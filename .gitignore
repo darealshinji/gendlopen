@@ -1,0 +1,20 @@
+# binaries and object code
+/gendlopen
+test/test[123]
+xxd
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.exe
+
+# generated code
+#cmdline.[ch]
+/c*_header.h
+test/test*.h
+test/test*.hpp
+
+# backups
+*.bak
+*.old

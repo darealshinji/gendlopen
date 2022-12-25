@@ -1,0 +1,24 @@
+/* Convenience macro to create versioned library names for DLLs, dylibs
+ * and DSOs. LIB(z,1) for example will be resolved to either libz-1.dll,
+ * libz.1.dylib or libz.so.1
+ */
+#ifndef LIB
+#  ifdef _WIN32
+#    define LIB(NAME, API)  "lib" #NAME "-" #API ".dll"
+#  elif __APPLE__
+#    define LIB(NAME, API)  "lib" #NAME "." #API ".dylib"
+#  else
+#    define LIB(NAME, API)  "lib" #NAME ".so." #API
+#  endif
+#endif
+
+/* shared library file extension (useful i.e. on plugins) */
+#ifndef LIBEXT
+#  ifdef _WIN32
+#    define LIBEXT "dll"
+#  elif __APPLE__
+#    define LIBEXT "dylib"
+#  else
+#    define LIBEXT "so"
+#  endif
+#endif

@@ -1,0 +1,18 @@
+/***
+ Let's see if our parser can get these three prototypes
+ from this file while ignoring comments and empty lines:
+
+ const char *zlibVersion (void);
+ int deflate  (z_streamp, int);
+ int deflateEnd (z_streamp);
+***/
+
+const char *zlibVersion (     ); /* //comment inside comment */
+/* /**\/ */;
+
+ int deflate  (z_streamp/* strm*/, int /*flush*/ ) ;  
+// this line is ignored
+
+// this line too
+int deflateEnd(z_streamp)
+// no newline at file end

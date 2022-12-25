@@ -1,0 +1,307 @@
+/**
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * For more information, please refer to <http://unlicense.org/
+ */
+@IF:_SOURCE@
+#include "@NAME@.hpp"
+
+@ELSE:_SOURCE@
+#ifndef @HEADERGUARD@
+#define @HEADERGUARD@
+
+@IF:_W32@
+#include <windows.h>
+@ELSE:_W32@
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+#endif
+#include <dlfcn.h>
+@ENDIF:_W32@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+@IFNOT:_CXXSTATIC@
+/* local function declarations */
+#define @NAMEUPPER@_LOCAL_DECL
+  @MACRO_START@
+  @TYPE@ (*@SYMBOL@)(@ARGS@) = NULL;
+  @MACRO_END@
+
+/* load all symbols; OBJ must be manually set as 'obj->'
+ * in case of pointer and as 'obj.' in case of reference
+ */
+#define @NAMEUPPER@_LOAD_SYMBOLS(OBJ)
+@MACRO_START@
+(
+  OBJ load_sym((void **)&@SYMBOL@, "@SYMBOL@") &&
+  true
+)
+@MACRO_END@
+
+#define @NAMEUPPER@_RELOAD_SYMBOLS(OBJ) \
+  @NAMEUPPER@_LOCAL_DECL; \
+  @NAMEUPPER@_LOAD_SYMBOLS(OBJ)
+@ENDIF:_CXXSTATIC@
+
+@LIB_LIBEXT@
+
+
+class @NAME@
+{
+private:
+  char *m_error = NULL;
+  char *m_origin = NULL;
+  const char *m_lib = @DEFAULT_LIB@; @D:_DEFLIB@
+  const char *m_lib = NULL;          @D!_DEFLIB@
+
+@IF:_W32@
+  static HMODULE m_handle; @D:_CXXSTATIC@
+  HMODULE m_handle = NULL; @D!_CXXSTATIC@
+  enum { DEFAULT_FLAGS = 0 };
+@ELSE:_W32@
+  /* needed for dladdr() */
+  void *m_lastsym = NULL;
+
+  static void *m_handle; @D:_CXXSTATIC@
+  void *m_handle = NULL; @D!_CXXSTATIC@
+  enum { DEFAULT_FLAGS = RTLD_LAZY };
+@ENDIF:_W32@
+
+  int m_flags = DEFAULT_FLAGS;
+
+@IF:_W32@
+  /* format an error message from an error code */
+  void save_error(DWORD lasterr, const char *msg)
+  {
+    char *buf = NULL;
+
+    DWORD dwFlags =
+      FORMAT_MESSAGE_ALLOCATE_BUFFER |
+      FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS |
+      FORMAT_MESSAGE_MAX_WIDTH_MASK; /* <- tidy up line breaks */
+
+    DWORD ret = FormatMessageA(dwFlags, NULL, lasterr,
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buf, 0, NULL);
+
+    clear_error();
+
+    if (ret == 0 || !buf) { /* FormatMessageA failed */
+      const char *fmt = "%s: error code %d";
+      /* allocate string length plus more than enough for an integer */
+      m_error = (char *)malloc(strlen(fmt) + strlen(msg) + 64);
+      sprintf(m_error, fmt, msg, (int)lasterr);
+    } else if (buf) {
+      m_error = (char *)malloc(strlen(msg) + strlen(buf) + 3);
+      sprintf(m_error, "%s: %s", msg, buf);
+    }
+
+    if (buf) LocalFree(buf);
+  }
+@ELSE:_W32@
+  /* save an error message, providing an alternative message */
+  void save_error(const char *msg, const char *alt_msg) {
+    clear_error();
+    m_error = strdup(msg ? msg : alt_msg);
+  }
+@ENDIF:_W32@
+
+  /* clear error message */
+  void clear_error() {
+    if (m_error) free(m_error);
+    m_error = NULL;
+  }
+
+public: @D!_CXXSTATIC@
+  /* load symbol and cast to fnptr */
+  bool load_sym(void **fnptr, const char *symbol)
+  {
+    clear_error();
+
+@IF:_W32@
+    FARPROC proc = GetProcAddress(m_handle, symbol);
+
+    if (!proc) {
+      save_error(GetLastError(), "GetProcAddress()");
+      return false;
+    }
+
+    *fnptr = (void *)proc;
+@ELSE:_W32@
+    if ((m_lastsym = dlsym(m_handle, symbol)) == NULL) {
+      save_error(dlerror(), "dlsym(): unknown error");
+      return false;
+    }
+
+    *fnptr = m_lastsym;
+@ENDIF:_W32@
+
+    return true;
+  }
+
+public:
+  /* default c'tor */
+  @NAME@()
+  {}
+
+  /* c'tor with arguments */
+  @NAME@(const char *filename, int flags=DEFAULT_FLAGS)
+  {
+    m_lib = filename;
+    m_flags = flags;
+  }
+
+  /* d'tor */
+  virtual ~@NAME@()
+  {
+    lib_free();
+    if (m_error) free(m_error);
+    if (m_origin) free(m_origin);
+  }
+
+  /* load library */
+  bool load()
+  {
+    clear_error();
+
+@IF:_W32@
+    if ((m_handle = LoadLibraryExA(m_lib, NULL, m_flags)) == NULL) {
+      save_error(GetLastError(), "LoadLibraryExA()");
+      return false;
+    }
+@ELSE:_W32@
+    if ((m_handle = dlopen(m_lib, m_flags)) == NULL) {
+      save_error(dlerror(), "dlopen(): unknown error");
+      return false;
+    }
+@ENDIF:_W32@
+
+    return true;    
+  }
+
+  /* load library with arguments */
+  bool load(const char *filename, int flags=DEFAULT_FLAGS) {
+    m_lib = filename;
+    m_flags = flags;
+    return load();
+  }
+
+  /* free library */
+  bool lib_free()
+  {
+    clear_error();
+
+    if (!m_handle) return true;
+
+@IF:_W32@
+    if (FreeLibrary(m_handle) == FALSE) {
+      save_error(GetLastError(), "FreeLibrary()");
+      return false;
+    }
+@ELSE:_W32@
+    if (dlclose(m_handle) != 0) {
+      save_error(dlerror(), "dlclose(): unknown error");
+      return false;
+    }
+@ENDIF:_W32@
+
+    return true;
+  }
+
+@IF:_CXXSTATIC@
+  /* load all symbols */
+  bool sym()
+  {
+    @LOOP_START@
+    if (!@SYMBOL@ && !load_sym((void **)&@SYMBOL@, "@SYMBOL@")) {
+      return false;
+    }
+    @LOOP_END@
+
+    clear_error();
+
+    return true;
+  }
+
+@ENDIF:_CXXSTATIC@
+  /* return path to loaded library */
+  const char *origin()
+  {
+    if (m_origin) return m_origin;
+
+@IF:_W32@
+    char buf[32*1024];
+
+    if (GetModuleFileNameA(m_handle, (LPSTR)&buf, sizeof(buf)-1) == 0) {
+      save_error(GetLastError(), "GetModuleFileNameA()");
+      return NULL;
+    }
+
+    m_origin = strdup(buf);
+@ELSE:_W32@
+    Dl_info dli;
+
+    if (!m_lastsym) {
+      save_error("dladdr(): address pointer is NULL", NULL);
+      return NULL;
+    }
+
+    if (dladdr(m_lastsym, &dli) == 0) {
+      save_error("dladdr(): unknown error", NULL);
+      return NULL;
+    }
+
+    m_origin = strdup(dli.dli_fname);
+@ENDIF:_W32@
+
+    return m_origin;
+  }
+
+  /* return the last saved error message */
+  const char *error() const {
+    return m_error;
+  }
+@IF:_CXXSTATIC@
+
+  /* function pointers */
+  static @TYPE@ (*@SYMBOL@)(@ARGS@);
+@ENDIF:_CXXSTATIC@
+};
+@IF:_CXXSTATIC@
+
+/* link against the static class member functions */
+#define @SYMBOL@ @NAME@::@SYMBOL@
+
+@ENDIF:_CXXSTATIC@
+@X@
+@IF:_HEADER@
+#endif //@HEADERGUARD@
+@ENDIF:_HEADER@
+@X@
+@ENDIF:_SOURCE@
+@X@
+@X@ // C++ body part
+@IFNOT:_HEADER@
+@IF:_CXXSTATIC@
+HMODULE @NAME@::m_handle = NULL;  @D:_W32@
+void *@NAME@::m_handle = NULL;    @D!_W32@
+
+/* function pointers */
+@TYPE@ (*@NAME@::@SYMBOL@)(@ARGS@) = NULL;
+
+@ENDIF:_CXXSTATIC@
+@X@
+@IFNOT:_SOURCE@
+#endif //@HEADERGUARD@
+@ENDIF:_SOURCE@
+@X@
+@ENDIF:_HEADER@

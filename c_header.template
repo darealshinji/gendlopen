@@ -1,0 +1,358 @@
+/**
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * For more information, please refer to <http://unlicense.org/
+ */
+@IF:_SOURCE@
+#include "@NAME@.h"
+
+@ELSE:_SOURCE@
+#ifndef @HEADERGUARD@
+#define @HEADERGUARD@
+
+@IF:_W32@
+#include <windows.h>
+#define @NAMEUPPER@_DEFAULT_FLAGS  0
+@ELSE:_W32@
+#ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+#endif
+#include <dlfcn.h>
+#define @NAMEUPPER@_DEFAULT_FLAGS  RTLD_LAZY
+@ENDIF:_W32@
+
+#include <assert.h>
+#include <string.h>
+
+
+/* The actual code is provided as macros. The main reason is that we get linker
+ * errors if we add the function pointers to the global scope.
+ * Ideally you would put all the dynamically loaded symbols in only a single
+ * function, which returns something useful if loading didn't work.
+ *
+ * ON_ERROR argument: here you put your code that handles dlopen() errors,
+ * usually an error message followed by a return statement.
+ * Examples:
+ *   @NAME@_load_all(return 1); //return NULL, return false, ...
+ *   @NAME@_load_all(exit(1));
+ *   @NAME@_load_all(fprintf(stderr, "%s\n", @NAME@_last_error); goto ERR_EXIT);
+ *
+ * When an error occurs the error code and additional information will be saved.
+ * A formatted message is available through @NAME@_last_error. The buffer will
+ * only be overwritten if another error happens in one of the macro calls.
+ */
+
+/* uppercase macros */
+#define @NAMEUPPER@_LOAD_ALL_FN(FILENAME, ON_ERROR)           @NAME@_load_all_fn(FILENAME, ON_ERROR)
+#define @NAMEUPPER@_LOAD_LIB_ARGS(FILENAME, FLAGS, ON_ERROR)  @NAME@_load_lib_args(FILENAME, FLAGS, ON_ERROR)
+#define @NAMEUPPER@_LOAD_SYM(AUTO_DLCLOSE, ON_ERROR)          @NAME@_load_sym(AUTO_DLCLOSE, ON_ERROR)
+@IF:_DEFLIB@
+#define @NAMEUPPER@_LOAD_ALL(ON_ERROR)  @NAME@_load_all(ON_ERROR)
+#define @NAMEUPPER@_LOAD_LIB(ON_ERROR)  @NAME@_load_lib(ON_ERROR)
+@ENDIF:_DEFLIB@
+#define @NAMEUPPER@_FREE_LIB            @NAME@_free_lib
+#define @NAMEUPPER@_LAST_ERROR          @NAME@_last_error
+#define @NAMEUPPER@_LAST_ERROR_CODE     @NAME@_last_error_code  @D:_W32@
+#define @NAMEUPPER@_LIB_ORIGIN(PTR)     @NAME@_lib_origin(PTR)
+
+@LIB_LIBEXT@
+
+@IF:_DEFLIB@
+/* load default library and the symbols */
+#define @NAME@_load_all(ON_ERROR) \
+  @NAME@_load_lib(ON_ERROR) \
+  @NAME@_load_sym(1, ON_ERROR)
+
+/* load default library */
+#define @NAME@_load_lib(ON_ERROR) \
+  @NAME@_load_lib_args(@DEFAULT_LIB@, @NAMEUPPER@_DEFAULT_FLAGS, ON_ERROR)
+
+@ENDIF:_DEFLIB@
+/* load FILENAME and symbols */
+#define @NAME@_load_all_fn(FILENAME, ON_ERROR) \
+  @NAME@_load_lib_args(FILENAME, @NAMEUPPER@_DEFAULT_FLAGS, ON_ERROR) \
+  @NAME@_load_sym(1, ON_ERROR)
+
+/* load the library */
+#define @NAME@_load_lib_args(FILENAME, FLAGS, ON_ERROR)
+@IF:_W32@
+  @MACRO_START@
+  __buf@R@[0] = 0;
+  __buf_formatted@R@[0] = 0;
+  __last_errno@R@ = 0;
+
+  @NAME@_free_lib_err(ON_ERROR)
+
+  if ((__handle@R@ = LoadLibraryExA(FILENAME, NULL, FLAGS)) == NULL) {
+    __last_errno@R@ = GetLastError();
+    if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);
+    ON_ERROR;
+  }
+  @MACRO_END@
+@ELSE:_W32@
+  @MACRO_START@
+  __buf@R@[0] = 0;
+
+  @NAME@_free_lib_err(ON_ERROR)
+
+  if ((__handle@R@ = dlopen(FILENAME, FLAGS)) != NULL) {
+    dlerror();
+  } else {
+    char *ptr@R@ = dlerror();
+    if (ptr@R@) strncpy(__buf@R@, ptr@R@, sizeof(__buf@R@)-1);
+    ON_ERROR;
+  }
+  @MACRO_END@
+@ENDIF:_W32@
+
+/* use this macro to retrieve the last saved error message */
+#define @NAME@_last_error  @NAME@_last_error_formatted@R@() @D:_W32@
+#define @NAME@_last_error  ((const char *)__buf@R@)         @D!_W32@
+
+@IF:_W32@
+/* use this macro to get the error code from the last error that
+ * happend in any of the macro calls (win32 API only) */
+#define @NAME@_last_error_code  __last_errno@R@
+@ENDIF:_W32@
+
+/* Free the library handle; can safely be called multiple
+ * times. This will not clear the error buffer.
+ */
+#define @NAME@_free_lib
+@IF:_W32@
+  @MACRO_START@
+  if (__handle@R@ && FreeLibrary(__handle@R@) == TRUE) {
+    __handle@R@ = NULL;
+  }
+  @MACRO_END@
+@ELSE:_W32@
+  @MACRO_START@
+  if (__handle@R@ && dlclose(__handle@R@) == 0) {
+    __handle@R@ = NULL;
+  }
+  @MACRO_END@
+@ENDIF:_W32@
+
+/* Free the library handle - including an error check;
+ * Here ON_ERROR doesn't neccessarily need to call return or exit(),
+ * just printing a warning might be sufficient for your code.
+ */
+#define @NAME@_free_lib_err(ON_ERROR)
+@IF:_W32@
+  @MACRO_START@
+  __buf@R@[0] = 0;
+  __buf_formatted@R@[0] = 0;
+  __last_errno@R@ = 0;
+
+  if (__handle@R@) {
+    if (FreeLibrary(__handle@R@) == TRUE) {
+      __handle@R@ = NULL;
+    } else {
+      __last_errno@R@ = GetLastError();
+      strcpy(__buf@R@, "FreeLibrary()");
+      ON_ERROR;
+    }
+  }
+  @MACRO_END@
+@ELSE:_W32@
+  @MACRO_START@
+  __buf@R@[0] = 0;
+
+  if (__handle@R@) {
+    if (dlclose(__handle@R@) == 0) {
+      __handle@R@ = NULL;
+    } else {
+      char *ptr@R@ = dlerror();
+      if (ptr@R@) strncpy(__buf@R@, ptr@R@, sizeof(__buf@R@)-1);
+      ON_ERROR;
+    }
+  }
+  @MACRO_END@
+@ENDIF:_W32@
+
+/* get the full library path and cast it to the pointer PTR (const char *) */
+#define @NAME@_lib_origin(PTR)
+@IF:_W32@
+  @MACRO_START@
+  if (__handle@R@ && GetModuleFileNameA(__handle@R@,
+      (LPSTR)&__orig@R@, sizeof(__orig@R@)-1) > 0)
+  {
+    PTR = (const char *)__orig@R@;
+  } else {
+    PTR = (const char *)NULL;
+  }
+  @MACRO_END@
+@ELSE:_W32@
+  @MACRO_START@
+  {
+    Dl_info __dli@R@;
+    if (__last_symbol@R@ && dladdr(__last_symbol@R@, &__dli@R@) != 0) {
+      PTR = (const char *)__dli@R@.dli_fname;
+    } else {
+      PTR = (const char *)NULL;
+    }
+  }
+  @MACRO_END@
+@ENDIF:_W32@
+
+/* load all symbols; can safely be called multiple times.
+ *
+ * If the symbols are used in different functions, make sure to
+ * call the @NAME@_load_lib or @NAME@_load_lib_args macro only once,
+ * but put this macro into every function where the symbols are used.
+ * The function pointers will only be loaded once through dlsym()
+ * and then just reassigned locally within each scope.
+ */
+#define @NAME@_load_sym(AUTO_DLCLOSE, ON_ERROR)
+@IF:_W32@
+  @MACRO_START@
+  assert(__handle@R@ != NULL);
+
+  @TYPE@ (*@SYMBOL@)(@ARGS@) = NULL;
+  @X@
+  @LOOP_START@
+
+  if (!@SYMBOL@@R@_ptr) {
+    __buf@R@[0] = 0;
+    __buf_formatted@R@[0] = 0;
+    __last_errno@R@ = 0;
+    @SYMBOL@@R@_ptr = (@SYMBOL@@R@_t)
+      GetProcAddress(__handle@R@, "@SYMBOL@");
+  }
+  if (@SYMBOL@@R@_ptr) {
+    *(void **) (&@SYMBOL@) = @SYMBOL@@R@_ptr;
+    __last_symbol@R@ = (FARPROC) @SYMBOL@@R@_ptr;
+  } else {
+    @X@ save error code and format the message only if needed
+    __last_errno@R@ = GetLastError();
+    strncpy(__buf@R@, "@SYMBOL@", sizeof(__buf@R@)-1);
+    if (AUTO_DLCLOSE) {
+      FreeLibrary(__handle@R@);
+      __handle@R@ = NULL;
+    }
+    ON_ERROR;
+  }
+  @LOOP_END@
+
+  assert(@SYMBOL@ != NULL);
+  @MACRO_END@
+@ELSE:_W32@
+  @MACRO_START@
+  assert(__handle@R@ != NULL);
+
+  @TYPE@ (*@SYMBOL@)(@ARGS@) = NULL;
+  @X@
+  @LOOP_START@
+
+  if (!@SYMBOL@@R@_ptr) {
+    __buf@R@[0] = 0;
+    @SYMBOL@@R@_ptr = (@SYMBOL@@R@_t)
+      dlsym(__handle@R@, "@SYMBOL@");
+  }
+  if (@SYMBOL@@R@_ptr) {
+    *(void **) (&@SYMBOL@) = @SYMBOL@@R@_ptr;
+    __last_symbol@R@ = @SYMBOL@@R@_ptr;
+  } else {
+    char *ptr@R@ = dlerror();
+    if (ptr@R@) strncpy(__buf@R@, ptr@R@, sizeof(__buf@R@)-1);
+    if (AUTO_DLCLOSE) {
+      dlclose(__handle@R@);
+      __handle@R@ = NULL;
+    }
+    ON_ERROR;
+  }
+  @LOOP_END@
+
+  assert(@SYMBOL@ != NULL);
+  @MACRO_END@
+@ENDIF:_W32@
+
+/* typedefs */
+typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
+
+@IF:_HEADER@
+#endif //@HEADERGUARD@
+@ENDIF:_HEADER@
+@ENDIF:_SOURCE@
+@X@
+@X@ // C body part
+@IFNOT:_HEADER@
+/* function pointers */
+@STATIC@@SYMBOL@@R@_t @SYMBOL@@R@_ptr = NULL;
+
+@IF:_W32@
+/* library handle */
+@STATIC@HMODULE __handle@R@ = NULL;
+
+/* last successfully loaded symbol */
+@STATIC@FARPROC __last_symbol@R@ = NULL;
+
+/* error buffer */
+@STATIC@char __buf@R@[8*1024] = {0};
+@STATIC@char __buf_formatted@R@[64*1024 + 1] = {0};
+
+/* error code */
+@STATIC@DWORD __last_errno@R@ = 0;
+
+/* module filepath buffer */
+@STATIC@char __orig@R@[8*1024] = {0};
+
+/* access the last saved error message  */
+@STATIC@const char *@NAME@_last_error_formatted@R@()
+{
+  /* message was already saved */
+  if (__buf_formatted@R@[0] != 0) {
+    return __buf_formatted@R@;
+  }
+
+  char *msg = NULL;
+
+  DWORD dwFlags =
+    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS |
+    FORMAT_MESSAGE_MAX_WIDTH_MASK; /* <- tidy up line breaks */
+
+  DWORD ret = FormatMessageA(dwFlags, NULL, __last_errno@R@,
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPTSTR)&msg, 0, NULL);
+
+  if (ret == 0 || !msg) {
+    /* FormatMessageA failed */
+    sprintf(__buf_formatted@R@, "Last saved error code: %d", (int)__last_errno@R@);
+    if (msg) LocalFree(msg);
+  } else if (msg) {
+    if (__buf@R@[0] == 0) {
+      strncpy(__buf_formatted@R@, msg, sizeof(__buf_formatted@R@)-1);
+    } else {
+      snprintf(__buf_formatted@R@, sizeof(__buf_formatted@R@)-1, "%s: %s", __buf@R@, msg);
+    }
+    LocalFree(msg);
+  }
+
+  return __buf_formatted@R@;
+}
+@ELSE:_W32@
+/* library handle */
+@STATIC@void *__handle@R@ = NULL;
+
+/* last successfully loaded symbol */
+@STATIC@void *__last_symbol@R@ = NULL;
+
+/* error buffer */
+#ifdef _WIN32
+@STATIC@char __buf@R@[64*1024 + 1] = {0};
+#else
+@STATIC@char __buf@R@[8*1024] = {0};
+#endif
+@ENDIF:_W32@
+@IFNOT:_SOURCE@
+
+#endif //@HEADERGUARD@
+@ENDIF:_SOURCE@
+@ENDIF:_HEADER@

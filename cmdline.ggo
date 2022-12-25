@@ -1,0 +1,21 @@
+package "gendlopen"
+version ""
+purpose "generates code to load functions using the dlopen() API"
+
+args "--no-handle-error --no-version"
+
+option "input"          i "Input file with C function prototype list" typestr="filename" string optional
+option "output"         o "Output header file; if not specified the output will be printed to STDOUT" typestr="filename" string optional
+option "separate-files" s "Output to separate files (header, source); requires `--output'" optional
+option "force"          f "Force overwriting of existing files" optional
+option "target"         t "Target language (c, cpp, cpp-static)  (default=`c')" typestr="cpp" string optional
+option "custom"         c "Custom input template file" typestr="filename" string optional
+option "name"           n "Macro prefix or C++ class name  (default=`gendlopen')" typestr="myclass" string optional
+option "def"            D "Boolean custom definition" typestr="option" string optional multiple
+option "library"        l "Default library name" typestr="libname.ext" string optional
+option "no-quote"       - "Do not put quotes around default library name" optional
+option "no-random"      - "Disable appending random numbers to symbol names" optional
+option "convert"        C "Convert our own type of macro conditionals to C style ones" optional
+option "win32"          w "Use the win32 LoadLibrary() API" optional
+option "win-linebreaks" - "Use Windows style line breaks (\\r\\n)" optional
+option "keep-spaces"    k "Do not strip trailing whitespaces after removing a macro from the end of a line" optional
