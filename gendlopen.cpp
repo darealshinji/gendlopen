@@ -616,6 +616,8 @@ bool gendlopen::parse(const char *input, const char *output, int target)
     bool is_defined = false;
     bool front = true;
 
+    line_no++;
+
     if (!preprocess(line, line_no, stack)) {
       continue;
     }
