@@ -118,7 +118,8 @@ characters before or after them will be ignored.
 `@ELSE:VALUE@`<br>
 `@ENDIF:VALUE@`:<br>
   Pre-processor conditionals similar to the ones used in C/C++. These will be
-  processed before anything else.
+  processed before anything else. `@ELSE@` and `@ENDIF@` can be used as
+  alternatives to `@ELSE:VALUE@` and `@ENDIF:VALUE@`.
 
 `@MACRO_START@`<br>
 `@MACRO_END@`:<br>

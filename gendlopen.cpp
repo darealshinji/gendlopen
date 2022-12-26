@@ -430,12 +430,12 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
       /* check for matching @ELSE@/@ENDIF@ first */
       if (!stack.empty()) {
         /* @ENDIF@ */
-        if (copy == stack.back().s_endif) {
+        if (copy == stack.back().s_endif || copy == "@ENDIF@") {
           stack.pop_back();
           return false;
         }
         /* @ELSE@ */
-        else if (copy == stack.back().s_else) {
+        else if (copy == stack.back().s_else || copy == "@ELSE@") {
           stack.back().b = !stack.back().b;
           return false;
         }
@@ -448,7 +448,9 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
         if (token_is_if_or_ifnot(copy, conditional, line_no)) {
           stack.push_back(conditional);
           return false;
-        } else if (IS_TOKEN(copy, "@ELSE:") || IS_TOKEN(copy, "@ENDIF:")) {
+        } else if (IS_TOKEN(copy, "@ELSE:") || IS_TOKEN(copy, "@ENDIF:") ||
+                   copy == "@ELSE@" || copy == "@ENDIF@")
+        {
           std::cerr << "warning: line " << line_no
             << " is missing a matching @IF@/@IFNOT@ line: "
             << copy << std::endl;

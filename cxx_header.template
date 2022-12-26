@@ -11,13 +11,13 @@
 @IF:_SOURCE@
 #include "@NAME@.hpp"
 
-@ELSE:_SOURCE@
+@ELSE@
 #ifndef @HEADERGUARD@
 #define @HEADERGUARD@
 
 @IF:_W32@
 #include <windows.h>
-@ELSE:_W32@
+@ELSE@
 #ifndef _GNU_SOURCE
 #  define _GNU_SOURCE
 #endif
@@ -68,7 +68,7 @@ private:
   static HMODULE m_handle; @D:_CXXSTATIC@
   HMODULE m_handle = NULL; @D!_CXXSTATIC@
   enum { DEFAULT_FLAGS = 0 };
-@ELSE:_W32@
+@ELSE@
   /* needed for dladdr() */
   void *m_lastsym = NULL;
 
@@ -108,7 +108,7 @@ private:
 
     if (buf) LocalFree(buf);
   }
-@ELSE:_W32@
+@ELSE@
   /* save an error message, providing an alternative message */
   void save_error(const char *msg, const char *alt_msg) {
     clear_error();
@@ -137,7 +137,7 @@ public: @D!_CXXSTATIC@
     }
 
     *fnptr = (void *)proc;
-@ELSE:_W32@
+@ELSE@
     if ((m_lastsym = dlsym(m_handle, symbol)) == NULL) {
       save_error(dlerror(), "dlsym(): unknown error");
       return false;
@@ -179,7 +179,7 @@ public:
       save_error(GetLastError(), "LoadLibraryExA()");
       return false;
     }
-@ELSE:_W32@
+@ELSE@
     if ((m_handle = dlopen(m_lib, m_flags)) == NULL) {
       save_error(dlerror(), "dlopen(): unknown error");
       return false;
@@ -219,7 +219,7 @@ public:
       save_error(GetLastError(), "FreeLibrary()");
       return false;
     }
-@ELSE:_W32@
+@ELSE@
     if (dlclose(m_handle) != 0) {
       save_error(dlerror(), "dlclose(): unknown error");
       return false;
@@ -259,7 +259,7 @@ public:
     }
 
     m_origin = strdup(buf);
-@ELSE:_W32@
+@ELSE@
     Dl_info dli;
 
     if (!m_lastsym) {

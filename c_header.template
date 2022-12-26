@@ -11,14 +11,14 @@
 @IF:_SOURCE@
 #include "@NAME@.h"
 
-@ELSE:_SOURCE@
+@ELSE@
 #ifndef @HEADERGUARD@
 #define @HEADERGUARD@
 
 @IF:_W32@
 #include <windows.h>
 #define @NAMEUPPER@_DEFAULT_FLAGS  0
-@ELSE:_W32@
+@ELSE@
 #ifndef _GNU_SOURCE
 #  define _GNU_SOURCE
 #endif
@@ -54,7 +54,7 @@
 @IF:_DEFLIB@
 #define @NAMEUPPER@_LOAD_ALL(ON_ERROR)  @NAME@_load_all(ON_ERROR)
 #define @NAMEUPPER@_LOAD_LIB(ON_ERROR)  @NAME@_load_lib(ON_ERROR)
-@ENDIF:_DEFLIB@
+@ENDIF@
 #define @NAMEUPPER@_FREE_LIB            @NAME@_free_lib
 #define @NAMEUPPER@_LAST_ERROR          @NAME@_last_error
 #define @NAMEUPPER@_LAST_ERROR_CODE     @NAME@_last_error_code  @D:_W32@
@@ -94,7 +94,7 @@
     ON_ERROR;
   }
   @MACRO_END@
-@ELSE:_W32@
+@ELSE@
   @MACRO_START@
   __buf@R@[0] = 0;
 
@@ -142,7 +142,7 @@
     }
   }
   @MACRO_END@
-@ELSE:_W32@
+@ELSE@
   @MACRO_START@
   {
     __buf@R@[0] = 0;
@@ -180,7 +180,7 @@
 /* use this macro to get the error code from the last error that
  * happend in any of the macro calls (win32 API only) */
 #define @NAME@_last_error_code  __last_errno@R@
-@ENDIF:_W32@
+@ENDIF@
 
 /* Free the library handle; can safely be called multiple
  * times. This will not clear the error buffer.
@@ -192,7 +192,7 @@
     __handle@R@ = NULL;
   }
   @MACRO_END@
-@ELSE:_W32@
+@ELSE@
   @MACRO_START@
   if (__handle@R@ && dlclose(__handle@R@) == 0) {
     __handle@R@ = NULL;
@@ -221,7 +221,7 @@
     }
   }
   @MACRO_END@
-@ELSE:_W32@
+@ELSE@
   @MACRO_START@
   __buf@R@[0] = 0;
 
@@ -251,7 +251,7 @@
     PTR = (const char *)NULL;
   }
   @MACRO_END@
-@ELSE:_W32@
+@ELSE@
   @MACRO_START@
   {
     Dl_info __dli@R@;
@@ -305,7 +305,7 @@
 
   assert(@SYMBOL@ != NULL);
   @MACRO_END@
-@ELSE:_W32@
+@ELSE@
   @MACRO_START@
   assert(__handle@R@ != NULL);
 
@@ -341,7 +341,7 @@ typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
 
 @IF:_HEADER@
 #endif //@HEADERGUARD@
-@ENDIF:_HEADER@
+@ENDIF@
 @ENDIF:_SOURCE@
 @X@
 @X@ // C body part
