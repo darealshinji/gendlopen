@@ -24,6 +24,7 @@
 #include <dlfcn.h>
 @ENDIF:_W32@
 
+#include <list>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -195,6 +196,17 @@ public:
     return load();
   }
 
+  /* load from a list of filenames */
+  bool load(std::list<const char *> list, int flags=DEFAULT_FLAGS)
+  {
+    for (const auto &e : list) {
+      if (load(e, flags)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /* free library */
   bool lib_free()
   {
@@ -269,6 +281,11 @@ public:
   /* return the last saved error message */
   const char *error() const {
     return m_error;
+  }
+
+  /* library name */
+  const char *lib() const {
+    return m_lib;
   }
 @IF:_CXXSTATIC@
 

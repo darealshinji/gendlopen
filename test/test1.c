@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <zlib.h>
@@ -32,7 +34,15 @@ void print2()
 int main()
 {
   // load library and symbols
-  gendlopen_zlib_load_all_fn(LIB(z,1), err_exit());
+  //gendlopen_zlib_load_all_fn(LIB(z,1), err_exit());
+
+  const char *lib = NULL, *origin = NULL;
+  const int flags = GENDLOPEN_ZLIB_DEFAULT_FLAGS;
+
+  gendlopen_zlib_load_lib_list(lib, flags, err_exit(), "libz.so.X", "libz.so.1", "libz.so");
+  gendlopen_zlib_load_sym(1, err_exit());
+  gendlopen_zlib_lib_origin(origin);
+  printf("loaded: %s (%s)\n", lib, origin);
 
   print1();
 

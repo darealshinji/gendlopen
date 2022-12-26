@@ -13,12 +13,16 @@ void print2() {
 
 int main()
 {
-  gendlopen_zlib gen(LIB(z,1));
+  gendlopen_zlib gen;
 
-  if (!gen.load() || !gen.sym()) {
+  if (!gen.load( {"libz.so.X", "libz.so.1", "libz.so"} ) ||
+      !gen.sym())
+  {
     std::cerr << gen.error() << std::endl;
     return 1;
   }
+
+  std::cout << "loaded: " << gen.lib() << " (" << gen.origin() << ')' << std::endl;
 
   print1();
   print2();

@@ -103,9 +103,71 @@
   if ((__handle@R@ = dlopen(FILENAME, FLAGS)) != NULL) {
     dlerror();
   } else {
-    char *ptr@R@ = dlerror();
-    if (ptr@R@) strncpy(__buf@R@, ptr@R@, sizeof(__buf@R@)-1);
+    char *__ptr@R@ = dlerror();
+    if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
     ON_ERROR;
+  }
+  @MACRO_END@
+@ENDIF:_W32@
+
+/* load from a list of library names
+ * LIB: on success the name of the loaded library from the list
+ *      will be set to this pointer (const char *)
+ */
+#define @NAME@_load_lib_list(LIB, FLAGS, ON_ERROR, ...)
+@IF:_W32@
+  @MACRO_START@
+  {
+    __buf@R@[0] = 0;
+    __buf_formatted@R@[0] = 0;
+    __last_errno@R@ = 0;
+    const char *__list@R@[] = { __VA_ARGS__, NULL };
+    const char **__entry@R@ = __list@R@;
+
+    @NAME@_free_lib_err(ON_ERROR)
+
+    while (*__entry@R@ && !__handle@R@) {
+      if ((__handle@R@ = LoadLibraryExA(*__entry@R@, NULL, FLAGS)) != NULL) {
+        break;
+      }
+      __last_errno@R@ = GetLastError();
+      __entry@R@++;
+    }
+
+    LIB = *__entry@R@;
+
+    if (!__handle@R@) {
+      if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);
+      ON_ERROR;
+    }
+  }
+  @MACRO_END@
+@ELSE:_W32@
+  @MACRO_START@
+  {
+    __buf@R@[0] = 0;
+    char *__ptr@R@ = NULL;
+    const char *__list@R@[] = { __VA_ARGS__, NULL };
+    const char **__entry@R@ = __list@R@;
+
+    @NAME@_free_lib_err(ON_ERROR)
+
+    while (*__entry@R@ && !__handle@R@) {
+      if ((__handle@R@ = dlopen(*__entry@R@, FLAGS)) != NULL) {
+        dlerror();
+        __ptr@R@ = NULL;
+        break;
+      }
+      __ptr@R@ = dlerror();
+      __entry@R@++;
+    }
+
+    LIB = *__entry@R@;
+
+    if (!__handle@R@) {
+      if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
+      ON_ERROR;
+    }
   }
   @MACRO_END@
 @ENDIF:_W32@
@@ -167,15 +229,17 @@
     if (dlclose(__handle@R@) == 0) {
       __handle@R@ = NULL;
     } else {
-      char *ptr@R@ = dlerror();
-      if (ptr@R@) strncpy(__buf@R@, ptr@R@, sizeof(__buf@R@)-1);
+      char *__ptr@R@ = dlerror();
+      if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
       ON_ERROR;
     }
   }
   @MACRO_END@
 @ENDIF:_W32@
 
-/* get the full library path and cast it to the pointer PTR (const char *) */
+/* get the full library path and cast it to the pointer PTR (const char *)
+ * TODO: save an error message?
+ */
 #define @NAME@_lib_origin(PTR)
 @IF:_W32@
   @MACRO_START@
@@ -258,8 +322,8 @@
     *(void **) (&@SYMBOL@) = @SYMBOL@@R@_ptr;
     __last_symbol@R@ = @SYMBOL@@R@_ptr;
   } else {
-    char *ptr@R@ = dlerror();
-    if (ptr@R@) strncpy(__buf@R@, ptr@R@, sizeof(__buf@R@)-1);
+    char *__ptr@R@ = dlerror();
+    if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
     if (AUTO_DLCLOSE) {
       dlclose(__handle@R@);
       __handle@R@ = NULL;
