@@ -38,6 +38,8 @@ public:
 
   struct cond {
     bool b;
+    bool b_cond;
+    bool b_else;
     size_t line_no;
     std::string s_cond;
     std::string s_else;
@@ -76,6 +78,7 @@ private:
   bool preprocess(std::string &line, const size_t line_no, std::vector<struct cond> &stack);
   inline bool defined(const std::string &s);
   bool token_is_if_or_ifnot(const std::string &s, struct cond &con, const size_t line_no);
+  bool token_is_elif_or_elifnot(const std::string &s, struct cond &con, const size_t line_no);
   void print_line(std::fstream &fs, const std::string &line, bool is_macro);
   inline const char *endl (bool is_macro) const;
 };

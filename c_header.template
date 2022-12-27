@@ -292,7 +292,7 @@
     *(void **) (&@SYMBOL@) = @SYMBOL@@R@_ptr;
     __last_symbol@R@ = (FARPROC) @SYMBOL@@R@_ptr;
   } else {
-    @X@ save error code and format the message only if needed
+    @X@// save error code and format the message only if needed
     __last_errno@R@ = GetLastError();
     strncpy(__buf@R@, "@SYMBOL@", sizeof(__buf@R@)-1);
     if (AUTO_DLCLOSE) {

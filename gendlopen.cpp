@@ -129,13 +129,18 @@ static bool getline_wrap(std::fstream &fs, std::string &line, const char *&p)
 }
 
 /* check 's' for 'token' and replace it with 'token_new' if found */
-static bool replace_token(std::string &s, const char *token, const char *token_new)
+static bool replace_token(std::string &s, const char *token, const char *token_new,
+                          const char *suffix = NULL)
 {
   const size_t len = strlen(token);
 
   if (s.size() > len+1 && s.compare(0, len, token) == 0) {
     s.replace(0, len, token_new);
     s.pop_back(); /* remove trailing '@' */
+
+    if (suffix) {
+      s += suffix;
+    }
     return true;
   }
 
@@ -343,19 +348,51 @@ bool gendlopen::token_is_if_or_ifnot(const std::string &s, struct cond &con, con
     return false;
   }
 
-  con.s_cond = s;
-
   if (len == static_strlen("@IFNOT:")) {
     con.b = !defined(tok);
   } else {
     con.b = defined(tok);
   }
 
+  con.s_cond = s;
+  con.b_cond = con.b;
   con.line_no = line_no;
   con.s_else = "@ELSE:" + tok;
   con.s_else += '@';
   con.s_endif = "@ENDIF:" + tok;
   con.s_endif += '@';
+
+  return true;
+}
+
+bool gendlopen::token_is_elif_or_elifnot(const std::string &s, struct cond &con, const size_t line_no)
+{
+  size_t len;
+
+  if (IS_TOKEN(s, "@ELIF:")) {
+    len = static_strlen("@ELIF:");
+  } else if (IS_TOKEN(s, "@ELIFNOT:")) {
+    len = static_strlen("@ELIFNOT:");
+  } else {
+    return false;
+  }
+
+  std::string tok = s;
+  tok.erase(0, len);
+  tok.pop_back();
+
+  if (!valid_token(tok, line_no)) {
+    return false;
+  }
+
+  if (len == static_strlen("@ELIFNOT:")) {
+    con.b = !defined(tok);
+  } else {
+    con.b = defined(tok);
+  }
+
+  con.s_cond = s;
+  con.line_no = line_no;
 
   return true;
 }
@@ -399,22 +436,31 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
   /* convert our own conditionals to C preprocessor
    * ones (no error checking) */
   if (m_conv_conditionals) {
-    if (!copy.empty() &&
+    if (copy.size() >= static_strlen("@ELSE@") &&
         copy.front() == '@' &&
         copy.back() == '@' &&
-        copy.find_first_of(WHITESPACE) == std::string::npos &&
-        (replace_token(copy, "@IF:", "#ifdef ") ||
-         replace_token(copy, "@IFNOT:", "#ifndef ") ||
-         replace_token(copy, "@ELSE:", "#else //") ||
-         replace_token(copy, "@ENDIF:", "#endif //")))
+        copy.find_first_of(WHITESPACE) == std::string::npos)
     {
-      size_t pos;
+      if (copy == "@ELSE@") {
+        line = "#else";
+      } else if (copy == "@ENDIF@") {
+        line = "#endif";
+      } else if (
+        replace_token(copy, "@IF:", "#ifdef ") ||
+        replace_token(copy, "@IFNOT:", "#ifndef ") ||
+        replace_token(copy, "@ELIF:", "#elif defined( ", " )") ||
+        replace_token(copy, "@ELIFNOT:", "#elif !defined( ", " )") ||
+        replace_token(copy, "@ELSE:", "#else //") ||
+        replace_token(copy, "@ENDIF:", "#endif //"))
+      {
+        size_t pos;
 
-      /* get original indentation */
-      if ((pos = line.find_first_not_of(WHITESPACE)) > 1) {
-        copy.insert(0, line.substr(0, pos));
+        /* get original indentation */
+        if ((pos = line.find_first_not_of(WHITESPACE)) > 1) {
+          copy.insert(0, line.substr(0, pos));
+        }
+        line = copy;
       }
-      line = copy;
     }
 
     return true;
@@ -427,34 +473,64 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
         copy.back() == '@' &&
         copy.find_first_of(WHITESPACE) == std::string::npos)
     {
-      /* check for matching @ELSE@/@ENDIF@ first */
+      /* check for @ELSE@ / @ENDIF@ / @ELIF@ */
       if (!stack.empty()) {
-        /* @ENDIF@ */
+        struct cond con = {0};
+
         if (copy == stack.back().s_endif || copy == "@ENDIF@") {
           stack.pop_back();
           return false;
         }
-        /* @ELSE@ */
-        else if (copy == stack.back().s_else || copy == "@ELSE@") {
-          stack.back().b = !stack.back().b;
+        else if (copy == stack.back().s_else || copy == "@ELSE@")
+        {
+          if (stack.back().b_else) {
+            std::cerr << "warning: redundant @ELSE@ at line " << line_no
+              << ": " << copy << std::endl;
+          }
+          stack.back().b_cond = stack.back().b = !stack.back().b_cond;
+          stack.back().b_else = true;
+          return false;
+        }
+        /* @ELIF@ / @ELIFNOT@ */
+        else if (token_is_elif_or_elifnot(copy, con, line_no))
+        {
+          if (stack.back().b_else) {
+            std::cerr << "warning: @ELIF@ / @ELIFNOT@ after @ELSE@ at line "
+              << line_no << ": " << copy << std::endl;
+          }
+
+          if (stack.back().b_cond == true) {
+            /* conditional was already set true, so disable this part */
+            stack.back().b = false;
+          } else {
+            /* conditional wasn't true yet, set it to the bool value
+             * from the current @ELIF@ part */
+            stack.back().b = con.b;
+            stack.back().b_cond = con.b;
+            stack.back().s_cond = con.s_cond;
+            stack.back().line_no = con.line_no;
+          }
           return false;
         }
       }
 
-      /* check @IF@/@IFNOT@ */
-      if (stack.empty() || stack.back().b == true) {
-        struct cond conditional = {0};
+      /* check for new @IF@/@IFNOT@ */
+      struct cond con = {0};
 
-        if (token_is_if_or_ifnot(copy, conditional, line_no)) {
-          stack.push_back(conditional);
-          return false;
-        } else if (IS_TOKEN(copy, "@ELSE:") || IS_TOKEN(copy, "@ENDIF:") ||
-                   copy == "@ELSE@" || copy == "@ENDIF@")
-        {
-          std::cerr << "warning: line " << line_no
-            << " is missing a matching @IF@/@IFNOT@ line: "
-            << copy << std::endl;
+      if (token_is_if_or_ifnot(copy, con, line_no)) {
+        if (!stack.empty() && stack.back().b == false) {
+          con.b = false;
+          con.b_cond = true;
         }
+        stack.push_back(con);
+        return false;
+      }
+      else if (IS_TOKEN(copy, "@ELSE:") || IS_TOKEN(copy, "@ENDIF:") ||
+                 copy == "@ELSE@" || copy == "@ENDIF@")
+      {
+        std::cerr << "warning: line " << line_no
+          << " is missing a matching @IF@/@IFNOT@ line: "
+          << copy << std::endl;
       }
     }
 

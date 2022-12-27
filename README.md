@@ -115,6 +115,8 @@ characters before or after them will be ignored.
 
 `@IF:VALUE@`<br>
 `@IFNOT:VALUE@`<br>
+`@ELIF:OTHERVALUE@`<br>
+`@ELIFNOT:OTHERVALUE@`<br>
 `@ELSE:VALUE@`<br>
 `@ENDIF:VALUE@`:<br>
   Pre-processor conditionals similar to the ones used in C/C++. These will be
