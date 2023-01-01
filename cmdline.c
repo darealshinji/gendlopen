@@ -35,7 +35,7 @@ const char *gengetopt_args_info_description = "";
 
 const char *gengetopt_args_info_help[] = {
   "  -h, --help                 Print help and exit",
-  "  -i, --input=filename       Input file with C function prototype list",
+  "  -i, --input=filename       Input file with C function prototype list; set\n                               filename as `-' to read from STDIN",
   "  -o, --output=filename      Output header file; if not specified the output\n                               will be printed to STDOUT",
   "  -s, --separate-files       Output to separate files (header, source);\n                               requires `--output'",
   "  -f, --force                Force overwriting of existing files",
@@ -889,7 +889,7 @@ cmdline_parser_internal (
           cmdline_parser_free (&local_args_info);
           exit (EXIT_SUCCESS);
 
-        case 'i':	/* Input file with C function prototype list.  */
+        case 'i':	/* Input file with C function prototype list; set filename as `-' to read from STDIN.  */
         
         
           if (update_arg( (void *)&(args_info->input_arg), 

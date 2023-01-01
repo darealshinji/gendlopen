@@ -4,7 +4,7 @@ purpose "generates code to load functions using the dlopen() API"
 
 args "--no-handle-error --no-version"
 
-option "input"          i "Input file with C function prototype list" typestr="filename" string optional
+option "input"          i "Input file with C function prototype list; set filename as `-' to read from STDIN" typestr="filename" string optional
 option "output"         o "Output header file; if not specified the output will be printed to STDOUT" typestr="filename" string optional
 option "separate-files" s "Output to separate files (header, source); requires `--output'" optional
 option "force"          f "Force overwriting of existing files" optional

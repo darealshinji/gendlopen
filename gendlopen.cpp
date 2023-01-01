@@ -49,6 +49,36 @@ struct func {
   std::string args;
 };
 
+
+/* small wrapper class to enable reading input from
+ * a file or STDIN using the same object */
+class my_ifstream
+{
+private:
+  bool m_stdin = false;
+  std::ifstream m_ifs;
+
+public:
+
+  my_ifstream(const char *file) {
+    if (strcmp(file, "-") == 0) {
+      m_stdin = true;
+    } else {
+      m_ifs.open(file);
+    }
+  }
+
+  ~my_ifstream() {
+    if (m_ifs.is_open()) m_ifs.close();
+  }
+
+  bool is_open() { return m_stdin ? true : m_ifs.is_open(); }
+  int get() { return m_stdin ? std::cin.get() : m_ifs.get(); }
+  int peek() { return m_stdin ? std::cin.peek() : m_ifs.peek(); }
+  void ignore() { get(); }
+};
+
+
 /* c_header and cxx_header must end on newline */
 
 static const char c_header[] = {
@@ -149,16 +179,22 @@ static bool replace_token(std::string &s, const char *token, const char *token_n
 
 /* read prototypes from text file, comments will be ignored; however this is
  * not a full C parser, so make sure the input is formatted correctly */
-static bool read_prototypes(std::fstream &fs, std::vector<struct func> &list)
+static bool read_prototypes(const char *input, std::vector<struct func> &list)
 {
   enum {
     COMMENT_NONE,
     COMMENT_ASTERISK,
     COMMENT_DOUBLE_SLASH
   };
+  char mode = COMMENT_NONE;
   std::vector<std::string> data;
   std::string line;
-  char mode = COMMENT_NONE;
+  my_ifstream fs(input);
+
+  if (!fs.is_open()) {
+    std::cerr << "error opening file for reading: " << input << std::endl;
+    return false;
+  }
 
   for (int c = fs.get(); c != EOF && c != '\0'; c = fs.get())
   {
@@ -168,7 +204,7 @@ static bool read_prototypes(std::fstream &fs, std::vector<struct func> &list)
       case COMMENT_ASTERISK:
         if (c == '*' && fs.peek() == '/') {
           mode = COMMENT_NONE;
-          fs.ignore(1);
+          fs.ignore();
         }
         continue;
       case COMMENT_DOUBLE_SLASH:
@@ -193,11 +229,11 @@ static bool read_prototypes(std::fstream &fs, std::vector<struct func> &list)
         switch (fs.peek()) {
           case '/':
             mode = COMMENT_DOUBLE_SLASH;
-            fs.ignore(1);
+            fs.ignore();
             continue;
           case '*':
             mode = COMMENT_ASTERISK;
-            fs.ignore(1);
+            fs.ignore();
             continue;
         }
         break;
@@ -557,15 +593,6 @@ bool gendlopen::parse(const char *input, const char *output, int target)
   size_t pos = std::string::npos;
   size_t line_no = 0;
 
-  /* read function prototypes from input file */
-
-  fs.open(input, std::fstream::in);
-
-  if (!fs.is_open()) {
-    std::cerr << "error opening file for reading: " << input << std::endl;
-    return false;
-  }
-
   if (output) {
     fout.open(output, std::fstream::out);
 
@@ -575,13 +602,15 @@ bool gendlopen::parse(const char *input, const char *output, int target)
     }
   }
 
-  if (!read_prototypes(fs, list)) {
+  /* read function prototypes from input file */
+
+  if (!read_prototypes(input, list)) {
     std::cerr << "error reading prototype data from file: "
       << input << std::endl;
     return false;
   }
 
-  fs.close();
+  /* don't print this info if output is set to STDOUT */
 
   if (fout.is_open()) {
     std::cout << list.size() << " prototypes found:\n" << std::endl;

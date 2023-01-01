@@ -38,9 +38,9 @@ extern "C" {
 struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
-  char * input_arg;	/**< @brief Input file with C function prototype list.  */
-  char * input_orig;	/**< @brief Input file with C function prototype list original value given at command line.  */
-  const char *input_help; /**< @brief Input file with C function prototype list help description.  */
+  char * input_arg;	/**< @brief Input file with C function prototype list; set filename as `-' to read from STDIN.  */
+  char * input_orig;	/**< @brief Input file with C function prototype list; set filename as `-' to read from STDIN original value given at command line.  */
+  const char *input_help; /**< @brief Input file with C function prototype list; set filename as `-' to read from STDIN help description.  */
   char * output_arg;	/**< @brief Output header file; if not specified the output will be printed to STDOUT.  */
   char * output_orig;	/**< @brief Output header file; if not specified the output will be printed to STDOUT original value given at command line.  */
   const char *output_help; /**< @brief Output header file; if not specified the output will be printed to STDOUT help description.  */

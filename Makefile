@@ -29,9 +29,7 @@ clean:
 	-rm -f $(GENHDRS)
 	-rm -f $(OBJS)
 
-distclean: clean
-
-maintainer-clean: distclean
+maintainer-clean: clean
 	-rm -f cmdline.c cmdline.h
 
 gendlopen.o: $(GENHDRS)

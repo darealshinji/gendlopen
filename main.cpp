@@ -50,13 +50,13 @@ inline bool file_exists(const char *path)
 
 inline bool strcase_ends_on(const std::string &s, const char *suf)
 {
-  if (s.empty()) {
+  if (s.empty() || !suf || !*suf) {
     return false;
   }
 
   size_t suflen = strlen(suf);
 
-  if (suflen == 0 || s.size() < suflen) {
+  if (s.size() < suflen) {
     return false;
   }
 
@@ -111,6 +111,11 @@ int main(int argc, char **argv)
   int ret = 1;
 
   argv0 = argv[0];
+
+  if (argc < 2) {
+    cmdline_parser_print_help();
+    return 1;
+  }
 
   if (cmdline_parser(argc, argv, &args) != 0) {
     return 1;
