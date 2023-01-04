@@ -42,7 +42,12 @@ int main()
   gendlopen_zlib_load_lib_list(lib, flags, err_exit(), "libz.so.X", "libz.so.1", "libz.so");
   gendlopen_zlib_load_sym(1, err_exit());
   gendlopen_zlib_lib_origin(origin);
-  printf("loaded: %s (%s)\n", lib, origin);
+
+  if (origin) {
+    printf("loaded: %s (%s)\n", lib, origin);
+  } else {
+    printf("loaded: %s\n", lib);
+  }
 
   print1();
 

@@ -80,103 +80,78 @@
 
 /* load the library */
 #define @NAME@_load_lib_args(FILENAME, FLAGS, ON_ERROR)
-@IF:_W32@
-  @MACRO_START@
+@MACRO_START@
   __buf@R@[0] = 0;
-  __buf_formatted@R@[0] = 0;
-  __last_errno@R@ = 0;
+  __buf_formatted@R@[0] = 0; @D:_W32@
+  __last_errno@R@ = 0;       @D:_W32@
 
   @NAME@_free_lib_err(ON_ERROR)
 
+  @IF:_W32@
   if ((__handle@R@ = LoadLibraryExA(FILENAME, NULL, FLAGS)) == NULL) {
     __last_errno@R@ = GetLastError();
     if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);
-    ON_ERROR;
-  } else {                       @D:_ATEXIT@
-    atexit(__call_free_lib@R@);  @D:_ATEXIT@
-  }
-  @MACRO_END@
-@ELSE@
-  @MACRO_START@
-  __buf@R@[0] = 0;
-
-  @NAME@_free_lib_err(ON_ERROR)
-
+  @ELSE@
   if ((__handle@R@ = dlopen(FILENAME, FLAGS)) == NULL) {
     char *__ptr@R@ = dlerror();
     if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
+  @ENDIF:_W32@
     ON_ERROR;
-  } else {                       @D:_ATEXIT@
-    atexit(__call_free_lib@R@);  @D:_ATEXIT@
+  @IF:_ATEXIT@
+  } else if (__call_free_lib_registered@R@ == 0) {
+    atexit(__call_free_lib@R@);
+    __call_free_lib_registered@R@ = 1;
+  @ENDIF:_ATEXIT@
   }
-  @MACRO_END@
-@ENDIF:_W32@
+@MACRO_END@
 
 /* load from a list of library names
  * LIB: on success the name of the loaded library from the list
  *      will be set to this pointer (const char *)
  */
 #define @NAME@_load_lib_list(LIB, FLAGS, ON_ERROR, ...)
-@IF:_W32@
-  @MACRO_START@
+@MACRO_START@
   {
-    __buf@R@[0] = 0;
-    __buf_formatted@R@[0] = 0;
-    __last_errno@R@ = 0;
     const char *__list@R@[] = { __VA_ARGS__, NULL };
     const char **__entry@R@ = __list@R@;
+    char *__ptr@R@ = NULL;      @D!_W32@
+    __buf@R@[0] = 0;
+    __buf_formatted@R@[0] = 0;  @D:_W32@
+    __last_errno@R@ = 0;        @D:_W32@
 
     @NAME@_free_lib_err(ON_ERROR)
 
     while (*__entry@R@ && !__handle@R@) {
+    @IF:_W32@
       if ((__handle@R@ = LoadLibraryExA(*__entry@R@, NULL, FLAGS)) != NULL) {
         break;
       }
       __last_errno@R@ = GetLastError();
-      __entry@R@++;
-    }
-
-    LIB = *__entry@R@;
-
-    if (!__handle@R@) {
-      if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);
-      ON_ERROR;
-    } else {                       @D:_ATEXIT@
-      atexit(__call_free_lib@R@);  @D:_ATEXIT@
-    }
-  }
-  @MACRO_END@
-@ELSE@
-  @MACRO_START@
-  {
-    __buf@R@[0] = 0;
-    char *__ptr@R@ = NULL;
-    const char *__list@R@[] = { __VA_ARGS__, NULL };
-    const char **__entry@R@ = __list@R@;
-
-    @NAME@_free_lib_err(ON_ERROR)
-
-    while (*__entry@R@ && !__handle@R@) {
+    @ELSE@
       if ((__handle@R@ = dlopen(*__entry@R@, FLAGS)) != NULL) {
         dlerror();
         __ptr@R@ = NULL;
         break;
       }
       __ptr@R@ = dlerror();
+    @ENDIF:_W32@
       __entry@R@++;
     }
 
     LIB = *__entry@R@;
 
     if (!__handle@R@) {
-      if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
+      if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);  @D:_W32@
+      if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);  @D!_W32@
       ON_ERROR;
-    } else {                       @D:_ATEXIT@
-      atexit(__call_free_lib@R@);  @D:_ATEXIT@
+    @IF:_ATEXIT@
+    } else if (__call_free_lib_registered@R@ == 0) {
+      atexit(__call_free_lib@R@);
+      __call_free_lib_registered@R@ = 1;
+    @ENDIF:_ATEXIT@
     }
   }
-  @MACRO_END@
-@ENDIF:_W32@
+@MACRO_END@
 
 /* use this macro to retrieve the last saved error message */
 #define @NAME@_last_error  @NAME@_last_error_formatted@R@() @D:_W32@
@@ -197,84 +172,59 @@
  * times. This will not clear the error buffer.
  */
 #define @NAME@_free_lib
-@IF:_W32@
-  @MACRO_START@
-  if (__handle@R@ && FreeLibrary(__handle@R@) == TRUE) {
+@MACRO_START@
+  if (__handle@R@ &&
+      FreeLibrary(__handle@R@) == TRUE)  @D:_W32@
+      dlclose(__handle@R@) == 0)         @D!_W32@
+  {
     __handle@R@ = NULL;
   }
-  @MACRO_END@
-@ELSE@
-  @MACRO_START@
-  if (__handle@R@ && dlclose(__handle@R@) == 0) {
-    __handle@R@ = NULL;
-  }
-  @MACRO_END@
-@ENDIF:_W32@
+@MACRO_END@
 
 /* Free the library handle - including an error check;
  * Here ON_ERROR doesn't neccessarily need to call return or exit(),
  * just printing a warning might be sufficient for your code.
  */
 #define @NAME@_free_lib_err(ON_ERROR)
-@IF:_W32@
-  @MACRO_START@
+@MACRO_START@
   __buf@R@[0] = 0;
-  __buf_formatted@R@[0] = 0;
-  __last_errno@R@ = 0;
+  __buf_formatted@R@[0] = 0;  @D:_W32@
+  __last_errno@R@ = 0;        @D:_W32@
 
   if (__handle@R@) {
-    if (FreeLibrary(__handle@R@) == TRUE) {
+    if (FreeLibrary(__handle@R@) == TRUE) {  @D:_W32@
+    if (dlclose(__handle@R@) == 0) {         @D!_W32@
       __handle@R@ = NULL;
     } else {
-      __last_errno@R@ = GetLastError();
-      strcpy(__buf@R@, "FreeLibrary()");
+      __last_errno@R@ = GetLastError();      @D:_W32@
+      strcpy(__buf@R@, "FreeLibrary()");     @D:_W32@
+      har *__ptr@R@ = dlerror();             @D!_W32@
+      if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);  @D!_W32@
       ON_ERROR;
     }
   }
-  @MACRO_END@
-@ELSE@
-  @MACRO_START@
-  __buf@R@[0] = 0;
-
-  if (__handle@R@) {
-    if (dlclose(__handle@R@) == 0) {
-      __handle@R@ = NULL;
-    } else {
-      char *__ptr@R@ = dlerror();
-      if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
-      ON_ERROR;
-    }
-  }
-  @MACRO_END@
-@ENDIF:_W32@
+@MACRO_END@
 @ENDIF:_ATEXIT@
 
 /* get the full library path and cast it to the pointer PTR (const char *)
  * TODO: save an error message?
  */
 #define @NAME@_lib_origin(PTR)
-@IF:_W32@
-  @MACRO_START@
-  if (__handle@R@ && GetModuleFileNameA(__handle@R@,
-      (LPSTR)&__orig@R@, sizeof(__orig@R@)-1) > 0)
+@MACRO_START@
+  @IF:_W32@
+  if (__handle@R@ &&
+      GetModuleFileNameA(__handle@R@, (LPSTR)&__orig@R@, sizeof(__orig@R@)-1) > 0)
+  @ELSE@
+  if (__last_symbol@R@ && dladdr(__last_symbol@R@, &__dli@R@) != 0 &&
+      __dli@R@.dli_fname && __dli@R@.dli_fname[0] != 0)
+  @ENDIF:_W32@
   {
-    PTR = (const char *)__orig@R@;
+    strncpy(__orig@R@, __dli@R@.dli_fname, sizeof(__orig@R@)-1);  @D!_W32@
+    PTR = __orig@R@;
   } else {
-    PTR = (const char *)NULL;
+    PTR = NULL;
   }
-  @MACRO_END@
-@ELSE@
-  @MACRO_START@
-  {
-    Dl_info __dli@R@;
-    if (__last_symbol@R@ && dladdr(__last_symbol@R@, &__dli@R@) != 0) {
-      PTR = (const char *)__dli@R@.dli_fname;
-    } else {
-      PTR = (const char *)NULL;
-    }
-  }
-  @MACRO_END@
-@ENDIF:_W32@
+@MACRO_END@
 
 /* load all symbols; can safely be called multiple times.
  *
@@ -285,8 +235,7 @@
  * and then just reassigned locally within each scope.
  */
 #define @NAME@_load_sym(AUTO_DLCLOSE, ON_ERROR)
-@IF:_W32@
-  @MACRO_START@
+@MACRO_START@
   assert(__handle@R@ != NULL);
 
   @TYPE@ (*@SYMBOL@)(@ARGS@) = NULL;
@@ -295,20 +244,28 @@
 
   if (!@SYMBOL@@R@_ptr) {
     __buf@R@[0] = 0;
-    __buf_formatted@R@[0] = 0;
-    __last_errno@R@ = 0;
+    __buf_formatted@R@[0] = 0;                     @D:_W32@
+    __last_errno@R@ = 0;                           @D:_W32@
     @SYMBOL@@R@_ptr = (@SYMBOL@@R@_t)
-      GetProcAddress(__handle@R@, "@SYMBOL@");
+      GetProcAddress(__handle@R@, "@SYMBOL@");     @D:_W32@
+      dlsym(__handle@R@, "@SYMBOL@");              @D!_W32@
   }
   if (@SYMBOL@@R@_ptr) {
     *(void **) (&@SYMBOL@) = @SYMBOL@@R@_ptr;
-    __last_symbol@R@ = (FARPROC) @SYMBOL@@R@_ptr;
+    __last_symbol@R@ = (FARPROC) @SYMBOL@@R@_ptr;  @D:_W32@
+    __last_symbol@R@ = @SYMBOL@@R@_ptr;            @D!_W32@
   } else {
-    @X@// save error code and format the message only if needed
-    __last_errno@R@ = GetLastError();
-    strncpy(__buf@R@, "@SYMBOL@", sizeof(__buf@R@)-1);
+    char *__ptr@R@ = dlerror();                    @D!_W32@
+    if (__ptr@R@) strncpy(__buf@R@, __ptr@R@,      @D!_W32@
+                          sizeof(__buf@R@)-1);     @D!_W32@
+    @X@
+    @X@// WIN32: save error code and format the message only if needed
+    __last_errno@R@ = GetLastError();                   @D:_W32@
+    strncpy(__buf@R@, "@SYMBOL@", sizeof(__buf@R@)-1);  @D:_W32@
+    @X@
     if (AUTO_DLCLOSE) {
-      FreeLibrary(__handle@R@);
+      FreeLibrary(__handle@R@);  @D:_W32@
+      dlclose(__handle@R@);      @D!_W32@
       __handle@R@ = NULL;
     }
     ON_ERROR;
@@ -316,37 +273,7 @@
   @LOOP_END@
 
   assert(@SYMBOL@ != NULL);
-  @MACRO_END@
-@ELSE@
-  @MACRO_START@
-  assert(__handle@R@ != NULL);
-
-  @TYPE@ (*@SYMBOL@)(@ARGS@) = NULL;
-  @X@
-  @LOOP_START@
-
-  if (!@SYMBOL@@R@_ptr) {
-    __buf@R@[0] = 0;
-    @SYMBOL@@R@_ptr = (@SYMBOL@@R@_t)
-      dlsym(__handle@R@, "@SYMBOL@");
-  }
-  if (@SYMBOL@@R@_ptr) {
-    *(void **) (&@SYMBOL@) = @SYMBOL@@R@_ptr;
-    __last_symbol@R@ = @SYMBOL@@R@_ptr;
-  } else {
-    char *__ptr@R@ = dlerror();
-    if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
-    if (AUTO_DLCLOSE) {
-      dlclose(__handle@R@);
-      __handle@R@ = NULL;
-    }
-    ON_ERROR;
-  }
-  @LOOP_END@
-
-  assert(@SYMBOL@ != NULL);
-  @MACRO_END@
-@ENDIF:_W32@
+@MACRO_END@
 
 /* typedefs */
 typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
@@ -361,6 +288,9 @@ typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
 /* function pointers */
 @STATIC@@SYMBOL@@R@_t @SYMBOL@@R@_ptr = NULL;
 
+/* module filepath buffer */
+@STATIC@char __orig@R@[8*1024] = {0};
+
 @IF:_W32@
 /* library handle */
 @STATIC@HMODULE __handle@R@ = NULL;
@@ -374,9 +304,6 @@ typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
 
 /* error code */
 @STATIC@DWORD __last_errno@R@ = 0;
-
-/* module filepath buffer */
-@STATIC@char __orig@R@[8*1024] = {0};
 
 /* access the last saved error message  */
 @STATIC@const char *@NAME@_last_error_formatted@R@()
@@ -420,6 +347,9 @@ typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
 /* last successfully loaded symbol */
 @STATIC@void *__last_symbol@R@ = NULL;
 
+/* needed by @NAME@_lib_origin */
+@STATIC@Dl_info __dli@R@;
+
 /* error buffer */
 #ifdef _WIN32
 @STATIC@char __buf@R@[64*1024 + 1] = {0};
@@ -429,6 +359,8 @@ typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
 @ENDIF:_W32@
 
 @IF:_ATEXIT@
+@STATIC@int __call_free_lib_registered@R@ = 1;
+
 @STATIC@void __call_free_lib@R@() {
   if (__handle@R@) {
     FreeLibrary(__handle@R@);  @D:_WIN32@
