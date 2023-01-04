@@ -69,6 +69,7 @@ struct gengetopt_args_info
   const char *win32_help; /**< @brief Use the win32 LoadLibrary() API help description.  */
   const char *win_linebreaks_help; /**< @brief Use Windows style line breaks (\\r\\n) help description.  */
   const char *keep_spaces_help; /**< @brief Do not strip trailing whitespaces after removing a macro from the end of a line help description.  */
+  const char *atexit_help; /**< @brief Automatically call a function on normal program termination to free library handles (C only) help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int input_given ;	/**< @brief Whether input was given.  */
@@ -86,6 +87,7 @@ struct gengetopt_args_info
   unsigned int win32_given ;	/**< @brief Whether win32 was given.  */
   unsigned int win_linebreaks_given ;	/**< @brief Whether win-linebreaks was given.  */
   unsigned int keep_spaces_given ;	/**< @brief Whether keep-spaces was given.  */
+  unsigned int atexit_given ;	/**< @brief Whether atexit was given.  */
 
 } ;
 

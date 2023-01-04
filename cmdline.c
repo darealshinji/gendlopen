@@ -50,6 +50,7 @@ const char *gengetopt_args_info_help[] = {
   "  -w, --win32                Use the win32 LoadLibrary() API",
   "      --win-linebreaks       Use Windows style line breaks (\\r\\n)",
   "  -k, --keep-spaces          Do not strip trailing whitespaces after removing a\n                               macro from the end of a line",
+  "  -a, --atexit               Automatically call a function on normal program\n                               termination to free library handles (C only)",
     0
 };
 
@@ -91,6 +92,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->win32_given = 0 ;
   args_info->win_linebreaks_given = 0 ;
   args_info->keep_spaces_given = 0 ;
+  args_info->atexit_given = 0 ;
 }
 
 static
@@ -137,6 +139,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->win32_help = gengetopt_args_info_help[13] ;
   args_info->win_linebreaks_help = gengetopt_args_info_help[14] ;
   args_info->keep_spaces_help = gengetopt_args_info_help[15] ;
+  args_info->atexit_help = gengetopt_args_info_help[16] ;
   
 }
 
@@ -352,6 +355,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "win-linebreaks", 0, 0 );
   if (args_info->keep_spaces_given)
     write_into_file(outfile, "keep-spaces", 0, 0 );
+  if (args_info->atexit_given)
+    write_into_file(outfile, "atexit", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -875,10 +880,11 @@ cmdline_parser_internal (
         { "win32",	0, NULL, 'w' },
         { "win-linebreaks",	0, NULL, 0 },
         { "keep-spaces",	0, NULL, 'k' },
+        { "atexit",	0, NULL, 'a' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hi:o:sft:c:n:D:l:Cwk", long_options, &option_index);
+      c = getopt_long (argc, argv, "hi:o:sft:c:n:D:l:Cwka", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1026,6 +1032,18 @@ cmdline_parser_internal (
               &(local_args_info.keep_spaces_given), optarg, 0, 0, ARG_NO,
               check_ambiguity, override, 0, 0,
               "keep-spaces", 'k',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'a':	/* Automatically call a function on normal program termination to free library handles (C only).  */
+        
+        
+          if (update_arg( 0 , 
+               0 , &(args_info->atexit_given),
+              &(local_args_info.atexit_given), optarg, 0, 0, ARG_NO,
+              check_ambiguity, override, 0, 0,
+              "atexit", 'a',
               additional_error))
             goto failure;
         

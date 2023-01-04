@@ -19,3 +19,4 @@ option "convert"        C "Convert our own type of macro conditionals to C style
 option "win32"          w "Use the win32 LoadLibrary() API" optional
 option "win-linebreaks" - "Use Windows style line breaks (\\r\\n)" optional
 option "keep-spaces"    k "Do not strip trailing whitespaces after removing a macro from the end of a line" optional
+option "atexit"         a "Automatically call a function on normal program termination to free library handles (C only)" optional

@@ -92,6 +92,8 @@
     __last_errno@R@ = GetLastError();
     if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);
     ON_ERROR;
+  } else {                       @D:_ATEXIT@
+    atexit(__call_free_lib@R@);  @D:_ATEXIT@
   }
   @MACRO_END@
 @ELSE@
@@ -100,12 +102,12 @@
 
   @NAME@_free_lib_err(ON_ERROR)
 
-  if ((__handle@R@ = dlopen(FILENAME, FLAGS)) != NULL) {
-    dlerror();
-  } else {
+  if ((__handle@R@ = dlopen(FILENAME, FLAGS)) == NULL) {
     char *__ptr@R@ = dlerror();
     if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
     ON_ERROR;
+  } else {                       @D:_ATEXIT@
+    atexit(__call_free_lib@R@);  @D:_ATEXIT@
   }
   @MACRO_END@
 @ENDIF:_W32@
@@ -139,6 +141,8 @@
     if (!__handle@R@) {
       if (FILENAME) strncpy(__buf@R@, FILENAME, sizeof(__buf@R@)-1);
       ON_ERROR;
+    } else {                       @D:_ATEXIT@
+      atexit(__call_free_lib@R@);  @D:_ATEXIT@
     }
   }
   @MACRO_END@
@@ -167,6 +171,8 @@
     if (!__handle@R@) {
       if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);
       ON_ERROR;
+    } else {                       @D:_ATEXIT@
+      atexit(__call_free_lib@R@);  @D:_ATEXIT@
     }
   }
   @MACRO_END@
@@ -175,13 +181,18 @@
 /* use this macro to retrieve the last saved error message */
 #define @NAME@_last_error  @NAME@_last_error_formatted@R@() @D:_W32@
 #define @NAME@_last_error  ((const char *)__buf@R@)         @D!_W32@
-
 @IF:_W32@
+
 /* use this macro to get the error code from the last error that
  * happend in any of the macro calls (win32 API only) */
 #define @NAME@_last_error_code  __last_errno@R@
 @ENDIF@
 
+@IF:_ATEXIT@
+/* libraries are automatically freed on exit */
+#define @NAME@_free_lib  /**/
+#define @NAME@_free_lib_err(ON_ERROR)  /**/
+@ELSE@
 /* Free the library handle; can safely be called multiple
  * times. This will not clear the error buffer.
  */
@@ -236,6 +247,7 @@
   }
   @MACRO_END@
 @ENDIF:_W32@
+@ENDIF:_ATEXIT@
 
 /* get the full library path and cast it to the pointer PTR (const char *)
  * TODO: save an error message?
@@ -415,6 +427,15 @@ typedef @TYPE@ (*@SYMBOL@@R@_t)(@ARGS@);
 @STATIC@char __buf@R@[8*1024] = {0};
 #endif
 @ENDIF:_W32@
+
+@IF:_ATEXIT@
+@STATIC@void __call_free_lib@R@() {
+  if (__handle@R@) {
+    FreeLibrary(__handle@R@);  @D:_WIN32@
+    dlclose(__handle@R@);      @D!_WIN32@
+  }
+}
+@ENDIF:_ATEXIT@
 @IFNOT:_SOURCE@
 
 #endif //@HEADERGUARD@

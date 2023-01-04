@@ -705,10 +705,6 @@ bool gendlopen::parse(const char *input, const char *output, int target)
     add_def("_DEFLIB");
   }
 
-  if (m_win32) {
-    add_def("_W32");
-  }
-
   /* don't use "static" keyword if saving to separate files */
   if (defined("_HEADER") || defined("_SOURCE")) {
     static_s = "";

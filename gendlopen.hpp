@@ -54,7 +54,6 @@ private:
   bool m_randomness = true;
   bool m_conv_conditionals = false;
   bool m_keep_whitespaces = false;
-  bool m_win32 = false;
   bool m_win_linebreaks = false;
 
 public:
@@ -71,7 +70,6 @@ public:
   void randomness(bool b) {m_randomness = b;}
   void conv_conditionals(bool b) {m_conv_conditionals = b;}
   void keep_whitespaces(bool b) {m_keep_whitespaces = b;}
-  void win32(bool b) {m_win32 = b;}
   void win_linebreaks(bool b) {m_win_linebreaks = b;}
 
 private:

@@ -35,9 +35,12 @@
 #include "gendlopen.hpp"
 #include "cmdline.h"
 
+#define SET(X, ...) \
+  header.X(__VA_ARGS__); \
+  body.X(__VA_ARGS__)
+
 
 static const char *argv0 = "";
-
 
 inline bool file_exists(const char *path)
 {
@@ -149,6 +152,24 @@ int main(int argc, char **argv)
     if (!args.force_given && file_exists(output)) {
       goto JMP_END;
     }
+
+    output_body = output;
+
+    if (strcase_ends_on(output_body, ".h")) {
+      output_body.replace(output_body.size()-1, 1, body_ext);
+    }
+    else if (strcase_ends_on(output_body, ".hpp") ||
+             strcase_ends_on(output_body, ".hxx"))
+    {
+      output_body.replace(output_body.size()-3, 3, body_ext);
+    } else {
+      output_body += '.';
+      output_body += body_ext;
+    }
+
+    if (!args.force_given && file_exists(output_body.c_str())) {
+      goto JMP_END;
+    }
   }
 
   if (args.target_given) {
@@ -168,25 +189,30 @@ int main(int argc, char **argv)
   }
 
   if (args.custom_given) {
-    header.custom_template(args.custom_arg);
+    SET(custom_template, args.custom_arg);
   }
 
   if (args.library_given) {
-    header.default_lib(args.library_arg, !args.no_quote_given);
-    body.default_lib(args.library_arg, !args.no_quote_given);
+    SET(default_lib, args.library_arg, !args.no_quote_given);
   }
 
   for (unsigned int i = 0; i < args.def_given; i++) {
-    header.add_def(args.def_arg[i]);
-    body.add_def(args.def_arg[i]);
+    SET(add_def, args.def_arg[i]);
   }
 
-  header.name(args.name_given ? args.name_arg : CMDLINE_PARSER_PACKAGE);
-  header.randomness(!args.no_random_given);
-  header.conv_conditionals(args.convert_given);
-  header.keep_whitespaces(args.keep_spaces_given);
-  header.win32(args.win32_given);
-  header.win_linebreaks(args.win_linebreaks_given);
+  if (args.win32_given) {
+    SET(add_def, "_W32");
+  }
+
+  if (args.atexit_given) {
+    SET(add_def, "_ATEXIT");
+  }
+
+  SET(name, args.name_given ? args.name_arg : CMDLINE_PARSER_PACKAGE);
+  SET(randomness, !args.no_random_given);
+  SET(conv_conditionals, args.convert_given);
+  SET(keep_whitespaces, args.keep_spaces_given);
+  SET(win_linebreaks, args.win_linebreaks_given);
 
   if (header.parse(args.input_arg, output, target)) {
     ret = 0;
@@ -194,42 +220,9 @@ int main(int argc, char **argv)
     goto JMP_END;
   }
 
-  if (!args.separate_files_given) {
-    goto JMP_END;
-  }
-
-  /* create a body file */
-
-  output_body = output;
-
-  if (strcase_ends_on(output_body, ".h")) {
-    output_body.replace(output_body.size()-1, 1, body_ext);
-  }
-  else if (strcase_ends_on(output_body, ".hpp") ||
-           strcase_ends_on(output_body, ".hxx"))
+  if (args.separate_files_given &&
+      !body.parse(args.input_arg, output_body.c_str(), target))
   {
-    output_body.replace(output_body.size()-3, 3, body_ext);
-  } else {
-    output_body += '.';
-    output_body += body_ext;
-  }
-
-  if (!args.force_given && file_exists(output_body.c_str())) {
-    goto JMP_END;
-  }
-
-  if (args.custom_given) {
-    body.custom_template(args.custom_arg);
-  }
-
-  body.name(args.name_given ? args.name_arg : CMDLINE_PARSER_PACKAGE);
-  body.randomness(!args.no_random_given);
-  body.conv_conditionals(args.convert_given);
-  body.keep_whitespaces(args.keep_spaces_given);
-  body.win32(args.win32_given);
-  body.win_linebreaks(args.win_linebreaks_given);
-
-  if (!body.parse(args.input_arg, output_body.c_str(), target)) {
     ret = 1;
   }
 

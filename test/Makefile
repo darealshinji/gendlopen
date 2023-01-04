@@ -29,7 +29,7 @@ test2.cpp: test2.hpp
 test3.cpp: test3.hpp
 
 test1.h:
-	$(GDO) -i zlib.txt -n gendlopen_zlib > $@
+	$(GDO) -i zlib.txt -n gendlopen_zlib --atexit > $@
 
 test2.hpp:
 	$(GDO) -i zlib.txt -n gendlopen_zlib -t cpp-static > $@
