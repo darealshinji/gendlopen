@@ -10,8 +10,8 @@ xxd
 *.exe
 
 # generated code
-#cmdline.[ch]
 /c*_header.h
+lib_macros.h
 test/test*.h
 test/test*.hpp
 
