@@ -198,7 +198,7 @@
     } else {
       __last_errno@R@ = GetLastError();      @D:_W32@
       strcpy(__buf@R@, "FreeLibrary()");     @D:_W32@
-      har *__ptr@R@ = dlerror();             @D!_W32@
+      char *__ptr@R@ = dlerror();            @D!_W32@
       if (__ptr@R@) strncpy(__buf@R@, __ptr@R@, sizeof(__buf@R@)-1);  @D!_W32@
       ON_ERROR;
     }
