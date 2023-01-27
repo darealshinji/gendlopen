@@ -19,6 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include <iostream>
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef _WIN32
@@ -40,9 +41,10 @@
   body.X(__VA_ARGS__)
 
 
+static struct gengetopt_args_info args;
 static const char *argv0 = "";
 
-inline bool file_exists(const char *path)
+static inline bool file_exists(const char *path)
 {
   if (access(path, F_OK) == 0) {
     std::cerr << argv0 << ": file already exists: " << path << std::endl;
@@ -51,7 +53,7 @@ inline bool file_exists(const char *path)
   return false;
 }
 
-inline bool strcase_ends_on(const std::string &s, const char *suf)
+static bool strcase_ends_on(const std::string &s, const char *suf)
 {
   if (s.empty() || !suf || !*suf) {
     return false;
@@ -76,7 +78,7 @@ static bool check_argument(char *ptr, const char *arg_long, const char arg_short
   return true;
 }
 
-static bool check_all_arguments(struct gengetopt_args_info &args)
+static bool check_all_arguments()
 {
 #define EMPTYARG(ARG_L, ARG_S) \
   (args.ARG_L##_given && !check_argument(args.ARG_L##_arg, #ARG_L , ARG_S))
@@ -105,15 +107,11 @@ static bool check_all_arguments(struct gengetopt_args_info &args)
 
 int main(int argc, char **argv)
 {
-  static struct gengetopt_args_info args;
   gendlopen header, body;
   const char *output = NULL;
   const char *body_ext = "c";
   std::string output_body;
   int target = gendlopen::trgt_c;
-  int ret = 1;
-
-  argv0 = argv[0];
 
   if (argc < 2) {
     cmdline_parser_print_help();
@@ -124,33 +122,40 @@ int main(int argc, char **argv)
     return 1;
   }
 
+  argv0 = argv[0];
+
+  /* free args on exit */
+  auto free_args = []() { cmdline_parser_free(&args); };
+  atexit(free_args);
+
+  /* --input */
   if (!args.input_given) {
     std::cerr << argv0 << ": '--input' ('-i') option required" << std::endl;
-    goto JMP_END;
+    return 1;
   }
 
   /* check if any empty argument was given */
-  if (!check_all_arguments(args)) {
-    goto JMP_END;
+  if (!check_all_arguments()) {
+    return 1;
   }
 
-  /* save output in separate header and source files */
+  /* --separate-files */
   if (args.separate_files_given) {
     if (!args.output_given) {
       std::cerr << argv0 << ": '--output' ('-o') option required by '--separate-files' ('-s')"
         << std::endl;
-      goto JMP_END;
+      return 1;
     }
     header.add_def("_HEADER");
     body.add_def("_SOURCE");
   }
 
-  /* set output and check if output exists */
+  /* --output */
   if (args.output_given) {
     output = args.output_arg;
 
     if (!args.force_given && file_exists(output)) {
-      goto JMP_END;
+      return 1;
     }
 
     output_body = output;
@@ -168,10 +173,11 @@ int main(int argc, char **argv)
     }
 
     if (!args.force_given && file_exists(output_body.c_str())) {
-      goto JMP_END;
+      return 1;
     }
   }
 
+  /* --target */
   if (args.target_given) {
     if (strcasecmp(args.target_arg, "cpp") == 0) {
       target = gendlopen::trgt_cpp;
@@ -184,7 +190,7 @@ int main(int argc, char **argv)
     } else {
       std::cerr << argv0 << ": unknown argument for option '--target' ('-t'):"
         << args.target_arg << std::endl;
-      goto JMP_END;
+      return 1;
     }
   }
 
@@ -214,21 +220,15 @@ int main(int argc, char **argv)
   SET(keep_whitespaces, args.keep_spaces_given);
   SET(win_linebreaks, args.win_linebreaks_given);
 
-  if (header.parse(args.input_arg, output, target)) {
-    ret = 0;
-  } else {
-    goto JMP_END;
+  if (!header.parse(args.input_arg, output, target)) {
+    return 1;
   }
 
   if (args.separate_files_given &&
       !body.parse(args.input_arg, output_body.c_str(), target))
   {
-    ret = 1;
+    return 1;
   }
 
-JMP_END:
-
-  cmdline_parser_free(&args);
-
-  return ret;
+  return 0;
 }
