@@ -96,19 +96,18 @@ static const char lib_macros[] = {
   /**/, 0x00
 };
 
-static bool first_line_printed = false;
-static std::string linebuf;
-
+bool gendlopen::m_first_line_printed = false;
+std::string gendlopen::m_linebuf;
 
 
 /* strip leading and trailing spaces */
-inline static void strip_spaces(std::string &s)
+void gendlopen::strip_spaces(std::string &s)
 {
   while (isspace(s.back())) s.pop_back();
   while (isspace(s.front())) s.erase(0, 1);
 }
 
-static bool valid_token(const std::string &token, const size_t line_no)
+bool gendlopen::valid_token(const std::string &token, const size_t line_no)
 {
   for (const char &c : token) {
     if (!isalnum(c) && c != '_') {
@@ -121,7 +120,7 @@ static bool valid_token(const std::string &token, const size_t line_no)
 }
 
 /* replace all occurences of 'from' with 'to' inside string 's' */
-static void replace_all(const char *from, const std::string &to, std::string &s)
+void gendlopen::replace_all(const char *from, const std::string &to, std::string &s)
 {
   size_t from_len = strlen(from);
   size_t pos = 0;
@@ -135,7 +134,7 @@ static void replace_all(const char *from, const std::string &to, std::string &s)
 }
 
 /* read lines either using std::getline() or from a const char array */
-static bool getline_wrap(std::fstream &fs, std::string &line, const char *&p)
+bool gendlopen::getline_wrap(std::fstream &fs, std::string &line, const char *&p)
 {
   if (!p) {
     return std::getline(fs, line) ? true : false;
@@ -159,8 +158,8 @@ static bool getline_wrap(std::fstream &fs, std::string &line, const char *&p)
 }
 
 /* check 's' for 'token' and replace it with 'token_new' if found */
-static bool replace_token(std::string &s, const char *token, const char *token_new,
-                          const char *suffix = NULL)
+bool gendlopen::replace_token(std::string &s, const char *token, const char *token_new,
+                              const char *suffix = NULL)
 {
   const size_t len = strlen(token);
 
@@ -179,7 +178,7 @@ static bool replace_token(std::string &s, const char *token, const char *token_n
 
 /* read prototypes from text file, comments will be ignored; however this is
  * not a full C parser, so make sure the input is formatted correctly */
-static bool read_prototypes(const char *input, std::vector<struct func> &list)
+bool gendlopen::read_prototypes(const char *input, std::vector<struct func> &list)
 {
   enum {
     COMMENT_NONE,
@@ -332,27 +331,32 @@ static bool read_prototypes(const char *input, std::vector<struct func> &list)
  * ends and we don't want it do end with a trailing backslash */
 void gendlopen::print_line(std::fstream &fs, const std::string &line, bool is_macro)
 {
-  if (!first_line_printed) {
-    linebuf = line;
-    first_line_printed = true;
+  if (!m_first_line_printed) {
+    m_linebuf = line;
+    m_first_line_printed = true;
     return;
   }
 
   if (fs.is_open()) {
-    fs << linebuf << endl(is_macro);
+    fs << m_linebuf << endl(is_macro);
   } else {
-    std::cout << linebuf << endl(is_macro);
+    std::cout << m_linebuf << endl(is_macro);
   }
 
-  linebuf = line;
+  m_linebuf = line;
 }
 
 inline const char *gendlopen::endl(bool is_macro) const
 {
+/*
   if (is_macro) {
     return m_win_linebreaks ? "\\\r\n" : "\\\n";
   }
   return m_win_linebreaks ? "\r\n" : "\n";
+  */
+
+  const char *s[2] = { "\\\n", "\\\r\n" };
+  return s[m_win_linebreaks] + !is_macro;
 }
 
 /* check if string "s" was defined */
@@ -366,6 +370,11 @@ inline bool gendlopen::defined(const std::string &s)
 
 bool gendlopen::token_is_if_or_ifnot(const std::string &s, struct cond &con, const size_t line_no)
 {
+/* TODO: use regex?
+ * std::smatch m;
+ * std::regex_match(s, m, std::regex("\\s*@(IF|IFNOT):([A-Za-z0-9_]*)@\\s*"));
+ */
+
   size_t len;
 
   if (IS_TOKEN(s, "@IF:")) {
@@ -403,6 +412,11 @@ bool gendlopen::token_is_if_or_ifnot(const std::string &s, struct cond &con, con
 
 bool gendlopen::token_is_elif_or_elifnot(const std::string &s, struct cond &con, const size_t line_no)
 {
+/* TODO: use regex?
+ * std::smatch m;
+ * std::regex_match(s, m, std::regex("\\s*@(ELIF|ELIFNOT):([A-Za-z0-9_]*)@\\s*"));
+ */
+
   size_t len;
 
   if (IS_TOKEN(s, "@ELIF:")) {
@@ -561,6 +575,10 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
         stack.push_back(con);
         return false;
       }
+      /* TODO: use regex?
+       * std::smatch m;
+       * std::regex_match(s, m, std::regex("\\s*@(ELSE|ENDIF):([A-Za-z0-9_]*)@\\s*"));
+       */
       else if (IS_TOKEN(copy, "@ELSE:") || IS_TOKEN(copy, "@ENDIF:") ||
                  copy == "@ELSE@" || copy == "@ENDIF@")
       {
@@ -769,8 +787,10 @@ bool gendlopen::parse(const char *input, const char *output, int target)
       }
 
       /* check for definitions */
+      /* TODO: use regex? */
       if (copy.size() > 4) {
         /* check beginning of line */
+        /* std::regex("^\\s*@(D[:!])([A-Za-z0-9_]*)@.*") */
         if (copy[0]=='@' && copy[1]=='D' && (copy[2]==':' || copy[2]=='!') &&
             copy[3]!='@')
         {
@@ -782,6 +802,7 @@ bool gendlopen::parse(const char *input, const char *output, int target)
           }
         }
         /* check end of line */
+        /* std::regex(".*@(D[:!])([A-Za-z0-9_]*)@\\s*") */
         else if (copy.back() == '@' &&
                  (pos = copy.rfind('@', copy.size()-2)) != std::string::npos)
         {

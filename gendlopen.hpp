@@ -55,6 +55,8 @@ private:
   bool m_conv_conditionals = false;
   bool m_keep_whitespaces = false;
   bool m_win_linebreaks = false;
+  static bool m_first_line_printed;
+  static std::string m_linebuf;
 
 public:
   gendlopen() {}
@@ -79,6 +81,13 @@ private:
   bool token_is_elif_or_elifnot(const std::string &s, struct cond &con, const size_t line_no);
   void print_line(std::fstream &fs, const std::string &line, bool is_macro);
   inline const char *endl (bool is_macro) const;
+
+  inline static void strip_spaces(std::string &s);
+  static bool valid_token(const std::string &token, const size_t line_no);
+  static void replace_all(const char *from, const std::string &to, std::string &s);
+  static bool getline_wrap(std::fstream &fs, std::string &line, const char *&p);
+  static bool replace_token(std::string &s, const char *token, const char *token_new, const char *suffix);
+  static bool read_prototypes(const char *input, std::vector<struct func> &list);
 };
 
 #endif //GENDLOPEN_HPP
