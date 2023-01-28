@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <regex>
 #include <vector>
 #include <ctype.h>
 #include <stdio.h>
@@ -37,10 +38,6 @@
 #define WHITESPACE  " \t\r\v\f"
 
 #define static_strlen(x)  (sizeof(x)-1)
-
-#define IS_TOKEN(STR, TOK) \
-  (STR.size() > (static_strlen(TOK)+1) && \
-   STR.compare(0, static_strlen(TOK), TOK) == 0)
 
 
 struct func {
@@ -204,6 +201,9 @@ bool gendlopen::read_prototypes(const char *input, std::vector<struct func> &lis
         if (c == '*' && fs.peek() == '/') {
           mode = COMMENT_NONE;
           fs.ignore();
+          if (!line.empty() && line.back() != ' ') {
+            line.push_back(' ');
+          }
         }
         continue;
       case COMMENT_DOUBLE_SLASH:
@@ -256,7 +256,7 @@ bool gendlopen::read_prototypes(const char *input, std::vector<struct func> &lis
     }
   }
 
-  if (!line.empty() && line.back() == ' ') {
+  while (line.back() == ' ') {
     line.pop_back();
   }
 
@@ -264,61 +264,27 @@ bool gendlopen::read_prototypes(const char *input, std::vector<struct func> &lis
     data.push_back(line);
   }
 
-  /* split data into return type, function name and parameter list */
+  std::regex reg(
+    "(.*?[\\*|\\s])"  /* type */
+    "([A-Za-z0-9_]*)" /* symbol */
+    "[?|\\s]*\\("
+    "(.*?)\\)"        /* args */
+  );
 
-  for (auto &e : data) {
-    struct func f;
-    size_t pos;
+  for (const auto &e : data) {
+    std::smatch m;
 
-    if (e.back() != ')') {
-      std::cerr << "error: function prototype missing closing bracket `)': "
-        << e << std::endl;
+    if (!std::regex_match(e, m, reg) || m.size() != 4) {
+      std::cerr << "error: malformed function prototype: " << e << std::endl;
       return false;
     }
 
-    if ((pos = e.find('(')) == std::string::npos) {
-      std::cerr << "error: function prototype missing opening bracket `(': "
-        << e << std::endl;
-      return false;
-    }
+    struct func f = { m[1], m[2], m[3] };
 
-    /* args: copy without brackets */
-    f.args = e.substr(pos+1);
-    f.args.pop_back();
-    strip_spaces(f.args);
+    /* cosmetics */
+    if (f.type.back() == ' ') f.type.pop_back();
+    if (f.args.back() == ' ') f.args.pop_back();
     if (f.args.empty()) f.args = "void";
-
-    /* function name */
-    e.erase(pos);
-    strip_spaces(e);
-
-    if (e.size() > 0) {
-      pos = e.size()-1;
-      while (--pos > 0) {
-        if (!isalnum(e.at(pos)) && e.at(pos) != '_') {
-          pos++;
-          break;
-        }
-      }
-      f.symbol = e.substr(pos);
-    }
-
-    if (f.symbol.empty()) {
-      std::cerr << "error: could not read function name from prototype: "
-        << e << std::endl;
-      return false;
-    }
-
-    /* return type */
-    e.erase(pos);
-    strip_spaces(e);
-    f.type = e;
-
-    if (f.type.empty()) {
-      std::cerr << "error: could not read function return type from prototype: "
-        << e << std::endl;
-      return false;
-    }
 
     list.push_back(f);
   }
@@ -346,15 +312,7 @@ void gendlopen::print_line(std::fstream &fs, const std::string &line, bool is_ma
   m_linebuf = line;
 }
 
-inline const char *gendlopen::endl(bool is_macro) const
-{
-/*
-  if (is_macro) {
-    return m_win_linebreaks ? "\\\r\n" : "\\\n";
-  }
-  return m_win_linebreaks ? "\r\n" : "\n";
-  */
-
+inline const char *gendlopen::endl(bool is_macro) const {
   const char *s[2] = { "\\\n", "\\\r\n" };
   return s[m_win_linebreaks] + !is_macro;
 }
@@ -370,41 +328,29 @@ inline bool gendlopen::defined(const std::string &s)
 
 bool gendlopen::token_is_if_or_ifnot(const std::string &s, struct cond &con, const size_t line_no)
 {
-/* TODO: use regex?
- * std::smatch m;
- * std::regex_match(s, m, std::regex("\\s*@(IF|IFNOT):([A-Za-z0-9_]*)@\\s*"));
- */
+  std::smatch m;
+  std::regex reg("@(IF|IFNOT):([A-Za-z0-9_]*)@");
 
-  size_t len;
-
-  if (IS_TOKEN(s, "@IF:")) {
-    len = static_strlen("@IF:");
-  } else if (IS_TOKEN(s, "@IFNOT:")) {
-    len = static_strlen("@IFNOT:");
-  } else {
+  if (!std::regex_match(s, m, reg) || m.size() != 3 || !valid_token(m[2], line_no)) {
     return false;
   }
 
-  std::string tok = s;
-  tok.erase(0, len);
-  tok.pop_back();
-
-  if (!valid_token(tok, line_no)) {
-    return false;
-  }
-
-  if (len == static_strlen("@IFNOT:")) {
-    con.b = !defined(tok);
+  if (m[1] == "IFNOT") {
+    con.b = !defined(m[2]);
   } else {
-    con.b = defined(tok);
+    con.b = defined(m[2]);
   }
 
   con.s_cond = s;
   con.b_cond = con.b;
   con.line_no = line_no;
-  con.s_else = "@ELSE:" + tok;
+
+  con.s_else = "@ELSE:";
+  con.s_else += m[2];
   con.s_else += '@';
-  con.s_endif = "@ENDIF:" + tok;
+
+  con.s_endif = "@ENDIF:";
+  con.s_endif += m[2];
   con.s_endif += '@';
 
   return true;
@@ -412,33 +358,17 @@ bool gendlopen::token_is_if_or_ifnot(const std::string &s, struct cond &con, con
 
 bool gendlopen::token_is_elif_or_elifnot(const std::string &s, struct cond &con, const size_t line_no)
 {
-/* TODO: use regex?
- * std::smatch m;
- * std::regex_match(s, m, std::regex("\\s*@(ELIF|ELIFNOT):([A-Za-z0-9_]*)@\\s*"));
- */
+  std::smatch m;
+  std::regex reg("@(ELIF|ELIFNOT):([A-Za-z0-9_]*)@");
 
-  size_t len;
-
-  if (IS_TOKEN(s, "@ELIF:")) {
-    len = static_strlen("@ELIF:");
-  } else if (IS_TOKEN(s, "@ELIFNOT:")) {
-    len = static_strlen("@ELIFNOT:");
-  } else {
+  if (!std::regex_match(s, m, reg) || m.size() != 3 || !valid_token(m[2], line_no)) {
     return false;
   }
 
-  std::string tok = s;
-  tok.erase(0, len);
-  tok.pop_back();
-
-  if (!valid_token(tok, line_no)) {
-    return false;
-  }
-
-  if (len == static_strlen("@ELIFNOT:")) {
-    con.b = !defined(tok);
+  if (m[1] == "ELIFNOT") {
+    con.b = !defined(m[2]);
   } else {
-    con.b = defined(tok);
+    con.b = defined(m[2]);
   }
 
   con.s_cond = s;
@@ -474,11 +404,9 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
   std::string copy = line;
   strip_spaces(copy);
 
-  const size_t len = static_strlen("@X@");
-
   /* skip lines beginning or ending with @X@ */
-  if (copy.compare(0, len, "@X@") == 0 ||
-      (copy.size() > len && copy.compare(copy.size()-len, len, "@X@") == 0))
+  if (copy.compare(0, 3, "@X@") == 0 ||
+      (copy.size() > 3 && copy.compare(copy.size()-3, 3, "@X@") == 0))
   {
     return false;
   }
@@ -486,7 +414,7 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
   /* convert our own conditionals to C preprocessor
    * ones (no error checking) */
   if (m_conv_conditionals) {
-    if (copy.size() >= static_strlen("@ELSE@") &&
+    if (copy.size() > static_strlen("@IF:") &&
         copy.front() == '@' &&
         copy.back() == '@' &&
         copy.find_first_of(WHITESPACE) == std::string::npos)
@@ -518,7 +446,7 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
   else  /* resolve conditionals */
   {
     /* is it a single token? */
-    if (!copy.empty() &&
+    if (copy.size() > 2 &&
         copy.front() == '@' &&
         copy.back() == '@' &&
         copy.find_first_of(WHITESPACE) == std::string::npos)
@@ -565,6 +493,7 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
       }
 
       /* check for new @IF@/@IFNOT@ */
+      std::smatch m;
       struct cond con = {0};
 
       if (token_is_if_or_ifnot(copy, con, line_no)) {
@@ -575,12 +504,9 @@ bool gendlopen::preprocess(std::string &line, const size_t line_no, std::vector<
         stack.push_back(con);
         return false;
       }
-      /* TODO: use regex?
-       * std::smatch m;
-       * std::regex_match(s, m, std::regex("\\s*@(ELSE|ENDIF):([A-Za-z0-9_]*)@\\s*"));
-       */
-      else if (IS_TOKEN(copy, "@ELSE:") || IS_TOKEN(copy, "@ENDIF:") ||
-                 copy == "@ELSE@" || copy == "@ENDIF@")
+      else if (copy == "@ELSE@" ||
+               copy == "@ENDIF@" ||
+               std::regex_match(copy, m, std::regex("@(ELSE|ENDIF):([A-Za-z0-9_]*)@")))
       {
         std::cerr << "warning: line " << line_no
           << " is missing a matching @IF@/@IFNOT@ line: "
@@ -751,10 +677,9 @@ bool gendlopen::parse(const char *input, const char *output, int target)
     if (!copy.empty())
     {
       /* macro/loop blocks */
-      if (copy.front() == '@' &&
-          copy.back() == '@' &&
-          /* "@LOOP_END@" is the shortest token we're looking for here */
-          copy.size() >= static_strlen("@LOOP_END@"))
+      if (copy.size() >= static_strlen("@LOOP_END@") &&
+          copy.front() == '@' &&
+          copy.back() == '@')
       {
         /* macro block */
         if (copy == "@MACRO_START@") {
@@ -787,38 +712,26 @@ bool gendlopen::parse(const char *input, const char *output, int target)
       }
 
       /* check for definitions */
-      /* TODO: use regex? */
       if (copy.size() > 4) {
-        /* check beginning of line */
-        /* std::regex("^\\s*@(D[:!])([A-Za-z0-9_]*)@.*") */
-        if (copy[0]=='@' && copy[1]=='D' && (copy[2]==':' || copy[2]=='!') &&
-            copy[3]!='@')
-        {
-          is_defined = (copy[2] == ':');
+        std::smatch m1, m2;
+        std::regex reg_beg("^@(D[:!])([A-Za-z0-9_]*)@.*");
+        std::regex reg_end(".*@(D[:!])([A-Za-z0-9_]*)@");
 
-          if ((pos = copy.find('@', 3)) != std::string::npos) {
-            def = copy.substr(3, pos-3);
-            def_orig = copy.substr(0, pos+1);
-          }
-        }
-        /* check end of line */
-        /* std::regex(".*@(D[:!])([A-Za-z0-9_]*)@\\s*") */
-        else if (copy.back() == '@' &&
-                 (pos = copy.rfind('@', copy.size()-2)) != std::string::npos)
-        {
-          std::string s = copy.substr(pos);
-
-          if (s.size() > 4 && s[1]=='D' && (s[2]==':' || s[2]=='!') && s[3]!='@') {
-            def_orig = s;
-            is_defined = (s[2] == ':');
-            def = s.substr(3);
-            def.pop_back();
-            front = false;
-          }
-        }
-
-        if (!def.empty() && !valid_token(def, line_no)) {
-          def.clear();
+        if (std::regex_match(copy, m1, reg_beg) && m1.size() == 3 && valid_token(m1[2], line_no)) {
+          is_defined = (m1[1] == "D:");
+          def = m1[2];
+          def_orig = "@";
+          def_orig += m1[1];
+          def_orig += m1[2];
+          def_orig += '@';
+        } else if (std::regex_match(copy, m2, reg_end) && m2.size() == 3 && valid_token(m2[2], line_no)) {
+          is_defined = (m2[1] == "D:");
+          def = m2[2];
+          def_orig = "@";
+          def_orig += m2[1];
+          def_orig += m2[2];
+          def_orig += '@';
+          front = false;
         }
 
         /* found a valid token */

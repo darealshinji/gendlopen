@@ -10,7 +10,9 @@
 const char *zlibVersion (     ); /* //comment inside comment */
 /* /**\/ */;
 
- int deflate  (z_streamp/* strm*/, int /*flush*/ ) ;  
+ int
+ deflate
+   (z_streamp/* strm*/, int /*flush*/ ) ;  
 // this line is ignored
 
 // this line too
