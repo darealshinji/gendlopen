@@ -98,7 +98,7 @@ std::string gendlopen::m_linebuf;
 
 
 /* strip leading and trailing spaces */
-void gendlopen::strip_spaces(std::string &s)
+inline void gendlopen::strip_spaces(std::string &s)
 {
   while (isspace(s.back())) s.pop_back();
   while (isspace(s.front())) s.erase(0, 1);
