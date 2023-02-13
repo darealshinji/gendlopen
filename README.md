@@ -88,7 +88,7 @@ This is a list of macros to use in the template files.
   this will be replaced with random code - useful to avoid symbol clashes
 
 `@X@`:<br>
-  Any line that begins or end with this macro (whitespaces are ignored) will not
+  Any line that begins or ends with this macro (whitespaces are ignored) will not
   be processed at all.
 
 `@D:VALUE@`<br>
@@ -125,7 +125,7 @@ characters before or after them will be ignored.
 
 `@MACRO_START@`<br>
 `@MACRO_END@`:<br>
-  On all lines between these two macros a trailing backslash ('\') will be added
+  On all lines between these two macros a trailing backslash ('\\') will be added
   before the newline character. This should help writing long macros on editors
   that won't highlight code embedded in a macro block. Don't put a `#define`
   inside this block. The line before `@MACRO_START@` must not end on a backslash.
