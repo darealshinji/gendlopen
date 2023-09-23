@@ -1,0 +1,31 @@
+/*
+About the input file format:
+  * all functions that should be loaded must be listed as modern C-style
+    prototypes, ending on semi-colon (;)
+  * function pointers MUST be typedef'd; the typedef can optionally be part of
+    the input file
+  * argument names must be included if you want to use auto-load features
+  * comments are ignored
+  * line-breaks are treated like spaces
+  * any other code will throw an error
+*/
+
+
+/* init */
+helloworld *helloworld_init(  );
+
+// function pointer typedef
+typedef void (*helloworld_cb)(const char *);
+
+// say hello
+void
+helloworld_hello(
+  helloworld *hw  ,
+  helloworld_cb cb
+);
+
+/* release */
+void helloworld_release
+  (/* //comment inside comment */ helloworld *hw)
+  ;
+

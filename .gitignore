@@ -1,0 +1,29 @@
+# cmake build files
+build/
+
+# generated headers
+examples/example_*.h
+examples/example_*.hpp
+
+# executables
+examples/example_1
+examples/example_autoload
+examples/example_auto_free
+examples/example_cxx
+examples/example_cxx_autoload
+
+# binary files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.so.*
+*.dylib
+*.lib
+*.a
+
+# backups
+*~
+*.old
+*.bak
