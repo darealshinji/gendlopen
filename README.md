@@ -98,9 +98,7 @@ cmake .. -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
   -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
   -DCMAKE_SYSTEM_NAME=Windows \
   -DCMAKE_CROSSCOMPILING=ON \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DENABLE_STATIC=ON \
-  -DENABLE_STRIP=ON
+  -DCMAKE_BUILD_TYPE=Release
 ```
 
 Or you can use clang-cl:

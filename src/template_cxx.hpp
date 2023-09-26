@@ -4,6 +4,8 @@
 /*           quick overview           */
 /**************************************/
 
+
+/* class */
 class gdo::dl;
 
 
@@ -24,6 +26,12 @@ class gdo::dl;
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
     static constexpr const char *libext;
+
+
+/*** static member functions ***/
+
+    /* set a custom callback function for error messages */
+    void set_callback(void (*callback)(const char *));
 
 
 /*** member functions ***/
@@ -118,19 +126,6 @@ GDO_TYPEDEFS
 namespace gdo
 {
 
-/* print error message */
-void _print_error(const std::string &msg)
-{
-    /* check for _WIN32 and NOT for GDO_WINAPI, so that
-     * we can use the message box on dlopen() too */
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-    MessageBoxA(NULL, msg.c_str(), "Error", MB_OK | MB_ICONERROR);
-#else
-    std::cerr << msg << std::endl;
-#endif
-}
-
-
 class dl
 {
 public:
@@ -141,6 +136,7 @@ public:
 #else
     static constexpr const int default_flags = RTLD_LAZY;
 #endif
+
 
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
@@ -170,6 +166,7 @@ private:
     std::string m_last_error;
 #endif
 
+    static void (*m_callback)(const char *);
     const char *m_filename = NULL;
     int m_flags = default_flags;
     bool m_new_namespace = false;
@@ -298,6 +295,13 @@ public:
 #else
         if (m_handle) ::dlclose(m_handle);
 #endif
+    }
+
+
+    /* set a custom callback function for error messages */
+    static void set_callback(void (*callback)(const char *))
+    {
+        m_callback = callback;
     }
 
 
@@ -502,6 +506,17 @@ public:
 #endif //GDO_WINAPI
 
 
+    /* used internally but must be set to public */
+    static void _print_error(const char *msg)
+    {
+        if (m_callback) {
+            m_callback(msg);
+        } else {
+            std::cerr << msg << std::endl;
+        }
+    }
+
+
 private:
 
     static void function_ptr_is_null(const char *symbol)
@@ -510,7 +525,7 @@ private:
         if (symbol) msg += symbol;
         msg += "' is NULL";
 
-        _print_error(msg);
+        _print_error(msg.c_str());
         std::abort();
     }
 
@@ -528,7 +543,6 @@ public:
 }; /* class dl */
 
 
-
 #ifdef GDO_USE_WRAPPER
 
 #if !defined(GDO_DEFAULT_LIB)
@@ -541,7 +555,7 @@ public:
     {
         if (!_al.load(GDO_DEFAULT_LIB)) {
             std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n" + _al.error();
-            _print_error(msg);
+            dl::_print_error(msg.c_str());
             std::exit(1);
         } else if (!_al.load_symbols()) {
             std::string msg = "";
@@ -553,7 +567,7 @@ public:
             }
             msg += _al.error();
 
-            _print_error(msg);
+            dl::_print_error(msg.c_str());
             std::exit(1);
         }
     }

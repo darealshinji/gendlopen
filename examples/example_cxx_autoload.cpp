@@ -10,16 +10,23 @@
 /* define a default library to load */
 #define GDO_DEFAULT_LIB GDO_LIB(helloworld,0)
 
-/* use message box window on Windows (has no effect on other platforms) */
-#define GDO_USE_MESSAGE_BOX 1
-
 /* include generated header file */
 #include "example_cxx.hpp"
 
 
+#ifdef _WIN32
+void print_error(const char *msg)
+{
+    MessageBoxA(NULL, msg, "Error", MB_OK | MB_ICONERROR);
+}
+#endif
+
+
 int main()
 {
-    /* no extra code needs to be added here */
+#ifdef _WIN32
+    gdo::dl::set_callback(print_error);
+#endif
 
     auto cb = [] (const char *msg) {
         std::cout << msg << std::endl;
