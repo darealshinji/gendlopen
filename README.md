@@ -13,23 +13,36 @@ Features:
  * option to automatically load library and symbols
 
 Limitations:
- * it's not a code analysis tool so in most cases you can't use the raw
-   C header files as input
+ * it's not a code analysis tool, so make sure the input is correct
  * function pointers must be typedef'd
- * function argument names must be included if you want to use autoload features
+ * parameter names must be included
+ * loading symbols of variables is not supported
  * C++11 is the minimum requirement for the generated C++ files
  * C++23 is the minimum requirement to compile the tool
+
+
+Input format
+------------
+
+Here's how the input text format must be:
+
+ * all functions that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)
+ * function pointers MUST be typedef'd; the typedef can optionally be part of the input file
+ * parameter names must be included
+ * comments are ignored
+ * line-breaks are treated like spaces
+ * any other code will throw an error
 
 
 Example
 -------
 
-Let's assume you want to load `int foo(foo_t *)` and `void bar(bar_t)` from `foo.so`.
+Let's assume you want to load `int foo(foo_t *f)` and `void bar(bar_t b)` from `foo.so`.
 First create a text file with the prototypes, each function prototype ending on a semicolon:
 
 ``` C
-int foo(foo_t *);
-void bar(bar_t);
+int foo(foo_t *f);
+void bar(bar_t b);
 ```
 
 Create a header file `load_foo.h` from the input:
@@ -72,19 +85,6 @@ Or in C++ using the `gdo::dl` class:
 You can find more information in the files from the `examples` directory or
 in the files `template_c.h` and `template_cxx.hpp` as well as the generated
 output files.
-
-
-Input format
-------------
-
-Here's how the input file format should be:
-
- * all functions that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)
- * function pointers MUST be typedef'd; the typedef can optionally be part of the input file
- * argument names must be included if you want to use auto-load features
- * comments are ignored
- * line-breaks are treated like spaces
- * any other code will throw an error
 
 
 Cross-compiling
