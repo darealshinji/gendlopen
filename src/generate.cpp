@@ -70,13 +70,13 @@ static bool open_fstream(std::ofstream &ofs, const std::string &ofile, bool forc
     return true;
 }
 
-int gendlopen::generate(
+void gendlopen::generate(
     const std::string &ifile,
     const std::string &ofile,
     const std::string &name)
 {
     /* read data */
-    if (!tokenize(ifile)) return 1;
+    if (!tokenize(ifile)) std::exit(1);
 
     /* output filename */
     std::filesystem::path ofhdr;
@@ -126,7 +126,7 @@ int gendlopen::generate(
         std::ofstream ofs;
 
         if (!open_fstream(ofs, ofhdr.string().c_str(), m_force)) {
-            return 1;
+            std::exit(1);
         }
 
         if (m_separate) {
@@ -136,7 +136,7 @@ int gendlopen::generate(
             ofbody.replace_extension(m_cxx ? ".cpp" : ".c");
 
             if (!open_fstream(ofs_body, ofbody.string().c_str(), m_force)) {
-                return 1;
+                std::exit(1);
             }
 
             /* header */
@@ -154,7 +154,5 @@ int gendlopen::generate(
             std::cout << "saved to file: " << ofhdr << std::endl;
         }
     }
-
-    return 0;
 }
 

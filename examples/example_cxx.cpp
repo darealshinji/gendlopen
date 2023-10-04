@@ -44,7 +44,8 @@ and the filename is then specified during loading:
     };
 
     helloworld *hw = helloworld_init();
-    helloworld_hello(hw, cb);
+    helloworld_callback = cb;
+    helloworld_hello(hw);
     helloworld_release(hw);
 
 

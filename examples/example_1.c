@@ -3,10 +3,6 @@
 /* include generated header file */
 #include "example_1.h"
 
-/* see if we can load in another one with
- * differently prefixed symbols; this code is unused */
-#include "example_1x.h"
-
 
 void cb(const char *msg)
 {
@@ -41,7 +37,8 @@ int main()
 
     /* our code */
     helloworld *hw = helloworld_init();
-    helloworld_hello(hw, cb);
+    helloworld_callback = cb;
+    helloworld_hello(hw);
     helloworld_release(hw);
 
     /* free library */

@@ -267,7 +267,7 @@ static std::vector<std::string> read_input(
     return vproto;
 }
 
-bool gendlopen::tokenize(const std::string &ifile)
+bool gendlopen::tokenize_function(const std::string &s)
 {
     const std::regex reg(
         "(.*?[\\*|\\s])"  /* type */
@@ -276,6 +276,54 @@ bool gendlopen::tokenize(const std::string &ifile)
         "(.*?)\\)"        /* args */
     );
 
+    std::smatch m;
+
+    if (!std::regex_match(s, m, reg) || m.size() != 4) {
+        return false;
+    }
+
+    proto_t proto = { m[1], m[2], m[3], "" };
+    strip_spaces(proto.type);
+    strip_spaces(proto.args);
+
+    if (!get_argument_names(proto)) {
+        return false;
+    }
+
+    if (proto.args.empty()) {
+        proto.args = "void";
+    } else {
+        replace_string(" ,", ",", proto.args);
+    }
+
+    m_prototypes.push_back(proto);
+
+    return true;
+}
+
+bool gendlopen::tokenize_object(const std::string &s)
+{
+    const std::regex reg(
+        "(.*?[\\*|\\s])"  /* type */
+        "([A-Za-z0-9_]*)" /* symbol */
+    );
+
+    std::smatch m;
+
+    if (!std::regex_match(s, m, reg) || m.size() != 3) {
+        return false;
+    }
+
+    obj_t obj = { m[1], m[2] };
+    strip_spaces(obj.type);
+
+    m_objects.push_back(obj);
+
+    return true;
+}
+
+bool gendlopen::tokenize(const std::string &ifile)
+{
     /* open file for reading */
     cin_ifstream ifs(ifile);
 
@@ -293,28 +341,16 @@ bool gendlopen::tokenize(const std::string &ifile)
 
     /* process prototypes */
     for (const auto &s : vproto_s) {
-        std::smatch m;
-
-        if (!std::regex_match(s, m, reg) || m.size() != 4) {
-            std::cerr << "error: malformed function prototype:\n" << s << std::endl;
+        if (!tokenize_function(s) && !tokenize_object(s)) {
+            std::cerr << "error: malformed prototype:\n" << s << std::endl;
             return false;
         }
+    }
 
-        proto_t proto = { m[1], m[2], m[3], "" };
-        strip_spaces(proto.type);
-        strip_spaces(proto.args);
-
-        if (!get_argument_names(proto)) {
-            return false;
-        }
-
-        if (proto.args.empty()) {
-            proto.args = "void";
-        } else {
-            replace_string(" ,", ",", proto.args);
-        }
-
-        m_prototypes.push_back(proto);
+    /* nothing found? */
+    if (m_prototypes.size() == 0 && m_objects.size() == 0) {
+        std::cerr << "error: no function or object prototypes found in file:" << ifile << std::endl;
+        return false;
     }
 
     return true;

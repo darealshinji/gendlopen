@@ -9,6 +9,8 @@ struct helloworld_
     char str[64];
 };
 
+helloworld_cb_t helloworld_callback = NULL;
+
 
 /* allocate object */
 helloworld *helloworld_init()
@@ -17,11 +19,12 @@ helloworld *helloworld_init()
 }
 
 /* use object and respond something */
-void helloworld_hello(helloworld *hw, void (*callback)(const char *))
+void helloworld_hello(helloworld *hw)
 {
-    if (!hw || !callback) return;
-    strcpy(hw->str, "hello world");
-    callback(hw->str);
+    if (hw && helloworld_callback) {
+        strcpy(hw->str, "hello world");
+        helloworld_callback(hw->str);
+    }
 }
 
 /* release object */

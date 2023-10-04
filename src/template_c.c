@@ -3,6 +3,10 @@
 #include <string.h>
 
 
+#ifndef _T
+    #define _T(x) x
+#endif
+
 #ifdef GDO_WINAPI
 GDO_LINKAGE HMODULE _gdo_handle = NULL;
 GDO_LINKAGE DWORD _gdo_last_errno = 0;
@@ -15,8 +19,11 @@ GDO_LINKAGE bool _gdo_call_free_lib_is_registered = false;
 GDO_LINKAGE bool _gdo_all_symbols_loaded = false;
 GDO_LINKAGE gdo_char_t _gdo_buf[4*1024] = {0};
 
-GDO_LINKAGE inline void _gdo_register_atexit();
-GDO_LINKAGE bool _gdo_load_symbols_error(const gdo_char_t *msg);
+#ifdef GDO_ATEXIT
+GDO_LINKAGE void _gdo_call_free_lib();
+#endif
+GDO_LINKAGE bool _gdo_free_lib();
+GDO_LINKAGE inline void *_gdo_sym(const char *symbol, const gdo_char_t *msg);
 
 
 
@@ -32,6 +39,45 @@ typedef GDO_TYPE (*_gdo_GDO_SYMBOL_t)(GDO_ARGS);
 /* function pointers */
 /***************************************************************************/
 GDO_LINKAGE _gdo_GDO_SYMBOL_t _gdo_GDO_SYMBOL_ptr_ = NULL;
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* object pointers */
+/***************************************************************************/
+GDO_LINKAGE GDO_OBJ_TYPE *_gdo_GDO_OBJ_SYMBOL_ptr_ = NULL;
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* save error */
+/***************************************************************************/
+GDO_LINKAGE void _gdo_save_error(const gdo_char_t *msg)
+{
+    _gdo_buf[0] = 0;
+#ifdef GDO_WINAPI
+    _gdo_buf_formatted[0] = 0;
+    _gdo_last_errno = GetLastError();
+    if (msg) _tcsncpy(_gdo_buf, msg, sizeof(_gdo_buf)-1);
+#else
+    (void)msg;
+    char *ptr = dlerror();
+    if (ptr) strncpy(_gdo_buf, ptr, sizeof(_gdo_buf)-1);
+#endif
+}
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* whether the library is currently loaded */
+/***************************************************************************/
+GDO_LINKAGE bool gdo_lib_is_loaded()
+{
+    return (_gdo_handle != NULL);
+}
 /***************************************************************************/
 
 
@@ -61,7 +107,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 #endif
 
     /* library already loaded */
-    if (_gdo_handle) {
+    if (gdo_lib_is_loaded()) {
         return true;
     }
 
@@ -69,42 +115,48 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 
     /* win32 */
     if ((_gdo_handle = LoadLibraryEx(filename, NULL, flags)) == NULL) {
-        _gdo_last_errno = GetLastError();
-        if (filename) _tcsncpy(_gdo_buf, filename, sizeof(_gdo_buf)-1);
+        _gdo_save_error(filename);
         return false;
     }
 
 #else //!GDO_WINAPI
 
 #ifdef GDO_NO_DLMOPEN
-
-    /* disable dlmopen() */
+    /* dlmopen() disabled */
     (void)new_namespace;
     _gdo_handle = dlopen(filename, flags);
-
-#else //!GDO_NO_DLMOPEN
-
-    /* dlopen() or dlmopen() for new namespace */
+#else
+    /* dlmopen() for new namespace or dlopen() */
     if (new_namespace) {
         _gdo_handle = dlmopen(LM_ID_NEWLM, filename, flags);
     } else {
         _gdo_handle = dlopen(filename, flags);
     }
-
 #endif //GDO_NO_DLMOPEN
 
-    if (!_gdo_handle) {
-        char *ptr = dlerror();
-        if (ptr) strncpy(_gdo_buf, ptr, sizeof(_gdo_buf)-1);
+    if (!gdo_lib_is_loaded()) {
+        _gdo_save_error(NULL);
         return false;
     }
 
 #endif //GDO_WINAPI
 
-    _gdo_register_atexit();
+#ifdef GDO_ATEXIT
+    if (_gdo_call_free_lib_is_registered) {
+        atexit(_gdo_call_free_lib);
+        _gdo_call_free_lib_is_registered = false;
+    }
+#endif //GDO_ATEXIT
 
     return true;
 }
+
+#ifdef GDO_ATEXIT
+GDO_LINKAGE void _gdo_call_free_lib()
+{
+    _gdo_free_lib();
+}
+#endif //GDO_ATEXIT
 /***************************************************************************/
 
 
@@ -118,33 +170,40 @@ GDO_LINKAGE bool gdo_free_lib()
 #ifdef GDO_WINAPI
     _gdo_buf_formatted[0] = 0;
     _gdo_last_errno = 0;
+    const gdo_char_t *msg = _T("FreeLibrary()");
+#else
+    const char *msg = NULL;
 #endif
 
-    if (!_gdo_handle) return true;
+    if (!gdo_lib_is_loaded()) return true;
 
+    if (!_gdo_free_lib()) {
+        _gdo_save_error(msg);
+        return false;
+    }
+
+    return true;
+}
+
+GDO_LINKAGE bool _gdo_free_lib()
+{
 #ifdef GDO_WINAPI
-
-    if (FreeLibrary(_gdo_handle) == TRUE) {
-        _gdo_handle = NULL;
-        return true;
+    if (FreeLibrary(_gdo_handle) == FALSE)
+#else
+    if (dlclose(_gdo_handle) != 0)
+#endif
+    {
+        return false;
     }
 
-    _gdo_last_errno = GetLastError();
-    _tcscpy(_gdo_buf, _T("FreeLibrary()"));
+    /* set pointers back to NULL */
 
-#else //!GDO_WINAPI
+    _gdo_handle = NULL;
 
-    if (dlclose(_gdo_handle) == 0) {
-        _gdo_handle = NULL;
-        return true;
-    }
+    _gdo_GDO_SYMBOL_ptr_ = NULL;
+    _gdo_GDO_OBJ_SYMBOL_ptr_ = NULL;
 
-    char *ptr = dlerror();
-    if (ptr) strncpy(_gdo_buf, ptr, sizeof(_gdo_buf)-1);
-
-#endif //GDO_WINAPI
-
-    return false;
+    return true;
 }
 /***************************************************************************/
 
@@ -156,71 +215,62 @@ GDO_LINKAGE bool gdo_free_lib()
 /***************************************************************************/
 GDO_LINKAGE bool gdo_load_symbols()
 {
+    _gdo_buf[0] = 0;
+#ifdef GDO_WINAPI
+    _gdo_buf_formatted[0] = 0;
+    _gdo_last_errno = 0;
+#endif
+
     /* already loaded all symbols */
     if (_gdo_all_symbols_loaded) {
         return true;
     }
 
     /* no library was loaded */
-    if (!_gdo_handle) {
+    if (!gdo_lib_is_loaded()) {
 #ifdef GDO_WINAPI
-        _gdo_buf_formatted[0] = 0;
         _gdo_last_errno = ERROR_INVALID_HANDLE;
         _tcsncpy(_gdo_buf, _T("no library was loaded"), sizeof(_gdo_buf)-1);
 #else
         strncpy(_gdo_buf, "no library was loaded", sizeof(_gdo_buf)-1);
-#endif //GDO_WINAPI
-
+#endif
         return false;
     }
 
-#ifdef GDO_WINAPI
-    #define LOAD_SYMBOL(TYPE, PTR, SYMBOL) \
-        if (!PTR) PTR = (TYPE) GetProcAddress(_gdo_handle, SYMBOL); \
-        if (!PTR) return _gdo_load_symbols_error( _T( SYMBOL ) )
-#else
-    #define LOAD_SYMBOL(TYPE, PTR, SYMBOL) \
-        if (!PTR) PTR = (TYPE) dlsym(_gdo_handle, SYMBOL); \
-        if (!PTR) return _gdo_load_symbols_error( SYMBOL )
-#endif
 
     /* load function pointer addresses */
-    LOAD_SYMBOL(_gdo_GDO_SYMBOL_t, _gdo_GDO_SYMBOL_ptr_, "GDO_SYMBOL");
 
-#undef LOAD_SYMBOL
+    _gdo_GDO_SYMBOL_ptr_ = (_gdo_GDO_SYMBOL_t)@
+        _gdo_sym("GDO_SYMBOL", _T( "GDO_SYMBOL" ));@
+    if (!_gdo_GDO_SYMBOL_ptr_) return false;@
+
+
+    /* load object pointer addresses */
+
+    _gdo_GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE*)@
+        _gdo_sym("GDO_OBJ_SYMBOL", _T( "GDO_OBJ_SYMBOL" ));@
+    if (!_gdo_GDO_OBJ_SYMBOL_ptr_) return false;@
+
 
     _gdo_all_symbols_loaded = true;
 
     return true;
 }
 
-GDO_LINKAGE bool _gdo_load_symbols_error(const gdo_char_t *msg)
+GDO_LINKAGE inline void *_gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
 #ifdef GDO_WINAPI
-    _gdo_buf_formatted[0] = 0;
-    _gdo_last_errno = GetLastError();
-    _tcsncpy(_gdo_buf, msg, sizeof(_gdo_buf)-1);
-    FreeLibrary(_gdo_handle);
+    void *ptr = (void *)GetProcAddress(_gdo_handle, symbol);
 #else
-    char *ptr = dlerror();
-    strncpy(_gdo_buf, ptr ? ptr : msg, sizeof(_gdo_buf)-1);
-    dlclose(_gdo_handle);
+    void *ptr = dlsym(_gdo_handle, symbol);
 #endif
-    _gdo_handle = NULL;
 
-    /* always return false */
-    return false;
-}
-/***************************************************************************/
+    if (!ptr) {
+        _gdo_save_error(msg);
+        _gdo_free_lib();
+    }
 
-
-
-/***************************************************************************/
-/* whether the library is currently loaded */
-/***************************************************************************/
-GDO_LINKAGE bool gdo_lib_is_loaded()
-{
-    return (_gdo_handle != NULL);
+    return ptr;
 }
 /***************************************************************************/
 
@@ -232,7 +282,6 @@ GDO_LINKAGE bool gdo_lib_is_loaded()
 GDO_LINKAGE const gdo_char_t *gdo_last_error()
 {
 #ifdef GDO_WINAPI
-
     /* message was already saved */
     if (_gdo_buf_formatted[0] != 0) {
         return _gdo_buf_formatted;
@@ -297,23 +346,23 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin()
 
     static gdo_char_t origin[36*1024] = {0};
 
-    if (!_gdo_handle) {
+    if (!gdo_lib_is_loaded()) {
         _gdo_last_errno = ERROR_INVALID_HANDLE;
+        _tcsncpy(_gdo_buf, _T("no library was loaded"), sizeof(_gdo_buf)-1);
         return NULL;
     } else if (GetModuleFileName(_gdo_handle, (LPTSTR)&origin, sizeof(origin)-1) == 0) {
-        _gdo_last_errno = GetLastError();
+        _gdo_save_error(NULL);
         return NULL;
     }
 #else
     static char origin[4*1024] = {0};
     struct link_map *lm = NULL;
 
-    if (!_gdo_handle) {
+    if (!gdo_lib_is_loaded()) {
         strncpy(_gdo_buf, "no library was loaded", sizeof(_gdo_buf)-1);
         return NULL;
     } else if (dlinfo(_gdo_handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        char *ptr = dlerror();
-        if (ptr) strncpy(_gdo_buf, ptr, sizeof(_gdo_buf)-1);
+        _gdo_save_error(NULL);
         return NULL;
     }
 
@@ -324,37 +373,6 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin()
 
     return origin;
 }
-/***************************************************************************/
-
-
-#ifdef GDO_ATEXIT
-GDO_LINKAGE void _gdo_call_free_lib();
-#endif
-
-
-/***************************************************************************/
-/* register dlcose() call with atexit() */
-/***************************************************************************/
-GDO_LINKAGE inline void _gdo_register_atexit()
-{
-#ifdef GDO_ATEXIT
-    if (_gdo_call_free_lib_is_registered) {
-        atexit(_gdo_call_free_lib);
-        _gdo_call_free_lib_is_registered = false;
-    }
-#endif //GDO_ATEXIT
-}
-
-#ifdef GDO_ATEXIT
-GDO_LINKAGE void _gdo_call_free_lib()
-{
-#ifdef GDO_WINAPI
-    if (_gdo_handle) FreeLibrary(_gdo_handle);
-#else
-    if (_gdo_handle) dlclose(_gdo_handle);
-#endif
-}
-#endif //GDO_ATEXIT
 /***************************************************************************/
 
 
@@ -397,11 +415,9 @@ GDO_LINKAGE void _gdo_quick_load(const char *function, const char *symbol)
 
     /* free library handle and exit */
 
-#ifdef GDO_WINAPI
-    if (_gdo_handle) FreeLibrary(_gdo_handle);
-#else
-    if (_gdo_handle) dlclose(_gdo_handle);
-#endif
+    if (gdo_lib_is_loaded()) {
+        _gdo_free_lib();
+    }
 
     exit(1);
 }

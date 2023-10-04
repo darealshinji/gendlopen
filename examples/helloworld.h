@@ -23,12 +23,16 @@ extern "C" {
 #endif
 
 typedef struct helloworld_ helloworld;
+typedef void (*helloworld_cb_t)(const char *);
+
+/* pointer to callback function */
+extern DLL_PUBLIC helloworld_cb_t helloworld_callback;
 
 /* initialize */
 DLL_PUBLIC helloworld *helloworld_init();
 
 /* pass a "hello world" string to a callback function */
-DLL_PUBLIC void helloworld_hello(helloworld *hw, void (*callback)(const char *));
+DLL_PUBLIC void helloworld_hello(helloworld *hw);
 
 /* free resources */
 DLL_PUBLIC void helloworld_release(helloworld *hw);

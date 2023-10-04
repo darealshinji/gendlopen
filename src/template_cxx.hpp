@@ -84,7 +84,7 @@ class gdo::dl;
 ****************************************************
 
 GDO_USE_DLOPEN
-    If defined use `dlopen()' API on win32 targets.
+    If defined `dlopen()' API is used on win32 targets.
     On other targets `dlopen()' is always used.
 
 GDO_NO_DLMOPEN
@@ -137,10 +137,15 @@ public:
     static constexpr const int default_flags = RTLD_LAZY;
 #endif
 
-
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
     static constexpr const char *libext = GDO_LIBEXT;
+
+    typedef void (*callback_t)(const char *);
+
+
+    /* object pointers */
+    static GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
 
 
 private:
@@ -153,12 +158,6 @@ private:
 
 
 #ifdef GDO_WINAPI
-    static constexpr const DWORD m_fmtmsg_flags =
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS |
-        FORMAT_MESSAGE_MAX_WIDTH_MASK;
-
     HMODULE m_handle = NULL;
     DWORD m_last_error = 0;
 #else
@@ -166,16 +165,15 @@ private:
     std::string m_last_error;
 #endif
 
-    static void (*m_callback)(const char *);
+    static callback_t m_callback;
+
     const char *m_filename = NULL;
     int m_flags = default_flags;
     bool m_new_namespace = false;
     bool m_symbols_loaded = false;
 
 
-    /* clear error;
-     * run this at the top of a function that
-     * has a libloaderapi or dlfcn API call */
+    /* clear error */
     void clear_error()
     {
 #ifdef GDO_WINAPI
@@ -188,9 +186,7 @@ private:
     }
 
 
-    /* save error;
-     * run this immediately after a
-     * libloaderapi or dlfcn API call */
+    /* save last error */
     void save_error()
     {
 #ifdef GDO_WINAPI
@@ -202,72 +198,68 @@ private:
     }
 
 
-    /* load library (convenience wrapper) */
-    bool load_(const char *filename, int flags, bool new_namespace)
-    {
-        return (new_namespace == true)
-            ? load_new_namespace(filename, flags)
-            : load_default(filename, flags);
-    }
-
-
-    /* load library (default version) */
-    bool load_default(const char *filename, int flags)
+    /* if m_handle is NULL */
+    void set_error_invalid_handle()
     {
         clear_error();
-
-        if (m_handle) return true;
 
 #ifdef GDO_WINAPI
-        m_handle = ::LoadLibraryExA(filename, NULL, flags);
+        m_last_error = ERROR_INVALID_HANDLE;
 #else
-        m_handle = ::dlopen(filename, flags);
+        m_last_error = "no library was loaded";
 #endif
-
-        save_error();
-
-        return (m_handle != NULL);
     }
 
 
-    /* load library into new namespace */
-    bool load_new_namespace(const char *filename, int flags)
+    /* load library */
+    void load_lib(const char *filename, int flags, bool new_namespace)
     {
-#if defined(GDO_WINAPI) || defined(GDO_NO_DLMOPEN)
-        /* no namespace option here */
-        return load_default(filename, flags);
+#if defined(GDO_WINAPI)
+        /* win32 */
+        (void)new_namespace;
+        m_handle = ::LoadLibraryExA(filename, NULL, flags);
+#elif defined(GDO_NO_DLMOPEN)
+        /* dlmopen() disabled */
+        (void)new_namespace;
+        m_handle = ::dlopen(filename, flags);
 #else
-        /* use dlmopen() */
-
-        clear_error();
-
-        if (m_handle) return true;
-
-        m_handle = ::dlmopen(LM_ID_NEWLM, filename, flags);
-        save_error();
-
-        return (m_handle != NULL);
+        /* dlmopen() for new namespace or dlopen() */
+        if (new_namespace) {
+            m_handle = ::dlmopen(LM_ID_NEWLM, filename, flags);
+        } else {
+            m_handle = ::dlopen(filename, flags);
+        }
 #endif
     }
 
 
     /* load symbol address */
     template<typename T>
-    T sym(const char *symbol)
+    bool sym(T &ptr, const char *symbol)
     {
-        clear_error();
-
-        if (!m_handle) std::abort();
-
 #ifdef GDO_WINAPI
-        T ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
+        ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
 #else
-        T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
+        ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
 #endif
 
-        save_error();
+        if (!ptr) {
+            save_error();
+            return false;
+        }
 
-        return ptr;
+        return true;
+    }
+
+
+    /* free library handle */
+    bool free_lib()
+    {
+#ifdef GDO_WINAPI
+        return (::FreeLibrary(m_handle) == TRUE);
+#else
+        return (::dlclose(m_handle) == 0);
+#endif
     }
 
 
@@ -290,16 +282,14 @@ public:
     /* d'tor */
     ~dl()
     {
-#ifdef GDO_WINAPI
-        if (m_handle) ::FreeLibrary(m_handle);
-#else
-        if (m_handle) ::dlclose(m_handle);
-#endif
+        if (lib_loaded()) {
+            free_lib();
+        }
     }
 
 
     /* set a custom callback function for error messages */
-    static void set_callback(void (*callback)(const char *))
+    static void set_callback(callback_t callback)
     {
         m_callback = callback;
     }
@@ -308,7 +298,16 @@ public:
     /* load library */
     bool load(const char *filename, int flags=default_flags, bool new_namespace=false)
     {
-        return load_(filename, flags, new_namespace);
+        clear_error();
+
+        if (lib_loaded()) {
+            return true;
+        }
+
+        load_lib(filename, flags, new_namespace);
+        save_error();
+
+        return lib_loaded();
     }
 
 
@@ -318,12 +317,14 @@ public:
     {
         clear_error();
 
-        if (m_handle) return true;
-        m_handle = ::LoadLibraryExW(filename, NULL, flags);
+        if (lib_loaded()) {
+            return true;
+        }
 
+        m_handle = ::LoadLibraryExW(filename, NULL, flags);
         save_error();
 
-        return (m_handle != NULL);
+        return lib_loaded();
     }
 #endif
 
@@ -346,26 +347,22 @@ public:
     bool load_symbols()
     {
         if (m_symbols_loaded) {
-            return true;
-        } else if (!m_handle) {
             clear_error();
-
-#ifdef GDO_WINAPI
-            m_last_error = ERROR_INVALID_HANDLE;
-#else
-            m_last_error = "no library was loaded";
-#endif
+            return true;
+        } else if (!lib_loaded()) {
+            set_error_invalid_handle();
             return false;
         }
 
-#define LOAD_SYM(SYM) \
-    if (!SYM##_ptr_) SYM##_ptr_ = sym<SYM##_t>(#SYM); \
-    if (!SYM##_ptr_) return false
-
         /* load function pointer addresses */
-        LOAD_SYM(GDO_SYMBOL);
+        if (!sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL")) {@
+            return false;@
+        }
 
-#undef LOAD_SYM
+        /* load object addresses */
+        if (!sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL")) {@
+            return false;@
+        }
 
         m_symbols_loaded = true;
         clear_error();
@@ -384,33 +381,34 @@ public:
     /* free library */
     bool free()
     {
-        clear_error();
-
-        if (!m_handle) return true;
-
-#ifdef GDO_WINAPI
-        bool ret = (::FreeLibrary(m_handle) == TRUE);
-#else
-        bool ret = (::dlclose(m_handle) == 0);
-#endif
-
-        save_error();
-
-        if (ret == true) {
-            m_handle = NULL;
+        if (!lib_loaded()) {
+            clear_error();
             return true;
         }
 
-        return false;
+        bool ret = free_lib();
+        save_error();
+
+        if (!ret) {
+            return false;
+        }
+
+        m_handle = NULL;
+
+        GDO_SYMBOL_ptr_ = nullptr;
+        GDO_OBJ_SYMBOL_ptr_ = nullptr;
+
+        return true;
     }
 
 
     /* get path of loaded library */
     std::string origin()
     {
-        clear_error();
-
-        if (!m_handle) return "";
+        if (!lib_loaded()) {
+            set_error_invalid_handle();
+            return "";
+        }
 
 #ifdef GDO_WINAPI
         char buf[36*1024] = {0};
@@ -438,11 +436,12 @@ public:
     /* get path of loaded library (wide characters version) */
     std::wstring origin_w()
     {
-        clear_error();
-
-        if (!m_handle) return L"";
-
         WCHAR buf[36*1024] = {0};
+
+        if (!lib_loaded()) {
+            set_error_invalid_handle();
+            return L"";
+        }
 
         DWORD ret = ::GetModuleFileNameW(m_handle, reinterpret_cast<LPWSTR>(&buf), sizeof(buf)-1);
         save_error();
@@ -458,8 +457,13 @@ public:
 #ifdef GDO_WINAPI
         std::string buf;
         char *msg = NULL;
+        const DWORD dwFlags =
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS |
+            FORMAT_MESSAGE_MAX_WIDTH_MASK;
 
-        const DWORD ret = ::FormatMessageA(m_fmtmsg_flags, NULL, m_last_error,
+        const DWORD ret = ::FormatMessageA(dwFlags, NULL, m_last_error,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             reinterpret_cast<LPSTR>(&msg), 0, NULL);
 
@@ -486,8 +490,13 @@ public:
     {
         std::wstring buf;
         WCHAR *msg = NULL;
+        const DWORD dwFlags =
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS |
+            FORMAT_MESSAGE_MAX_WIDTH_MASK;
 
-        const DWORD ret = ::FormatMessageW(m_fmtmsg_flags, NULL, m_last_error,
+        const DWORD ret = ::FormatMessageW(dwFlags, NULL, m_last_error,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             reinterpret_cast<LPWSTR>(&msg), 0, NULL);
 
@@ -586,18 +595,20 @@ public:
 
 
 /* aliases */
+
 #ifdef GDO_USE_WRAPPER
 
 /* use auto-loading wrapper functions */
-#ifndef GDO_SYMBOL@
-#define GDO_SYMBOL gdo::GDO_SYMBOL@
-#endif
+#define GDO_SYMBOL gdo::GDO_SYMBOL
 
 #else
 
 /* use class-internal wrapped functions */
-#ifndef GDO_SYMBOL@
-#define GDO_SYMBOL gdo::dl::GDO_SYMBOL@
-#endif
+#define GDO_SYMBOL gdo::dl::GDO_SYMBOL
 
 #endif // GDO_USE_WRAPPER
+
+
+/* object pointers */
+#define GDO_OBJ_SYMBOL *gdo::dl::GDO_OBJ_SYMBOL_ptr_
+

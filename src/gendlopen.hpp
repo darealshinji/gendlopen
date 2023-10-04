@@ -42,15 +42,24 @@ public:
         std::string notype_args;
     } proto_t;
 
+    typedef struct {
+        std::string type;
+        std::string symbol;
+    } obj_t;
+
 private:
 
     std::vector<proto_t> m_prototypes;
+    std::vector<obj_t> m_objects;
     std::string m_typedefs;
     std::string m_name_upper, m_name_lower;
     std::string m_guard;
     bool m_cxx, m_force, m_separate;
 
     bool tokenize(const std::string &ifile);
+    bool tokenize_function(const std::string &s);
+    bool tokenize_object(const std::string &s);
+
     std::string parse(const char *data);
 
     /* helper to put header guards around the data and save
@@ -97,7 +106,7 @@ public:
     void cxx(bool b) {m_cxx = b;}
 
     /* generate output */
-    int generate(const std::string &ifile, const std::string &ofile, const std::string &name);
+    void generate(const std::string &ifile, const std::string &ofile, const std::string &name);
 
 };
 

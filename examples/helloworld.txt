@@ -14,15 +14,14 @@ About the input file format:
 /* init */
 helloworld *helloworld_init(  );
 
-// function pointer typedef
-typedef void (*helloworld_cb)(const char *);
+/* function pointer */
+helloworld_cb_t helloworld_callback;
 
-// say hello
-void
-helloworld_hello(
-  helloworld *hw  ,
-  helloworld_cb cb
-);
+/* say hello */
+void helloworld_hello(helloworld *hw);
+
+//typedef void (*helloworld_cb)(const char *);
+//void helloworld_hello(helloworld *hw, helloworld_cb cb);
 
 /* release */
 void helloworld_release

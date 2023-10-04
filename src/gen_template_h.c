@@ -22,15 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifdef _MSC_VER
-  #define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #ifdef _WIN32
-  #include <direct.h>
-  #define chdir _chdir
+    #ifdef _MSC_VER
+        #define _CRT_SECURE_NO_WARNINGS
+    #endif
+    #include <direct.h>
 #else
-  #include <unistd.h>
+    #include <unistd.h>
 #endif
 
 #include <stdio.h>
@@ -62,7 +60,6 @@ static void hexdump(const char *in, const char *varName, FILE *fpOut)
         if (ferror(fp) != 0) {
             perror("fread()");
             fprintf(stderr, "(%s)\n", in);
-            fclose(fp);
             exit(1);
         }
 
@@ -90,22 +87,21 @@ int main(int argc, char **argv)
     if (!fp) {
         perror("fopen()");
         fprintf(stderr, "(%s)\n", out);
-        return 1;
+        exit(1);
     }
 
     if (argc > 1 && chdir(argv[1]) == -1) {
         perror("chdir()");
         fprintf(stderr, "(%s)\n", argv[1]);
-        fclose(fp);
-        return 1;
+        exit(1);
     }
 
-    hexdump("license.h", "license_data", fp);
+    hexdump("license.h",         "license_data",                fp);
     hexdump("template_common.h", "template_common_header_data", fp);
-    hexdump("template_c.h", "template_c_header_data", fp);
-    hexdump("template_c.c", "template_c_body_data", fp);
-    hexdump("template_cxx.hpp", "template_cxx_header_data", fp);
-    hexdump("template_cxx.cpp", "template_cxx_body_data", fp);
+    hexdump("template_c.h",      "template_c_header_data",      fp);
+    hexdump("template_c.c",      "template_c_body_data",        fp);
+    hexdump("template_cxx.hpp",  "template_cxx_header_data",    fp);
+    hexdump("template_cxx.cpp",  "template_cxx_body_data",      fp);
 
     //printf("data written to `%s'\n", out);
     fclose(fp);

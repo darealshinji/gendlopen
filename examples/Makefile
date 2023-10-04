@@ -67,7 +67,7 @@ libhelloworld.lib: libhelloworld-0.dll
 $(LIB): helloworld.c
 	$(CC) $(SOFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDSOFLAGS)
 
-example_1: example_1.c example_1.h example_1x.h
+example_1: example_1.c example_1.h
 	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS)
 
 example_auto_free: example_auto_free.c example_auto_free.h
@@ -87,9 +87,6 @@ example_wide: example_wide.c example_wide.h
 
 example_cxx_wide: example_cxx_wide.cpp example_cxx_wide.hpp
 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
-
-example_1x.h: helloworld.txt
-	$(GENDLOPEN) -i $^ --name=gdo2_ > $@
 
 example_%.h: helloworld.txt
 	$(GENDLOPEN) -i $^ > $@

@@ -173,15 +173,13 @@ GDO_TYPEDEFS
 #define GDO_ATEXIT
 #endif
 
-#ifndef GDO_SYMBOL@
-#define GDO_SYMBOL _gdo_wrap_GDO_SYMBOL@
-#endif
+#define GDO_SYMBOL _gdo_wrap_GDO_SYMBOL
 
 #else
 
-#ifndef GDO_SYMBOL@
-#define GDO_SYMBOL _gdo_GDO_SYMBOL_ptr_@
-#endif
+#define GDO_SYMBOL _gdo_GDO_SYMBOL_ptr_
 
 #endif
+
+#define GDO_OBJ_SYMBOL *_gdo_GDO_OBJ_SYMBOL_ptr_
 /****************************************************************************/

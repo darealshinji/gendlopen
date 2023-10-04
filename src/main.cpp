@@ -26,7 +26,7 @@ SOFTWARE.
 #include "args.hxx"
 #include "gendlopen.hpp"
 
-typedef args::ValueFlag<std::string> Value;
+typedef args::ValueFlag<std::string> StrValue;
 using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
@@ -48,17 +48,17 @@ int main(int argc, char **argv)
         "Display this help menu",
         {'h', "help"});
 
-    Value a_input(args, "FILE",
+    StrValue a_input(args, "FILE",
         "Input file (use \"-\" for STDIN)",
         {'i', "input"},
         args::Options::Required);
 
-    Value a_output(args, "FILE",
+    StrValue a_output(args, "FILE",
         "Set an output file path (default: STDOUT)",
         {'o', "output"},
         "-");
 
-    Value a_name(args, "STRING",
+    StrValue a_name(args, "STRING",
         "Custom string to be used as prefix in function and macro names or as "
         "C++ namespace (default: gdo)",
         {'n', "name"},
@@ -99,6 +99,7 @@ int main(int argc, char **argv)
     gdo.separate(a_separate);
     gdo.force(a_force);
     gdo.cxx(a_cxx);
+    gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 
-    return gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
+    return 0;
 }

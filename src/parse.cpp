@@ -36,18 +36,27 @@ SOFTWARE.
 #include "template.h"
 
 
-/* check if the line needs to be processed in a loop */
-static bool need_loop(const std::string &line)
+static const char *function_keywords[] =
 {
-    const char *list[] = {
-        "GDO_RET",
-        "GDO_TYPE",
-        "GDO_SYMBOL",
-        "GDO_ARGS",
-        "GDO_NOTYPE_ARGS",
-        NULL
-    };
+    "GDO_RET",
+    "GDO_TYPE",
+    "GDO_SYMBOL",
+    "GDO_ARGS",
+    "GDO_NOTYPE_ARGS",
+    NULL
+};
 
+static const char *object_keywords[] =
+{
+    "GDO_OBJ_TYPE",
+    "GDO_OBJ_SYMBOL",
+    NULL
+};
+
+
+/* check if the line needs to be processed in a loop */
+static inline bool need_loop(const std::string &line, const char **list)
+{
     for (const char **p = list; *p != NULL; p++) {
         if (line.find(*p) != std::string::npos) {
             return true;
@@ -55,7 +64,28 @@ static bool need_loop(const std::string &line)
     }
 
     return false;
+}
 
+static inline std::string get_indent(const std::string &line)
+{
+    auto pos = line.find_first_not_of(" \t\n\r\v\f");
+
+    if (pos != std::string::npos) {
+        return line.substr(0, pos);
+    }
+
+    return {};
+}
+
+static inline std::string get_indent_end(const std::string &line)
+{
+    auto pos = line.find_last_not_of(" \t\n\r\v\f");
+
+    if (pos != std::string::npos) {
+        return line.substr(pos+1);
+    }
+
+    return {};
 }
 
 /* parse the template data */
@@ -63,8 +93,9 @@ std::string gendlopen::parse(const char *data)
 {
     std::string buf, line;
 
-    if (m_prototypes.empty()) {
-        return {};
+    if (m_prototypes.empty() && m_objects.empty()) {
+        std::cerr << "error: no function or object prototypes" << std::endl;
+        std::exit(1);
     }
 
     for (const char *p = data; *p != 0; p++)
@@ -103,37 +134,65 @@ std::string gendlopen::parse(const char *data)
             replace_string("GDO_TYPEDEFS", m_typedefs, line);
         }
 
-        /* just append and continue */
-        if (!need_loop(line)) {
+        /* replace if needed */
+
+        bool has_func = need_loop(line, function_keywords);
+        bool has_obj = need_loop(line, object_keywords);
+
+        if (has_func && has_obj) {
+            /* error */
+            std::cerr << "error: cannot use function and object prototypes in the same line" << std::endl;
+            std::exit(1);
+        } else if (has_func) {
+            /* function prototypes */
+
+            if (m_prototypes.empty()) {
+                buf += get_indent(line);
+                buf += "/* -- no function prototypes -- */";
+                buf += get_indent_end(line);
+                line.clear();
+                continue;
+            }
+
+            for (const auto &p : m_prototypes) {
+                auto copy = line;
+
+                /* don't "return" on "void" functions */
+                if (strcasecmp(p.type.c_str(), "void") == 0) {
+                    /* keep the indentation pretty */
+                    replace_string("GDO_RET ", "", copy);
+                    replace_string("GDO_RET", "", copy);
+                } else {
+                    replace_string("GDO_RET", "return", copy);
+                }
+
+                replace_string("GDO_TYPE", p.type, copy);
+                replace_string("GDO_SYMBOL", p.symbol, copy);
+                replace_string("GDO_ARGS", p.args, copy);
+                replace_string("GDO_NOTYPE_ARGS", p.notype_args, copy);
+
+                buf += copy;
+            }
+        } else if (has_obj) {
+            /* object prototypes */
+
+            if (m_objects.empty()) {
+                buf += get_indent(line);
+                buf += "/* -- no object prototypes -- */";
+                buf += get_indent_end(line);
+                line.clear();
+                continue;
+            }
+
+            for (const auto &p : m_objects) {
+                auto copy = line;
+                replace_string("GDO_OBJ_TYPE", p.type, copy);
+                replace_string("GDO_OBJ_SYMBOL", p.symbol, copy);
+                buf += copy;
+            }
+        } else {
+            /* nothing to loop, just append */
             buf += line;
-            line.clear();
-            continue;
-        }
-
-        /* strings that need to be replaced in a loop */
-        for (const auto &p : m_prototypes) {
-            auto copy = line;
-
-            /* don't "return" on "void" functions */
-            if (strcasecmp(p.type.c_str(), "void") == 0) {
-                /* keep the indentation pretty */
-                replace_string("GDO_RET ", "", copy);
-                replace_string("GDO_RET", "", copy);
-            } else {
-                replace_string("GDO_RET", "return", copy);
-            }
-
-            if (p.type.back() == '*') {
-                /* make the asterisk stick to the next token */
-                replace_string("GDO_TYPE ", p.type, copy);
-            }
-            replace_string("GDO_TYPE", p.type, copy);
-
-            replace_string("GDO_SYMBOL", p.symbol, copy);
-            replace_string("GDO_ARGS", p.args, copy);
-            replace_string("GDO_NOTYPE_ARGS", p.notype_args, copy);
-
-            buf += copy;
         }
 
         line.clear();
