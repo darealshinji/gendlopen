@@ -120,7 +120,9 @@ GDO_LIBEXT
 
 ***/
 
-#include <stdbool.h>
+#if !defined(__cplusplus)
+    #include <stdbool.h>
+#endif
 
 
 GDO_COMMON

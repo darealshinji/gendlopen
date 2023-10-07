@@ -30,6 +30,16 @@
 #include <string>
 #include <vector>
 
+#define EXTERN_C_START \
+    "#ifdef __cplusplus\n" \
+    "extern \"C\" {\n" \
+    "#endif\n\n"
+
+#define EXTERN_C_END \
+    "#ifdef __cplusplus\n" \
+    "} /* extern \"C\" */\n" \
+    "#endif\n\n"
+
 
 class gendlopen
 {
@@ -65,18 +75,24 @@ private:
     /* helper to put header guards around the data and save
      * them to the provided stream */
     template<typename T=std::ofstream>
-    void put_header_guards(T &stream, const char *header_data, const char *body_data, const char *license_data)
+    void put_header_guards(T &str, const char *header_data, const char *body_data, const char *license_data)
     {
-        stream << license_data
-            << "#ifndef " << m_guard << '\n'
-            << "#define " << m_guard << "\n\n"
-            << parse(header_data);
+        str << license_data;
+        str << "#ifndef " << m_guard << '\n';
+        str << "#define " << m_guard << "\n\n";
 
-        if (body_data) {
-            stream << parse(body_data);
+        if (!m_cxx) {
+            str << EXTERN_C_START;
         }
 
-        stream << "#endif //" << m_guard << '\n';
+        str << parse(header_data);
+        str << parse(body_data);
+
+        if (!m_cxx) {
+            str << EXTERN_C_END;
+        }
+
+        str << "#endif //" << m_guard << '\n';
     }
 
 public:
@@ -101,9 +117,9 @@ public:
     }
 
     /* set options */
-    void separate(bool b) {m_separate = b;}
-    void force(bool b) {m_force = b;}
-    void cxx(bool b) {m_cxx = b;}
+    void separate(bool b) { m_separate = b; }
+    void force(bool b) { m_force = b; }
+    void cxx(bool b) { m_cxx = b; }
 
     /* generate output */
     void generate(const std::string &ifile, const std::string &ofile, const std::string &name);

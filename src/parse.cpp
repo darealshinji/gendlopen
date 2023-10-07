@@ -93,6 +93,10 @@ std::string gendlopen::parse(const char *data)
 {
     std::string buf, line;
 
+    if (!data) {
+        return {};
+    }
+
     if (m_prototypes.empty() && m_objects.empty()) {
         std::cerr << "error: no function or object prototypes" << std::endl;
         std::exit(1);
