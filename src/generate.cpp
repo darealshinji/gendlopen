@@ -140,7 +140,7 @@ void gendlopen::generate(
             }
 
             /* header */
-            put_header_guards(ofs, header_data, NULL, license_data);
+            put_header_guards(ofs, header_data, "", license_data);
             std::cout << "saved to file: " << ofhdr << std::endl;
 
             /* body */

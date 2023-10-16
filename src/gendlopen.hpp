@@ -30,16 +30,6 @@
 #include <string>
 #include <vector>
 
-#define EXTERN_C_START \
-    "#ifdef __cplusplus\n" \
-    "extern \"C\" {\n" \
-    "#endif\n\n"
-
-#define EXTERN_C_END \
-    "#ifdef __cplusplus\n" \
-    "} /* extern \"C\" */\n" \
-    "#endif\n\n"
-
 
 class gendlopen
 {
@@ -80,18 +70,8 @@ private:
         str << license_data;
         str << "#ifndef " << m_guard << '\n';
         str << "#define " << m_guard << "\n\n";
-
-        if (!m_cxx) {
-            str << EXTERN_C_START;
-        }
-
         str << parse(header_data);
         str << parse(body_data);
-
-        if (!m_cxx) {
-            str << EXTERN_C_END;
-        }
-
         str << "#endif //" << m_guard << '\n';
     }
 

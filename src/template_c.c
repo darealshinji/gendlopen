@@ -3,6 +3,10 @@
 #include <string.h>
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _T
     #define _T(x) x
 #endif
@@ -434,3 +438,8 @@ GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 
 #endif //GDO_USE_WRAPPER
 /***************************************************************************/
+
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif

@@ -120,7 +120,9 @@ GDO_LIBEXT
 
 ***/
 
-#if !defined(__cplusplus)
+#ifdef __cplusplus
+extern "C" {
+#else
     #include <stdbool.h>
 #endif
 
@@ -185,3 +187,7 @@ GDO_TYPEDEFS
 
 #define GDO_OBJ_SYMBOL *_gdo_GDO_OBJ_SYMBOL_ptr_
 /****************************************************************************/
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
