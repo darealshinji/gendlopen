@@ -51,6 +51,9 @@ class gdo::dl;
     /* check if library was successfully loaded */
     bool lib_loaded() const;
 
+    /* return the flags used to load the library */
+    int flags() const;
+
     /* load all symbols */
     bool load_symbols();
 
@@ -214,20 +217,22 @@ private:
     /* load library */
     void load_lib(const char *filename, int flags, bool new_namespace)
     {
+        m_flags = flags;
+
 #if defined(GDO_WINAPI)
         /* win32 */
         (void)new_namespace;
-        m_handle = ::LoadLibraryExA(filename, NULL, flags);
+        m_handle = ::LoadLibraryExA(filename, NULL, m_flags);
 #elif defined(GDO_NO_DLMOPEN)
         /* dlmopen() disabled */
         (void)new_namespace;
-        m_handle = ::dlopen(filename, flags);
+        m_handle = ::dlopen(filename, m_flags);
 #else
         /* dlmopen() for new namespace or dlopen() */
         if (new_namespace) {
-            m_handle = ::dlmopen(LM_ID_NEWLM, filename, flags);
+            m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);
         } else {
-            m_handle = ::dlopen(filename, flags);
+            m_handle = ::dlopen(filename, m_flags);
         }
 #endif
     }
@@ -321,7 +326,8 @@ public:
             return true;
         }
 
-        m_handle = ::LoadLibraryExW(filename, NULL, flags);
+        m_flags = flags;
+        m_handle = ::LoadLibraryExW(filename, NULL, m_flags);
         save_error();
 
         return lib_loaded();
@@ -340,6 +346,13 @@ public:
     bool lib_loaded() const
     {
         return (m_handle != NULL);
+    }
+
+
+    /* return the flags used to load the library */
+    int flags() const
+    {
+        return m_flags;
     }
 
 
@@ -411,7 +424,7 @@ public:
         }
 
 #ifdef GDO_WINAPI
-        char buf[36*1024] = {0};
+        char buf[32*1024] = {0};
 
         DWORD ret = ::GetModuleFileNameA(m_handle, reinterpret_cast<LPSTR>(&buf), sizeof(buf)-1);
         save_error();
@@ -436,7 +449,7 @@ public:
     /* get path of loaded library (wide characters version) */
     std::wstring origin_w()
     {
-        WCHAR buf[36*1024] = {0};
+        WCHAR buf[32*1024] = {0};
 
         if (!lib_loaded()) {
             set_error_invalid_handle();

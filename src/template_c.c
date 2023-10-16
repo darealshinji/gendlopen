@@ -344,7 +344,7 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin()
     _gdo_buf_formatted[0] = 0;
     _gdo_last_errno = 0;
 
-    static gdo_char_t origin[36*1024] = {0};
+    static gdo_char_t origin[32*1024] = {0};
 
     if (!gdo_lib_is_loaded()) {
         _gdo_last_errno = ERROR_INVALID_HANDLE;
