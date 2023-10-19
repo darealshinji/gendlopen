@@ -30,6 +30,12 @@
 #include <string>
 #include <vector>
 
+#ifdef _MSC_VER
+#define strcasecmp _stricmp
+#else
+#include <strings.h>
+#endif
+
 
 class gendlopen
 {

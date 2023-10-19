@@ -26,12 +26,6 @@ SOFTWARE.
 #include <vector>
 #include <string.h>
 
-#ifdef _MSC_VER
-#define strcasecmp _stricmp
-#else
-#include <strings.h>
-#endif
-
 #include "gendlopen.hpp"
 #include "template.h"
 
