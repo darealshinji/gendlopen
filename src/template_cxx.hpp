@@ -118,10 +118,10 @@ GDO_LIB(NAME, API)
 ***/
 
 
+GDO_COMMON
+
 #include <iostream>
 #include <string>
-
-GDO_COMMON
 
 GDO_TYPEDEFS
 

@@ -51,8 +51,7 @@ Create a header file `load_foo.h` from the input:
 Include it in your source file and use the provided functions to load the symbols:
 ``` C
     /* load library and symbols */
-    if (!gdo_load_lib_args("foo.so", GDO_DEFAULT_FLAGS, true) ||
-        !gdo_load_symbols())
+    if (!gdo_load_lib_name("foo.so") || !gdo_load_symbols())
     {
         fprintf(stderr, "%s\n", gdo_last_error());
         gdo_free_lib();

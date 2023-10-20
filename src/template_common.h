@@ -7,11 +7,15 @@
     #include <windows.h>
     #include <tchar.h>
 #else
-    #ifndef _GNU_SOURCE
-        #define _GNU_SOURCE
+    #ifdef _GNU_SOURCE
+    #undef _GNU_SOURCE
     #endif
+    #define _GNU_SOURCE
     #include <link.h>
     #include <dlfcn.h>
+#endif
+#ifndef __cplusplus
+    #include <stdbool.h>
 #endif
 
 

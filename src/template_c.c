@@ -76,17 +76,6 @@ GDO_LINKAGE void _gdo_save_error(const gdo_char_t *msg)
 
 
 /***************************************************************************/
-/* whether the library is currently loaded */
-/***************************************************************************/
-GDO_LINKAGE bool gdo_lib_is_loaded()
-{
-    return (_gdo_handle != NULL);
-}
-/***************************************************************************/
-
-
-
-/***************************************************************************/
 /* load default library with default flags */
 /***************************************************************************/
 #ifdef GDO_DEFAULT_LIB
@@ -95,6 +84,17 @@ GDO_LINKAGE bool gdo_load_lib()
     return gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false);
 }
 #endif
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* load library by filename with default flags */
+/***************************************************************************/
+GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)
+{
+    return gdo_load_lib_args(filename, GDO_DEFAULT_FLAGS, false);
+}
 /***************************************************************************/
 
 
@@ -161,6 +161,17 @@ GDO_LINKAGE void _gdo_call_free_lib()
     _gdo_free_lib();
 }
 #endif //GDO_ATEXIT
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* whether the library is currently loaded */
+/***************************************************************************/
+GDO_LINKAGE bool gdo_lib_is_loaded()
+{
+    return (_gdo_handle != NULL);
+}
 /***************************************************************************/
 
 
