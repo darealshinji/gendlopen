@@ -63,6 +63,9 @@ class gdo::dl;
     /* free library */
     bool free();
 
+    /* whether to free the library in the class destructor */
+    void free_lib_in_dtor(bool b);
+
     /* get full path of loaded library */
     std::string origin();
 #ifdef GDO_WINAPI
@@ -174,6 +177,7 @@ private:
     int m_flags = default_flags;
     bool m_new_namespace = false;
     bool m_symbols_loaded = false;
+    bool m_free_lib_in_dtor = true;
 
 
     /* clear error */
@@ -287,16 +291,9 @@ public:
     /* d'tor */
     ~dl()
     {
-        if (lib_loaded()) {
+        if (m_free_lib_in_dtor && lib_loaded()) {
             free_lib();
         }
-    }
-
-
-    /* set a custom callback function for error messages */
-    static void set_callback(callback_t callback)
-    {
-        m_callback = callback;
     }
 
 
@@ -415,6 +412,13 @@ public:
     }
 
 
+    /* whether to free the library in the class destructor */
+    void free_lib_in_dtor(bool b)
+    {
+        m_free_lib_in_dtor = b;
+    }
+
+
     /* get path of loaded library */
     std::string origin()
     {
@@ -526,6 +530,13 @@ public:
         return buf;
     }
 #endif //GDO_WINAPI
+
+
+    /* set a custom callback function for error messages */
+    static void set_callback(callback_t callback)
+    {
+        m_callback = callback;
+    }
 
 
     /* used internally but must be set to public */
