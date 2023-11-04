@@ -1,0 +1,59 @@
+void
+gtk_main_quit (
+  void
+);
+
+void
+gtk_init (
+  int* argc,
+  char*** argv
+);
+
+GtkWidget*
+gtk_window_new (
+  GtkWindowType type
+);
+
+GtkActionGroup*
+gtk_action_group_new (
+  const gchar* name
+);
+
+void
+gtk_action_group_add_actions (
+  GtkActionGroup* action_group,
+  const GtkActionEntry* entries,
+  guint n_entries,
+  gpointer user_data
+);
+
+GtkUIManager*
+gtk_ui_manager_new (
+  void
+);
+
+void
+gtk_ui_manager_insert_action_group (
+  GtkUIManager* manager,
+  GtkActionGroup* action_group,
+  gint pos
+);
+
+guint
+gtk_ui_manager_add_ui_from_string (
+  GtkUIManager* manager,
+  const gchar* buffer,
+  gssize length,
+  GError** error
+);
+
+GtkWidget*
+gtk_ui_manager_get_widget (
+  GtkUIManager* manager,
+  const gchar* path
+);
+
+void
+gtk_main (
+  void
+);

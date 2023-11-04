@@ -1,0 +1,7 @@
+AppIndicator                   *app_indicator_new                (const gchar          *id,
+                                                                  const gchar          *icon_name,
+                                                                  AppIndicatorCategory  category);
+void                            app_indicator_set_status         (AppIndicator       *self,
+                                                                  AppIndicatorStatus  status);
+void                            app_indicator_set_menu           (AppIndicator       *self,
+                                                                  GtkMenu            *menu);

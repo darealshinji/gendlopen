@@ -13,7 +13,7 @@ helloworld_cb_t helloworld_callback = NULL;
 
 
 /* allocate object */
-helloworld *helloworld_init()
+helloworld *HELLOWORLD_INIT()
 {
     return malloc(sizeof(helloworld));
 }

@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#ifdef TEST_UNDEFINED_SYMBOL
+    #define HELLOWORLD_INIT helloworld_init_foobar
+#else
+    #define HELLOWORLD_INIT helloworld_init
+#endif
+
 #ifdef BUILDING_STATIC
     #define DLL_PUBLIC
 #endif
@@ -29,7 +35,7 @@ typedef void (*helloworld_cb_t)(const char *);
 extern DLL_PUBLIC helloworld_cb_t helloworld_callback;
 
 /* initialize */
-DLL_PUBLIC helloworld *helloworld_init();
+DLL_PUBLIC helloworld *HELLOWORLD_INIT();
 
 /* pass a "hello world" string to a callback function */
 DLL_PUBLIC void helloworld_hello(helloworld *hw);
