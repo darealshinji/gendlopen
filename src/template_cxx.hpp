@@ -194,13 +194,20 @@ private:
 
 
     /* save last error */
-    void save_error()
+    void save_error(const char *errptr=NULL)
     {
 #ifdef GDO_WINAPI
+        (void)errptr;
         m_last_error = ::GetLastError();
 #else
-        char *ptr = ::dlerror();
-        m_last_error = ptr ? ptr : "";
+        if (errptr) {
+            /* copy string first, then call dlerror() to clear buffer */
+            m_last_error = errptr;
+            ::dlerror();
+        } else {
+            const char *ptr = ::dlerror();
+            m_last_error = ptr ? ptr : "";
+        }
 #endif
     }
 
@@ -248,14 +255,23 @@ private:
     {
 #ifdef GDO_WINAPI
         ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
-#else
-        ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
-#endif
 
         if (!ptr) {
             save_error();
             return false;
         }
+#else
+        ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
+
+        /* NULL can be a valid value (unusual but possible),
+         * so call dlerror() to check for errors */
+        const char *errptr = dlerror();
+
+        if (errptr) {
+            save_error(errptr);
+            return false;
+        }
+#endif
 
         return true;
     }
