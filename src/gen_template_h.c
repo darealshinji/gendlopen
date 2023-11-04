@@ -96,12 +96,13 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    hexdump("license.h",         "license_data",                fp);
-    hexdump("template_common.h", "template_common_header_data", fp);
-    hexdump("template_c.h",      "template_c_header_data",      fp);
-    hexdump("template_c.c",      "template_c_body_data",        fp);
-    hexdump("template_cxx.hpp",  "template_cxx_header_data",    fp);
-    hexdump("template_cxx.cpp",  "template_cxx_body_data",      fp);
+    hexdump("license.h",          "license_data",                 fp);
+    hexdump("template_common.h",  "template_common_header_data",  fp);
+    hexdump("template_c.h",       "template_c_header_data",       fp);
+    hexdump("template_c.c",       "template_c_body_data",         fp);
+    hexdump("template_cxx.hpp",   "template_cxx_header_data",     fp);
+    hexdump("template_cxx.cpp",   "template_cxx_body_data",       fp);
+    hexdump("template_minimal.h", "template_minimal_header_data", fp);
 
     //printf("data written to `%s'\n", out);
     fclose(fp);

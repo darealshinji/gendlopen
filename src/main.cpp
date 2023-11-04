@@ -68,6 +68,10 @@ int main(int argc, char **argv)
         "Generate C++ code",
         {'x', "cxx"});
 
+    Flag a_min(args, "",
+        "Generate minimal C code (disables C++ output)",
+        {'m', "minimal"});
+
     Flag a_separate(args, "",
         "Save output into separate header and body files",
         {'s', "separate"});
@@ -96,9 +100,14 @@ int main(int argc, char **argv)
 
     auto gdo = gendlopen();
 
+    if (a_min) {
+        gdo.minimal(a_min);
+    } else {
+        gdo.cxx(a_cxx);
+    }
+
     gdo.separate(a_separate);
     gdo.force(a_force);
-    gdo.cxx(a_cxx);
     gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 
     return 0;

@@ -60,7 +60,7 @@ private:
     std::string m_typedefs;
     std::string m_name_upper, m_name_lower;
     std::string m_guard;
-    bool m_cxx, m_force, m_separate;
+    bool m_cxx, m_minimal, m_force, m_separate;
 
     bool tokenize(const std::string &ifile);
     bool tokenize_function(const std::string &s);
@@ -86,7 +86,7 @@ public:
     /* c'tor */
     gendlopen()
     {
-        m_cxx = m_force = m_separate = false;
+        m_cxx = m_minimal = m_force = m_separate = false;
     }
 
     /* d'tor */
@@ -106,6 +106,7 @@ public:
     void separate(bool b) { m_separate = b; }
     void force(bool b) { m_force = b; }
     void cxx(bool b) { m_cxx = b; }
+    void minimal(bool b) { m_minimal = b; }
 
     /* generate output */
     void generate(const std::string &ifile, const std::string &ofile, const std::string &name);

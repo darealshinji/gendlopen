@@ -119,6 +119,11 @@ void gendlopen::generate(
     auto header_data = m_cxx ? template_cxx_header_data : template_c_header_data;
     auto body_data = m_cxx ? template_cxx_body_data : template_c_body_data;
 
+    if (m_minimal) {
+        header_data = template_minimal_header_data;
+        body_data = "";
+    }
+
     if (use_stdout) {
         /* STDOUT */
         put_header_guards<std::ostream>(std::cout, header_data, body_data, license_data);
