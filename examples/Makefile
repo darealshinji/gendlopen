@@ -61,12 +61,12 @@ clean:
 
 run_tests: $(BINS)
 	@for f in $^; do \
-		echo "./$$f"; ./$$f; echo ""; \
+		echo "./$$f"; ./$$f; echo "return value: $$?"; echo ""; \
 	done
 
 run_tests2: $(BINS2)
 	@for f in $^; do \
-		echo "./$$f"; ./$$f; echo ""; \
+		echo "./$$f"; ./$$f; echo "return value: $$?"; echo ""; \
 	done
 
 

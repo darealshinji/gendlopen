@@ -97,6 +97,20 @@ GDO_LINKAGE bool gdo_load_lib()
 
 
 /***************************************************************************/
+/* load default library with default flags and load the symbols */
+/***************************************************************************/
+#ifdef GDO_DEFAULT_LIB
+GDO_LINKAGE bool gdo_load_lib_and_symbols()
+{
+    return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&
+        gdo_load_symbols());
+}
+#endif
+/***************************************************************************/
+
+
+
+/***************************************************************************/
 /* load library by filename with default flags */
 /***************************************************************************/
 GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)

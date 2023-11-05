@@ -15,6 +15,7 @@ Otherwise `gdo_char_t` will become `char`.
 **************************
 
 bool               gdo_load_lib ();
+bool               gdo_load_lib_and_symbols ();
 bool               gdo_load_lib_name (const gdo_char_t *filename);
 bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
 bool               gdo_load_symbols ();
@@ -28,6 +29,11 @@ bool gdo_load_lib ();
 
     Load the library specified by the macro GDO_DEFAULT_LIB using default flags.
     This function is not available if GDO_DEFAULT_LIB was not defined.
+
+
+bool gdo_load_lib_and_symbols ();
+
+    Calls gdo_load_lib() and gdo_load_symbols().
 
 
 bool gdo_load_lib_name (const gdo_char_t *filename);
@@ -160,6 +166,7 @@ typedef char gdo_char_t;
 
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib();
+GDO_LINKAGE bool gdo_load_lib_and_symbols();
 #endif
 GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_LINKAGE bool gdo_load_symbols();

@@ -77,33 +77,33 @@ int indicator(const char *appID, const char *icon, void (*callback)())
   return 0;
 }
 
-static void hello_cb() {
-  printf("Hello World!\n");
+static void callback() {
+  printf("callback!\n");
 }
 
 int main()
 {
 #ifdef USE_DLOPEN
   /* libappindicator */
-  if (!xappindicator_load_lib() || !xappindicator_load_symbols()) {
+  if (!xappindicator_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xappindicator_last_error());
     return 1;
   }
 
   /* libgobject */
-  if (!xgobject_load_lib() || !xgobject_load_symbols()) {
+  if (!xgobject_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xgobject_last_error());
     return 1;
   }
 
   /* libgtk */
-  if (!xgtk_load_lib() || !xgtk_load_symbols()) {
+  if (!xgtk_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xgtk_last_error());
     return 1;
   }
 #endif /* USE_DLOPEN */
 
-  return indicator(NULL, NULL, hello_cb);
+  return indicator(NULL, NULL, callback);
 }
 
 

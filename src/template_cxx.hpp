@@ -4,18 +4,17 @@
 /*           quick overview           */
 /**************************************/
 
-
-/* class */
-class gdo::dl;
-
+/* gdo::dl() */
+namespace gdo {
+class dl {
 
 /*** constructors ***/
 
     /* empty c'tor */
-    gdo::dl();
+    dl();
 
     /* set filename, flags and whether to use a new namespace */
-    gdo::dl(const char *filename, int flags=default_flags, bool new_namespace=false);
+    dl(const char *filename, int flags=default_flags, bool new_namespace=false);
 
 
 /*** constants ***/
@@ -48,6 +47,9 @@ class gdo::dl;
     bool load(const WCHAR *filename, int flags=default_flags);
 #endif
 
+    /* load library and symbols */
+    bool load_lib_and_symbols();
+
     /* check if library was successfully loaded */
     bool lib_loaded() const;
 
@@ -77,6 +79,9 @@ class gdo::dl;
 #ifdef GDO_WINAPI
     std::wstring error_w();
 #endif
+
+}; /* class dl */
+} /* namespace gdo */
 
 /***************************************/
 
@@ -352,6 +357,13 @@ public:
     bool load()
     {
         return load(m_filename, m_flags, m_new_namespace);
+    }
+
+
+    /* load library and symbols */
+    bool load_lib_and_symbols()
+    {
+        return (load(m_filename, m_flags, m_new_namespace) && load_symbols());
     }
 
 

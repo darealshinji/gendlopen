@@ -43,13 +43,13 @@ int main(int, char **argv)
 {
 #ifdef USE_DLOPEN
   /* libnotify */
-  if (!xnotify_load_lib() || !xnotify_load_symbols()) {
+  if (!xnotify_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xnotify_last_error());
     return 1;
   }
 
   /* libgobject */
-  if (!xgobject_load_lib() || !xgobject_load_symbols()) {
+  if (!xgobject_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xgobject_last_error());
     return 1;
   }
