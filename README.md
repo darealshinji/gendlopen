@@ -16,7 +16,7 @@ Limitations:
  * it's not a code analysis tool, so make sure the input is correct
  * function pointers must be typedef'd
  * parameter names must be included
- * auto-loading only works on functions
+ * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
  * C++11 is the minimum requirement for the generated C++ files
  * C++23 is the minimum requirement to compile the tool
 
@@ -71,7 +71,7 @@ Or in C++ using the `gdo::dl` class:
     /* load library; resources are freed by the class d'tor */
     gdo::dl loader("foo.so");
 
-    if (!loader.load() || !loader.load_symbols()) {
+    if (!loader.load_lib_and_symbols()) {
         std::cerr << loader.error() << std::endl;
         return 1;
     }

@@ -441,7 +441,7 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin()
 
 GDO_LINKAGE void _gdo_quick_load(const char *function, const char *symbol)
 {
-    if (gdo_load_lib() && gdo_load_symbols()) {
+    if (gdo_load_lib_and_symbols()) {
         return;
     }
 
@@ -472,7 +472,6 @@ GDO_LINKAGE void _gdo_quick_load(const char *function, const char *symbol)
         _gdo_free_lib();
     }
 
-    //_Exit(1);
     exit(1);
 }
 
