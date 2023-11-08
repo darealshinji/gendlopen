@@ -46,7 +46,7 @@ inline static void strip_spaces(std::string &in)
 
 /* compare s with a list of very basic types and keywords
  * to guess if it could be a parameter name */
-static bool is_parameter_name(const std::string &s)
+static bool is_keyword(const std::string &s)
 {
     const char *list[] = {
         "*",
@@ -57,16 +57,17 @@ static bool is_parameter_name(const std::string &s)
         "const", "volatile",
         "struct",
         "void",
+        "extern",
         NULL
     };
 
     for (const char **p = list; *p != NULL; p++) {
         if (strcasecmp(s.c_str(), *p) == 0) {
-            return false;
+            return true;
         }
     }
 
-    return true;
+    return false;
 }
 
 /* extract argument names from args list */
@@ -95,7 +96,7 @@ static bool get_argument_names(gendlopen::proto_t &proto)
             continue;
         }
 
-        if (arg.size() < 2 || !is_parameter_name(arg.back())) {
+        if (arg.size() < 2 || is_keyword(arg.back())) {
             std::cerr << "error: a parameter name is missing: "
                 << proto.symbol << '(' << proto.args << ");" << std::endl;
             return false;
@@ -222,6 +223,7 @@ bool gendlopen::tokenize_function(const std::string &s)
         return false;
     }
 
+    /* format args */
     if (proto.args.empty()) {
         proto.args = "void";
     } else {
@@ -248,6 +250,11 @@ bool gendlopen::tokenize_object(const std::string &s)
 
     obj_t obj = { m[1], m[2] };
     strip_spaces(obj.type);
+
+    /* remove "extern" keyword */
+    if (obj.type.starts_with("extern ")) {
+        obj.type.erase(0, 7);
+    }
 
     m_objects.push_back(obj);
 

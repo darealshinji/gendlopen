@@ -15,7 +15,7 @@ About the input file format:
 helloworld *helloworld_init(  );
 
 /* function pointer */
-helloworld_cb_t helloworld_callback;
+extern helloworld_cb_t helloworld_callback;
 
 /* say hello */
 void helloworld_hello(helloworld *hw);
