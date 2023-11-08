@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -280,7 +281,27 @@ bool gendlopen::tokenize(const std::string &ifile)
 
     /* nothing found? */
     if (m_prototypes.size() == 0 && m_objects.size() == 0) {
-        std::cerr << "error: no function or object prototypes found in file:" << ifile << std::endl;
+        std::cerr << "error: no function or object prototypes found in file: " << ifile << std::endl;
+        return false;
+    }
+
+    /* check for duplicates */
+    std::vector<std::string> list;
+
+    for (const auto &s : m_prototypes) {
+        list.push_back(s.symbol);
+    }
+
+    for (const auto &s : m_objects) {
+        list.push_back(s.symbol);
+    }
+
+    std::sort(list.begin(), list.end());
+    auto it = std::ranges::adjacent_find(list);
+
+    if (it != list.end()) {
+        std::cerr << "error: multiple definitions of symbol `" << *it
+            << "' found in file: " << ifile << std::endl;
         return false;
     }
 

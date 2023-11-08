@@ -8,3 +8,6 @@ NotifyNotification *notify_notification_new                  (const char        
                                                               const char         *icon);
 gboolean            notify_notification_show                  (NotifyNotification *notification,
                                                                GError            **error);
+
+/* uncomment to test if gendlopen will find duplicate symbol names */
+//int notify_uninit;
