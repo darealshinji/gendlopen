@@ -22,15 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifdef _WIN32
-    #ifdef _MSC_VER
-        #define _CRT_SECURE_NO_WARNINGS
-    #endif
-    #include <direct.h>
+#ifdef _MSC_VER
+# define _CRT_SECURE_NO_WARNINGS
+# define _CRT_NONSTDC_NO_WARNINGS
+# include <direct.h>
 #else
-    #include <unistd.h>
+# include <unistd.h>
 #endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,6 +94,8 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    fprintf(fp, "%s\n",   "#ifndef _TEMPLATE_H_");
+    fprintf(fp, "%s\n\n", "#define _TEMPLATE_H_");
     hexdump("license.h",          "license_data",                 fp);
     hexdump("template_common.h",  "template_common_header_data",  fp);
     hexdump("template_c.h",       "template_c_header_data",       fp);
@@ -103,6 +103,7 @@ int main(int argc, char **argv)
     hexdump("template_cxx.hpp",   "template_cxx_header_data",     fp);
     hexdump("template_cxx.cpp",   "template_cxx_body_data",       fp);
     hexdump("template_minimal.h", "template_minimal_header_data", fp);
+    fprintf(fp, "%s\n", "#endif /* _TEMPLATE_H_ */");
 
     //printf("data written to `%s'\n", out);
     fclose(fp);

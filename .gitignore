@@ -4,6 +4,7 @@ build/
 # generated headers
 examples/example_*.h
 examples/example_*.hpp
+template.h
 
 # executables
 examples/example_1
@@ -11,6 +12,8 @@ examples/example_autoload
 examples/example_auto_free
 examples/example_cxx
 examples/example_cxx_autoload
+gen_template_h
+gendlopen
 
 # binary files
 *.o
@@ -22,6 +25,7 @@ examples/example_cxx_autoload
 *.dylib
 *.lib
 *.a
+a.out
 
 # backups
 *~
