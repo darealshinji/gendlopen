@@ -72,11 +72,11 @@ run_tests2: $(BINS2)
 
 $(BINS): $(LIBX)
 
-libhelloworld.so: libhelloworld.so.0
+libhelloworld.so: $(LIB)
 	ln -fs $< $@
 
-libhelloworld.dll.a: libhelloworld-0.dll
-libhelloworld.lib: libhelloworld-0.dll
+libhelloworld.dll.a: $(LIB)
+libhelloworld.lib: $(LIB)
 
 $(LIB): helloworld.c
 	$(CC) $(SOFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDSOFLAGS)

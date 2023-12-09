@@ -22,7 +22,7 @@ bool               gdo_load_symbols ();
 bool               gdo_free_lib ();
 bool               gdo_lib_is_loaded ();
 const gdo_char_t * gdo_last_error ();
-const gdo_char_t * gdo_lib_origin ();
+gdo_char_t *       gdo_lib_origin ();
 
 
 bool gdo_load_lib ();
@@ -74,9 +74,9 @@ const gdo_char_t *gdo_last_error();
     This function doesn't return a null pointer.
 
 
-const gdo_char_t *gdo_lib_origin();
+gdo_char_t *gdo_lib_origin();
 
-    Return the full library path.
+    Return the full library path. The returned string must be deallocated with free().
     On error or if no library was loaded NULL is returned.
 
 
@@ -173,7 +173,7 @@ GDO_LINKAGE bool gdo_load_symbols();
 GDO_LINKAGE bool gdo_free_lib();
 GDO_LINKAGE bool gdo_lib_is_loaded();
 GDO_LINKAGE const gdo_char_t *gdo_last_error();
-GDO_LINKAGE const gdo_char_t *gdo_lib_origin();
+GDO_LINKAGE gdo_char_t *gdo_lib_origin();
 
 
 GDO_TYPEDEFS
@@ -192,11 +192,11 @@ GDO_TYPEDEFS
 
 #else
 
-#define GDO_SYMBOL _gdo_GDO_SYMBOL_ptr_
+#define GDO_SYMBOL _gdo_handle.GDO_SYMBOL_ptr_
 
 #endif
 
-#define GDO_OBJ_SYMBOL *_gdo_GDO_OBJ_SYMBOL_ptr_
+#define GDO_OBJ_SYMBOL *_gdo_handle.GDO_OBJ_SYMBOL_ptr_
 /****************************************************************************/
 
 #ifdef __cplusplus

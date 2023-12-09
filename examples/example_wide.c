@@ -34,8 +34,12 @@ int wmain()
     helloworld_release(hw);
 
     /* get the full library path */
-    const wchar_t *wcs = gdo_lib_origin();
-    if (wcs) wprintf(L"library loaded at: %ls\n", wcs);
+    wchar_t *wcs = gdo_lib_origin();
+
+    if (wcs) {
+        wprintf(L"library loaded at: %ls\n", wcs);
+        free(wcs);
+    }
 
     /* free library */
     gdo_free_lib();
