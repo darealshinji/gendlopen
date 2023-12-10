@@ -27,7 +27,7 @@ CFLAGS    := -Wall -O2 -DWIN32_LEAN_AND_MEAN
 CXXFLAGS  := $(CFLAGS) -std=c++11
 MUNICODE  := -municode
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
-LDFLAGS   := -s
+LDFLAGS   := -static -s
 else
 CFLAGS    := -Wall -Wextra -O3 -Wno-deprecated-declarations -D_GNU_SOURCE
 CXXFLAGS  := $(CFLAGS) -std=c++11

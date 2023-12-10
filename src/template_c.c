@@ -350,8 +350,13 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error()
                 NULL);
 
     if (msg) {
-        _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,
-            _T("%ls: %ls"), _gdo_handle.buf, msg);
+        if (_gdo_handle.buf[0] != 0) {
+            _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,
+                _T("%s: %s"), _gdo_handle.buf, msg);
+        } else {
+            _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,
+                _T("%s"), msg);
+        }
         LocalFree(msg);
     } else {
         _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,

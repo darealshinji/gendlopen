@@ -44,7 +44,7 @@ class dl {
 
     /* wide character variants for win32 */
 #ifdef GDO_WINAPI
-    bool load(const WCHAR *filename, int flags=default_flags);
+    bool load(const wchar_t *filename, int flags=default_flags);
 #endif
 
     /* load library and symbols */
@@ -254,6 +254,17 @@ private:
     }
 
 
+    /* free library handle */
+    bool free_lib()
+    {
+#ifdef GDO_WINAPI
+        return (::FreeLibrary(m_handle) == TRUE);
+#else
+        return (::dlclose(m_handle) == 0);
+#endif
+    }
+
+
     /* load symbol address */
     template<typename T>
     bool sym(T &ptr, const char *symbol)
@@ -282,15 +293,79 @@ private:
     }
 
 
-    /* free library handle */
-    bool free_lib()
-    {
 #ifdef GDO_WINAPI
-        return (::FreeLibrary(m_handle) == TRUE);
-#else
-        return (::dlclose(m_handle) == 0);
-#endif
+    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, size_t len) {
+        return ::GetModuleFileNameW(handle, buf, len);
     }
+
+    inline DWORD get_module_filename(HMODULE handle, char *buf, size_t len) {
+        return ::GetModuleFileNameA(handle, buf, len);
+    }
+
+
+    /* get the module's full path using GetModuleFileName() but
+     * without relying on a fixed size buffer */
+    template<typename T>
+    T *get_origin_from_module_handle()
+    {
+        size_t len = 1024;
+        T *buf = reinterpret_cast<T*>(malloc(len * sizeof(T)));
+
+        if (get_module_filename(m_handle, buf, len-1) == 0) {
+            save_error();
+            ::free(buf);
+            return NULL;
+        }
+
+        while (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            len += 1024;
+            buf = reinterpret_cast<T*>(realloc(buf, len * sizeof(T)));
+
+            if (get_module_filename(m_handle, buf, len-1) == 0) {
+                save_error();
+                ::free(buf);
+                return NULL;
+            }
+        }
+
+        return buf;
+    }
+
+
+    inline DWORD format_message(DWORD dwFlags, LPWSTR lpBuffer)
+    {
+        return ::FormatMessageW(dwFlags, NULL, m_last_error, 0, lpBuffer, 0, NULL);
+    }
+
+    inline DWORD format_message(DWORD dwFlags, LPSTR lpBuffer)
+    {
+        return ::FormatMessageA(dwFlags, NULL, m_last_error, 0, lpBuffer, 0, NULL);
+    }
+
+
+    /* return a formatted error message */
+    template<typename T1, typename T2>
+    T1 format_last_error_message()
+    {
+        T1 str;
+        T2 *msg = NULL;
+
+        const DWORD dwFlags =
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS |
+            FORMAT_MESSAGE_MAX_WIDTH_MASK;
+
+        format_message(dwFlags, reinterpret_cast<T2 *>(&msg));
+
+        if (msg) {
+            str = msg;
+            ::LocalFree(msg);
+        }
+
+        return str;
+    }
+#endif //GDO_WINAPI
 
 
 public:
@@ -336,7 +411,7 @@ public:
 
 #ifdef GDO_WINAPI
     /* load library (wide characters version) */
-    bool load(const WCHAR *filename, int flags=default_flags)
+    bool load(const wchar_t *filename, int flags=default_flags)
     {
         clear_error();
 
@@ -456,12 +531,13 @@ public:
         }
 
 #ifdef GDO_WINAPI
-        char buf[32*1024] = {0};
+        char *buf = get_origin_from_module_handle<char>();
 
-        DWORD ret = ::GetModuleFileNameA(m_handle, reinterpret_cast<LPSTR>(&buf), sizeof(buf)-1);
-        save_error();
-
-        return (ret == 0) ? "" : buf;
+        if (buf) {
+            std::string s = buf;
+            ::free(buf);
+            return s;
+        }
 #else
         struct link_map *lm = NULL;
 
@@ -471,9 +547,9 @@ public:
         if (ret != -1 && lm->l_name) {
             return lm->l_name;
         }
+#endif //GDO_WINAPI
 
         return "";
-#endif //GDO_WINAPI
     }
 
 
@@ -481,17 +557,20 @@ public:
     /* get path of loaded library (wide characters version) */
     std::wstring origin_w()
     {
-        WCHAR buf[32*1024] = {0};
-
         if (!lib_loaded()) {
             set_error_invalid_handle();
             return L"";
         }
 
-        DWORD ret = ::GetModuleFileNameW(m_handle, reinterpret_cast<LPWSTR>(&buf), sizeof(buf)-1);
-        save_error();
+        wchar_t *buf = get_origin_from_module_handle<wchar_t>();
 
-        return (ret == 0) ? L"" : buf;
+        if (buf) {
+            std::wstring ws = buf;
+            ::free(buf);
+            return ws;
+        }
+
+        return L"";
     }
 #endif //GDO_WINAPI
 
@@ -500,26 +579,11 @@ public:
     std::string error()
     {
 #ifdef GDO_WINAPI
-        std::string buf;
-        char *msg = NULL;
-        const DWORD dwFlags =
-            FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_IGNORE_INSERTS |
-            FORMAT_MESSAGE_MAX_WIDTH_MASK;
+        std::string buf = format_last_error_message<std::string, char>();
 
-        const DWORD ret = ::FormatMessageA(dwFlags, NULL, m_last_error,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            reinterpret_cast<LPSTR>(&msg), 0, NULL);
-
-        if (ret == 0 || !msg) {
-            /* FormatMessageA failed */
+        if (buf.empty()) {
             buf = "Last saved error code: ";
             buf += std::to_string(m_last_error);
-            if (msg) ::LocalFree(msg);
-        } else if (msg) {
-            buf = msg;
-            ::LocalFree(msg);
         }
 
         return buf;
@@ -533,26 +597,11 @@ public:
     /* retrieve the last error (wide characters version) */
     std::wstring error_w()
     {
-        std::wstring buf;
-        WCHAR *msg = NULL;
-        const DWORD dwFlags =
-            FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_IGNORE_INSERTS |
-            FORMAT_MESSAGE_MAX_WIDTH_MASK;
+        std::wstring buf = format_last_error_message<std::wstring, wchar_t>();
 
-        const DWORD ret = ::FormatMessageW(dwFlags, NULL, m_last_error,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-            reinterpret_cast<LPWSTR>(&msg), 0, NULL);
-
-        if (ret == 0 || !msg) {
-            /* FormatMessageW failed */
+        if (buf.empty()) {
             buf = L"Last saved error code: ";
             buf += std::to_wstring(m_last_error);
-            if (msg) ::LocalFree(msg);
-        } else if (msg) {
-            buf = msg;
-            ::LocalFree(msg);
         }
 
         return buf;
@@ -615,7 +664,8 @@ public:
     void _autoload(const char *symbol)
     {
         if (!_al.load(GDO_DEFAULT_LIB)) {
-            std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n" + _al.error();
+            std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n"
+                + _al.error();
             dl::_print_error(msg.c_str());
             std::exit(1);
         } else if (!_al.load_symbols()) {
