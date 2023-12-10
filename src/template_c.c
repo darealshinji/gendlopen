@@ -23,13 +23,6 @@ GDO_LINKAGE void *_gdo_sym(const char *symbol, const gdo_char_t *msg, bool *b);
 
 
 
-/***************************************************************************/
-/* typedefs */
-/***************************************************************************/
-typedef GDO_TYPE (*_gdo_GDO_SYMBOL_t)(GDO_ARGS);
-/***************************************************************************/
-
-
 typedef struct {
 #ifdef GDO_WINAPI
     HMODULE handle;
@@ -43,10 +36,10 @@ typedef struct {
     gdo_char_t buf[4*1024];
 
     /* function pointers */
-    GDO_LINKAGE _gdo_GDO_SYMBOL_t GDO_SYMBOL_ptr_;
+    GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
 
     /* object pointers */
-    GDO_LINKAGE GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
+    GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
 
 } _gdo_handle_t;
 
@@ -278,7 +271,7 @@ GDO_LINKAGE bool gdo_load_symbols()
 
     /* load function pointer addresses */
 
-    _gdo_handle.GDO_SYMBOL_ptr_ = (_gdo_GDO_SYMBOL_t)@
+    _gdo_handle.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
         _gdo_sym("GDO_SYMBOL", _T( "GDO_SYMBOL" ), &b);@
     if (!b) return false;@
 
@@ -339,12 +332,6 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error()
         return _gdo_handle.buf_formatted;
     }
 
-#ifdef _UNICODE
-    const WCHAR *fmt = L"%ls: %ls";
-#else
-    const char *fmt = "%s: %s";
-#endif
-
     gdo_char_t *msg = NULL;
 
     const DWORD dwFlags =
@@ -354,25 +341,21 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error()
         FORMAT_MESSAGE_MAX_WIDTH_MASK;
 
     /* format the message */
-    DWORD ret = FormatMessage(dwFlags, NULL, _gdo_handle.last_errno,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR)&msg, 0, NULL);
+    FormatMessage(dwFlags,
+                NULL,
+                _gdo_handle.last_errno,
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPTSTR)&msg,
+                0,
+                NULL);
 
-    if (ret == 0 || !msg) {
-        /* FormatMessage failed */
+    if (msg) {
+        _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,
+            _T("%ls: %ls"), _gdo_handle.buf, msg);
+        LocalFree(msg);
+    } else {
         _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,
             _T("Last saved error code: %d"), (int)_gdo_handle.last_errno);
-
-        if (msg) LocalFree(msg);
-    } else if (msg) {
-        if (_gdo_handle.buf[0] == 0) {
-            _tcsncpy(_gdo_handle.buf_formatted, msg, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1);
-        } else {
-            _sntprintf(_gdo_handle.buf_formatted, _GDO_ARRSZ(_gdo_handle.buf_formatted)-1,
-                fmt, _gdo_handle.buf, msg);
-        }
-
-        LocalFree(msg);
     }
 
     return _gdo_handle.buf_formatted;
