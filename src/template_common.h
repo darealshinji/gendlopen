@@ -21,16 +21,28 @@
 
 /* helper macros for libray file extension and names */
 
-/* Windows;
- * Make sure to exclude winegcc by checking for `__ELF__`! */
-#if defined(_WIN32) && !defined(__ELF__)
-    #define GDO_LIBEXT          "dll"
-    #define GDO_LIB(NAME, API)  "lib" #NAME "-" #API ".dll"
+/* Windows */
+#if defined(_WIN32)
+    /* ANSI */
+    #define GDO_LIBEXTA             "dll"
+    #define GDO_LIBA(NAME, API)     "lib" #NAME "-" #API ".dll"
+
+    /* WCHAR */
+    #define GDO_LIBEXTW             _T("dll")
+    #define GDO_LIBW(NAME, API)     _T("lib" #NAME "-" #API ".dll")
+
+    #ifdef _UNICODE
+        #define GDO_LIBEXT          GDO_LIBEXTW
+        #define GDO_LIB(NAME, API)  GDO_LIBW(NAME, API)
+    #else
+        #define GDO_LIBEXT          GDO_LIBEXTA
+        #define GDO_LIB(NAME, API)  GDO_LIBA(NAME, API)
+    #endif
 
 /* Darwin (macOS, iOS) */
 #elif defined(__APPLE__)
-    #define GDO_LIBEXT          "dylib"
-    #define GDO_LIB(NAME, API)  "lib" #NAME "." #API ".dylib"
+    #define GDO_LIBEXT              "dylib"
+    #define GDO_LIB(NAME, API)      "lib" #NAME "." #API ".dylib"
 
 /* IBM AIX;
  * After looking up some manuals it seems tht shared object files (.o)
@@ -39,13 +51,13 @@
  * Loading .so files directly is apparently possible too
  * but by default .a files are treated as shared libraries. */
 #elif defined(_AIX)
-    #define GDO_LIBEXT          "a"
-    #define GDO_LIB(NAME, API)  "lib" #NAME ".a"
+    #define GDO_LIBEXT              "a"
+    #define GDO_LIB(NAME, API)      "lib" #NAME ".a"
 
 /* ELF systems */
 #else
-    #define GDO_LIBEXT          "so"
-    #define GDO_LIB(NAME, API)  "lib" #NAME ".so." #API
+    #define GDO_LIBEXT              "so"
+    #define GDO_LIB(NAME, API)      "lib" #NAME ".so." #API
 #endif
 
 

@@ -5,7 +5,7 @@
 ******************
 
 If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT defined
-`gdo_char_t` will become `WCHAR`.
+`gdo_char_t` will become `wchar_t`.
 
 Otherwise `gdo_char_t` will become `char`.
 
@@ -156,9 +156,9 @@ GDO_COMMON
 #endif
 
 
-/* char / WCHAR */
+/* char / wchar_t */
 #if defined(GDO_WINAPI) && defined(_UNICODE)
-typedef WCHAR gdo_char_t;
+typedef wchar_t gdo_char_t;
 #else
 typedef char gdo_char_t;
 #endif
@@ -192,11 +192,11 @@ GDO_TYPEDEFS
 
 #else
 
-#define GDO_SYMBOL _gdo_handle.GDO_SYMBOL_ptr_
+#define GDO_SYMBOL _gdo_hndl.GDO_SYMBOL_ptr_
 
 #endif
 
-#define GDO_OBJ_SYMBOL *_gdo_handle.GDO_OBJ_SYMBOL_ptr_
+#define GDO_OBJ_SYMBOL *_gdo_hndl.GDO_OBJ_SYMBOL_ptr_
 /****************************************************************************/
 
 #ifdef __cplusplus

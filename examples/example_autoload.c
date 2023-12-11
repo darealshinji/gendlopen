@@ -1,8 +1,15 @@
+#define _UNICODE 1
+#define UNICODE 1
+
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions;
  * the library handle is automatically released on exit */
 #define GDO_USE_WRAPPER 1
+
+/* show error messages for errors that occurred during
+ * auto-loading in a message box window */
+#define GDO_USE_MESSAGE_BOX 1
 
 /* define a default library to load; this is required */
 #define GDO_DEFAULT_LIB GDO_LIB(helloworld,0)
