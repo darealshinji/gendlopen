@@ -116,7 +116,9 @@ std::string gendlopen::parse(const char *data)
         }
 
         /* nothing to replace */
-        if (line.find("GDO_") == std::string::npos) {
+        if (line.find("GDO_") == std::string::npos &&
+            line.find('$') == std::string::npos)
+        {
             buf += line;
             line.clear();
             continue;
@@ -196,22 +198,20 @@ std::string gendlopen::parse(const char *data)
         line.clear();
     }
 
-    /* replace the rest if a different prefix was set */
-    if (m_name_upper != "GDO_") {
-        replace_string("GDO_", m_name_upper, buf);
-        replace_string("gdo_", m_name_lower, buf);
+    /* replace the rest */
+    replace_string("_$", m_name_upper, buf);
+    replace_string("$", m_name_lower, buf);
 
-        /* C++ namespace */
-        if (m_cxx) {
-            std::string s = "namespace " + m_name_lower;
-            s.pop_back(); /* remove trailing underscore */
-            replace_string("namespace gdo", s, buf);
+    /* C++ namespace */
+    if (m_cxx) {
+        std::string s = "namespace " + m_name_lower;
+        s.pop_back(); /* remove trailing underscore */
+        replace_string("namespace gdo", s, buf);
 
-            s = m_name_lower;
-            s.pop_back(); /* remove trailing underscore */
-            s += "::";
-            replace_string("gdo::", s, buf);
-        }
+        s = m_name_lower;
+        s.pop_back(); /* remove trailing underscore */
+        s += "::";
+        replace_string("gdo::", s, buf);
     }
 
     buf += '\n';

@@ -1,9 +1,9 @@
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
-    #define GDO_WINAPI
+#if defined(_WIN32) && !defined(_$USE_DLOPEN)
+    #define _$WINAPI
 #endif
 
 
-#ifdef GDO_WINAPI
+#ifdef _$WINAPI
     #include <windows.h>
     #include <tchar.h>
 #else
@@ -24,25 +24,25 @@
 /* Windows */
 #if defined(_WIN32)
     /* ANSI */
-    #define GDO_LIBEXTA             "dll"
-    #define GDO_LIBA(NAME, API)     "lib" #NAME "-" #API ".dll"
+    #define _$LIBEXTA             "dll"
+    #define _$LIBA(NAME, API)     "lib" #NAME "-" #API ".dll"
 
     /* WCHAR */
-    #define GDO_LIBEXTW             _T("dll")
-    #define GDO_LIBW(NAME, API)     _T("lib" #NAME "-" #API ".dll")
+    #define _$LIBEXTW             _T("dll")
+    #define _$LIBW(NAME, API)     _T("lib" #NAME "-" #API ".dll")
 
     #ifdef _UNICODE
-        #define GDO_LIBEXT          GDO_LIBEXTW
-        #define GDO_LIB(NAME, API)  GDO_LIBW(NAME, API)
+        #define _$LIBEXT          _$LIBEXTW
+        #define _$LIB(NAME, API)  _$LIBW(NAME, API)
     #else
-        #define GDO_LIBEXT          GDO_LIBEXTA
-        #define GDO_LIB(NAME, API)  GDO_LIBA(NAME, API)
+        #define _$LIBEXT          _$LIBEXTA
+        #define _$LIB(NAME, API)  _$LIBA(NAME, API)
     #endif
 
 /* Darwin (macOS, iOS) */
 #elif defined(__APPLE__)
-    #define GDO_LIBEXT              "dylib"
-    #define GDO_LIB(NAME, API)      "lib" #NAME "." #API ".dylib"
+    #define _$LIBEXT              "dylib"
+    #define _$LIB(NAME, API)      "lib" #NAME "." #API ".dylib"
 
 /* IBM AIX;
  * After looking up some manuals it seems tht shared object files (.o)
@@ -51,13 +51,13 @@
  * Loading .so files directly is apparently possible too
  * but by default .a files are treated as shared libraries. */
 #elif defined(_AIX)
-    #define GDO_LIBEXT              "a"
-    #define GDO_LIB(NAME, API)      "lib" #NAME ".a"
+    #define _$LIBEXT              "a"
+    #define _$LIB(NAME, API)      "lib" #NAME ".a"
 
 /* ELF systems */
 #else
-    #define GDO_LIBEXT              "so"
-    #define GDO_LIB(NAME, API)      "lib" #NAME ".so." #API
+    #define _$LIBEXT              "so"
+    #define _$LIB(NAME, API)      "lib" #NAME ".so." #API
 #endif
 
 

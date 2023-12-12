@@ -12,6 +12,8 @@ examples/example_autoload
 examples/example_auto_free
 examples/example_cxx
 examples/example_cxx_autoload
+examples/appindicator
+examples/notify
 gen_template_h
 gendlopen
 

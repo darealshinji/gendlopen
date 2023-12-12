@@ -1,80 +1,80 @@
 /***
 
 ******************
-*   gdo_char_t   *
+*   $char_t   *
 ******************
 
-If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT defined
-`gdo_char_t` will become `wchar_t`.
+If compiling for win32 and `_UNICODE` is defined and `_$USE_DLOPEN` is NOT defined
+`$char_t` will become `wchar_t`.
 
-Otherwise `gdo_char_t` will become `char`.
+Otherwise `$char_t` will become `char`.
 
 
 **************************
 *   Functions provided   *
 **************************
 
-bool               gdo_load_lib ();
-bool               gdo_load_lib_and_symbols ();
-bool               gdo_load_lib_name (const gdo_char_t *filename);
-bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
-bool               gdo_load_symbols ();
-bool               gdo_free_lib ();
-bool               gdo_lib_is_loaded ();
-const gdo_char_t * gdo_last_error ();
-gdo_char_t *       gdo_lib_origin ();
+bool               $load_lib ();
+bool               $load_lib_and_symbols ();
+bool               $load_lib_name (const $char_t *filename);
+bool               $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
+bool               $load_symbols ();
+bool               $free_lib ();
+bool               $lib_is_loaded ();
+const $char_t * $last_error ();
+$char_t *       $lib_origin ();
 
 
-bool gdo_load_lib ();
+bool $load_lib ();
 
-    Load the library specified by the macro GDO_DEFAULT_LIB using default flags.
-    This function is not available if GDO_DEFAULT_LIB was not defined.
-
-
-bool gdo_load_lib_and_symbols ();
-
-    Calls gdo_load_lib() and gdo_load_symbols().
+    Load the library specified by the macro _$DEFAULT_LIB using default flags.
+    This function is not available if _$DEFAULT_LIB was not defined.
 
 
-bool gdo_load_lib_name (const gdo_char_t *filename);
+bool $load_lib_and_symbols ();
+
+    Calls $load_lib() and $load_symbols().
+
+
+bool $load_lib_name (const $char_t *filename);
 
     Load the library specified by `filename' using default flags.
 
 
-bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
+bool $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
 
     Load the library; `filename' and `flags' are passed to the underlying library
     loading functions.
 
     If `new_namespace' is true the library will be loaded into a new namespace.
     This is done using dlmopen() with the LM_ID_NEWLM argument.
-    If the win32 API is used or the macro GDO_NO_DLMOPEN is defined this argument
+    If the win32 API is used or the macro _$NO_DLMOPEN is defined this argument
     is ignored.
 
 
-bool gdo_load_symbols();
+bool $load_symbols();
 
     Load the symbols. This function can safely be called multiple times.
 
 
-bool gdo_free_lib();
+bool $free_lib();
 
     Free/release library handle.
 
 
-bool gdo_lib_is_loaded();
+bool $lib_is_loaded();
 
     Returns true if the library was successfully loaded.
 
 
-const gdo_char_t *gdo_last_error();
+const $char_t *$last_error();
 
     Returns a pointer to the error message buffer with the last saved error string.
     This buffer can be empty and is in fact cleared when no error occured in a function.
     This function doesn't return a null pointer.
 
 
-gdo_char_t *gdo_lib_origin();
+$char_t *$lib_origin();
 
     Return the full library path. The returned string must be deallocated with free().
     On error or if no library was loaded NULL is returned.
@@ -85,31 +85,31 @@ gdo_char_t *gdo_lib_origin();
 * The following options may be set through macros: *
 ****************************************************
 
-GDO_USE_DLOPEN
+_$USE_DLOPEN
     If defined use `dlopen()' API on win32 targets.
     On other targets `dlopen()' is always used.
 
-GDO_NO_DLMOPEN
+_$NO_DLMOPEN
     If defined `dlmopen()` will never be used.
-    See the function `gdo_load_lib_args()` for details.
+    See the function `$load_lib_args()` for details.
 
-GDO_STATIC
+_$STATIC
     If defined static linkage (the `static' keyword) is used for all
     functions.
 
-GDO_DEFAULT_LIB
+_$DEFAULT_LIB
     Set a default library name through this macro (including double quote
-    marks). This macro must be defined if you want to set GDO_USE_WRAPPER
-    or if you want to use the `gdo_load_lib()' function.
+    marks). This macro must be defined if you want to set _$USE_WRAPPER
+    or if you want to use the `$load_lib()' function.
 
-GDO_USE_WRAPPER
+_$USE_WRAPPER
     Define this macro if you want to use auto-loading wrapper functions.
     This means you don't need to explicitly call library load functions.
-    It requires GDO_DEFAULT_LIB to be defined.
+    It requires _$DEFAULT_LIB to be defined.
     If an error occures during loading these functions throw an error message
     and call `exit(1)'!
 
-GDO_ATEXIT
+_$ATEXIT
     If defined the library handle will automatically be released on program exit.
 
 
@@ -118,15 +118,15 @@ GDO_ATEXIT
 * Helper macros *
 *****************
 
-GDO_DEFAULT_FLAGS
+_$DEFAULT_FLAGS
     Default flags for `dlopen()' or `LoadLibraryEx()'
 
-GDO_LIB(NAME, API)
+_$LIB(NAME, API)
     Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
     including double quote marks.
-    GDO_LIB(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
+    _$LIB(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
 
-GDO_LIBEXT
+_$LIBEXT
     Shared library file extension without dot ("dll", "dylib" or "so").
     Useful i.e. on plugins.
 
@@ -141,39 +141,39 @@ GDO_COMMON
 
 
 /* default flags */
-#ifdef GDO_WINAPI
-    #define GDO_DEFAULT_FLAGS  0
+#ifdef _$WINAPI
+    #define _$DEFAULT_FLAGS  0
 #else
-    #define GDO_DEFAULT_FLAGS  RTLD_LAZY
+    #define _$DEFAULT_FLAGS  RTLD_LAZY
 #endif
 
 
 /* static linkage */
-#ifdef GDO_STATIC
-    #define GDO_LINKAGE  static
+#ifdef _$STATIC
+    #define _$LINKAGE  static
 #else
-    #define GDO_LINKAGE  /**/
+    #define _$LINKAGE  /**/
 #endif
 
 
 /* char / wchar_t */
-#if defined(GDO_WINAPI) && defined(_UNICODE)
-typedef wchar_t gdo_char_t;
+#if defined(_$WINAPI) && defined(_UNICODE)
+typedef wchar_t $char_t;
 #else
-typedef char gdo_char_t;
+typedef char $char_t;
 #endif
 
 
-#ifdef GDO_DEFAULT_LIB
-GDO_LINKAGE bool gdo_load_lib();
-GDO_LINKAGE bool gdo_load_lib_and_symbols();
+#ifdef _$DEFAULT_LIB
+_$LINKAGE bool $load_lib();
+_$LINKAGE bool $load_lib_and_symbols();
 #endif
-GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
-GDO_LINKAGE bool gdo_load_symbols();
-GDO_LINKAGE bool gdo_free_lib();
-GDO_LINKAGE bool gdo_lib_is_loaded();
-GDO_LINKAGE const gdo_char_t *gdo_last_error();
-GDO_LINKAGE gdo_char_t *gdo_lib_origin();
+_$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_namespace);
+_$LINKAGE bool $load_symbols();
+_$LINKAGE bool $free_lib();
+_$LINKAGE bool $lib_is_loaded();
+_$LINKAGE const $char_t *$last_error();
+_$LINKAGE $char_t *$lib_origin();
 
 
 GDO_TYPEDEFS
@@ -182,21 +182,21 @@ GDO_TYPEDEFS
 /****************************************************************************/
 /* aliases */
 /****************************************************************************/
-#if defined(GDO_DEFAULT_LIB) && defined(GDO_USE_WRAPPER)
+#if defined(_$DEFAULT_LIB) && defined(_$USE_WRAPPER)
 
-#ifndef GDO_ATEXIT
-#define GDO_ATEXIT
+#ifndef _$ATEXIT
+#define _$ATEXIT
 #endif
 
-#define GDO_SYMBOL _gdo_wrap_GDO_SYMBOL
+#define GDO_SYMBOL $wrap_GDO_SYMBOL
 
 #else
 
-#define GDO_SYMBOL _gdo_hndl.GDO_SYMBOL_ptr_
+#define GDO_SYMBOL $hndl.GDO_SYMBOL_ptr_
 
 #endif
 
-#define GDO_OBJ_SYMBOL *_gdo_hndl.GDO_OBJ_SYMBOL_ptr_
+#define GDO_OBJ_SYMBOL *$hndl.GDO_OBJ_SYMBOL_ptr_
 /****************************************************************************/
 
 #ifdef __cplusplus
