@@ -1,3 +1,7 @@
+#if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)
+    #pragma comment(lib, "user32.lib")
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,8 +14,6 @@ extern "C" {
 #ifndef _T
     #define _T(x) x
 #endif
-
-#define _GDO_ARRSZ(x) (sizeof(x) / sizeof(*(x)))
 
 #ifdef GDO_ATEXIT
 GDO_LINKAGE void _gdo_call_free_lib();
@@ -27,6 +29,8 @@ GDO_LINKAGE void _gdo_clear_errbuf();
     GDO_LINKAGE void *_GDO_SYM(const char *symbol, bool *b);
 #endif
 
+#define _GDO_BUFLEN 4096
+
 
 
 typedef struct {
@@ -40,7 +44,7 @@ typedef struct {
 #endif
     bool call_free_lib_is_registered;
     bool all_symbols_loaded;
-    gdo_char_t buf[4*1024];
+    gdo_char_t buf[_GDO_BUFLEN];
 
     /* function pointers */
     GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
@@ -64,15 +68,15 @@ GDO_LINKAGE void _gdo_save_error(const gdo_char_t *msg)
     _gdo_hndl.last_errno = GetLastError();
 
     if (msg) {
-        _sntprintf(_gdo_hndl.buf, _GDO_ARRSZ(_gdo_hndl.buf)-1, _T("%s"), msg);
+        _sntprintf(_gdo_hndl.buf, _GDO_BUFLEN-1, _T("%s"), msg);
     }
 }
-#else //!GDO_WINAPI
+#else
 GDO_LINKAGE void _gdo_save_dl_error()
 {
     _gdo_clear_errbuf();
     const char *ptr = dlerror();
-    if (ptr) strncpy(_gdo_hndl.buf, ptr, sizeof(_gdo_hndl.buf)-1);
+    if (ptr) snprintf(_gdo_hndl.buf, _GDO_BUFLEN-1, "%s", ptr);
 }
 #endif //!GDO_WINAPI
 
@@ -264,10 +268,9 @@ GDO_LINKAGE bool gdo_load_symbols()
     if (!gdo_lib_is_loaded()) {
 #ifdef GDO_WINAPI
         _gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
-        _sntprintf(_gdo_hndl.buf, _GDO_ARRSZ(_gdo_hndl.buf)-1, _T("%s"),
-            _T("no library was loaded"));
+        _tcscpy(_gdo_hndl.buf, _T("no library was loaded"));
 #else
-        strncpy(_gdo_hndl.buf, "no library was loaded", sizeof(_gdo_hndl.buf)-1);
+        strcpy(_gdo_hndl.buf, "no library was loaded");
 #endif
         return false;
     }
@@ -321,7 +324,7 @@ GDO_LINKAGE void *_GDO_SYM(const char *symbol, bool *ret)
     if (p) {
         *ret = false;
         _gdo_clear_errbuf();
-        strncpy(_gdo_hndl.buf, p, sizeof(_gdo_hndl.buf)-1);
+        snprintf(_gdo_hndl.buf, _GDO_BUFLEN-1, "%s", p);
         _gdo_free_lib();
     } else {
         *ret = true;
@@ -347,7 +350,7 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error()
 
     _gdo_hndl.buf_formatted[0] = 0;
 
-    const size_t bufmax = _GDO_ARRSZ(_gdo_hndl.buf_formatted) - 1;
+    const size_t bufmax = (sizeof(_gdo_hndl.buf_formatted) / sizeof(gdo_char_t)) - 1;
     gdo_char_t *buf = NULL;
     gdo_char_t *msg = _gdo_hndl.buf;
     gdo_char_t *bufFmt = _gdo_hndl.buf_formatted;
@@ -401,8 +404,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin()
 
     if (!gdo_lib_is_loaded()) {
         _gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
-        _sntprintf(_gdo_hndl.buf, _GDO_ARRSZ(_gdo_hndl.buf)-1, _T("%s"),
-            _T("no library was loaded"));
+        _tcscpy(_gdo_hndl.buf, _T("no library was loaded"));
         return NULL;
     }
 
@@ -437,7 +439,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin()
     struct link_map *lm = NULL;
 
     if (!gdo_lib_is_loaded()) {
-        strncpy(_gdo_hndl.buf, "no library was loaded", sizeof(_gdo_hndl.buf)-1);
+        strcpy(_gdo_hndl.buf, "no library was loaded");
         return NULL;
     } else if (dlinfo(_gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         _gdo_save_dl_error();
