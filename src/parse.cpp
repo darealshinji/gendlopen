@@ -203,7 +203,7 @@ std::string gendlopen::parse(const char *data)
     replace_string("$", m_name_lower, buf);
 
     /* C++ namespace */
-    if (m_cxx) {
+    if (m_cxx && m_name_lower != "gdo_") {
         std::string s = "namespace " + m_name_lower;
         s.pop_back(); /* remove trailing underscore */
         replace_string("namespace gdo", s, buf);

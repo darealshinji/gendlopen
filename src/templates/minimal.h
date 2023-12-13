@@ -8,7 +8,7 @@
 #endif
 
 #if !defined(_$LINKAGE)
-#define _$LINKAGE  inline static
+#define _$LINKAGE  static
 #endif
 
 GDO_TYPEDEFS
@@ -18,7 +18,7 @@ GDO_TYPEDEFS
 /* typedefs */
 /***************************************************************************/
 #define _$DECLARE_TYPEDEFS \
-    typedef GDO_TYPE (*_gdo_GDO_SYMBOL_t)(GDO_ARGS); \
+    typedef GDO_TYPE (*$GDO_SYMBOL_t)(GDO_ARGS); \
     /**/
 /***************************************************************************/
 
@@ -28,7 +28,7 @@ GDO_TYPEDEFS
 /* function pointers */
 /***************************************************************************/
 #define _$DECLARE_FUNCTION_POINTERS \
-    _$LINKAGE _gdo_GDO_SYMBOL_t _gdo_GDO_SYMBOL_ptr_ = NULL; \
+    _$LINKAGE $GDO_SYMBOL_t $GDO_SYMBOL_ptr_ = NULL; \
     /**/
 /***************************************************************************/
 
@@ -38,7 +38,7 @@ GDO_TYPEDEFS
 /* object pointers */
 /***************************************************************************/
 #define _$DECLARE_OBJECT_POINTERS \
-    _$LINKAGE GDO_OBJ_TYPE *_gdo_GDO_OBJ_SYMBOL_ptr_ = NULL; \
+    _$LINKAGE GDO_OBJ_TYPE *$GDO_OBJ_SYMBOL_ptr_ = NULL; \
     /**/
 /***************************************************************************/
 
@@ -47,35 +47,35 @@ GDO_TYPEDEFS
 /***************************************************************************/
 /* aliases */
 /***************************************************************************/
-#define GDO_SYMBOL _gdo_GDO_SYMBOL_ptr_
-#define GDO_OBJ_SYMBOL *_gdo_GDO_OBJ_SYMBOL_ptr_
+#define GDO_SYMBOL $GDO_SYMBOL_ptr_
+#define GDO_OBJ_SYMBOL *$GDO_OBJ_SYMBOL_ptr_
 /***************************************************************************/
 
 
 
-_$LINKAGE
+inline _$LINKAGE
 void *load_library(const char *filename)
 {
 #ifdef _$WINAPI
-    return (void *)LoadLibrary(filename);
+    return (void *)LoadLibraryExA(filename, NULL, 0);
 #else
     return dlopen(filename, RTLD_LAZY);
 #endif
 }
 
 
-_$LINKAGE
+inline _$LINKAGE
 void *load_library_flags(const char *filename, int flags)
 {
 #ifdef _$WINAPI
-    return (void *)LoadLibraryEx(filename, NULL, flags);
+    return (void *)LoadLibraryExA(filename, NULL, flags);
 #else
     return dlopen(filename, flags);
 #endif
 }
 
 
-_$LINKAGE
+inline _$LINKAGE
 bool free_library(void *handle)
 {
 #ifdef _$WINAPI
@@ -86,7 +86,7 @@ bool free_library(void *handle)
 }
 
 
-_$LINKAGE
+inline _$LINKAGE
 void *get_symbol(void *handle, const char *symbol)
 {
 #ifdef _$WINAPI
