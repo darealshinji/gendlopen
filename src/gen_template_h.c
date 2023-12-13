@@ -96,14 +96,14 @@ int main(int argc, char **argv)
 
     fprintf(fp, "%s\n",   "#ifndef _TEMPLATE_H_");
     fprintf(fp, "%s\n\n", "#define _TEMPLATE_H_");
-    hexdump("license.h",          "license_data",                 fp);
-    hexdump("template_common.h",  "template_common_header_data",  fp);
-    hexdump("template_c.h",       "template_c_header_data",       fp);
-    hexdump("template_c.c",       "template_c_body_data",         fp);
-    hexdump("template_cxx.hpp",   "template_cxx_header_data",     fp);
-    hexdump("template_cxx.cpp",   "template_cxx_body_data",       fp);
-    hexdump("template_minimal.h", "template_minimal_header_data", fp);
-    fprintf(fp, "%s\n", "#endif /* _TEMPLATE_H_ */");
+    hexdump("license.h",  "license_data",        fp);
+    hexdump("common.h",   "common_header_data",  fp);
+    hexdump("c.h",        "c_header_data",       fp);
+    hexdump("c.c",        "c_body_data",         fp);
+    hexdump("cxx.hpp",    "cxx_header_data",     fp);
+    hexdump("cxx.cpp",    "cxx_body_data",       fp);
+    hexdump("minimal.h",  "minimal_header_data", fp);
+    fprintf(fp, "%s\n",   "#endif //_TEMPLATE_H_");
 
     //printf("data written to `%s'\n", out);
     fclose(fp);

@@ -51,12 +51,12 @@ if(CMAKE_CROSSCOMPILING)
     add_custom_command(
         OUTPUT ${TEMPLATE_H}
         COMMAND "${C_COMPILER_BUILD}" ${CMAKE_SOURCE_DIR}/src/gen_template_h.c -o ${GEN_TEMPLATE_H}
-        COMMAND ${GEN_TEMPLATE_H} ${CMAKE_SOURCE_DIR}/src
+        COMMAND ${GEN_TEMPLATE_H} ${CMAKE_SOURCE_DIR}/src/templates
     )
 else()
     add_custom_command(
         OUTPUT ${TEMPLATE_H}
-        COMMAND ${GEN_TEMPLATE_H} ${CMAKE_SOURCE_DIR}/src
+        COMMAND ${GEN_TEMPLATE_H} ${CMAKE_SOURCE_DIR}/src/templates
         DEPENDS gen_template_h
     )
 endif()

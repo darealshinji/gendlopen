@@ -92,13 +92,13 @@ Compiling
 You can use cmake or you can manually compile the tool:
 ``` sh
 gcc src/gen_template_h.c -o gen_template_h
-./gen_template_h src
-g++ -O3 -Wall -std=c++20 src/all.cpp -o gendlopen -s
+./gen_template_h src/templates
+g++ -O3 -Wall -std=c++20 src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp -o gendlopen -s
 ```
 ```
 cl src/gen_template_h.c
 gen_template_h.exe src
-cl -O2 -EHsc -std:c++latest -Fegendlopen src/all.cpp
+cl -O2 -EHsc -std:c++latest -Fegendlopen src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp
 ```
 
 

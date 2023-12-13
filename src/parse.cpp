@@ -130,7 +130,7 @@ std::string gendlopen::parse(const char *data)
             line.clear();
             continue;
         } else {
-            replace_string("GDO_COMMON", template_common_header_data, line);
+            replace_string("GDO_COMMON", common_header_data, line);
             replace_string("GDO_TYPEDEFS", m_typedefs, line);
         }
 
