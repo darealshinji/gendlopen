@@ -18,6 +18,7 @@ int main()
 
     if (!loader.load(L"libhelloworld-0.dll") || !loader.load_symbols()) {
         std::cerr << loader.error() << std::endl;
+        //std::wcerr << L"(wide characters message) " << loader.error_w() << std::endl;
         return 1;
     }
 

@@ -350,7 +350,6 @@ _$LINKAGE const $char_t *$last_error()
     /* format the message */
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                     FORMAT_MESSAGE_FROM_SYSTEM |
-                    FORMAT_MESSAGE_IGNORE_INSERTS |
                     FORMAT_MESSAGE_MAX_WIDTH_MASK,
                 NULL,
                 $hndl.last_errno,

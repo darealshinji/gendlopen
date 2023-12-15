@@ -130,6 +130,9 @@ GDO_COMMON
 
 #include <iostream>
 #include <string>
+#ifdef _$WINAPI
+#include <locale>
+#endif
 
 GDO_TYPEDEFS
 
@@ -169,8 +172,22 @@ private:
 
 
 #ifdef _$WINAPI
+    /* for codecvt */
+    template<class Facet>
+    struct deletable_facet : Facet {
+        template<class... Args>
+        deletable_facet(Args&&... args) : Facet(std::forward<Args>(args)...) {}
+        ~deletable_facet() {}
+    };
+
+    typedef std::wstring_convert<
+        deletable_facet<std::codecvt<wchar_t, char, std::mbstate_t>>,
+        wchar_t> convert_string_t;
+
     HMODULE m_handle = NULL;
     DWORD m_last_error = 0;
+    const char *m_errmsg = NULL;
+    const wchar_t *m_werrmsg = NULL;
 #else
     void *m_handle = NULL;
     std::string m_last_error;
@@ -190,7 +207,9 @@ private:
     {
 #ifdef _$WINAPI
         m_last_error = 0;
-        ::SetLastError(0);
+        m_errmsg = NULL;
+        m_werrmsg = NULL;
+        //::SetLastError(0);
 #else
         m_last_error = "";
         ::dlerror();
@@ -199,22 +218,29 @@ private:
 
 
     /* save last error */
-    void save_error(const char *errptr=NULL)
+    void save_error(const char *msg=NULL)
     {
 #ifdef _$WINAPI
-        (void)errptr;
         m_last_error = ::GetLastError();
+        m_errmsg = msg;
+        m_werrmsg = NULL;
 #else
-        if (errptr) {
-            /* copy string first, then call dlerror() to clear buffer */
-            m_last_error = errptr;
-            ::dlerror();
-        } else {
-            const char *ptr = ::dlerror();
-            m_last_error = ptr ? ptr : "";
-        }
+        (void)msg;
+        const char *ptr = ::dlerror();
+        m_last_error = ptr ? ptr : "";
 #endif
     }
+
+
+    /* save last error (wide characters) */
+#ifdef _$WINAPI
+    void save_error(const wchar_t *msg)
+    {
+        m_last_error = ::GetLastError();
+        m_werrmsg = msg;
+        m_errmsg = NULL;
+    }
+#endif
 
 
     /* if m_handle is NULL */
@@ -273,7 +299,7 @@ private:
         ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
 
         if (!ptr) {
-            save_error();
+            save_error(symbol);
             return false;
         }
 #else
@@ -281,10 +307,11 @@ private:
 
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
-        const char *errptr = dlerror();
+        const char *errptr = ::dlerror();
 
         if (errptr) {
-            save_error(errptr);
+            m_last_error = errptr;
+            ::dlerror(); /* clear error */
             return false;
         }
 #endif
@@ -352,7 +379,6 @@ private:
         const DWORD dwFlags =
             FORMAT_MESSAGE_ALLOCATE_BUFFER |
             FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_IGNORE_INSERTS |
             FORMAT_MESSAGE_MAX_WIDTH_MASK;
 
         format_message(dwFlags, reinterpret_cast<T2 *>(&msg));
@@ -402,7 +428,7 @@ public:
         }
 
         load_lib(filename, flags, new_namespace);
-        save_error();
+        save_error(filename);
 
         return lib_loaded();
     }
@@ -420,7 +446,7 @@ public:
 
         m_flags = flags;
         m_handle = ::LoadLibraryExW(filename, NULL, m_flags);
-        save_error();
+        save_error(filename);
 
         return lib_loaded();
     }
@@ -562,14 +588,12 @@ public:
         }
 
         wchar_t *buf = get_origin_from_module_handle<wchar_t>();
+        if (!buf) return L"";
 
-        if (buf) {
-            std::wstring ws = buf;
-            ::free(buf);
-            return ws;
-        }
+        std::wstring ws = buf;
+        ::free(buf);
 
-        return L"";
+        return ws;
     }
 #endif //_$WINAPI
 
@@ -583,6 +607,16 @@ public:
         if (buf.empty()) {
             buf = "Last saved error code: ";
             buf += std::to_string(m_last_error);
+        }
+
+        if (m_errmsg && m_errmsg[0] != 0) {
+            buf.insert(0, ": ");
+            buf.insert(0, m_errmsg);
+        } else if (m_werrmsg && m_werrmsg[0] != 0) {
+            /* convert wchar_t to char */
+            convert_string_t conv;
+            buf.insert(0, ": ");
+            buf.insert(0, conv.to_bytes(m_werrmsg));
         }
 
         return buf;
@@ -601,6 +635,16 @@ public:
         if (buf.empty()) {
             buf = L"Last saved error code: ";
             buf += std::to_wstring(m_last_error);
+        }
+
+        if (m_werrmsg && m_werrmsg[0] != 0) {
+            buf.insert(0, L": ");
+            buf.insert(0, m_werrmsg);
+        } else if (m_errmsg && m_errmsg[0] != 0) {
+            /* convert char to wchar_t */
+            convert_string_t conv;
+            buf.insert(0, L": ");
+            buf.insert(0, conv.from_bytes(m_errmsg));
         }
 
         return buf;
