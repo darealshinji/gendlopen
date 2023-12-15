@@ -281,7 +281,7 @@ private:
 
 
     /* free library handle */
-    bool free_lib()
+    inline bool free_lib()
     {
 #ifdef _$WINAPI
         return (::FreeLibrary(m_handle) == TRUE);
@@ -331,32 +331,41 @@ private:
 
 
     /* get the module's full path using GetModuleFileName() */
-    template<typename T>
-    T *get_origin_from_module_handle()
+    template<typename T1, typename T2>
+    T1 get_origin_from_module_handle()
     {
         size_t len = 260;
-        T *buf = reinterpret_cast<T*>(malloc(len * sizeof(T)));
+        T1 str;
+        T2 *buf = reinterpret_cast<T2*>(malloc(len * sizeof(T2)));
+
+        if (!buf) {
+            save_error();
+            return {};
+        }
 
         if (get_module_filename(m_handle, buf, len-1) == 0) {
             save_error();
             ::free(buf);
-            return NULL;
+            return {};
         }
 
         /* technically the path could exceed 260 characters, but in reality
          * it's practically still stuck at the old MAX_PATH value */
         while (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
             len += 1024;
-            buf = reinterpret_cast<T*>(realloc(buf, len * sizeof(T)));
+            buf = reinterpret_cast<T2*>(realloc(buf, len * sizeof(T2)));
 
             if (get_module_filename(m_handle, buf, len-1) == 0) {
                 save_error();
                 ::free(buf);
-                return NULL;
+                return {};
             }
         }
 
-        return buf;
+        str = buf;
+        ::free(buf);
+
+        return str;
     }
 
 
@@ -552,17 +561,11 @@ public:
     {
         if (!lib_loaded()) {
             set_error_invalid_handle();
-            return "";
+            return {};
         }
 
 #ifdef _$WINAPI
-        char *buf = get_origin_from_module_handle<char>();
-
-        if (buf) {
-            std::string s = buf;
-            ::free(buf);
-            return s;
-        }
+        return get_origin_from_module_handle<std::string, char>();
 #else
         struct link_map *lm = NULL;
 
@@ -572,9 +575,9 @@ public:
         if (ret != -1 && lm->l_name) {
             return lm->l_name;
         }
-#endif //_$WINAPI
 
-        return "";
+        return {};
+#endif //_$WINAPI
     }
 
 
@@ -584,16 +587,10 @@ public:
     {
         if (!lib_loaded()) {
             set_error_invalid_handle();
-            return L"";
+            return {};
         }
 
-        wchar_t *buf = get_origin_from_module_handle<wchar_t>();
-        if (!buf) return L"";
-
-        std::wstring ws = buf;
-        ::free(buf);
-
-        return ws;
+        return get_origin_from_module_handle<std::wstring, wchar_t>();
     }
 #endif //_$WINAPI
 
