@@ -18,7 +18,7 @@ bool               $load_lib ();
 bool               $load_lib_and_symbols ();
 bool               $load_lib_name (const $char_t *filename);
 bool               $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
-bool               $load_symbols ();
+bool               $load_symbols (bool ignore_errors);
 bool               $free_lib ();
 bool               $lib_is_loaded ();
 const $char_t * $last_error ();
@@ -169,7 +169,7 @@ _$LINKAGE bool $load_lib();
 _$LINKAGE bool $load_lib_and_symbols();
 #endif
 _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_namespace);
-_$LINKAGE bool $load_symbols();
+_$LINKAGE bool $load_symbols(bool ignore_errors);
 _$LINKAGE bool $free_lib();
 _$LINKAGE bool $lib_is_loaded();
 _$LINKAGE const $char_t *$last_error();

@@ -111,7 +111,7 @@ _$LINKAGE bool $load_lib()
 _$LINKAGE bool $load_lib_and_symbols()
 {
     return ($load_lib_args(_$DEFAULT_LIB, _$DEFAULT_FLAGS, false) &&
-        $load_symbols());
+        $load_symbols(false));
 }
 #endif
 /***************************************************************************/
@@ -173,9 +173,9 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 #endif //!_$WINAPI
 
 #ifdef _$ATEXIT
-    if ($hndl.call_free_lib_is_registered) {
+    if (!$hndl.call_free_lib_is_registered) {
         atexit($call_free_lib);
-        $hndl.call_free_lib_is_registered = false;
+        $hndl.call_free_lib_is_registered = true;
     }
 #endif //_$ATEXIT
 
@@ -185,11 +185,13 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 #ifdef _$ATEXIT
 _$LINKAGE void $call_free_lib()
 {
+    if ($lib_is_loaded()) {
 #ifdef _$WINAPI
-    FreeLibrary($hndl.handle);
+        FreeLibrary($hndl.handle);
 #else
-    dlclose($hndl.handle);
+        dlclose($hndl.handle);
 #endif //!_$WINAPI
+    }
 }
 #endif //_$ATEXIT
 /***************************************************************************/
@@ -245,9 +247,9 @@ _$LINKAGE bool $free_lib()
 /* load all symbols; can safely be called multiple times.
  */
 /***************************************************************************/
-_$LINKAGE bool $load_symbols()
+_$LINKAGE bool $load_symbols(bool ignore_errors)
 {
-    bool b = true;
+    bool rv = true;
 
     $clear_errbuf();
 
@@ -267,23 +269,37 @@ _$LINKAGE bool $load_symbols()
         return false;
     }
 
-    /* load function pointer addresses */
+    /* We can ignore errors in which case dlsym() or GetProcAddress()
+     * is called for each symbol and continue to do so even if it fails.
+     * The function will however in the end still return false if 1 or more
+     * symbols failed to load.
+     * If we do not ignore errors the function will simply return false on
+     * the first error it encounters. */
+    if (ignore_errors) {
+        /* load function pointer addresses */
+        $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
+            _$SYM("GDO_SYMBOL", &rv);
 
-    $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
-        _$SYM("GDO_SYMBOL", &b);@
-    if (!b) return false;@
+        /* load object pointer addresses */
+        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+            _$SYM("GDO_OBJ_SYMBOL", &rv);
+    } else {
+        /* load function pointer addresses */
+        $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
+            _$SYM("GDO_SYMBOL", &rv);@
+        if (!rv) return false;@
+        rv = true;
 
+        /* load object pointer addresses */
+        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+            _$SYM("GDO_OBJ_SYMBOL", &rv);@
+        if (!rv) return false;@
+        rv = true;
+    }
 
-    /* load object pointer addresses */
+    if (rv) $hndl.all_symbols_loaded = true;
 
-    $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE*)@
-        _$SYM("GDO_OBJ_SYMBOL", &b);@
-    if (!b) return false;@
-
-
-    $hndl.all_symbols_loaded = true;
-
-    return true;
+    return rv;
 }
 
 #ifdef _$WINAPI

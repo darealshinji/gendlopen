@@ -19,7 +19,7 @@ int main()
      * that there is no explicit call to gdo_free_lib() */
 
     if (!gdo_load_lib_args(GDO_LIB(helloworld,0), GDO_DEFAULT_FLAGS, true) ||
-        !gdo_load_symbols())
+        !gdo_load_symbols(false))
     {
         fprintf(stderr, "%s\n", gdo_last_error());
         return 1;

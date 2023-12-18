@@ -56,8 +56,11 @@ class dl {
     /* return the flags used to load the library */
     int flags() const;
 
-    /* load all symbols */
-    bool load_symbols();
+    /* load all symbols;
+     * If ignore_errors is set true the function won't stop on the first
+     * symbol that can't be loaded but instead tries to load them all.
+     * If one or more symbols weren't loaded the function returns false. */
+    bool load_symbols(bool ignore_errors=false);
 
     /* check if symbols were successfully loaded */
     bool symbols_loaded() const;
@@ -293,17 +296,21 @@ private:
 
     /* load symbol address */
     template<typename T>
-    bool sym(T &ptr, const char *symbol)
+    bool sym(T &ptr, const char *symbol, bool rv=true)
     {
 #ifdef _$WINAPI
         ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
 
-        if (!ptr) {
+        if (!rv) {
+            return false;
+        } else if (!ptr) {
             save_error(symbol);
             return false;
         }
 #else
         ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
+
+        if (!rv) return false;
 
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
@@ -491,30 +498,42 @@ public:
 
 
     /* load all symbols */
-    bool load_symbols()
+    bool load_symbols(bool ignore_errors=false)
     {
+        bool rv = true;
+
+        clear_error();
+
         if (m_symbols_loaded) {
-            clear_error();
             return true;
         } else if (!lib_loaded()) {
             set_error_invalid_handle();
             return false;
         }
 
-        /* load function pointer addresses */
-        if (!sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL")) {@
-            return false;@
+        if (ignore_errors) {
+            /* load function pointer addresses */
+            rv = sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL", rv);
+
+            /* load object addresses */
+            rv = sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL", rv);
+        } else {
+            /* load function pointer addresses */
+            if (!sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL")) {@
+                return false;@
+            }
+
+            /* load object addresses */
+            if (!sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL")) {@
+                return false;@
+            }
         }
 
-        /* load object addresses */
-        if (!sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL")) {@
-            return false;@
-        }
+        if (rv) m_symbols_loaded = true;
 
-        m_symbols_loaded = true;
         clear_error();
 
-        return true;
+        return rv;
     }
 
 
