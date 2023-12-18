@@ -23,9 +23,9 @@ _$LINKAGE void $clear_errbuf();
 /* $sym() */
 #ifdef _$WINAPI
     #define _$SYM(a, b)  $sym(a, _T(a), b)
-    _$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *b);
+    _$LINKAGE FARPROC    $sym(const char *symbol, const $char_t *msg, bool *b);
 #else
-    _$LINKAGE void *_$SYM(const char *symbol, bool *b);
+    _$LINKAGE void *    _$SYM(const char *symbol, bool *b);
 #endif
 
 #define _$BUFLEN 4096
@@ -303,44 +303,95 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
 }
 
 #ifdef _$WINAPI
-_$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *ret)
+_$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *rv)
 {
-    void *ptr = (void *)GetProcAddress($hndl.handle, symbol);
+    FARPROC ptr = GetProcAddress($hndl.handle, symbol);
 
-    if (ptr) {
-        *ret = true;
-    } else {
-        *ret = false;
+    if (*rv == false) {
+        /* a previous call has already failed;
+         * return without error check */
+        return ptr;
+    } else if (!ptr) {
+        *rv = false;
         $save_error(msg);
-        $free_lib();
     }
 
     return ptr;
 }
 #else //!_$WINAPI
-_$LINKAGE void *_$SYM(const char *symbol, bool *ret)
+_$LINKAGE void *_$SYM(const char *symbol, bool *rv)
 {
     /* clear buffer */
     (void)dlerror();
 
     void *ptr = dlsym($hndl.handle, symbol);
 
+    if (*rv == false) {
+        /* a previous call has already failed;
+         * return without error check */
+        return ptr;
+    }
+
     /* NULL can be a valid value (unusual but possible),
      * so call dlerror() to check for errors */
     const char *p = dlerror();
 
     if (p) {
-        *ret = false;
+        *rv = false;
         $clear_errbuf();
         snprintf($hndl.buf, _$BUFLEN-1, "%s", p);
-        $free_lib();
-    } else {
-        *ret = true;
     }
 
     return ptr;
 }
 #endif //!_$WINAPI
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* load a specific symbol;
+ * The main intention is to check if a certain symbol is present in a library
+ * so you can conditionally enable or disable features in your program. */
+/***************************************************************************/
+_$LINKAGE bool $load_symbol(const char *symbol)
+{
+    bool rv = true;
+
+    $clear_errbuf();
+
+    /* no library was loaded */
+    if (!$lib_is_loaded()) {
+#ifdef _$WINAPI
+        $hndl.last_errno = ERROR_INVALID_HANDLE;
+        _tcscpy($hndl.buf, _T("no library was loaded"));
+#else
+        strcpy($hndl.buf, "no library was loaded");
+#endif
+        return false;
+    }
+
+    if (!symbol || !*symbol) {
+        return false;
+    }
+
+
+    /* function pointer addresses */
+    if (strcmp("GDO_SYMBOL", symbol) == 0) {@
+        $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
+            _$SYM("GDO_SYMBOL", &rv);@
+        return rv;@
+    }
+
+    /* load object addresses */
+    if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
+        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+            _$SYM("GDO_OBJ_SYMBOL", &rv);@
+        return rv;@
+    }
+
+    return false;
+}
 /***************************************************************************/
 
 

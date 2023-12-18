@@ -62,6 +62,9 @@ class dl {
      * If one or more symbols weren't loaded the function returns false. */
     bool load_symbols(bool ignore_errors=false);
 
+    /* load a specific symbol */
+    bool load_symbol(const char *symbol);
+
     /* check if symbols were successfully loaded */
     bool symbols_loaded() const;
 
@@ -136,6 +139,7 @@ GDO_COMMON
 #ifdef _$WINAPI
 #include <locale>
 #endif
+#include <cstring>
 
 GDO_TYPEDEFS
 
@@ -537,7 +541,33 @@ public:
     }
 
 
-    /* check if symbols are loaded */
+    /* load a specific symbol */
+    bool load_symbol(const char *symbol)
+    {
+        clear_error();
+
+        if (!lib_loaded()) {
+            set_error_invalid_handle();
+            return false;
+        } else if (!symbol || !*symbol) {
+            return false;
+        }
+
+        /* function pointer addresses */
+        if (strcmp("GDO_SYMBOL", symbol) == 0) {@
+            return sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL");@
+        }
+
+        /* load object addresses */
+        if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
+            return sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL");@
+        }
+
+        return false;
+    }
+
+
+    /* check if all symbols are loaded */
     bool symbols_loaded() const
     {
         return m_symbols_loaded;
@@ -560,7 +590,6 @@ public:
         }
 
         m_handle = NULL;
-
         GDO_SYMBOL_ptr_ = nullptr;
         GDO_OBJ_SYMBOL_ptr_ = nullptr;
 

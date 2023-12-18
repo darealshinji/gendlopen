@@ -19,6 +19,7 @@ bool               $load_lib_and_symbols ();
 bool               $load_lib_name (const $char_t *filename);
 bool               $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
 bool               $load_symbols (bool ignore_errors);
+bool               $load_symbol (const char *symbol);
 bool               $free_lib ();
 bool               $lib_is_loaded ();
 const $char_t * $last_error ();
@@ -52,9 +53,17 @@ bool $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
     is ignored.
 
 
-bool $load_symbols();
+bool $load_symbols (bool ignore_errors);
 
     Load the symbols. This function can safely be called multiple times.
+    If ignore_errors is set true the function won't stop on the first
+    symbol that can't be loaded but instead tries to load them all.
+    If one or more symbols weren't loaded the function returns false.
+
+
+bool $load_symbol (const char *symbol);
+
+    Load a specific symbol.
 
 
 bool $free_lib();
@@ -170,6 +179,7 @@ _$LINKAGE bool $load_lib_and_symbols();
 #endif
 _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_namespace);
 _$LINKAGE bool $load_symbols(bool ignore_errors);
+_$LINKAGE bool $load_symbol(const char *symbol);
 _$LINKAGE bool $free_lib();
 _$LINKAGE bool $lib_is_loaded();
 _$LINKAGE const $char_t *$last_error();
