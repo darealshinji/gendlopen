@@ -61,6 +61,8 @@ _$LINKAGE $handle_t $hndl = {0};
 /* save error */
 /***************************************************************************/
 #ifdef _$WINAPI
+/* Save the last system error code. A message for additional information
+ * can be provided too. */
 _$LINKAGE void $save_error(const $char_t *msg)
 {
     $clear_errbuf();
@@ -71,6 +73,7 @@ _$LINKAGE void $save_error(const $char_t *msg)
     }
 }
 #else
+/* Save the last message provided by dlerror() */
 _$LINKAGE void $save_dl_error()
 {
     $clear_errbuf();
@@ -79,6 +82,8 @@ _$LINKAGE void $save_dl_error()
 }
 #endif //!_$WINAPI
 
+/* Clear error buffers. */
+inline
 _$LINKAGE void $clear_errbuf()
 {
     $hndl.buf[0] = 0;
@@ -136,7 +141,7 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 {
     $clear_errbuf();
 
-    /* library already loaded */
+    /* check if the library was already loaded */
     if ($lib_is_loaded()) {
         return true;
     }
@@ -144,7 +149,10 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 #ifdef _$WINAPI
 
     /* win32 */
+
     (void)new_namespace; /* unused */
+
+    /* LoadLibraryEx() */
     if (($hndl.handle = LoadLibraryEx(filename, NULL, flags)) == NULL) {
         $save_error(filename);
         return false;
@@ -152,12 +160,14 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 
 #else //!_$WINAPI
 
+    /* dlfcn */
+
 #ifdef _$NO_DLMOPEN
     /* dlmopen() disabled */
-    (void)new_namespace;
+    (void)new_namespace; /* unused */
     $hndl.handle = dlopen(filename, flags);
 #else
-    /* dlmopen() for new namespace or dlopen() */
+    /* call dlmopen() for new namespace, otherwise dlopen() */
     if (new_namespace) {
         $hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
     } else {
@@ -165,6 +175,7 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
     }
 #endif //_$NO_DLMOPEN
 
+    /* check if dl(m)open() was successful */
     if (!$lib_is_loaded()) {
         $save_dl_error();
         return false;
@@ -173,6 +184,8 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 #endif //!_$WINAPI
 
 #ifdef _$ATEXIT
+    /* register our call to free the library handle with atexit()
+     * so that the library will automatically be freed upon exit */
     if (!$hndl.call_free_lib_is_registered) {
         atexit($call_free_lib);
         $hndl.call_free_lib_is_registered = true;
@@ -183,6 +196,8 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 }
 
 #ifdef _$ATEXIT
+/* If registered with atexit() this function will be called at
+ * the program's exit. Function must be of type "void (*)(void)". */
 _$LINKAGE void $call_free_lib()
 {
     if ($lib_is_loaded()) {
@@ -209,14 +224,17 @@ _$LINKAGE bool $lib_is_loaded()
 
 
 
-/***************************************************************************
-* Free the library
-****************************************************************************/
+/***************************************************************************/
+/* Free the library handle and set pointers to NULL */
+/***************************************************************************/
 _$LINKAGE bool $free_lib()
 {
     $clear_errbuf();
 
-    if (!$lib_is_loaded()) return true;
+    if (!$lib_is_loaded()) {
+        /* nothing to free */
+        return true;
+    }
 
 #ifdef _$WINAPI
     if (FreeLibrary($hndl.handle) == FALSE) {
@@ -231,9 +249,7 @@ _$LINKAGE bool $free_lib()
 #endif //!_$WINAPI
 
     /* set pointers back to NULL */
-
     $hndl.handle = NULL;
-
     $hndl.GDO_SYMBOL_ptr_ = NULL;
     $hndl.GDO_OBJ_SYMBOL_ptr_ = NULL;
 
@@ -244,8 +260,7 @@ _$LINKAGE bool $free_lib()
 
 
 /***************************************************************************/
-/* load all symbols; can safely be called multiple times.
- */
+/* load all symbols; can safely be called multiple times. */
 /***************************************************************************/
 _$LINKAGE bool $load_symbols(bool ignore_errors)
 {
@@ -303,7 +318,8 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
 }
 
 #ifdef _$WINAPI
-_$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *rv)
+/* If Unicode is enabled, we save the symbol name as wchar_t too. */
+_$LINKAGE FARPROC $sym(const char *symbol, const $char_t *wsymbol, bool *rv)
 {
     FARPROC ptr = GetProcAddress($hndl.handle, symbol);
 
@@ -313,7 +329,8 @@ _$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *rv)
         return ptr;
     } else if (!ptr) {
         *rv = false;
-        $save_error(msg);
+        $save_error(wsymbol);
+        return NULL;
     }
 
     return ptr;
@@ -334,12 +351,15 @@ _$LINKAGE void *_$SYM(const char *symbol, bool *rv)
 
     /* NULL can be a valid value (unusual but possible),
      * so call dlerror() to check for errors */
-    const char *p = dlerror();
+    const char *err = dlerror();
 
-    if (p) {
+    if (err) {
+        /* must save our error message manually instead of
+         * invoking $save_dl_error() */
         *rv = false;
         $clear_errbuf();
-        snprintf($hndl.buf, _$BUFLEN-1, "%s", p);
+        snprintf($hndl.buf, _$BUFLEN-1, "%s", err);
+        return NULL;
     }
 
     return ptr;
@@ -397,7 +417,8 @@ _$LINKAGE bool $load_symbol(const char *symbol)
 
 
 /***************************************************************************/
-/* retrieve the last saved error message */
+/* retrieve the last saved error message (can be an empty buffer);
+ * On Windows the message will be generated from an error code. */
 /***************************************************************************/
 _$LINKAGE const $char_t *$last_error()
 {
@@ -450,7 +471,8 @@ _$LINKAGE const $char_t *$last_error()
 
 
 /***************************************************************************/
-/* get the full library path - returns NULL on error */
+/* get the full library path;
+ * Result must be deallocated with free(), returns NULL on error. */
 /***************************************************************************/
 _$LINKAGE $char_t *$lib_origin()
 {
@@ -458,14 +480,16 @@ _$LINKAGE $char_t *$lib_origin()
 
 #ifdef _$WINAPI
     $char_t *origin;
-    size_t len = 260;
+    size_t len = 260; /* MAX_PATH */
 
+    /* check if library was loaded */
     if (!$lib_is_loaded()) {
         $hndl.last_errno = ERROR_INVALID_HANDLE;
         _tcscpy($hndl.buf, _T("no library was loaded"));
         return NULL;
     }
 
+    /* allocate enough space */
     origin = ($char_t *)malloc(len * sizeof($char_t));
 
     if (!origin) {
@@ -473,6 +497,7 @@ _$LINKAGE $char_t *$lib_origin()
         return NULL;
     }
 
+    /* receive path from handle */
     if (GetModuleFileName($hndl.handle, origin, len-1) == 0) {
         $save_error(_T("GetModuleFileName"));
         free(origin);
@@ -494,17 +519,21 @@ _$LINKAGE $char_t *$lib_origin()
 
     return origin;
 #else
+    /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
 
     if (!$lib_is_loaded()) {
+        /* library is not loaded */
         strcpy($hndl.buf, "no library was loaded");
         return NULL;
     } else if (dlinfo($hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
+        /* dlinfo() failed */
         $save_dl_error();
         return NULL;
     }
 
     if (lm->l_name) {
+        /* copy string */
         return strdup(lm->l_name);
     }
 #endif //_$WINAPI
@@ -526,6 +555,7 @@ _$LINKAGE $char_t *$lib_origin()
 
 
 #if defined(_WIN32) && defined(_UNICODE)
+/* convert UTF-8 to wide characters */
 _$LINKAGE wchar_t *$convert_utf8_to_wcs(const char *lpStr)
 {
     int mbslen = (int)strlen(lpStr);
@@ -546,34 +576,44 @@ _$LINKAGE wchar_t *$convert_utf8_to_wcs(const char *lpStr)
 #endif //_WIN32 && _UNICODE
 
 
+/* This function is used by the wrapper functions to perform the loading
+ * and handle errors. */
 _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
 {
-    /* load and return if successful */
+    /* load library+symbols and return if successful */
     if ($load_lib_and_symbols()) {
         return;
     }
 
-    /* print error message */
+    /* an error has occured: display an error message */
 
 #if defined(_WIN32) && defined(_$USE_MESSAGE_BOX)
-    /* Windows with MessageBox */
+    /* Windows: show message in a MessageBox window */
     const $char_t *err = $last_error();
     const $char_t *pfunc;
     /* double newline at end */
     const $char_t *fmt = _T("error in wrapper function `%s' for symbol `%s':\n\n%s");
 
 #ifdef _UNICODE
-    /* convert function name to wide characters */
+    /* convert function name to wide characters
+     * (we cannot receive the function name in a wide character format) */
     wchar_t *wfunc = $convert_utf8_to_wcs(function);
     pfunc = wfunc;
 #else
     pfunc = function;
 #endif //_UNICODE
 
+    /* allocate message buffer */
     const size_t len = _tcslen(fmt) +  _tcslen(pfunc) + _tcslen(symbol) + _tcslen(err);
     $char_t *buf = malloc((len + 1) * sizeof($char_t));
+
+    /* save message to buffer */
     _sntprintf(buf, len, fmt, pfunc, symbol, err);
+
+    /* show message */
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
+
+    /* free buffers */
 #ifdef _UNICODE
     free(wfunc);
 #endif
@@ -581,24 +621,20 @@ _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
 
 #elif defined(_WIN32) && defined(_UNICODE)
 
-    /* Windows with support for wide character output to console */
+    /* Windows: output to console (wide characters) */
     fwprintf(stderr, L"error in wrapper function `%hs' for symbol `%ls':\n%ls\n",
         function, symbol, $last_error());
 
 #else
 
-    /* default: UTF-8 output to console for Windows and other systems */
+    /* default: UTF-8 output to console (any operating system) */
     fprintf(stderr, "error in wrapper function `%s' for symbol `%s':\n%s\n",
         function, symbol, $last_error());
 
 #endif //_WIN32 && _$USE_MESSAGE_BOX
 
     /* free library handle and exit */
-
-    if ($lib_is_loaded()) {
-        $free_lib();
-    }
-
+    $free_lib();
     exit(1);
 }
 

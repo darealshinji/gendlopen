@@ -321,8 +321,10 @@ private:
         const char *errptr = ::dlerror();
 
         if (errptr) {
+            /* save error message */
             m_last_error = errptr;
-            ::dlerror(); /* clear error */
+            /* clear error */
+            ::dlerror();
             return false;
         }
 #endif
@@ -345,7 +347,7 @@ private:
     template<typename T1, typename T2>
     T1 get_origin_from_module_handle()
     {
-        size_t len = 260;
+        size_t len = 260; /* MAX_PATH */
         T1 str;
         T2 *buf = reinterpret_cast<T2*>(malloc(len * sizeof(T2)));
 

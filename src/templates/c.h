@@ -14,14 +14,14 @@ Otherwise `$char_t` will become `char`.
 *   Functions provided   *
 **************************
 
-bool               $load_lib ();
-bool               $load_lib_and_symbols ();
-bool               $load_lib_name (const $char_t *filename);
-bool               $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
-bool               $load_symbols (bool ignore_errors);
-bool               $load_symbol (const char *symbol);
-bool               $free_lib ();
-bool               $lib_is_loaded ();
+bool            $load_lib ();
+bool            $load_lib_and_symbols ();
+bool            $load_lib_name (const $char_t *filename);
+bool            $load_lib_args (const $char_t *filename, int flags, bool new_namespace);
+bool            $load_symbols (bool ignore_errors);
+bool            $load_symbol (const char *symbol);
+bool            $free_lib ();
+bool            $lib_is_loaded ();
 const $char_t * $last_error ();
 $char_t *       $lib_origin ();
 
@@ -66,24 +66,24 @@ bool $load_symbol (const char *symbol);
     Load a specific symbol.
 
 
-bool $free_lib();
+bool $free_lib ();
 
     Free/release library handle.
 
 
-bool $lib_is_loaded();
+bool $lib_is_loaded ();
 
     Returns true if the library was successfully loaded.
 
 
-const $char_t *$last_error();
+const $char_t *$last_error ();
 
     Returns a pointer to the error message buffer with the last saved error string.
     This buffer can be empty and is in fact cleared when no error occured in a function.
     This function doesn't return a null pointer.
 
 
-$char_t *$lib_origin();
+$char_t *$lib_origin ();
 
     Return the full library path. The returned string must be deallocated with free().
     On error or if no library was loaded NULL is returned.
