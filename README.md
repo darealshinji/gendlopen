@@ -14,7 +14,6 @@ Features:
 
 Limitations:
  * it's not a code analysis tool, so make sure the input is correct
- * function pointers must be typedef'd
  * parameter names must be included
  * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
  * C++11 is the minimum requirement for the generated C++ files
@@ -27,10 +26,10 @@ Input format
 Here's how the input text format must be:
 
  * all symbols that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)
- * function pointers MUST be typedef'd; the typedef can optionally be part of the input file
+ * a typedef can optionally be part of the input file
  * parameter names must be included
  * comments are ignored
- * line-breaks are treated like spaces
+ * line-breaks are treated as spaces
  * any other code will throw an error
 
 

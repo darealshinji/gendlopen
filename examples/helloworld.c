@@ -27,6 +27,15 @@ void helloworld_hello(helloworld *hw)
     }
 }
 
+/* use object and respond something */
+void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
+{
+    if (hw && helloworld_cb) {
+        strcpy(hw->str, "hello world");
+        helloworld_cb(hw->str);
+    }
+}
+
 /* release object */
 void helloworld_release(helloworld *hw)
 {

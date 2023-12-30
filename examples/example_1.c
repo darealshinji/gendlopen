@@ -39,6 +39,7 @@ int main()
     helloworld *hw = helloworld_init();
     helloworld_callback = cb;
     helloworld_hello(hw);
+    helloworld_hello2(hw, cb);
     helloworld_release(hw);
 
     /* free library */

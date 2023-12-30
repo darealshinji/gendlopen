@@ -36,6 +36,8 @@ SOFTWARE.
 #include "cin_ifstream.hpp"
 #include "gendlopen.hpp"
 
+typedef std::vector<std::string> StrVector;
+
 
 /* strip leading and trailing spaces */
 inline static void strip_spaces(std::string &in)
@@ -73,8 +75,11 @@ static bool is_keyword(const std::string &s)
 /* extract argument names from args list */
 static bool get_argument_names(gendlopen::proto_t &proto)
 {
+    bool fptr_name = false;
+    bool fptr_args = false;
+    int scope = 0;
     std::string out, token;
-    std::vector<std::string> arg;
+    StrVector arg;
 
     /* void; nothing to do */
     if (proto.args.empty() || strcasecmp(proto.args.c_str(), "void") == 0) {
@@ -83,6 +88,8 @@ static bool get_argument_names(gendlopen::proto_t &proto)
 
     /* needed for parsing */
     auto in = proto.args;
+    gendlopen::replace_string("(", " ( ", in);
+    gendlopen::replace_string(")", " ) ", in);
     gendlopen::replace_string(",", " , ", in);
     gendlopen::replace_string("*", " * ", in);
     in += " ,";
@@ -91,6 +98,35 @@ static bool get_argument_names(gendlopen::proto_t &proto)
 
     /* tokenize argument list */
     while (iss >> token) {
+        /* skip function pointer arguments list */
+        if (fptr_args) {
+            if (token == "(") {
+                scope++;
+            } else if (token == ")") {
+                scope--;
+            }
+
+            if (scope < 1) {
+                scope = 0;
+                fptr_name = fptr_args = false;
+            }
+            continue;
+        }
+
+        /* function pointer name */
+        if (fptr_name) {
+            if (token == ")") {
+                fptr_args = true;
+            } else {
+                arg.push_back(token);
+            }
+            continue;
+        } else if (token == "(") {
+            fptr_name = true;
+            continue;
+        }
+
+        /* argument separator */
         if (token != ",") {
             arg.push_back(token);
             continue;
@@ -116,12 +152,42 @@ static bool get_argument_names(gendlopen::proto_t &proto)
     return true;
 }
 
+/* tokenize line and save into vector or typedef string */
+static void save_line(std::string &input, std::string &s_typedef, StrVector &vproto)
+{
+    /* strip spaces -> the input may only
+     * contain whitespace characters */
+    strip_spaces(input);
+
+    if (input.empty()) {
+        return;
+    }
+
+    std::istringstream iss(input);
+    std::string token, line;
+
+    while (iss >> token) {
+        line += token + " ";
+    }
+
+    strip_spaces(line);
+
+    if (line.starts_with("typedef")) {
+        s_typedef += line + ";\n";
+    } else {
+        vproto.push_back(line);
+    }
+
+    /* it's important to clear the variable */
+    input.clear();
+}
+
 /* read input and strip comments */
-static std::vector<std::string> read_input(
+static StrVector read_input(
     cin_ifstream &ifs,
     std::string &s_typedef)
 {
-    std::vector<std::string> vproto;
+    StrVector vproto;
     char c, comment = 0;
     std::string line;
 
@@ -133,25 +199,9 @@ static std::vector<std::string> read_input(
         }
 
         switch (c) {
-            /* end of sequence -> tokenize and save into vector */
+            /* end of sequence -> save line buffer */
             case ';': {
-                std::istringstream iss(line);
-                std::string token;
-                line.clear();
-
-                while (iss >> token) {
-                    line += token + " ";
-                }
-
-                strip_spaces(line);
-
-                if (line.starts_with("typedef")) {
-                    s_typedef += line + ";\n";
-                } else {
-                    vproto.push_back(line);
-                }
-
-                line.clear();
+                save_line(line, s_typedef, vproto);
                 break;
             }
 
@@ -166,7 +216,9 @@ static std::vector<std::string> read_input(
                     comment = '\n';
                     continue;
                 }
+                line += ' ';
                 line += c;
+                line += ' ';
                 break;
             }
 
@@ -175,7 +227,7 @@ static std::vector<std::string> read_input(
                 if (comment == '\n') {
                     comment = 0;
                 }
-                line += c;
+                line += ' ';
                 break;
             case '*': {
                 if (comment == '*' && ifs.peek() == '/') {
@@ -183,17 +235,43 @@ static std::vector<std::string> read_input(
                     comment = 0;
                     continue;
                 } else if (comment == 0) {
+                    line += ' ';
                     line += c;
+                    line += ' ';
                 }
                 break;
             }
 
-            /* append character to line */
-            default:
+            /* append character to line buffer */
+#ifdef __GNUC__
+            case 'a'...'z':
+            case 'A'...'Z':
+            case '0'...'9':
+            case '_':
                 line += c;
                 break;
+
+            default:
+                line += ' ';
+                line += c;
+                line += ' ';
+                break;
+#else
+            default:
+                if (c == '_' || (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9')) {
+                    line += c;
+                } else {
+                    line += ' ';
+                    line += c;
+                    line += ' ';
+                }
+                break;
+#endif
         }
     }
+
+    /* in case the last prototype didn't end on semicolon */
+    save_line(line, s_typedef, vproto);
 
     ifs.close();
 
@@ -227,7 +305,12 @@ bool gendlopen::tokenize_function(const std::string &s)
     if (proto.args.empty()) {
         proto.args = "void";
     } else {
+        replace_string("* *", "**", proto.args);
+        replace_string("* ", "*", proto.args);
         replace_string(" ,", ",", proto.args);
+        replace_string("( ", "(", proto.args);
+        replace_string(" )", ")", proto.args);
+        replace_string(") (", ")(", proto.args);
     }
 
     m_prototypes.push_back(proto);
@@ -293,7 +376,7 @@ bool gendlopen::tokenize(const std::string &ifile)
     }
 
     /* check for duplicates */
-    std::vector<std::string> list;
+    StrVector list;
 
     for (const auto &s : m_prototypes) {
         list.push_back(s.symbol);

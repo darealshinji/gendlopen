@@ -39,6 +39,7 @@ DLL_PUBLIC helloworld *HELLOWORLD_INIT();
 
 /* pass a "hello world" string to a callback function */
 DLL_PUBLIC void helloworld_hello(helloworld *hw);
+DLL_PUBLIC void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *));
 
 /* free resources */
 DLL_PUBLIC void helloworld_release(helloworld *hw);
