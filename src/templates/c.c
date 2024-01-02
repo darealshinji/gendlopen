@@ -318,8 +318,7 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
 }
 
 #ifdef _$WINAPI
-/* If Unicode is enabled, we save the symbol name as wchar_t too. */
-_$LINKAGE FARPROC $sym(const char *symbol, const $char_t *wsymbol, bool *rv)
+_$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *rv)
 {
     FARPROC ptr = GetProcAddress($hndl.handle, symbol);
 
@@ -329,7 +328,7 @@ _$LINKAGE FARPROC $sym(const char *symbol, const $char_t *wsymbol, bool *rv)
         return ptr;
     } else if (!ptr) {
         *rv = false;
-        $save_error(wsymbol);
+        $save_error(msg);
         return NULL;
     }
 
@@ -428,39 +427,32 @@ _$LINKAGE const $char_t *$last_error()
         return $hndl.buf_formatted;
     }
 
-    $hndl.buf_formatted[0] = 0;
-
     const size_t bufmax = (sizeof($hndl.buf_formatted) / sizeof($char_t)) - 1;
     $char_t *buf = NULL;
     $char_t *msg = $hndl.buf;
-    $char_t *bufFmt = $hndl.buf_formatted;
+    $char_t *out = $hndl.buf_formatted;
 
     /* format the message */
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                     FORMAT_MESSAGE_FROM_SYSTEM |
                     FORMAT_MESSAGE_MAX_WIDTH_MASK,
-                NULL,
-                $hndl.last_errno,
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR)&buf,
-                0,
-                NULL);
+                NULL, $hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);
 
     if (buf) {
         /* put custom message in front of system error message */
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < bufmax) {
-            _sntprintf(bufFmt, bufmax, _T("%s: %s"), msg, buf);
+            _sntprintf(out, bufmax, _T("%s: %s"), msg, buf);
         } else {
-            _sntprintf(bufFmt, bufmax, _T("%s"), buf);
+            _sntprintf(out, bufmax, _T("%s"), buf);
         }
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, just print the error code */
-        _sntprintf(bufFmt, bufmax, _T("Last saved error code: %lu"),
+        _sntprintf(out, bufmax, _T("Last saved error code: %lu"),
             $hndl.last_errno);
     }
 
-    return bufFmt;
+    return out;
 #else
     /* simply return the buffer */
     return $hndl.buf;
@@ -556,22 +548,22 @@ _$LINKAGE $char_t *$lib_origin()
 
 #if defined(_WIN32) && defined(_UNICODE)
 /* convert UTF-8 to wide characters */
-_$LINKAGE wchar_t *$convert_utf8_to_wcs(const char *lpStr)
+_$LINKAGE wchar_t *$convert_utf8_to_wcs(const char *str)
 {
-    int mbslen = (int)strlen(lpStr);
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, lpStr, mbslen, NULL, 0);
-    if (wlen < 1) return NULL;
+    int mbslen = (int)strlen(str);
+    int len = MultiByteToWideChar(CP_UTF8, 0, str, mbslen, NULL, 0);
+    if (len < 1) return NULL;
 
-    wchar_t *pwBuf = malloc((wlen + 1) * sizeof(wchar_t));
-    if (!pwBuf) return NULL;
+    wchar_t *buf = malloc((len + 1) * sizeof(wchar_t));
+    if (!buf) return NULL;
 
-    if (MultiByteToWideChar(CP_UTF8, 0, lpStr, mbslen, pwBuf, wlen) < 1) {
-        free(pwBuf);
+    if (MultiByteToWideChar(CP_UTF8, 0, str, mbslen, buf, len) < 1) {
+        free(buf);
         return NULL;
     }
 
-    pwBuf[wlen] = L'\0';
-    return pwBuf;
+    buf[len] = L'\0';
+    return buf;
 }
 #endif //_WIN32 && _UNICODE
 

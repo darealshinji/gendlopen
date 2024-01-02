@@ -160,7 +160,11 @@ public:
 
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
+#ifdef _$WINAPI
+    static constexpr const char *libext = _$LIBEXTA;
+#else
     static constexpr const char *libext = _$LIBEXT;
+#endif
 
     typedef void (*callback_t)(const char *);
 
@@ -382,12 +386,12 @@ private:
     }
 
 
-    inline DWORD format_message(DWORD dwFlags, LPWSTR lpBuffer) {
-        return ::FormatMessageW(dwFlags, NULL, m_last_error, 0, lpBuffer, 0, NULL);
+    inline DWORD format_message(DWORD flags, LPWSTR buf) {
+        return ::FormatMessageW(flags, NULL, m_last_error, 0, buf, 0, NULL);
     }
 
-    inline DWORD format_message(DWORD dwFlags, LPSTR lpBuffer) {
-        return ::FormatMessageA(dwFlags, NULL, m_last_error, 0, lpBuffer, 0, NULL);
+    inline DWORD format_message(DWORD flags, LPSTR buf) {
+        return ::FormatMessageA(flags, NULL, m_last_error, 0, buf, 0, NULL);
     }
 
 
@@ -396,18 +400,16 @@ private:
     T1 format_last_error_message()
     {
         T1 str;
-        T2 *msg = NULL;
+        T2 *buf = NULL;
 
-        const DWORD dwFlags =
-            FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_MAX_WIDTH_MASK;
+        format_message(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_FROM_SYSTEM |
+                        FORMAT_MESSAGE_MAX_WIDTH_MASK,
+                    reinterpret_cast<T2 *>(&buf));
 
-        format_message(dwFlags, reinterpret_cast<T2 *>(&msg));
-
-        if (msg) {
-            str = msg;
-            ::LocalFree(msg);
+        if (buf) {
+            str = buf;
+            ::LocalFree(buf);
         }
 
         return str;
