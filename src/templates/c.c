@@ -36,7 +36,7 @@ typedef struct {
 #ifdef _$WINAPI
     HMODULE handle;
     DWORD last_errno;
-    /* according to MSDN the maximum is either 64k or 128k */
+    /* FormatMessage: according to MSDN the maximum is either 64k or 128k */
     $char_t buf_formatted[64*1024];
 #else
     void *handle;
@@ -69,7 +69,7 @@ _$LINKAGE void $save_error(const $char_t *msg)
     $hndl.last_errno = GetLastError();
 
     if (msg) {
-        _sntprintf($hndl.buf, _$BUFLEN-1, _T("%s"), msg);
+        _sntprintf_s($hndl.buf, _$BUFLEN-1, _TRUNCATE, _T("%s"), msg);
     }
 }
 #else
@@ -277,7 +277,7 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
     if (!$lib_is_loaded()) {
 #ifdef _$WINAPI
         $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy($hndl.buf, _T("no library was loaded"));
+        _tcscpy_s($hndl.buf, _$BUFLEN-1, _T("no library was loaded"));
 #else
         strcpy($hndl.buf, "no library was loaded");
 #endif
@@ -383,7 +383,7 @@ _$LINKAGE bool $load_symbol(const char *symbol)
     if (!$lib_is_loaded()) {
 #ifdef _$WINAPI
         $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy($hndl.buf, _T("no library was loaded"));
+        _tcscpy_s($hndl.buf, _$BUFLEN-1, _T("no library was loaded"));
 #else
         strcpy($hndl.buf, "no library was loaded");
 #endif
@@ -427,7 +427,7 @@ _$LINKAGE const $char_t *$last_error()
         return $hndl.buf_formatted;
     }
 
-    const size_t bufmax = (sizeof($hndl.buf_formatted) / sizeof($char_t)) - 1;
+    const size_t bufmax = _countof($hndl.buf_formatted) - 1;
     $char_t *buf = NULL;
     $char_t *msg = $hndl.buf;
     $char_t *out = $hndl.buf_formatted;
@@ -441,14 +441,14 @@ _$LINKAGE const $char_t *$last_error()
     if (buf) {
         /* put custom message in front of system error message */
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < bufmax) {
-            _sntprintf(out, bufmax, _T("%s: %s"), msg, buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%s: %s"), msg, buf);
         } else {
-            _sntprintf(out, bufmax, _T("%s"), buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%s"), buf);
         }
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, just print the error code */
-        _sntprintf(out, bufmax, _T("Last saved error code: %lu"),
+        _sntprintf_s(out, bufmax, _TRUNCATE, _T("Last saved error code: %lu"),
             $hndl.last_errno);
     }
 
@@ -477,7 +477,7 @@ _$LINKAGE $char_t *$lib_origin()
     /* check if library was loaded */
     if (!$lib_is_loaded()) {
         $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy($hndl.buf, _T("no library was loaded"));
+        _tcscpy_s($hndl.buf, _$BUFLEN-1, _T("no library was loaded"));
         return NULL;
     }
 
@@ -547,22 +547,28 @@ _$LINKAGE $char_t *$lib_origin()
 
 
 #if defined(_WIN32) && defined(_UNICODE)
-/* convert UTF-8 to wide characters */
-_$LINKAGE wchar_t *$convert_utf8_to_wcs(const char *str)
+/* convert narrow to wide characters */
+_$LINKAGE wchar_t *$convert_str_to_wcs(const char *str)
 {
-    int mbslen = (int)strlen(str);
-    int len = MultiByteToWideChar(CP_UTF8, 0, str, mbslen, NULL, 0);
-    if (len < 1) return NULL;
+    size_t len, n;
+    wchar_t *buf;
 
-    wchar_t *buf = malloc((len + 1) * sizeof(wchar_t));
+    if (!str) return NULL;
+
+    if (mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+        return NULL;
+    }
+
+    buf = malloc((len + 1) * sizeof(wchar_t));
     if (!buf) return NULL;
 
-    if (MultiByteToWideChar(CP_UTF8, 0, str, mbslen, buf, len) < 1) {
+    if (mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
         free(buf);
         return NULL;
     }
 
     buf[len] = L'\0';
+
     return buf;
 }
 #endif //_WIN32 && _UNICODE
@@ -589,18 +595,18 @@ _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
 #ifdef _UNICODE
     /* convert function name to wide characters
      * (we cannot receive the function name in a wide character format) */
-    wchar_t *wfunc = $convert_utf8_to_wcs(function);
+    wchar_t *wfunc = $convert_str_to_wcs(function);
     pfunc = wfunc;
 #else
     pfunc = function;
 #endif //_UNICODE
 
     /* allocate message buffer */
-    const size_t len = _tcslen(fmt) +  _tcslen(pfunc) + _tcslen(symbol) + _tcslen(err);
+    const size_t len = _tcslen(fmt) + _tcslen(pfunc) + _tcslen(symbol) + _tcslen(err);
     $char_t *buf = malloc((len + 1) * sizeof($char_t));
 
     /* save message to buffer */
-    _sntprintf(buf, len, fmt, pfunc, symbol, err);
+    _sntprintf_s(buf, len, _TRUNCATE, fmt, pfunc, symbol, err);
 
     /* show message */
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);

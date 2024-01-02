@@ -12,7 +12,7 @@ ifneq ($(CLANG_CL),)
 CC         = $(CLANG_CL)
 CXX        = $(CLANG_CL)
 BINS      += example_wide example_cxx_wide
-CFLAGS    := -W3 -O2 -DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS
+CFLAGS    := -W3 -O2 -DWIN32_LEAN_AND_MEAN
 CXXFLAGS  := $(CFLAGS) /EHsc
 LDFLAGS   := -fuse-ld=lld -link -subsystem:console -libpath:$(shell echo $$LIB | sed 's|;| -libpath:|g')
 LIB       := libhelloworld-0.dll
@@ -23,7 +23,7 @@ ifneq ($(shell echo $(CXX) | grep mingw),)
 BINS      += example_wide example_cxx_wide
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.dll.a
-CFLAGS    := -Wall -O2 -DWIN32_LEAN_AND_MEAN
+CFLAGS    := -Wall -Wextra -O3 -Wno-cast-function-type -DWIN32_LEAN_AND_MEAN
 CXXFLAGS  := $(CFLAGS) -std=c++11
 MUNICODE  := -municode
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
