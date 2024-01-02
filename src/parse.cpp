@@ -166,6 +166,9 @@ std::string gendlopen::parse(const char *data)
                     replace_string("GDO_RET", "return", copy);
                 }
 
+                if (p.type.ends_with("*")) {
+                    replace_string("GDO_TYPE ", p.type, copy);
+                }
                 replace_string("GDO_TYPE", p.type, copy);
                 replace_string("GDO_SYMBOL", p.symbol, copy);
                 replace_string("GDO_ARGS", p.args, copy);

@@ -28,8 +28,8 @@
     #define _$LIBA(NAME, API)     "lib" #NAME "-" #API ".dll"
 
     /* WCHAR */
-    #define _$LIBEXTW             _T("dll")
-    #define _$LIBW(NAME, API)     _T("lib" #NAME "-" #API ".dll")
+    #define _$LIBEXTW             L"dll"
+    #define _$LIBW(NAME, API)     L"lib" #NAME "-" #API ".dll"
 
     #ifdef _UNICODE
         #define _$LIBEXT          _$LIBEXTW

@@ -188,74 +188,75 @@ static StrVector read_input(
             continue;
         }
 
-        switch (c) {
-            /* end of sequence -> save line buffer */
-            case ';':
-                save_line(line, s_typedef, vec);
-                break;
+        switch (c)
+        {
+        /* end of sequence -> save line buffer */
+        case ';':
+            save_line(line, s_typedef, vec);
+            break;
 
-            case '/':
-                if (ifs.peek() == '*') {
-                    /* commentary begin */
-                    ifs.ignore();
-                    comment = '*';
-                } else if (ifs.peek() == '/') {
-                    /* commentary begin */
-                    ifs.ignore();
-                    comment = '\n';
-                } else {
-                    /* add character */
-                    add_space(line);
-                    line += c;
-                    line += ' ';
-                }
-                break;
-
-            case '\n':
-                if (comment == '\n') {
-                    /* commentary end */
-                    comment = 0;
-                }
+        case '/':
+            if (ifs.peek() == '*') {
+                /* commentary begin */
+                ifs.ignore();
+                comment = '*';
+            } else if (ifs.peek() == '/') {
+                /* commentary begin */
+                ifs.ignore();
+                comment = '\n';
+            } else {
+                /* add character */
                 add_space(line);
-                break;
-
-            case '*':
-                if (comment == '*' && ifs.peek() == '/') {
-                    /* commentary end */
-                    ifs.ignore();
-                    comment = 0;
-                } else if (comment == 0) {
-                    /* add character */
-                    add_space(line);
-                    line += c;
-                    line += ' ';
-                }
-                break;
-
-#ifdef __GNUC__
-            /* function name, argument, etc. */
-            case 'a'...'z':
-            case 'A'...'Z':
-            case '0'...'9':
-            case '_':
-                line += c;
-                break;
-#endif
-
-            /* add character */
-            default:
-#ifndef __GNUC__
-                /* function name, argument, etc. */
-                if (c == '_' || (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9')) {
-                    line += c;
-                    break;
-                }
-#endif
-                add_space(line);
-                if (isspace(c)) break;
                 line += c;
                 line += ' ';
+            }
+            break;
+
+        case '\n':
+            if (comment == '\n') {
+                /* commentary end */
+                comment = 0;
+            }
+            add_space(line);
+            break;
+
+        case '*':
+            if (comment == '*' && ifs.peek() == '/') {
+                /* commentary end */
+                ifs.ignore();
+                comment = 0;
+            } else if (comment == 0) {
+                /* add character */
+                add_space(line);
+                line += c;
+                line += ' ';
+            }
+            break;
+
+#ifdef __GNUC__
+        /* function name, argument, etc. */
+        case 'a'...'z':
+        case 'A'...'Z':
+        case '0'...'9':
+        case '_':
+            line += c;
+            break;
+#endif
+
+        /* add character */
+        default:
+#ifndef __GNUC__
+            /* function name, argument, etc. */
+            if (c == '_' || (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9')) {
+                line += c;
                 break;
+            }
+#endif
+            add_space(line);
+            if (isspace(c)) break;
+            line += c;
+            line += ' ';
+            break;
         }
     }
 
