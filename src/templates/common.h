@@ -61,7 +61,7 @@
 #endif
 
 
-/* flags */
+/* dlopen(3) */
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 0
 #endif
@@ -83,6 +83,8 @@
 #ifndef RTLD_DEEPBIND
 #define RTLD_DEEPBIND 0
 #endif
+
+/* https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */
 #ifndef DONT_RESOLVE_DLL_REFERENCES
 #define DONT_RESOLVE_DLL_REFERENCES 0
 #endif
