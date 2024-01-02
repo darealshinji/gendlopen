@@ -86,20 +86,17 @@ static bool get_argument_names(gendlopen::proto_t &proto)
         return true;
     }
 
-    /* needed for parsing */
     auto in = proto.args;
-    gendlopen::replace_string("(", " ( ", in);
-    gendlopen::replace_string(")", " ) ", in);
-    gendlopen::replace_string(",", " , ", in);
-    gendlopen::replace_string("*", " * ", in);
+
+    /* needed for parsing */
     in += " ,";
 
     std::istringstream iss(in);
 
     /* tokenize argument list */
     while (iss >> token) {
-        /* skip function pointer arguments list */
         if (fptr_args) {
+            /* skip through function pointer arguments list */
             if (token == "(") {
                 scope++;
             } else if (token == ")") {
@@ -110,37 +107,30 @@ static bool get_argument_names(gendlopen::proto_t &proto)
                 scope = 0;
                 fptr_name = fptr_args = false;
             }
-            continue;
-        }
-
-        /* function pointer name */
-        if (fptr_name) {
+        } else if (fptr_name) {
+            /* function pointer name */
             if (token == ")") {
                 fptr_args = true;
             } else {
                 arg.push_back(token);
             }
-            continue;
         } else if (token == "(") {
+            /* begin of a function pointer name */
             fptr_name = true;
-            continue;
-        }
+        } else if (token == ",") {
+            /* argument list separator */
+            if (arg.size() < 2 || is_keyword(arg.back())) {
+                std::cerr << "error: a parameter name is missing: "
+                    << proto.symbol << '(' << proto.args << ");" << std::endl;
+                return false;
+            }
 
-        /* argument separator */
-        if (token != ",") {
+            out += ", ";
+            out += arg.back();
+            arg.clear();
+        } else {
             arg.push_back(token);
-            continue;
         }
-
-        if (arg.size() < 2 || is_keyword(arg.back())) {
-            std::cerr << "error: a parameter name is missing: "
-                << proto.symbol << '(' << proto.args << ");" << std::endl;
-            return false;
-        }
-
-        out += ", ";
-        out += arg.back();
-        arg.clear();
     }
 
     if (out.starts_with(", ")) {
@@ -153,7 +143,7 @@ static bool get_argument_names(gendlopen::proto_t &proto)
 }
 
 /* tokenize line and save into vector or typedef string */
-static void save_line(std::string &input, std::string &s_typedef, StrVector &vproto)
+static void save_line(std::string &input, std::string &s_typedef, StrVector &vec)
 {
     /* strip spaces -> the input may only
      * contain whitespace characters */
@@ -163,22 +153,16 @@ static void save_line(std::string &input, std::string &s_typedef, StrVector &vpr
         return;
     }
 
-    std::istringstream iss(input);
-    std::string token, line;
-
-    while (iss >> token) {
-        line += token + " ";
-    }
-
+    auto line = input;
     strip_spaces(line);
 
-    if (line.starts_with("typedef")) {
+    if (line.starts_with("typedef ")) {
         s_typedef += line + ";\n";
     } else {
-        vproto.push_back(line);
+        vec.push_back(line);
     }
 
-    /* it's important to clear the variable */
+    /* it's important to clear the input variable */
     input.clear();
 }
 
@@ -187,9 +171,15 @@ static StrVector read_input(
     cin_ifstream &ifs,
     std::string &s_typedef)
 {
-    StrVector vproto;
+    StrVector vec;
     char c, comment = 0;
     std::string line;
+
+    auto add_space = [] (std::string &line) {
+        if (!line.empty() && line.back() != ' ') {
+            line += ' ';
+        }
+    };
 
     /* read input into vector */
     while (ifs.get(c) && ifs.good())
@@ -200,84 +190,84 @@ static StrVector read_input(
 
         switch (c) {
             /* end of sequence -> save line buffer */
-            case ';': {
-                save_line(line, s_typedef, vproto);
+            case ';':
+                save_line(line, s_typedef, vec);
                 break;
-            }
 
-            /* commentary begin */
-            case '/': {
+            case '/':
                 if (ifs.peek() == '*') {
+                    /* commentary begin */
                     ifs.ignore();
                     comment = '*';
-                    continue;
                 } else if (ifs.peek() == '/') {
+                    /* commentary begin */
                     ifs.ignore();
                     comment = '\n';
-                    continue;
-                }
-                line += ' ';
-                line += c;
-                line += ' ';
-                break;
-            }
-
-            /* commentary end */
-            case '\n':
-                if (comment == '\n') {
-                    comment = 0;
-                }
-                line += ' ';
-                break;
-            case '*': {
-                if (comment == '*' && ifs.peek() == '/') {
-                    ifs.ignore();
-                    comment = 0;
-                    continue;
-                } else if (comment == 0) {
-                    line += ' ';
+                } else {
+                    /* add character */
+                    add_space(line);
                     line += c;
                     line += ' ';
                 }
                 break;
-            }
 
-            /* append character to line buffer */
+            case '\n':
+                if (comment == '\n') {
+                    /* commentary end */
+                    comment = 0;
+                }
+                add_space(line);
+                break;
+
+            case '*':
+                if (comment == '*' && ifs.peek() == '/') {
+                    /* commentary end */
+                    ifs.ignore();
+                    comment = 0;
+                } else if (comment == 0) {
+                    /* add character */
+                    add_space(line);
+                    line += c;
+                    line += ' ';
+                }
+                break;
+
 #ifdef __GNUC__
+            /* function name, argument, etc. */
             case 'a'...'z':
             case 'A'...'Z':
             case '0'...'9':
             case '_':
                 line += c;
                 break;
+#endif
 
+            /* add character */
             default:
-                line += ' ';
+#ifndef __GNUC__
+                /* function name, argument, etc. */
+                if (c == '_' || (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9')) {
+                    line += c;
+                    break;
+                }
+#endif
+                add_space(line);
+                if (isspace(c)) break;
                 line += c;
                 line += ' ';
                 break;
-#else
-            default:
-                if (c == '_' || (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9')) {
-                    line += c;
-                } else {
-                    line += ' ';
-                    line += c;
-                    line += ' ';
-                }
-                break;
-#endif
         }
     }
 
     /* in case the last prototype didn't end on semicolon */
-    save_line(line, s_typedef, vproto);
+    save_line(line, s_typedef, vec);
 
     ifs.close();
 
-    return vproto;
+    return vec;
 }
 
+/* assume a function prototype and tokenize */
 bool gendlopen::tokenize_function(const std::string &s)
 {
     const std::regex reg(
@@ -305,7 +295,6 @@ bool gendlopen::tokenize_function(const std::string &s)
     if (proto.args.empty()) {
         proto.args = "void";
     } else {
-        replace_string("* *", "**", proto.args);
         replace_string("* ", "*", proto.args);
         replace_string(" ,", ",", proto.args);
         replace_string("( ", "(", proto.args);
@@ -318,6 +307,7 @@ bool gendlopen::tokenize_function(const std::string &s)
     return true;
 }
 
+/* assume an object prototype and tokenize */
 bool gendlopen::tokenize_object(const std::string &s)
 {
     const std::regex reg(
@@ -344,6 +334,7 @@ bool gendlopen::tokenize_object(const std::string &s)
     return true;
 }
 
+/* read input and tokenize */
 bool gendlopen::tokenize(const std::string &ifile)
 {
     /* open file for reading */
@@ -355,14 +346,14 @@ bool gendlopen::tokenize(const std::string &ifile)
     }
 
     /* read and tokenize input */
-    auto vproto_s = read_input(ifs, m_typedefs);
+    StrVector vec = read_input(ifs, m_typedefs);
 
     if (!m_typedefs.empty()) {
         m_typedefs.insert(0, "\n/* typedefs */\n");
     }
 
     /* process prototypes */
-    for (const auto &s : vproto_s) {
+    for (const auto &s : vec) {
         if (!tokenize_function(s) && !tokenize_object(s)) {
             std::cerr << "error: malformed prototype:\n" << s << std::endl;
             return false;

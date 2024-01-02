@@ -19,10 +19,13 @@ extern helloworld_cb_t helloworld_callback;
 
 /* say hello */
 void helloworld_hello(helloworld *hw);
-void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *));
+void helloworld_hello2(helloworld *hw,
+    void ( * helloworld_cb )
+        (const char*)
+);
 
 /* release */
 void helloworld_release
-  (/* //comment inside comment */ helloworld *hw)
+  (/* //comment inside comment */ helloworld * hw)
   ;
 
