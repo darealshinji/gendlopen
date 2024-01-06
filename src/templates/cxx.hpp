@@ -141,8 +141,6 @@ GDO_COMMON
 #endif
 #include <cstring>
 
-GDO_TYPEDEFS
-
 
 namespace gdo
 {
@@ -160,12 +158,10 @@ public:
 
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
-#ifdef _$WINAPI
     static constexpr const char *libext = _$LIBEXTA;
-#else
-    static constexpr const char *libext = _$LIBEXT;
-#endif
 
+
+    /* function pointer typedef to error message callback */
     typedef void (*callback_t)(const char *);
 
 
@@ -220,7 +216,6 @@ private:
         m_last_error = 0;
         m_errmsg = NULL;
         m_werrmsg = NULL;
-        //::SetLastError(0);
 #else
         m_last_error = "";
         ::dlerror();

@@ -10,7 +10,7 @@
     #ifdef _GNU_SOURCE
     #undef _GNU_SOURCE
     #endif
-    #define _GNU_SOURCE
+    #define _GNU_SOURCE 1
     #include <link.h>
     #include <dlfcn.h>
 #endif
@@ -58,6 +58,10 @@
 #else
     #define _$LIBEXT              "so"
     #define _$LIB(NAME, API)      "lib" #NAME ".so." #API
+#endif
+
+#ifndef _$LIBEXTA
+#define _$LIBEXTA _$LIBEXT
 #endif
 
 

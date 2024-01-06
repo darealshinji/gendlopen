@@ -17,7 +17,7 @@ Limitations:
  * parameter names must be included
  * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
  * C++11 is the minimum requirement for the generated C++ files
- * C++23 is the minimum requirement to compile the tool
+ * C++20 is the minimum requirement to compile the tool
 
 
 Input format
@@ -26,7 +26,6 @@ Input format
 Here's how the input text format must be:
 
  * all symbols that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)
- * a typedef can optionally be part of the input file
  * parameter names must be included
  * comments are ignored
  * line-breaks are treated as spaces

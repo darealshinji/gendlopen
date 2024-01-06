@@ -1,57 +1,50 @@
-/*
-Licensed under the MIT License <http://opensource.org/licenses/MIT>.
-SPDX-License-Identifier: MIT
-Copyright (c) 2023 djcj@gmx.de
-
-Permission is hereby  granted, free of charge, to any  person obtaining a copy
-of this software and associated  documentation files (the "Software"), to deal
-in the Software  without restriction, including without  limitation the rights
-to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
-copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
-IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
-FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
-AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
-LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (C) 2023-2024 djcj@gmx.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE
+ */
 
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <sstream>
+#include <ranges>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <vector>
-#include <cstdlib>
-#include <ctype.h>
-#include <string.h>
 
-#include "cin_ifstream.hpp"
-#include "gendlopen.hpp"
-
-typedef std::vector<std::string> StrVector;
+#include "strcasecmp.h"
+#include "tokenize.hpp"
 
 
-/* strip leading and trailing spaces */
-inline static void strip_spaces(std::string &in)
+/* extract argument names from args list */
+static bool get_argument_names(proto_t &proto)
 {
-    while (isspace(in.back())) in.pop_back();
-    while (isspace(in.front())) in.erase(0, 1);
-}
+    bool fptr_name = false;
+    bool fptr_args = false;
+    int scope = 0;
+    std::string out, token;
+    vstring_t arg;
 
-/* compare s with a list of very basic types and keywords
- * to guess if it could be a parameter name */
-static bool is_keyword(const std::string &s)
-{
-    const char *list[] = {
-        "*",
+    const char *keywords[] = {
         "char",
         "int", "long", "short",
         "float", "double",
@@ -63,23 +56,17 @@ static bool is_keyword(const std::string &s)
         NULL
     };
 
-    for (const char **p = list; *p != NULL; p++) {
-        if (strcasecmp(s.c_str(), *p) == 0) {
-            return true;
+    /* compare s with a list of very basic types and keywords
+     * to guess if it could be a parameter name */
+    auto is_keyword = [] (const char **list, const std::string &s) -> bool
+    {
+        for (const char **p = list; *p != NULL; p++) {
+            if (strcasecmp(s.c_str(), *p) == 0) {
+                return true;
+            }
         }
-    }
-
-    return false;
-}
-
-/* extract argument names from args list */
-static bool get_argument_names(gendlopen::proto_t &proto)
-{
-    bool fptr_name = false;
-    bool fptr_args = false;
-    int scope = 0;
-    std::string out, token;
-    StrVector arg;
+        return false;
+    };
 
     /* void; nothing to do */
     if (proto.args.empty() || strcasecmp(proto.args.c_str(), "void") == 0) {
@@ -119,7 +106,9 @@ static bool get_argument_names(gendlopen::proto_t &proto)
             fptr_name = true;
         } else if (token == ",") {
             /* argument list separator */
-            if (arg.size() < 2 || is_keyword(arg.back())) {
+            if (arg.size() < 2 || arg.back().back() == '*' ||
+                is_keyword(keywords, arg.back()))
+            {
                 std::cerr << "error: a parameter name is missing: "
                     << proto.symbol << '(' << proto.args << ");" << std::endl;
                 return false;
@@ -142,36 +131,10 @@ static bool get_argument_names(gendlopen::proto_t &proto)
     return true;
 }
 
-/* tokenize line and save into vector or typedef string */
-static void save_line(std::string &input, std::string &s_typedef, StrVector &vec)
-{
-    /* strip spaces -> the input may only
-     * contain whitespace characters */
-    strip_spaces(input);
-
-    if (input.empty()) {
-        return;
-    }
-
-    auto line = input;
-    strip_spaces(line);
-
-    if (line.starts_with("typedef ")) {
-        s_typedef += line + ";\n";
-    } else {
-        vec.push_back(line);
-    }
-
-    /* it's important to clear the input variable */
-    input.clear();
-}
-
 /* read input and strip comments */
-static StrVector read_input(
-    cin_ifstream &ifs,
-    std::string &s_typedef)
+vstring_t tokenize::read_input()
 {
-    StrVector vec;
+    vstring_t vec;
     char c, comment = 0;
     std::string line;
 
@@ -181,8 +144,18 @@ static StrVector read_input(
         }
     };
 
+    auto save_line = [] (std::string &input, vstring_t &vec)
+    {
+        strip_spaces(input);
+        if (input.empty()) return; /* had only whitespaces */
+        auto line = input;
+        input.clear(); /* empty variable */
+        strip_spaces(line);
+        vec.push_back(line);
+    };
+
     /* read input into vector */
-    while (ifs.get(c) && ifs.good())
+    while (m_ifs.get(c) && m_ifs.good())
     {
         if (comment != 0 && comment != c) {
             continue;
@@ -192,17 +165,17 @@ static StrVector read_input(
         {
         /* end of sequence -> save line buffer */
         case ';':
-            save_line(line, s_typedef, vec);
+            save_line(line, vec);
             break;
 
         case '/':
-            if (ifs.peek() == '*') {
+            if (m_ifs.peek() == '*') {
                 /* commentary begin */
-                ifs.ignore();
+                m_ifs.ignore();
                 comment = '*';
-            } else if (ifs.peek() == '/') {
+            } else if (m_ifs.peek() == '/') {
                 /* commentary begin */
-                ifs.ignore();
+                m_ifs.ignore();
                 comment = '\n';
             } else {
                 /* add character */
@@ -221,9 +194,9 @@ static StrVector read_input(
             break;
 
         case '*':
-            if (comment == '*' && ifs.peek() == '/') {
+            if (comment == '*' && m_ifs.peek() == '/') {
                 /* commentary end */
-                ifs.ignore();
+                m_ifs.ignore();
                 comment = 0;
             } else if (comment == 0) {
                 /* add character */
@@ -241,7 +214,7 @@ static StrVector read_input(
         case '_':
             line += c;
             break;
-#endif
+#endif //__GNUC__
 
         /* add character */
         default:
@@ -251,7 +224,7 @@ static StrVector read_input(
                 line += c;
                 break;
             }
-#endif
+#endif //!__GNUC__
             add_space(line);
             if (isspace(c)) break;
             line += c;
@@ -261,15 +234,15 @@ static StrVector read_input(
     }
 
     /* in case the last prototype didn't end on semicolon */
-    save_line(line, s_typedef, vec);
+    save_line(line, vec);
 
-    ifs.close();
+    m_ifs.close();
 
     return vec;
 }
 
 /* assume a function prototype and tokenize */
-bool gendlopen::tokenize_function(const std::string &s)
+bool tokenize::tokenize_function(const std::string &s)
 {
     const std::regex reg(
         "(.*?[\\*|\\s])"  /* type */
@@ -292,15 +265,23 @@ bool gendlopen::tokenize_function(const std::string &s)
         return false;
     }
 
+    /* replace string in proto.args (macro) */
+#define REPL(a, b) \
+    for (size_t pos = 0; (pos = proto.args.find(a, pos)) != std::string::npos; \
+        pos += sizeof(b) - 1) \
+    { \
+        proto.args.replace(pos, sizeof(a) - 1, b); \
+    }
+
     /* format args */
     if (proto.args.empty()) {
         proto.args = "void";
     } else {
-        replace_string("* ", "*", proto.args);
-        replace_string(" ,", ",", proto.args);
-        replace_string("( ", "(", proto.args);
-        replace_string(" )", ")", proto.args);
-        replace_string(") (", ")(", proto.args);
+        REPL("* ", "*");
+        REPL(" ,", ",");
+        REPL("( ", "(");
+        REPL(" )", ")");
+        REPL(") (", ")(");
     }
 
     m_prototypes.push_back(proto);
@@ -309,7 +290,7 @@ bool gendlopen::tokenize_function(const std::string &s)
 }
 
 /* assume an object prototype and tokenize */
-bool gendlopen::tokenize_object(const std::string &s)
+bool tokenize::tokenize_object(const std::string &s)
 {
     const std::regex reg(
         "(.*?[\\*|\\s])"  /* type */
@@ -336,22 +317,18 @@ bool gendlopen::tokenize_object(const std::string &s)
 }
 
 /* read input and tokenize */
-bool gendlopen::tokenize(const std::string &ifile)
+bool tokenize::tokenize_file(const std::string &ifile)
 {
     /* open file for reading */
-    cin_ifstream ifs(ifile);
+    m_ifs.open(ifile);
 
-    if (!ifs.is_open()) {
+    if (!m_ifs.is_open()) {
         std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
         return false;
     }
 
     /* read and tokenize input */
-    StrVector vec = read_input(ifs, m_typedefs);
-
-    if (!m_typedefs.empty()) {
-        m_typedefs.insert(0, "\n/* typedefs */\n");
-    }
+    vstring_t vec = read_input();
 
     /* process prototypes */
     for (const auto &s : vec) {
@@ -368,7 +345,7 @@ bool gendlopen::tokenize(const std::string &ifile)
     }
 
     /* check for duplicates */
-    StrVector list;
+    vstring_t list;
 
     for (const auto &s : m_prototypes) {
         list.push_back(s.symbol);

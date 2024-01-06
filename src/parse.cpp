@@ -1,55 +1,39 @@
-/*
-Licensed under the MIT License <http://opensource.org/licenses/MIT>.
-SPDX-License-Identifier: MIT
-Copyright (c) 2023 djcj@gmx.de
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (C) 2023-2024 djcj@gmx.de
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE
+ */
 
-Permission is hereby  granted, free of charge, to any  person obtaining a copy
-of this software and associated  documentation files (the "Software"), to deal
-in the Software  without restriction, including without  limitation the rights
-to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
-copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
-IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
-FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
-AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
-LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
+#include <iostream>
 #include <string>
-#include <vector>
-#include <string.h>
+#include <cstdlib>
 
+#include "strcasecmp.h"
 #include "gendlopen.hpp"
 #include "template.h"
 
 
-static const char *function_keywords[] =
-{
-    "GDO_RET",
-    "GDO_TYPE",
-    "GDO_SYMBOL",
-    "GDO_ARGS",
-    "GDO_NOTYPE_ARGS",
-    NULL
-};
-
-static const char *object_keywords[] =
-{
-    "GDO_OBJ_TYPE",
-    "GDO_OBJ_SYMBOL",
-    NULL
-};
-
-
-/* check if the line needs to be processed in a loop */
-static inline bool need_loop(const std::string &line, const char **list)
+/* check for keyword in list */
+static inline
+bool find_keyword(const std::string &line, const char **list)
 {
     for (const char **p = list; *p != NULL; p++) {
         if (line.find(*p) != std::string::npos) {
@@ -60,7 +44,8 @@ static inline bool need_loop(const std::string &line, const char **list)
     return false;
 }
 
-static inline std::string get_indent(const std::string &line)
+static inline
+std::string get_indent(const std::string &line)
 {
     auto pos = line.find_first_not_of(" \t\n\r\v\f");
 
@@ -71,27 +56,43 @@ static inline std::string get_indent(const std::string &line)
     return {};
 }
 
-static inline std::string get_indent_end(const std::string &line)
+static inline
+std::string get_indent_end(const std::string &line)
 {
     auto pos = line.find_last_not_of(" \t\n\r\v\f");
 
     if (pos != std::string::npos) {
-        return line.substr(pos+1);
+        return line.substr(pos + 1);
     }
 
     return {};
 }
 
 /* parse the template data */
-std::string gendlopen::parse(const char *data)
+std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &objects)
 {
     std::string buf, line;
+
+    const char *function_keywords[] = {
+        "GDO_RET",
+        "GDO_TYPE",
+        "GDO_SYMBOL",
+        "GDO_ARGS",
+        "GDO_NOTYPE_ARGS",
+        NULL
+    };
+
+    const char *object_keywords[] = {
+        "GDO_OBJ_TYPE",
+        "GDO_OBJ_SYMBOL",
+        NULL
+    };
 
     if (!data) {
         return {};
     }
 
-    if (m_prototypes.empty() && m_objects.empty()) {
+    if (prototypes.empty() && objects.empty()) {
         std::cerr << "error: no function or object prototypes" << std::endl;
         std::exit(1);
     }
@@ -124,20 +125,12 @@ std::string gendlopen::parse(const char *data)
             continue;
         }
 
-        /* replace typedefs and common header data first */
-        if (line == "GDO_TYPEDEFS\n" && m_typedefs.empty()) {
-            /* skip entire line */
-            line.clear();
-            continue;
-        } else {
-            replace_string("GDO_COMMON", common_header_data, line);
-            replace_string("GDO_TYPEDEFS", m_typedefs, line);
-        }
+        /* replace common header data first */
+        replace_string("GDO_COMMON", common_header_data, line);
 
-        /* replace if needed */
-
-        bool has_func = need_loop(line, function_keywords);
-        bool has_obj = need_loop(line, object_keywords);
+        /* check if the line needs to be processed in a loop */
+        bool has_func = find_keyword(line, function_keywords);
+        bool has_obj = find_keyword(line, object_keywords);
 
         if (has_func && has_obj) {
             /* error */
@@ -146,7 +139,7 @@ std::string gendlopen::parse(const char *data)
         } else if (has_func) {
             /* function prototypes */
 
-            if (m_prototypes.empty()) {
+            if (prototypes.empty()) {
                 buf += get_indent(line);
                 buf += "/* -- no function prototypes -- */";
                 buf += get_indent_end(line);
@@ -154,7 +147,7 @@ std::string gendlopen::parse(const char *data)
                 continue;
             }
 
-            for (const auto &p : m_prototypes) {
+            for (const auto &p : prototypes) {
                 auto copy = line;
 
                 /* don't "return" on "void" functions */
@@ -179,7 +172,7 @@ std::string gendlopen::parse(const char *data)
         } else if (has_obj) {
             /* object prototypes */
 
-            if (m_objects.empty()) {
+            if (objects.empty()) {
                 buf += get_indent(line);
                 buf += "/* -- no object prototypes -- */";
                 buf += get_indent_end(line);
@@ -187,7 +180,7 @@ std::string gendlopen::parse(const char *data)
                 continue;
             }
 
-            for (const auto &p : m_objects) {
+            for (const auto &p : objects) {
                 auto copy = line;
                 replace_string("GDO_OBJ_TYPE", p.type, copy);
                 replace_string("GDO_OBJ_SYMBOL", p.symbol, copy);

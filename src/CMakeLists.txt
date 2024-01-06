@@ -2,8 +2,9 @@
 set(C_COMPILER_BUILD "cc" CACHE FILEPATH "build platform C compiler; needed for cross-building")
 
 
-# needs C++23
-set(CMAKE_CXX_STANDARD 23)
+# there's a linking bug related to C++23 + regex + MinGW + static linking:
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=110572
+set(CMAKE_CXX_STANDARD 20)
 
 
 # compiler-specific flags
