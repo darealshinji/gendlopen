@@ -65,6 +65,14 @@
 #endif
 
 
+/* default flags */
+#ifdef _$WINAPI
+    #define _$DEFAULT_FLAGS  0
+#else
+    #define _$DEFAULT_FLAGS  RTLD_LAZY
+#endif
+
+
 /* dlopen(3) */
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 0

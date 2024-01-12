@@ -15,7 +15,7 @@ extern "C" {
     #define _T(x) x
 #endif
 
-#ifdef _$ATEXIT
+#ifdef _$AUTO_RELEASE
 _$LINKAGE void $call_free_lib();
 #endif
 _$LINKAGE void $clear_errbuf();
@@ -23,9 +23,9 @@ _$LINKAGE void $clear_errbuf();
 /* $sym() */
 #ifdef _$WINAPI
     #define _$SYM(a, b)  $sym(a, _T(a), b)
-    _$LINKAGE FARPROC    $sym(const char *symbol, const $char_t *msg, bool *b);
+    _$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *b);
 #else
-    _$LINKAGE void *    _$SYM(const char *symbol, bool *b);
+    _$LINKAGE void *_$SYM(const char *symbol, bool *b);
 #endif
 
 #define _$BUFLEN 4096
@@ -183,19 +183,19 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 
 #endif //!_$WINAPI
 
-#ifdef _$ATEXIT
+#ifdef _$AUTO_RELEASE
     /* register our call to free the library handle with atexit()
      * so that the library will automatically be freed upon exit */
     if (!$hndl.call_free_lib_is_registered) {
         atexit($call_free_lib);
         $hndl.call_free_lib_is_registered = true;
     }
-#endif //_$ATEXIT
+#endif //_$AUTO_RELEASE
 
     return true;
 }
 
-#ifdef _$ATEXIT
+#ifdef _$AUTO_RELEASE
 /* If registered with atexit() this function will be called at
  * the program's exit. Function must be of type "void (*)(void)". */
 _$LINKAGE void $call_free_lib()
@@ -208,7 +208,7 @@ _$LINKAGE void $call_free_lib()
 #endif //!_$WINAPI
     }
 }
-#endif //_$ATEXIT
+#endif //_$AUTO_RELEASE
 /***************************************************************************/
 
 
@@ -539,10 +539,10 @@ _$LINKAGE $char_t *$lib_origin()
 /***************************************************************************/
 /* autoload wrapper functions */
 /***************************************************************************/
-#ifdef _$USE_WRAPPER
+#ifdef _$ENABLE_AUTOLOAD
 
 #if !defined(_$DEFAULT_LIB)
-#error "You need to define _$DEFAULT_LIB if you want to make use of _$USE_WRAPPER"
+#error "You need to define _$DEFAULT_LIB if you want to make use of _$ENABLE_AUTOLOAD"
 #endif
 
 
@@ -646,7 +646,7 @@ GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 
 #undef $WRAP
 
-#endif //_$USE_WRAPPER
+#endif //_$ENABLE_AUTOLOAD
 /***************************************************************************/
 
 

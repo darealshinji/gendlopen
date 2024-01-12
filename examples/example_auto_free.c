@@ -2,7 +2,7 @@
 
 /* automatically release library on exit using
  * the atexit() function */
-#define GDO_ATEXIT 1
+#define GDO_AUTO_RELEASE 1
 
 /* include generated header file */
 #include "example_auto_free.h"

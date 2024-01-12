@@ -5,7 +5,7 @@
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions */
-#define GDO_USE_WRAPPER 1
+#define GDO_ENABLE_AUTOLOAD 1
 
 /* define a default library to load */
 #define GDO_DEFAULT_LIB GDO_LIB(helloworld,0)
@@ -14,19 +14,19 @@
 #include "example_cxx.hpp"
 
 
-#ifdef _WIN32
 void print_error(const char *msg)
 {
+#ifdef _WIN32
     MessageBoxA(NULL, msg, "Error", MB_OK | MB_ICONERROR);
-}
+#else
+    std::cout << "ERROR >>> " << msg << std::endl;
 #endif
+}
 
 
 int main()
 {
-#ifdef _WIN32
-    gdo::dl::set_callback(print_error);
-#endif
+    gdo::message_callback = print_error;
 
     auto cb = [] (const char *msg) {
         std::cout << msg << std::endl;

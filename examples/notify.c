@@ -6,11 +6,11 @@
 #ifdef USE_DLOPEN
 
 #define XNOTIFY_DEFAULT_LIB "libnotify.so.4"
-#define XNOTIFY_ATEXIT
+#define XNOTIFY_AUTO_RELEASE
 #include "example_notify_notify.h"
 
 #define XGOBJECT_DEFAULT_LIB "libgobject-2.0.so.0"
-#define XGOBJECT_ATEXIT
+#define XGOBJECT_AUTO_RELEASE
 #include "example_notify_gobject.h"
 
 #undef G_OBJECT

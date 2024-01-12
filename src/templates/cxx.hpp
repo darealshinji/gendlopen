@@ -4,89 +4,86 @@
 /*           quick overview           */
 /**************************************/
 
-/* gdo::dl() */
 namespace gdo {
-class dl {
-
-/*** constructors ***/
-
-    /* empty c'tor */
-    dl();
-
-    /* set filename, flags and whether to use a new namespace */
-    dl(const char *filename, int flags=default_flags, bool new_namespace=false);
-
 
 /*** constants ***/
 
     /* API-agnostic default flags */
-    static constexpr int default_flags;
+    const int default_flags;
 
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
-    static constexpr const char *libext;
+    const char * const libext;
+
+    /* function pointer to error message callback */
+    void (*message_callback)(const char *) = nullptr;
 
 
-/*** static member functions ***/
+    class dl {
 
-    /* set a custom callback function for error messages */
-    void set_callback(void (*callback)(const char *));
+    /*** constructors ***/
+
+        /* empty c'tor */
+        dl();
+
+        /* set filename, flags and whether to use a new namespace */
+        dl(const char *filename, int flags=default_flags, bool new_namespace=false);
 
 
-/*** member functions ***/
+    /*** member functions ***/
 
-    /* load the library that was set by the c'tor;
-     * if nothing was given it will use NULL as filename to load */
-    bool load();
+        /* load the library that was set by the c'tor;
+        * if nothing was given it will use NULL as filename to load */
+        bool load();
 
-    /* load filename; set flags and whether to use a new namespace */
-    bool load(const char *filename, int flags=default_flags, bool new_namespace=false);
+        /* load filename; set flags and whether to use a new namespace */
+        bool load(const char *filename, int flags=default_flags, bool new_namespace=false);
 
-    /* wide character variants for win32 */
+        /* wide character variants for win32 */
 #ifdef _$WINAPI
-    bool load(const wchar_t *filename, int flags=default_flags);
+        bool load(const wchar_t *filename, int flags=default_flags);
 #endif
 
-    /* load library and symbols */
-    bool load_lib_and_symbols();
+        /* load library and symbols */
+        bool load_lib_and_symbols();
 
-    /* check if library was successfully loaded */
-    bool lib_loaded() const;
+        /* check if library was successfully loaded */
+        bool lib_loaded() const;
 
-    /* return the flags used to load the library */
-    int flags() const;
+        /* return the flags used to load the library */
+        int flags() const;
 
-    /* load all symbols;
-     * If ignore_errors is set true the function won't stop on the first
-     * symbol that can't be loaded but instead tries to load them all.
-     * If one or more symbols weren't loaded the function returns false. */
-    bool load_symbols(bool ignore_errors=false);
+        /* load all symbols;
+        * If ignore_errors is set true the function won't stop on the first
+        * symbol that can't be loaded but instead tries to load them all.
+        * If one or more symbols weren't loaded the function returns false. */
+        bool load_symbols(bool ignore_errors=false);
 
-    /* load a specific symbol */
-    bool load_symbol(const char *symbol);
+        /* load a specific symbol */
+        bool load_symbol(const char *symbol);
 
-    /* check if symbols were successfully loaded */
-    bool symbols_loaded() const;
+        /* check if symbols were successfully loaded */
+        bool symbols_loaded() const;
 
-    /* free library */
-    bool free();
+        /* free library */
+        bool free();
 
-    /* whether to free the library in the class destructor */
-    void free_lib_in_dtor(bool b);
+        /* whether to free the library in the class destructor */
+        void free_lib_in_dtor(bool b);
 
-    /* get full path of loaded library */
-    std::string origin();
+        /* get full path of loaded library */
+        std::string origin();
 #ifdef _$WINAPI
-    std::wstring origin_w();
+        std::wstring origin_w();
 #endif
 
-    /* retrieve the last error message */
-    std::string error();
+        /* retrieve the last error message */
+        std::string error();
 #ifdef _$WINAPI
-    std::wstring error_w();
+        std::wstring error_w();
 #endif
 
-}; /* class dl */
+    }; /* class dl */
 } /* namespace gdo */
 
 /***************************************/
@@ -109,9 +106,9 @@ _$NO_DLMOPEN
 
 _$DEFAULT_LIB
     Set a default library name through this macro (including double quote
-    marks). This macro must be defined if you want to set _$USE_WRAPPER.
+    marks). This macro must be defined if you want to set _$ENABLE_AUTOLOAD.
 
-_$USE_WRAPPER
+_$ENABLE_AUTOLOAD
     Define this macro if you want to use auto-loading wrapper functions.
     This means you don't need to explicitly call library load functions.
     It requires _$DEFAULT_LIB to be defined.
@@ -142,54 +139,47 @@ GDO_COMMON
 #include <cstring>
 
 
+/* begin namespace */
 namespace gdo
 {
 
-class dl
-{
-public:
-
-    /* default flags */
-#ifdef _$WINAPI
-    static constexpr const int default_flags = 0;
-#else
-    static constexpr const int default_flags = RTLD_LAZY;
-#endif
-
-    /* Shared library file extension without dot ("dll", "dylib" or "so").
-     * Useful i.e. on plugins. */
-    static constexpr const char *libext = _$LIBEXTA;
-
-
-    /* function pointer typedef to error message callback */
-    typedef void (*callback_t)(const char *);
-
+/* anonymous namespace */
+namespace {
+    /* function pointers */
+    using GDO_SYMBOL_t = GDO_TYPE (*)(GDO_ARGS);@
+    GDO_SYMBOL_t GDO_SYMBOL_ptr_;
 
     /* object pointers */
-    static GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
+    GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
+}
+
+/* default flags */
+const int default_flags = _$DEFAULT_FLAGS;
+
+/* Shared library file extension without dot ("dll", "dylib" or "so").
+ * Useful i.e. on plugins. */
+const char * const libext = _$LIBEXTA;
+
+/* function pointer to error message callback */
+void (*message_callback)(const char *) = nullptr;
 
 
+/* library loader class */
+class dl
+{
 private:
 
-    /* function typedefs */
-    typedef GDO_TYPE (*GDO_SYMBOL_t)(GDO_ARGS);
-
-    /* function pointers */
-    static GDO_SYMBOL_t GDO_SYMBOL_ptr_;
-
-
 #ifdef _$WINAPI
-    /* for codecvt */
+    /* utility wrapper to adapt locale-bound facets for wstring convert */
     template<class Facet>
-    struct deletable_facet : Facet {
-        template<class... Args>
-        deletable_facet(Args&&... args) : Facet(std::forward<Args>(args)...) {}
+    struct deletable_facet : Facet
+    {
+        template<class ...Args>
+        deletable_facet(Args&& ...args) : Facet(std::forward<Args>(args)...) {}
         ~deletable_facet() {}
     };
 
-    typedef std::wstring_convert<
-        deletable_facet<std::codecvt<wchar_t, char, std::mbstate_t>>,
-        wchar_t> convert_string_t;
+    using WCharFacet = deletable_facet<std::codecvt<wchar_t, char, std::mbstate_t>>;
 
     HMODULE m_handle = NULL;
     DWORD m_last_error = 0;
@@ -199,8 +189,6 @@ private:
     void *m_handle = NULL;
     std::string m_last_error;
 #endif
-
-    static callback_t m_callback;
 
     const char *m_filename = NULL;
     int m_flags = default_flags;
@@ -282,17 +270,6 @@ private:
         } else {
             m_handle = ::dlopen(filename, m_flags);
         }
-#endif
-    }
-
-
-    /* free library handle */
-    inline bool free_lib()
-    {
-#ifdef _$WINAPI
-        return (::FreeLibrary(m_handle) == TRUE);
-#else
-        return (::dlclose(m_handle) == 0);
 #endif
     }
 
@@ -432,7 +409,11 @@ public:
     ~dl()
     {
         if (m_free_lib_in_dtor && lib_loaded()) {
-            free_lib();
+#ifdef _$WINAPI
+            ::FreeLibrary(m_handle);
+#else
+            ::dlclose(m_handle);
+#endif
         }
     }
 
@@ -482,7 +463,7 @@ public:
     /* load library and symbols */
     bool load_lib_and_symbols()
     {
-        return (load(m_filename, m_flags, m_new_namespace) && load_symbols());
+        return (load() && load_symbols());
     }
 
 
@@ -581,7 +562,12 @@ public:
             return true;
         }
 
-        bool ret = free_lib();
+#ifdef _$WINAPI
+        bool ret = (::FreeLibrary(m_handle) == TRUE);
+#else
+        bool ret = (::dlclose(m_handle) == 0);
+#endif
+
         save_error();
 
         if (!ret) {
@@ -658,7 +644,7 @@ public:
             buf.insert(0, m_errmsg);
         } else if (m_werrmsg && m_werrmsg[0] != 0) {
             /* convert wchar_t to char */
-            convert_string_t conv;
+            std::wstring_convert<WCharFacet> conv;
             buf.insert(0, ": ");
             buf.insert(0, conv.to_bytes(m_werrmsg));
         }
@@ -686,7 +672,7 @@ public:
             buf.insert(0, m_werrmsg);
         } else if (m_errmsg && m_errmsg[0] != 0) {
             /* convert char to wchar_t */
-            convert_string_t conv;
+            std::wstring_convert<WCharFacet> conv;
             buf.insert(0, L": ");
             buf.insert(0, conv.from_bytes(m_errmsg));
         }
@@ -695,107 +681,77 @@ public:
     }
 #endif //_$WINAPI
 
+}; /* end class dl */
 
-    /* set a custom callback function for error messages */
-    static void set_callback(callback_t callback)
+
+    /* anonymous */
+    namespace
     {
-        m_callback = callback;
-    }
-
-
-    /* used internally but must be set to public */
-    static void _print_error(const char *msg)
-    {
-        if (m_callback) {
-            m_callback(msg);
-        } else {
-            std::cerr << msg << std::endl;
+        void print_error(const std::string &msg)
+        {
+            if (message_callback) {
+                message_callback(msg.c_str());
+            } else {
+                std::cerr << msg << std::endl;
+            }
         }
-    }
 
+#ifdef _$ENABLE_AUTOLOAD
 
-private:
+#if !defined(_$DEFAULT_LIB)
+    #error  _$DEFAULT_LIB was not defined!
+#endif
+        auto al = dl();
 
-    static void function_ptr_is_null(const char *symbol)
-    {
-        std::string msg = "error: function pointer `";
-        if (symbol) msg += symbol;
-        msg += "' is NULL";
+        void autoload(const char *symbol)
+        {
+            if (!al.load(_$DEFAULT_LIB)) {
+                std::string msg = "error loading library `" _$DEFAULT_LIB "':\n";
+                msg += al.error();
+                print_error(msg);
+                std::exit(1);
+            }
 
-        _print_error(msg.c_str());
-        std::abort();
-    }
+            if (!al.load_symbols()) {
+                std::string msg = "error in auto-loading wrapper function `";
+                msg += symbol ? symbol : "(NULL)";
+                msg += "': ";
+                msg += al.error();
+                print_error(msg);
+                std::exit(1);
+            }
+        }
 
-public:
+#else // !_$ENABLE_AUTOLOAD
+
+        void autoload(const char *) {}
+
+#endif // !_$ENABLE_AUTOLOAD
+
+        void ptr_is_null(const char *symbol)
+        {
+            std::string msg = "error: pointer to symbol `";
+            msg += symbol ? symbol : "(NULL)";
+            msg += "' is NULL";
+            print_error(msg);
+            std::abort();
+        }
+
+    } /* anonymous namespace end */
+
 
     /* wrapped functions */
 
-    static GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-        if (!GDO_SYMBOL_ptr_) function_ptr_is_null("GDO_SYMBOL");@
+    GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+        autoload("GDO_SYMBOL");@
+        if (!GDO_SYMBOL_ptr_) ptr_is_null("GDO_SYMBOL");@
         GDO_RET GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
     }@
-
-}; /* class dl */
-
-
-#ifdef _$USE_WRAPPER
-
-#if !defined(_$DEFAULT_LIB)
-#error  _$DEFAULT_LIB was not defined!
-#endif
-
-    auto _al = dl();
-
-    void _autoload(const char *symbol)
-    {
-        if (!_al.load(_$DEFAULT_LIB)) {
-            std::string msg = "error loading library `" _$DEFAULT_LIB "':\n"
-                + _al.error();
-            dl::_print_error(msg.c_str());
-            std::exit(1);
-        } else if (!_al.load_symbols()) {
-            std::string msg = "";
-
-            if (symbol) {
-                msg += "error in auto-loading wrapper function `";
-                msg += symbol;
-                msg += "': ";
-            }
-            msg += _al.error();
-
-            dl::_print_error(msg.c_str());
-            std::exit(1);
-        }
-    }
-
-
-    /* auto-loading wrapper functions */
-
-    GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-        _autoload("GDO_SYMBOL");@
-        GDO_RET dl::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
-    }@
-
-#endif // _$USE_WRAPPER
 
 } /* namespace gdo */
 
 
 /* aliases */
-
-#ifdef _$USE_WRAPPER
-
-/* use auto-loading wrapper functions */
 #define GDO_SYMBOL gdo::GDO_SYMBOL
-
-#else
-
-/* use class-internal wrapped functions */
-#define GDO_SYMBOL gdo::dl::GDO_SYMBOL
-
-#endif // _$USE_WRAPPER
-
-
-/* object pointers */
-#define GDO_OBJ_SYMBOL *gdo::dl::GDO_OBJ_SYMBOL_ptr_
+#define GDO_OBJ_SYMBOL *gdo::GDO_OBJ_SYMBOL_ptr_
 

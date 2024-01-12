@@ -123,13 +123,17 @@ void gendlopen::generate(
 
     /* create output */
 
-    auto header_data = m_cxx ? cxx_header_data : c_header_data;
-    auto body_data = m_cxx ? cxx_body_data : c_body_data;
     auto proto = tok.prototypes();
     auto objs = tok.objects();
 
+    const char *header_data = c_header_data;
+    const char *body_data = c_body_data;
+
     if (m_minimal) {
         header_data = minimal_header_data;
+        body_data = "";
+    } else if (m_cxx) {
+        header_data = cxx_header_data;
         body_data = "";
     }
 

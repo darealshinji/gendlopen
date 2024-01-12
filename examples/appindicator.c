@@ -7,15 +7,15 @@
 #ifdef USE_DLOPEN
 
 #define XAPPINDICATOR_DEFAULT_LIB "libappindicator.so.1"
-#define XAPPINDICATOR_ATEXIT
+#define XAPPINDICATOR_AUTO_RELEASE
 #include "example_appindicator_appindicator.h"
 
 #define XGOBJECT_DEFAULT_LIB "libgobject-2.0.so.0"
-#define XGOBJECT_ATEXIT
+#define XGOBJECT_AUTO_RELEASE
 #include "example_appindicator_gobject.h"
 
 #define XGTK_DEFAULT_LIB "libgtk-x11-2.0.so.0"
-#define XGTK_ATEXIT
+#define XGTK_AUTO_RELEASE
 #include "example_appindicator_gtk.h"
 
 #undef G_OBJECT

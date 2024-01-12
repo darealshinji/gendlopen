@@ -108,17 +108,17 @@ _$STATIC
 
 _$DEFAULT_LIB
     Set a default library name through this macro (including double quote
-    marks). This macro must be defined if you want to set _$USE_WRAPPER
+    marks). This macro must be defined if you want to set _$ENABLE_AUTOLOAD
     or if you want to use the `$load_lib()' function.
 
-_$USE_WRAPPER
+_$ENABLE_AUTOLOAD
     Define this macro if you want to use auto-loading wrapper functions.
     This means you don't need to explicitly call library load functions.
     It requires _$DEFAULT_LIB to be defined.
     If an error occures during loading these functions throw an error message
     and call `exit(1)'!
 
-_$ATEXIT
+_$AUTO_RELEASE
     If defined the library handle will automatically be released on program exit.
 
 
@@ -147,14 +147,6 @@ extern "C" {
 
 
 GDO_COMMON
-
-
-/* default flags */
-#ifdef _$WINAPI
-    #define _$DEFAULT_FLAGS  0
-#else
-    #define _$DEFAULT_FLAGS  RTLD_LAZY
-#endif
 
 
 /* static linkage */
@@ -189,11 +181,7 @@ _$LINKAGE $char_t *$lib_origin();
 /****************************************************************************/
 /* aliases */
 /****************************************************************************/
-#if defined(_$DEFAULT_LIB) && defined(_$USE_WRAPPER)
-
-#ifndef _$ATEXIT
-#define _$ATEXIT
-#endif
+#if defined(_$DEFAULT_LIB) && defined(_$ENABLE_AUTOLOAD)
 
 #define GDO_SYMBOL $wrap_GDO_SYMBOL
 

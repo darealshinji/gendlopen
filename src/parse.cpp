@@ -31,42 +31,45 @@
 #include "template.h"
 
 
-/* check for keyword in list */
-static inline
-bool find_keyword(const std::string &line, const char **list)
-{
-    for (const char **p = list; *p != NULL; p++) {
-        if (line.find(*p) != std::string::npos) {
-            return true;
+/* anonymous */
+namespace {
+
+    /* check for keyword in list */
+    inline bool find_keyword(const std::string &line, const char **list)
+    {
+        for (const char **p = list; *p != NULL; p++) {
+            if (line.find(*p) != std::string::npos) {
+                return true;
+            }
         }
+
+        return false;
     }
 
-    return false;
-}
+    inline std::string get_indent(const std::string &line)
+    {
+        auto pos = line.find_first_not_of(" \t\n\r\v\f");
 
-static inline
-std::string get_indent(const std::string &line)
-{
-    auto pos = line.find_first_not_of(" \t\n\r\v\f");
+        if (pos != std::string::npos) {
+            return line.substr(0, pos);
+        }
 
-    if (pos != std::string::npos) {
-        return line.substr(0, pos);
+        return {};
     }
 
-    return {};
-}
+    inline std::string get_indent_end(const std::string &line)
+    {
+        auto pos = line.find_last_not_of(" \t\n\r\v\f");
 
-static inline
-std::string get_indent_end(const std::string &line)
-{
-    auto pos = line.find_last_not_of(" \t\n\r\v\f");
+        if (pos != std::string::npos) {
+            return line.substr(pos + 1);
+        }
 
-    if (pos != std::string::npos) {
-        return line.substr(pos + 1);
+        return {};
     }
 
-    return {};
-}
+} /* anonymous namespace end */
+
 
 /* parse the template data */
 std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &objects)

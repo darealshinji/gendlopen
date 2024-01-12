@@ -101,7 +101,6 @@ int main(int argc, char **argv)
     hexdump("c.h",        "c_header_data",       fp);
     hexdump("c.c",        "c_body_data",         fp);
     hexdump("cxx.hpp",    "cxx_header_data",     fp);
-    hexdump("cxx.cpp",    "cxx_body_data",       fp);
     hexdump("minimal.h",  "minimal_header_data", fp);
     fprintf(fp, "%s\n",   "#endif //_TEMPLATE_H_");
 
