@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include "strcasecmp.h"
 #include "args.hxx"
 #include "gendlopen.hpp"
 
@@ -31,6 +32,13 @@ using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
 
+
+static void error_exit(char **argv, const std::string &msg)
+{
+    std::cerr << msg << std::endl;
+    std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
+    std::exit(1);
+}
 
 int main(int argc, char **argv)
 {
@@ -64,13 +72,9 @@ int main(int argc, char **argv)
         {'n', "name"},
         "GDO");
 
-    Flag a_cxx(args, "",
-        "Generate C++ code",
-        {'x', "cxx"});
-
-    Flag a_min(args, "",
-        "Generate minimal C code (disables C++ output)",
-        {'m', "minimal"});
+    StrValue a_format(args, "STRING",
+        "Set output format: C, C++ or minimal (default is C)",
+        {'F', "format"});
 
     Flag a_separate(args, "",
         "Save output into separate header and body files",
@@ -88,22 +92,27 @@ int main(int argc, char **argv)
         return 0;
     }
     catch (const args::RequiredError &e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
-        return 1;
+        error_exit(argv, e.what());
     }
     catch (const args::ParseError &e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
-        return 1;
+        error_exit(argv, e.what());
     }
 
     auto gdo = gendlopen();
 
-    if (a_min) {
-        gdo.minimal(a_min);
-    } else {
-        gdo.cxx(a_cxx);
+    if (a_format) {
+        std::string fmt = a_format.Get();
+
+        if (strcasecmp(fmt.c_str(), "C") == 0) {
+            gdo.format(output::c);
+        } else if (strcasecmp(fmt.c_str(), "C++") == 0) {
+            gdo.format(output::cxx);
+        } else if (strcasecmp(fmt.c_str(), "minimal") == 0) {
+            gdo.format(output::minimal);
+        } else {
+            std::string s = "unknown output format: " + fmt;
+            error_exit(argv, s);
+        }
     }
 
     gdo.separate(a_separate);

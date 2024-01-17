@@ -28,6 +28,7 @@
 #include <fstream>
 #include <string>
 
+#include "types.hpp"
 #include "tokenize.hpp"
 
 
@@ -36,7 +37,9 @@ class gendlopen
 private:
 
     std::string m_name_upper, m_name_lower, m_guard;
-    bool m_cxx, m_minimal, m_force, m_separate;
+    bool m_force = false;
+    bool m_separate = false;
+    output::format m_out = output::c;
 
     bool open_fstream(std::ofstream &ofs, const std::string &ofile);
     std::string parse(const char *data, vproto_t &prototypes, vobj_t &objects);
@@ -59,9 +62,7 @@ public:
 
     /* c'tor */
     gendlopen()
-    {
-        m_cxx = m_minimal = m_force = m_separate = false;
-    }
+    {}
 
     /* d'tor */
     virtual ~gendlopen()
@@ -80,8 +81,7 @@ public:
     /* set options */
     void separate(bool b) { m_separate = b; }
     void force(bool b) { m_force = b; }
-    void cxx(bool b) { m_cxx = b; }
-    void minimal(bool b) { m_minimal = b; }
+    void format(output::format val) { m_out = val; }
 
     /* generate output */
     void generate(const std::string &ifile, const std::string &ofile, const std::string &name);

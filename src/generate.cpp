@@ -92,7 +92,7 @@ void gendlopen::generate(
     if (use_stdout == false) {
         ofhdr = ofile;
 
-        if (m_cxx) {
+        if (m_out == output::cxx) {
             /* C++ */
             auto ext = ofhdr.extension();
 
@@ -109,8 +109,11 @@ void gendlopen::generate(
     std::string header_name;
 
     if (use_stdout) {
-        header_name = name + ".h";
-        if (m_cxx) header_name += "pp";
+        if (m_out == output::cxx) {
+            header_name = name + ".hpp";
+        } else {
+            header_name = name + ".h";
+        }
     } else {
         header_name = ofhdr.filename().string();
     }
@@ -129,12 +132,18 @@ void gendlopen::generate(
     const char *header_data = c_header_data;
     const char *body_data = c_body_data;
 
-    if (m_minimal) {
-        header_data = minimal_header_data;
-        body_data = "";
-    } else if (m_cxx) {
+    switch (m_out)
+    {
+    case output::cxx:
         header_data = cxx_header_data;
         body_data = "";
+        break;
+    case output::minimal:
+        header_data = minimal_header_data;
+        body_data = "";
+        break;
+    case output::c:
+        break;
     }
 
     if (use_stdout) {
@@ -151,7 +160,7 @@ void gendlopen::generate(
             /* separate files */
             std::ofstream ofs_body;
             auto ofbody = ofhdr;
-            ofbody.replace_extension(m_cxx ? ".cpp" : ".c");
+            ofbody.replace_extension(m_out == output::cxx ? ".cpp" : ".c");
 
             if (!open_fstream(ofs_body, ofbody.string())) {
                 std::exit(1);

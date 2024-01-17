@@ -117,5 +117,5 @@ example_%.h: helloworld.txt
 	$(GENDLOPEN) -i $^ > $@
 
 example_%.hpp: helloworld.txt
-	$(GENDLOPEN) -x -i $^ > $@
+	$(GENDLOPEN) --format=C++ -i $^ > $@
 

@@ -33,7 +33,10 @@ add_executable(gendlopen
     generate.cpp
     main.cpp
     parse.cpp
+    strcasecmp.h
     tokenize.cpp
+    tokenize.hpp
+    types.hpp
     ${TEMPLATE_H}
 )
 

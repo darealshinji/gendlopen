@@ -29,23 +29,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
-
-
-typedef struct {
-    std::string type;
-    std::string symbol;
-    std::string args;
-    std::string notype_args;
-} proto_t;
-
-typedef struct {
-    std::string type;
-    std::string symbol;
-} obj_t;
-
-typedef std::vector<proto_t> vproto_t;
-typedef std::vector<obj_t> vobj_t;
-typedef std::vector<std::string> vstring_t;
+#include "types.hpp"
 
 
 /* wrapper class to enable reading input from
