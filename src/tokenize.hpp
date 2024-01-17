@@ -110,11 +110,18 @@ private:
 
 public:
 
-    tokenize() {}
-    virtual ~tokenize() {}
+    /* c'tor */
+    tokenize()
+    {}
 
+    /* d'tor */
+    virtual ~tokenize()
+    {}
+
+    /* tokenize input */
     bool tokenize_file(const std::string &ifile);
 
+    /* return prototype vectors */
     vproto_t &prototypes() { return m_prototypes; };
     vobj_t &objects() { return m_objects; };
 };

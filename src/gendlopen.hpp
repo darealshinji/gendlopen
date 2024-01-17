@@ -37,9 +37,9 @@ class gendlopen
 private:
 
     std::string m_name_upper, m_name_lower, m_guard;
+    output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;
-    output::format m_out = output::c;
 
     bool open_fstream(std::ofstream &ofs, const std::string &ofile);
     std::string parse(const char *data, vproto_t &prototypes, vobj_t &objects);
@@ -79,9 +79,9 @@ public:
     }
 
     /* set options */
+    void format(output::format val) { m_out = val; }
     void separate(bool b) { m_separate = b; }
     void force(bool b) { m_force = b; }
-    void format(output::format val) { m_out = val; }
 
     /* generate output */
     void generate(const std::string &ifile, const std::string &ofile, const std::string &name);

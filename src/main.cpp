@@ -27,7 +27,18 @@
 #include "args.hxx"
 #include "gendlopen.hpp"
 
-typedef args::ValueFlag<std::string> StrValue;
+/* defined in C++23 */
+#ifndef unreachable
+    #ifdef __GNUC__
+        #define unreachable() (__builtin_unreachable())
+    #elif defined(_MSC_VER)
+        #define unreachable() (__assume(0))
+    #else
+        #define unreachable() /**/
+    #endif
+#endif
+
+using StrValue = args::ValueFlag<std::string>;
 using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
@@ -38,6 +49,21 @@ static void error_exit(char **argv, const std::string &msg)
     std::cerr << msg << std::endl;
     std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
     std::exit(1);
+}
+
+static output::format str_to_enum(char **argv, const std::string &fmt)
+{
+    if (same_string_case(fmt, "C")) {
+        return output::c;
+    } else if (same_string_case(fmt, "C++")) {
+        return output::cxx;
+    } else if (same_string_case(fmt, "minimal")) {
+        return output::minimal;
+    }
+
+    std::string s = "unknown output format: " + fmt;
+    error_exit(argv, s);
+    unreachable();
 }
 
 int main(int argc, char **argv)
@@ -91,30 +117,15 @@ int main(int argc, char **argv)
         std::cout << args;
         return 0;
     }
-    catch (const args::RequiredError &e) {
-        error_exit(argv, e.what());
-    }
-    catch (const args::ParseError &e) {
+    catch (const args::Error &e) {
         error_exit(argv, e.what());
     }
 
     auto gdo = gendlopen();
 
     if (a_format) {
-        std::string fmt = a_format.Get();
-
-        if (same_string_case(fmt, "C")) {
-            gdo.format(output::c);
-        } else if (same_string_case(fmt, "C++")) {
-            gdo.format(output::cxx);
-        } else if (same_string_case(fmt, "minimal")) {
-            gdo.format(output::minimal);
-        } else {
-            std::string s = "unknown output format: " + fmt;
-            error_exit(argv, s);
-        }
+        gdo.format(str_to_enum(argv, a_format.Get()));
     }
-
     gdo.separate(a_separate);
     gdo.force(a_force);
     gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
