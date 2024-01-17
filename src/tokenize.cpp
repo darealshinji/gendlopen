@@ -61,15 +61,15 @@ static bool get_argument_names(proto_t &proto)
     auto is_keyword = [] (const char **list, const std::string &s) -> bool
     {
         for (const char **p = list; *p != NULL; p++) {
-            if (strcasecmp(s.c_str(), *p) == 0) {
+            if (same_string_case(s, *p)) {
                 return true;
             }
         }
         return false;
     };
 
-    /* void; nothing to do */
-    if (proto.args.empty() || strcasecmp(proto.args.c_str(), "void") == 0) {
+    /* void or empty: nothing to do */
+    if (proto.args.empty() || same_string_case(proto.args, "void")) {
         return true;
     }
 

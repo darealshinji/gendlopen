@@ -154,7 +154,7 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
                 auto copy = line;
 
                 /* don't "return" on "void" functions */
-                if (strcasecmp(p.type.c_str(), "void") == 0) {
+                if (same_string_case(p.type, "void")) {
                     /* keep the indentation pretty */
                     replace_string("GDO_RET ", "", copy);
                     replace_string("GDO_RET", "", copy);

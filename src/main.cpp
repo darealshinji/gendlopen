@@ -103,11 +103,11 @@ int main(int argc, char **argv)
     if (a_format) {
         std::string fmt = a_format.Get();
 
-        if (strcasecmp(fmt.c_str(), "C") == 0) {
+        if (same_string_case(fmt, "C")) {
             gdo.format(output::c);
-        } else if (strcasecmp(fmt.c_str(), "C++") == 0) {
+        } else if (same_string_case(fmt, "C++")) {
             gdo.format(output::cxx);
-        } else if (strcasecmp(fmt.c_str(), "minimal") == 0) {
+        } else if (same_string_case(fmt, "minimal")) {
             gdo.format(output::minimal);
         } else {
             std::string s = "unknown output format: " + fmt;
