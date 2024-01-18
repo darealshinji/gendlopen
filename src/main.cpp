@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (C) 2023 djcj@gmx.de
+ * Copyright (C) 2023-2024 djcj@gmx.de
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,17 +27,6 @@
 #include "args.hxx"
 #include "gendlopen.hpp"
 
-/* defined in C++23 */
-#ifndef unreachable
-    #ifdef __GNUC__
-        #define unreachable() (__builtin_unreachable())
-    #elif defined(_MSC_VER)
-        #define unreachable() (__assume(0))
-    #else
-        #define unreachable() /**/
-    #endif
-#endif
-
 using StrValue = args::ValueFlag<std::string>;
 using args::ArgumentParser;
 using args::HelpFlag;
@@ -53,17 +42,16 @@ static void error_exit(char **argv, const std::string &msg)
 
 static output::format str_to_enum(char **argv, const std::string &fmt)
 {
-    if (same_string_case(fmt, "C")) {
-        return output::c;
-    } else if (same_string_case(fmt, "C++")) {
+    if (same_string_case(fmt, "C++")) {
         return output::cxx;
     } else if (same_string_case(fmt, "minimal")) {
         return output::minimal;
+    } else if (!same_string_case(fmt, "C")) {
+        std::string s = "unknown output format: " + fmt;
+        error_exit(argv, s);
     }
 
-    std::string s = "unknown output format: " + fmt;
-    error_exit(argv, s);
-    unreachable();
+    return output::c;
 }
 
 int main(int argc, char **argv)
