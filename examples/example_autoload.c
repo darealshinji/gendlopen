@@ -6,6 +6,7 @@
 /* enable automatic loading through wrapper functions;
  * the library handle is automatically released on exit */
 #define GDO_ENABLE_AUTOLOAD 1
+#define GDO_WRAP_FUNCTIONS  1
 
 /* show error messages for errors that occurred during
  * auto-loading in a message box window */

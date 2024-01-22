@@ -147,29 +147,37 @@ GDO_COMMON
 #include <cstring>
 
 
-/* begin namespace */
 namespace gdo
 {
+    namespace type
+    {
+        using GDO_SYMBOL = GDO_TYPE (*)(GDO_ARGS);
+    }
 
-/* anonymous namespace */
-namespace {
-    /* function pointers */
-    using GDO_SYMBOL_t = GDO_TYPE (*)(GDO_ARGS);@
-    GDO_SYMBOL_t GDO_SYMBOL_ptr_;
+    namespace ptr
+    {
+        /* function pointers */
+        type::GDO_SYMBOL GDO_SYMBOL;
 
-    /* object pointers */
-    GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
-}
+        /* object pointers */
+        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL;
+    }
 
-/* default flags */
-const int default_flags = _$DEFAULT_FLAGS;
+    namespace loaded
+    {
+        bool GDO_SYMBOL = false;
+        bool GDO_OBJ_SYMBOL = false;
+    }
 
-/* Shared library file extension without dot ("dll", "dylib" or "so").
- * Useful i.e. on plugins. */
-const char * const libext = _$LIBEXTA;
+    /* default flags */
+    const int default_flags = _$DEFAULT_FLAGS;
 
-/* function pointer to error message callback */
-void (*message_callback)(const char *) = nullptr;
+    /* Shared library file extension without dot ("dll", "dylib" or "so").
+     * Useful i.e. on plugins. */
+    const char * const libext = _$LIBEXTA;
+
+    /* function pointer to error message callback */
+    void (*message_callback)(const char *) = nullptr;
 
 
 /* library loader class */
@@ -201,7 +209,6 @@ private:
     const char *m_filename = NULL;
     int m_flags = default_flags;
     bool m_new_namespace = false;
-    bool m_symbols_loaded = false;
     bool m_free_lib_in_dtor = true;
 
 
@@ -284,23 +291,17 @@ private:
 
     /* load symbol address */
     template<typename T>
-    void sym(T &ptr, const char *symbol, bool &rv)
+    bool sym(T &ptr, const char *symbol)
     {
 #ifdef _$WINAPI
         ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
 
-        if (!rv) {
-            /* an error has already occurred */
-            return;
-        } else if (!ptr) {
+        if (!ptr) {
             save_error(symbol);
-            return;
+            return false;
         }
 #else
         ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
-
-        /* an error has already occurred */
-        if (!rv) return;
 
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
@@ -313,20 +314,11 @@ private:
             /* clear error */
             ::dlerror();
 
-            rv = false;
-            return;
+            return false;
         }
 #endif
 
-        rv = true;
-    }
-
-    template<typename T>
-    bool sym(T &ptr, const char *symbol)
-    {
-        bool rv = true;
-        sym(ptr, symbol, rv);
-        return rv;
+        return true;
     }
 
 
@@ -505,11 +497,9 @@ public:
     /* load all symbols */
     bool load_symbols(bool ignore_errors=false)
     {
-        bool rv = true;
-
         clear_error();
 
-        if (m_symbols_loaded) {
+        if (symbols_loaded()) {
             return true;
         } else if (!lib_loaded()) {
             set_error_invalid_handle();
@@ -517,18 +507,23 @@ public:
         }
 
         /* load function pointer addresses */
-        sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL", rv);@
-        if (!ignore_errors && !rv) return false;
+@
+        loaded::GDO_SYMBOL = sym<type::GDO_SYMBOL>(@
+            ptr::GDO_SYMBOL, "GDO_SYMBOL");@
+        if (!loaded::GDO_SYMBOL && !ignore_errors){@
+            return false;@
+        }
 
         /* load object addresses */
-        sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL", rv);@
-        if (!ignore_errors && !rv) return false;
-
-        m_symbols_loaded = rv;
+        loaded::GDO_OBJ_SYMBOL = sym<GDO_OBJ_TYPE *>(@
+            ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@
+        if (!loaded::GDO_OBJ_SYMBOL && !ignore_errors) {@
+            return false;@
+        }
 
         clear_error();
 
-        return rv;
+        return symbols_loaded();
     }
 
 
@@ -546,12 +541,14 @@ public:
 
         /* function pointer addresses */
         if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-            return sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL");@
+            return sym<type::GDO_SYMBOL>(@
+                ptr::GDO_SYMBOL, "GDO_SYMBOL");@
         }
 
         /* load object addresses */
         if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-            return sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL");@
+            return sym<GDO_OBJ_TYPE *>(@
+                ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@
         }
 
         return false;
@@ -561,7 +558,14 @@ public:
     /* check if all symbols are loaded */
     bool symbols_loaded() const
     {
-        return m_symbols_loaded;
+        if (true
+            && loaded::GDO_SYMBOL
+            && loaded::GDO_OBJ_SYMBOL
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
 
@@ -586,8 +590,12 @@ public:
         }
 
         m_handle = NULL;
-        GDO_SYMBOL_ptr_ = nullptr;
-        GDO_OBJ_SYMBOL_ptr_ = nullptr;
+
+        ptr::GDO_SYMBOL = nullptr;
+        ptr::GDO_OBJ_SYMBOL = nullptr;
+
+        loaded::GDO_SYMBOL = false;
+        loaded::GDO_OBJ_SYMBOL = false;
 
         return true;
     }
@@ -715,20 +723,19 @@ public:
 
         auto al = dl();
 
-        void autoload(const char *symbol)
+        /* used internally by wrapper functions, `calling_function' is never NULL */
+        void autoload(const char *calling_function)
         {
             if (!al.load(_$DEFAULT_LIB)) {
-                std::string msg = "error loading library `" _$DEFAULT_LIB "':\n";
-                msg += al.error();
+                std::string msg = "error loading library `" _$DEFAULT_LIB "':\n"
+                    + al.error();
                 print_error(msg);
                 std::exit(1);
             }
 
             if (!al.load_symbols()) {
-                std::string msg = "error in auto-loading wrapper function `";
-                msg += symbol ? symbol : "(NULL)";
-                msg += "': ";
-                msg += al.error();
+                std::string msg = "error in auto-loading wrapper function `"
+                    + std::string(calling_function) + "': " + al.error();
                 print_error(msg);
                 std::exit(1);
             }
@@ -736,39 +743,45 @@ public:
 
 #else // !_$ENABLE_AUTOLOAD
 
+        /* dummy */
         void autoload(const char *) {}
 
 #endif // !_$ENABLE_AUTOLOAD
 
-        void ptr_is_null(const char *symbol)
+        /* used internally by wrapper functions, `symbol' is never NULL */
+        void check_symbol_loaded(const char *symbol, bool sym_loaded)
         {
-            std::string msg = "error: pointer to symbol `";
-            msg += symbol ? symbol : "(NULL)";
-            msg += "' is NULL";
-            print_error(msg);
-            std::exit(1);
+            if (!sym_loaded) {
+                std::string msg = "error: symbol `" + std::string(symbol)
+                    + "' was not loaded";
+                print_error(msg);
+                std::exit(1);
+            }
         }
 
-    } /* anonymous namespace end */
+    } /* anonymous namespace */
 
 
     /* wrapped functions */
-@
-    GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-        autoload("GDO_SYMBOL");@
-        if (!GDO_SYMBOL_ptr_) ptr_is_null("GDO_SYMBOL");@
-        GDO_RET GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
-    }
+    namespace wrapped
+    {
+        GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+            autoload(__FUNCTION__);@
+            check_symbol_loaded("GDO_SYMBOL", loaded::GDO_SYMBOL);@
+            GDO_RET ptr::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+        }@
+
+    } /* namespace wrapped */
 
 } /* namespace gdo */
 
 
 #ifdef _$WRAP_FUNCTIONS
 
-/* wrapped autoload functions */
+/* function wrappers */
 @
 _$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-    GDO_RET gdo::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+    GDO_RET gdo::wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
 }
 
 #else //!_$WRAP_FUNCTIONS
@@ -776,12 +789,12 @@ _$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     #ifdef _$ENABLE_AUTOLOAD
 
         /* aliases to autoload function names */
-        #define GDO_SYMBOL gdo::GDO_SYMBOL
+        #define GDO_SYMBOL gdo::wrapped::GDO_SYMBOL
 
     #else //!_$ENABLE_AUTOLOAD
 
         /* aliases to raw function pointers */
-        #define GDO_SYMBOL gdo::GDO_SYMBOL_ptr_
+        #define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
 
     #endif //!_$ENABLE_AUTOLOAD
 
@@ -789,5 +802,5 @@ _$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 
 
 /* aliases to raw object pointers */
-#define GDO_OBJ_SYMBOL *gdo::GDO_OBJ_SYMBOL_ptr_
+#define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL
 
