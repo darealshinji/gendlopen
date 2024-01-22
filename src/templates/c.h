@@ -178,21 +178,9 @@ _$LINKAGE const $char_t *$last_error();
 _$LINKAGE $char_t *$lib_origin();
 
 
-/****************************************************************************/
-/* aliases */
-/****************************************************************************/
-#if defined(_$DEFAULT_LIB) && defined(_$ENABLE_AUTOLOAD)
-
-#define GDO_SYMBOL $wrap_GDO_SYMBOL
-
-#else
-
-#define GDO_SYMBOL $hndl.GDO_SYMBOL_ptr_
-
-#endif
-
+/* object pointer aliases */
 #define GDO_OBJ_SYMBOL *$hndl.GDO_OBJ_SYMBOL_ptr_
-/****************************************************************************/
+
 
 #ifdef __cplusplus
 } /* extern "C" */

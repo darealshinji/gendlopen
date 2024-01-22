@@ -28,7 +28,8 @@
 #include <fstream>
 #include <string>
 
-#include "types.hpp"
+#include "template.h"
+#include "common.hpp"
 #include "tokenize.hpp"
 
 
@@ -48,7 +49,7 @@ private:
      * them to the provided stream */
     template<typename T=std::ofstream>
     void put_header_guards(T &str, const char *header_data, const char *body_data,
-        const char *license_data, vproto_t &prototypes, vobj_t &objects)
+        vproto_t &prototypes, vobj_t &objects)
     {
         str << license_data;
         str << "#ifndef " << m_guard << '\n';
@@ -67,16 +68,6 @@ public:
     /* d'tor */
     virtual ~gendlopen()
     {}
-
-    /* replace_string(a,b,s) will substitute a with b in s */
-    inline static
-    void replace_string(const std::string &from, const std::string &to, std::string &s)
-    {
-        for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
-        {
-            s.replace(pos, from.size(), to);
-        }
-    }
 
     /* set options */
     void format(output::format val) { m_out = val; }

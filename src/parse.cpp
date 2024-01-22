@@ -24,52 +24,49 @@
 
 #include <iostream>
 #include <string>
-#include <cstdlib>
+#include <stdlib.h>
 
-#include "strcasecmp.h"
-#include "gendlopen.hpp"
 #include "template.h"
+#include "common.hpp"
+#include "gendlopen.hpp"
 
 
-/* anonymous */
-namespace {
+static inline
+std::string get_indent(const std::string &line)
+{
+    auto pos = line.find_first_not_of(" \t\n\r\v\f");
 
-    /* check for keyword in list */
-    inline bool find_keyword(const std::string &line, const char **list)
-    {
-        for (const char **p = list; *p != NULL; p++) {
-            if (line.find(*p) != std::string::npos) {
-                return true;
-            }
-        }
-
-        return false;
+    if (pos != std::string::npos) {
+        return line.substr(0, pos);
     }
 
-    inline std::string get_indent(const std::string &line)
-    {
-        auto pos = line.find_first_not_of(" \t\n\r\v\f");
+    return {};
+}
 
-        if (pos != std::string::npos) {
-            return line.substr(0, pos);
-        }
+static inline
+std::string get_indent_end(const std::string &line)
+{
+    auto pos = line.find_last_not_of(" \t\n\r\v\f");
 
-        return {};
+    if (pos != std::string::npos) {
+        return line.substr(pos + 1);
     }
 
-    inline std::string get_indent_end(const std::string &line)
-    {
-        auto pos = line.find_last_not_of(" \t\n\r\v\f");
+    return {};
+}
 
-        if (pos != std::string::npos) {
-            return line.substr(pos + 1);
+/* check for keyword in list */
+static inline
+bool find_keyword(const std::string &line, const char **list)
+{
+    for (const char **p = list; *p != NULL; p++) {
+        if (line.find(*p) != std::string::npos) {
+            return true;
         }
-
-        return {};
     }
 
-} /* anonymous namespace end */
-
+    return false;
+}
 
 /* parse the template data */
 std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &objects)

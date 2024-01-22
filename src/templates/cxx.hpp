@@ -276,21 +276,23 @@ private:
 
     /* load symbol address */
     template<typename T>
-    bool sym(T &ptr, const char *symbol, bool rv=true)
+    void sym(T &ptr, const char *symbol, bool &rv)
     {
 #ifdef _$WINAPI
         ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
 
         if (!rv) {
-            return false;
+            /* an error has already occurred */
+            return;
         } else if (!ptr) {
             save_error(symbol);
-            return false;
+            return;
         }
 #else
         ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
 
-        if (!rv) return false;
+        /* an error has already occurred */
+        if (!rv) return;
 
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
@@ -299,13 +301,24 @@ private:
         if (errptr) {
             /* save error message */
             m_last_error = errptr;
+
             /* clear error */
             ::dlerror();
-            return false;
+
+            rv = false;
+            return;
         }
 #endif
 
-        return true;
+        rv = true;
+    }
+
+    template<typename T>
+    bool sym(T &ptr, const char *symbol)
+    {
+        bool rv = true;
+        sym(ptr, symbol, rv);
+        return rv;
     }
 
 
@@ -495,25 +508,15 @@ public:
             return false;
         }
 
-        if (ignore_errors) {
-            /* load function pointer addresses */
-            rv = sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL", rv);
+        /* load function pointer addresses */
+        sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL", rv);@
+        if (!ignore_errors && !rv) return false;
 
-            /* load object addresses */
-            rv = sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL", rv);
-        } else {
-            /* load function pointer addresses */
-            if (!sym<GDO_SYMBOL_t>(GDO_SYMBOL_ptr_, "GDO_SYMBOL")) {@
-                return false;@
-            }
+        /* load object addresses */
+        sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL", rv);@
+        if (!ignore_errors && !rv) return false;
 
-            /* load object addresses */
-            if (!sym<GDO_OBJ_TYPE *>(GDO_OBJ_SYMBOL_ptr_, "GDO_OBJ_SYMBOL")) {@
-                return false;@
-            }
-        }
-
-        if (rv) m_symbols_loaded = true;
+        m_symbols_loaded = rv;
 
         clear_error();
 
@@ -724,7 +727,7 @@ public:
 
 #else // !_$ENABLE_AUTOLOAD
 
-        void autoload(const char *) {}
+        inline void autoload(const char *) {}
 
 #endif // !_$ENABLE_AUTOLOAD
 
@@ -742,7 +745,7 @@ public:
 
     /* wrapped functions */
 
-    GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+    inline GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
         autoload("GDO_SYMBOL");@
         if (!GDO_SYMBOL_ptr_) ptr_is_null("GDO_SYMBOL");@
         GDO_RET GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
@@ -751,7 +754,13 @@ public:
 } /* namespace gdo */
 
 
-/* aliases */
-#define GDO_SYMBOL gdo::GDO_SYMBOL
+/* wrapped functions */
+@
+_$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+    GDO_RET gdo::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+}
+
+
+/* object pointer aliases */
 #define GDO_OBJ_SYMBOL *gdo::GDO_OBJ_SYMBOL_ptr_
 

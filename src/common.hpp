@@ -22,11 +22,18 @@
  * THE SOFTWARE
  */
 
-#ifndef _TYPES_HPP_
-#define _TYPES_HPP_
+#ifndef _COMMON_HPP_
+#define _COMMON_HPP_
 
 #include <string>
 #include <vector>
+#include <ctype.h>
+#include <string.h>
+#ifndef _MSC_VER
+#include <strings.h>
+#endif
+
+/* typedefs */
 
 typedef struct {
     std::string type;
@@ -47,8 +54,37 @@ typedef std::vector<std::string> vstring_t;
 namespace output
 {
     typedef enum {
-        c, cxx, minimal
+        c,
+        cxx,
+        minimal
     } format;
 }
 
-#endif //_TYPES_HPP_
+
+/* common inline functions */
+
+inline bool same_string_case(const std::string &str1, const char *str2)
+{
+#ifdef _MSC_VER
+    return (_stricmp(str1.c_str(), str2) == 0);
+#else
+    return (strcasecmp(str1.c_str(), str2) == 0);
+#endif
+}
+
+inline void strip_spaces(std::string &in)
+{
+    while (isspace(in.back())) in.pop_back();
+    while (isspace(in.front())) in.erase(0, 1);
+}
+
+/* replace_string(a,b,s) will substitute a with b in s */
+inline void replace_string(const std::string &from, const std::string &to, std::string &s)
+{
+    for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
+    {
+        s.replace(pos, from.size(), to);
+    }
+}
+
+#endif //_COMMON_HPP_

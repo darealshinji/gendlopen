@@ -264,8 +264,6 @@ _$LINKAGE bool $free_lib()
 /***************************************************************************/
 _$LINKAGE bool $load_symbols(bool ignore_errors)
 {
-    bool rv = true;
-
     $clear_errbuf();
 
     /* already loaded all symbols */
@@ -290,29 +288,26 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
      * symbols failed to load.
      * If we do not ignore errors the function will simply return false on
      * the first error it encounters. */
-    if (ignore_errors) {
-        /* load function pointer addresses */
-        $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
-            _$SYM("GDO_SYMBOL", &rv);
 
-        /* load object pointer addresses */
-        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-            _$SYM("GDO_OBJ_SYMBOL", &rv);
-    } else {
-        /* load function pointer addresses */
-        $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
+    bool rv = true;
+
+    /* load function pointer addresses */
+@
+    /* GDO_SYMBOL */@
+    $hndl.GDO_SYMBOL_ptr_ = @
+        (GDO_TYPE (*)(GDO_ARGS))@
             _$SYM("GDO_SYMBOL", &rv);@
-        if (!rv) return false;@
-        rv = true;
+    if (!ignore_errors && !rv) return false;
 
-        /* load object pointer addresses */
-        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+    /* load object pointer addresses */
+@
+    /* GDO_OBJ_SYMBOL */@
+    $hndl.GDO_OBJ_SYMBOL_ptr_ = @
+        (GDO_OBJ_TYPE *)@
             _$SYM("GDO_OBJ_SYMBOL", &rv);@
-        if (!rv) return false;@
-        rv = true;
-    }
+    if (!ignore_errors && !rv) return false;
 
-    if (rv) $hndl.all_symbols_loaded = true;
+    $hndl.all_symbols_loaded = rv;
 
     return rv;
 }
@@ -396,16 +391,22 @@ _$LINKAGE bool $load_symbol(const char *symbol)
 
 
     /* function pointer addresses */
+@
+    /* GDO_SYMBOL */@
     if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-        $hndl.GDO_SYMBOL_ptr_ = (GDO_TYPE (*)(GDO_ARGS))@
-            _$SYM("GDO_SYMBOL", &rv);@
+        $hndl.GDO_SYMBOL_ptr_ =@
+            (GDO_TYPE (*)(GDO_ARGS))@
+                _$SYM("GDO_SYMBOL", &rv);@
         return rv;@
     }
 
     /* load object addresses */
+@
+    /* GDO_OBJ_SYMBOL */@
     if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-            _$SYM("GDO_OBJ_SYMBOL", &rv);@
+        $hndl.GDO_OBJ_SYMBOL_ptr_ =@
+            (GDO_OBJ_TYPE *)@
+                _$SYM("GDO_OBJ_SYMBOL", &rv);@
         return rv;@
     }
 
@@ -537,7 +538,7 @@ _$LINKAGE $char_t *$lib_origin()
 
 
 /***************************************************************************/
-/* autoload wrapper functions */
+/* autoload functions */
 /***************************************************************************/
 #ifdef _$ENABLE_AUTOLOAD
 
@@ -546,7 +547,9 @@ _$LINKAGE $char_t *$lib_origin()
 #endif
 
 
-#if defined(_WIN32) && defined(_UNICODE)
+#ifdef _WIN32
+
+#ifdef _UNICODE
 /* convert narrow to wide characters */
 _$LINKAGE wchar_t *$convert_str_to_wcs(const char *str)
 {
@@ -571,22 +574,12 @@ _$LINKAGE wchar_t *$convert_str_to_wcs(const char *str)
 
     return buf;
 }
-#endif //_WIN32 && _UNICODE
+#endif //_UNICODE
 
-
-/* This function is used by the wrapper functions to perform the loading
- * and handle errors. */
-_$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
+#ifdef _$USE_MESSAGE_BOX
+/* Windows: show message in a MessageBox window */
+_$LINKAGE void $win32_show_last_error_in_messagebox(const char *function, const $char_t *symbol)
 {
-    /* load library+symbols and return if successful */
-    if ($load_lib_and_symbols()) {
-        return;
-    }
-
-    /* an error has occured: display an error message */
-
-#if defined(_WIN32) && defined(_$USE_MESSAGE_BOX)
-    /* Windows: show message in a MessageBox window */
     const $char_t *err = $last_error();
     const $char_t *pfunc;
     /* double newline at end */
@@ -595,8 +588,7 @@ _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
 #ifdef _UNICODE
     /* convert function name to wide characters
      * (we cannot receive the function name in a wide character format) */
-    wchar_t *wfunc = $convert_str_to_wcs(function);
-    pfunc = wfunc;
+    pfunc = $convert_str_to_wcs(function);
 #else
     pfunc = function;
 #endif //_UNICODE
@@ -613,22 +605,36 @@ _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
 
     /* free buffers */
 #ifdef _UNICODE
-    free(wfunc);
+    free(($char_t *)pfunc);
 #endif
     free(buf);
+}
+#endif //_$USE_MESSAGE_BOX
 
+#endif //_WIN32
+
+
+/* This function is used by the wrapper functions to perform the loading
+ * and handle errors. */
+_$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
+{
+    /* load library+symbols and return if successful */
+    if ($load_lib_and_symbols()) {
+        return;
+    }
+
+    /* an error has occured: display an error message */
+
+#if defined(_WIN32) && defined(_$USE_MESSAGE_BOX)
+    $win32_show_last_error_in_messagebox(function, symbol);
 #elif defined(_WIN32) && defined(_UNICODE)
-
     /* Windows: output to console (wide characters) */
     fwprintf(stderr, L"error in wrapper function `%hs' for symbol `%ls':\n%ls\n",
         function, symbol, $last_error());
-
 #else
-
     /* default: UTF-8 output to console (any operating system) */
     fprintf(stderr, "error in wrapper function `%s' for symbol `%s':\n%s\n",
         function, symbol, $last_error());
-
 #endif //_WIN32 && _$USE_MESSAGE_BOX
 
     /* free library handle and exit */
@@ -636,18 +642,20 @@ _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
     exit(1);
 }
 
+#else
 
-/* wrapper functions */
-
-GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-    $quick_load(__FUNCTION__, _T("GDO_SYMBOL"));@
-    GDO_RET $hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
-}@
-
-#undef $WRAP
+#define $quick_load(a,b)  /**/
 
 #endif //_$ENABLE_AUTOLOAD
 /***************************************************************************/
+
+
+/* wrapper functions */
+@
+_$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+    $quick_load(__FUNCTION__, _T("GDO_SYMBOL"));@
+    GDO_RET $hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
+}
 
 
 #ifdef __cplusplus

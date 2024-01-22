@@ -19,6 +19,12 @@
 #endif
 
 
+/* set the symbol visibility manually */
+#ifndef _$VISIBILITY
+    #define _$VISIBILITY  /**/
+#endif
+
+
 /* helper macros for libray file extension and names */
 
 /* Windows */

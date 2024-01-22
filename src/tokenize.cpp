@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "strcasecmp.h"
+#include "common.hpp"
 #include "tokenize.hpp"
 
 
@@ -52,7 +52,6 @@ static bool get_argument_names(proto_t &proto)
         "const", "volatile",
         "struct",
         "void",
-        "extern",
         NULL
     };
 
@@ -138,20 +137,21 @@ vstring_t tokenize::read_input()
     char c, comment = 0;
     std::string line;
 
-    auto add_space = [] (std::string &line) {
+    auto add_space = [] (std::string &line)
+    {
         if (!line.empty() && line.back() != ' ') {
             line += ' ';
         }
     };
 
-    auto save_line = [] (std::string &input, vstring_t &vec)
+    auto save_line = [] (std::string &line, vstring_t &vec)
     {
-        strip_spaces(input);
-        if (input.empty()) return; /* had only whitespaces */
-        auto line = input;
-        input.clear(); /* empty variable */
         strip_spaces(line);
-        vec.push_back(line);
+
+        if (!line.empty()) {
+            vec.push_back(line);
+            line.clear();
+        }
     };
 
     /* read input into vector */
@@ -185,14 +185,6 @@ vstring_t tokenize::read_input()
             }
             break;
 
-        case '\n':
-            if (comment == '\n') {
-                /* commentary end */
-                comment = 0;
-            }
-            add_space(line);
-            break;
-
         case '*':
             if (comment == '*' && m_ifs.peek() == '/') {
                 /* commentary end */
@@ -206,29 +198,33 @@ vstring_t tokenize::read_input()
             }
             break;
 
-#ifdef __GNUC__
-        /* function name, argument, etc. */
-        case 'a'...'z':
-        case 'A'...'Z':
-        case '0'...'9':
-        case '_':
-            line += c;
+        case '\n':
+            if (comment == '\n') {
+                /* commentary end */
+                comment = 0;
+            }
+            add_space(line);
             break;
-#endif //__GNUC__
+
+        /* space */
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\v':
+        case '\f':
+            add_space(line);
+            break;
 
         /* add character */
         default:
-#ifndef __GNUC__
             /* function name, argument, etc. */
-            if (c == '_' || (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9')) {
+            if ((c>='a' && c<='z') || (c>='A' && c<='Z') || isdigit(c) || c == '_') {
                 line += c;
-                break;
+            } else {
+                add_space(line);
+                line += c;
+                line += ' ';
             }
-#endif //!__GNUC__
-            add_space(line);
-            if (isspace(c)) break;
-            line += c;
-            line += ' ';
             break;
         }
     }
@@ -265,23 +261,8 @@ bool tokenize::tokenize_function(const std::string &s)
         return false;
     }
 
-    /* replace string in proto.args (macro) */
-#define REPL(a, b) \
-    for (size_t pos = 0; (pos = proto.args.find(a, pos)) != std::string::npos; \
-        pos += sizeof(b) - 1) \
-    { \
-        proto.args.replace(pos, sizeof(a) - 1, b); \
-    }
-
-    /* format args */
     if (proto.args.empty()) {
         proto.args = "void";
-    } else {
-        REPL("* ", "*");
-        REPL(" ,", ",");
-        REPL("( ", "(");
-        REPL(" )", ")");
-        REPL(") (", ")(");
     }
 
     m_prototypes.push_back(proto);
@@ -362,6 +343,21 @@ bool tokenize::tokenize_file(const std::string &ifile)
         std::cerr << "error: multiple definitions of symbol `" << *it
             << "' found in file: " << ifile << std::endl;
         return false;
+    }
+
+    /* format args */
+    for (auto &s : m_prototypes) {
+        replace_string("* ", "*", s.args);
+        replace_string(" ,", ",", s.args);
+
+        replace_string("( ", "(", s.args);
+        replace_string(" )", ")", s.args);
+        replace_string(") (", ")(", s.args);
+
+        replace_string("[ ", "[", s.args);
+        replace_string("] ", "]", s.args);
+        replace_string(" [", "[", s.args);
+        replace_string(" ]", "]", s.args);
     }
 
     return true;

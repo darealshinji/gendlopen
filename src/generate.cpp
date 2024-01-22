@@ -28,8 +28,8 @@
 #include <string>
 #include <ctype.h>
 
-#include "gendlopen.hpp"
 #include "template.h"
+#include "gendlopen.hpp"
 
 
 /* convert input string to be used as prefixes or header guards */
@@ -148,7 +148,7 @@ void gendlopen::generate(
 
     if (use_stdout) {
         /* STDOUT */
-        put_header_guards<std::ostream>(std::cout, header_data, body_data, license_data, proto, objs);
+        put_header_guards<std::ostream>(std::cout, header_data, body_data, proto, objs);
     } else {
         std::ofstream ofs;
 
@@ -167,7 +167,7 @@ void gendlopen::generate(
             }
 
             /* header */
-            put_header_guards(ofs, header_data, "", license_data, proto, objs);
+            put_header_guards(ofs, header_data, "", proto, objs);
             std::cout << "saved to file: " << ofhdr << std::endl;
 
             /* body */
@@ -177,7 +177,7 @@ void gendlopen::generate(
             std::cout << "saved to file: " << ofbody << std::endl;
         } else {
             /* single file */
-            put_header_guards(ofs, header_data, body_data, license_data, proto, objs);
+            put_header_guards(ofs, header_data, body_data, proto, objs);
             std::cout << "saved to file: " << ofhdr << std::endl;
         }
     }

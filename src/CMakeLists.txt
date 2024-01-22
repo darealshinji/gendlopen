@@ -29,14 +29,13 @@ set(GEN_TEMPLATE_H ${CMAKE_BINARY_DIR}/src/gen_template_h)
 
 add_executable(gendlopen
     args.hxx
+    common.hpp
     gendlopen.hpp
     generate.cpp
     main.cpp
     parse.cpp
-    strcasecmp.h
     tokenize.cpp
     tokenize.hpp
-    types.hpp
     ${TEMPLATE_H}
 )
 

@@ -29,7 +29,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include "types.hpp"
+#include "common.hpp"
 
 
 /* wrapper class to enable reading input from
@@ -97,12 +97,6 @@ private:
     vproto_t m_prototypes;
     vobj_t m_objects;
     cin_ifstream m_ifs;
-
-    inline static
-    void strip_spaces(std::string &in) {
-        while (isspace(in.back())) in.pop_back();
-        while (isspace(in.front())) in.erase(0, 1);
-    }
 
     vstring_t read_input();
     bool tokenize_function(const std::string &s);

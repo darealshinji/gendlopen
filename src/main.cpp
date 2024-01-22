@@ -23,8 +23,8 @@
  */
 
 #include <iostream>
-#include "strcasecmp.h"
 #include "args.hxx"
+#include "common.hpp"
 #include "gendlopen.hpp"
 
 using StrValue = args::ValueFlag<std::string>;
