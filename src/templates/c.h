@@ -121,6 +121,14 @@ _$ENABLE_AUTOLOAD
 _$AUTO_RELEASE
     If defined the library handle will automatically be released on program exit.
 
+_$WRAP_FUNCTIONS
+    Use actual wrapped functions instead of a name alias. This is useful if you
+    want to create a library to later link an application against.
+
+_$VISIBILITY
+    You can set the symbol visibility of wrapped functions (enabled with _$WRAP_FUNCTIONS)
+    using this macro.
+
 
 
 *****************
@@ -178,7 +186,15 @@ _$LINKAGE const $char_t *$last_error();
 _$LINKAGE $char_t *$lib_origin();
 
 
-/* object pointer aliases */
+#if !defined(_$WRAP_FUNCTIONS)
+
+/* aliases to raw function pointers */
+#define GDO_SYMBOL $hndl.GDO_SYMBOL_ptr_
+
+#endif //!_$WRAP_FUNCTIONS
+
+
+/* aliases to raw object pointers */
 #define GDO_OBJ_SYMBOL *$hndl.GDO_OBJ_SYMBOL_ptr_
 
 

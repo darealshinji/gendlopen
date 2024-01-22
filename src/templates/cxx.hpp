@@ -113,7 +113,15 @@ _$ENABLE_AUTOLOAD
     This means you don't need to explicitly call library load functions.
     It requires _$DEFAULT_LIB to be defined.
     If an error occures during loading these functions throw an error message
-    and call `std::abort()'!
+    and call `std::exit(1)'!
+
+_$WRAP_FUNCTIONS
+    Use actual wrapped functions instead of a name alias. This is useful if you
+    want to create a library to later link an application against.
+
+_$VISIBILITY
+    You can set the symbol visibility of wrapped functions (enabled with
+    _$WRAP_FUNCTIONS) using this macro.
 
 
 
@@ -704,6 +712,7 @@ public:
 #if !defined(_$DEFAULT_LIB)
     #error  _$DEFAULT_LIB was not defined!
 #endif
+
         auto al = dl();
 
         void autoload(const char *symbol)
@@ -727,7 +736,7 @@ public:
 
 #else // !_$ENABLE_AUTOLOAD
 
-        inline void autoload(const char *) {}
+        void autoload(const char *) {}
 
 #endif // !_$ENABLE_AUTOLOAD
 
@@ -737,30 +746,48 @@ public:
             msg += symbol ? symbol : "(NULL)";
             msg += "' is NULL";
             print_error(msg);
-            std::abort();
+            std::exit(1);
         }
 
     } /* anonymous namespace end */
 
 
     /* wrapped functions */
-
-    inline GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+@
+    GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
         autoload("GDO_SYMBOL");@
         if (!GDO_SYMBOL_ptr_) ptr_is_null("GDO_SYMBOL");@
         GDO_RET GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
-    }@
+    }
 
 } /* namespace gdo */
 
 
-/* wrapped functions */
+#ifdef _$WRAP_FUNCTIONS
+
+/* wrapped autoload functions */
 @
 _$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     GDO_RET gdo::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
 }
 
+#else //!_$WRAP_FUNCTIONS
 
-/* object pointer aliases */
+    #ifdef _$ENABLE_AUTOLOAD
+
+        /* aliases to autoload function names */
+        #define GDO_SYMBOL gdo::GDO_SYMBOL
+
+    #else //!_$ENABLE_AUTOLOAD
+
+        /* aliases to raw function pointers */
+        #define GDO_SYMBOL gdo::GDO_SYMBOL_ptr_
+
+    #endif //!_$ENABLE_AUTOLOAD
+
+#endif //!_$WRAP_FUNCTIONS
+
+
+/* aliases to raw object pointers */
 #define GDO_OBJ_SYMBOL *gdo::GDO_OBJ_SYMBOL_ptr_
 

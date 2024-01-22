@@ -650,12 +650,16 @@ _$LINKAGE void $quick_load(const char *function, const $char_t *symbol)
 /***************************************************************************/
 
 
-/* wrapper functions */
+/* wrapped functions */
+
+#ifdef _$WRAP_FUNCTIONS
 @
 _$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     $quick_load(__FUNCTION__, _T("GDO_SYMBOL"));@
     GDO_RET $hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
 }
+
+#endif //_$WRAP_FUNCTIONS
 
 
 #ifdef __cplusplus
