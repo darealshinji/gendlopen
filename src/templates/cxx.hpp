@@ -333,12 +333,12 @@ private:
 
 
     /* get the module's full path using GetModuleFileName() */
-    template<typename T1, typename T2>
-    T1 get_origin_from_module_handle()
+    template<typename T>
+    std::basic_string<T> get_origin_from_module_handle()
     {
         size_t len = 260; /* MAX_PATH */
-        T1 str;
-        T2 *buf = reinterpret_cast<T2*>(malloc(len * sizeof(T2)));
+        std::basic_string<T> str;
+        T *buf = reinterpret_cast<T*>(malloc(len * sizeof(T)));
 
         if (!buf) {
             save_error();
@@ -355,7 +355,7 @@ private:
          * it's practically still stuck at the old MAX_PATH value */
         while (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
             len += 1024;
-            buf = reinterpret_cast<T2*>(realloc(buf, len * sizeof(T2)));
+            buf = reinterpret_cast<T*>(realloc(buf, len * sizeof(T)));
 
             if (get_module_filename(m_handle, buf, len-1) == 0) {
                 save_error();
@@ -381,16 +381,16 @@ private:
 
 
     /* return a formatted error message */
-    template<typename T1, typename T2>
-    T1 format_last_error_message()
+    template<typename T>
+    std::basic_string<T> format_last_error_message()
     {
-        T1 str;
-        T2 *buf = NULL;
+        std::basic_string<T> str;
+        T *buf = NULL;
 
         format_message(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                         FORMAT_MESSAGE_FROM_SYSTEM |
                         FORMAT_MESSAGE_MAX_WIDTH_MASK,
-                    reinterpret_cast<T2 *>(&buf));
+                    reinterpret_cast<T*>(&buf));
 
         if (buf) {
             str = buf;
@@ -617,7 +617,7 @@ public:
         }
 
 #ifdef _$WINAPI
-        return get_origin_from_module_handle<std::string, char>();
+        return get_origin_from_module_handle<char>();
 #else
         struct link_map *lm = NULL;
 
@@ -642,7 +642,7 @@ public:
             return {};
         }
 
-        return get_origin_from_module_handle<std::wstring, wchar_t>();
+        return get_origin_from_module_handle<wchar_t>();
     }
 #endif //_$WINAPI
 
@@ -651,7 +651,7 @@ public:
     std::string error()
     {
 #ifdef _$WINAPI
-        std::string buf = format_last_error_message<std::string, char>();
+        auto buf = format_last_error_message<char>();
 
         if (buf.empty()) {
             buf = "Last saved error code: ";
@@ -679,7 +679,7 @@ public:
     /* retrieve the last error (wide characters version) */
     std::wstring error_w()
     {
-        std::wstring buf = format_last_error_message<std::wstring, wchar_t>();
+        auto buf = format_last_error_message<wchar_t>();
 
         if (buf.empty()) {
             buf = L"Last saved error code: ";
@@ -749,14 +749,12 @@ public:
 #endif // !_$ENABLE_AUTOLOAD
 
         /* used internally by wrapper functions, `symbol' is never NULL */
-        void check_symbol_loaded(const char *symbol, bool sym_loaded)
+        void symbol_error(const char *symbol)
         {
-            if (!sym_loaded) {
-                std::string msg = "error: symbol `" + std::string(symbol)
-                    + "' was not loaded";
-                print_error(msg);
-                std::exit(1);
-            }
+            std::string msg = "error: symbol `" + std::string(symbol)
+                + "' was not loaded";
+            print_error(msg);
+            std::exit(1);
         }
 
     } /* anonymous namespace */
@@ -767,7 +765,7 @@ public:
     {
         GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
             autoload(__FUNCTION__);@
-            check_symbol_loaded("GDO_SYMBOL", loaded::GDO_SYMBOL);@
+            if (!loaded::GDO_SYMBOL) symbol_error("GDO_SYMBOL");@
             GDO_RET ptr::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
         }@
 
