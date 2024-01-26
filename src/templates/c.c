@@ -15,24 +15,23 @@ extern "C" {
     #define _T(x) x
 #endif
 
-#ifdef _$AUTO_RELEASE
 _$LINKAGE void $call_free_lib();
-#endif
+_$LINKAGE void $register_free_lib();
 _$LINKAGE void $clear_errbuf();
 
-/* $sym() */
+_$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv);
+
 #ifdef _$WINAPI
     #define _$SYM(a, b)  $sym(a, _T(a), b)
-    _$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *b);
 #else
-    _$LINKAGE void *_$SYM(const char *symbol, bool *b);
+    #define _$SYM(a, b)  $sym(a, NULL, b)
 #endif
 
-#define _$BUFLEN 4096
 
 
-
-typedef struct {
+/* Our library and symbols handle */
+typedef struct
+{
 #ifdef _$WINAPI
     HMODULE handle;
     DWORD last_errno;
@@ -42,14 +41,16 @@ typedef struct {
     void *handle;
 #endif
     bool call_free_lib_is_registered;
-    bool all_symbols_loaded;
-    $char_t buf[_$BUFLEN];
+    $char_t buf[4096];
 
     /* function pointers */
     GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
 
     /* object pointers */
     GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
+
+    bool GDO_SYMBOL_loaded_;
+    bool GDO_OBJ_SYMBOL_loaded_;
 
 } $handle_t;
 
@@ -69,7 +70,7 @@ _$LINKAGE void $save_error(const $char_t *msg)
     $hndl.last_errno = GetLastError();
 
     if (msg) {
-        _sntprintf_s($hndl.buf, _$BUFLEN-1, _TRUNCATE, _T("%s"), msg);
+        _sntprintf_s($hndl.buf, sizeof($hndl.buf)-1, _TRUNCATE, _T("%s"), msg);
     }
 }
 #else
@@ -78,7 +79,7 @@ _$LINKAGE void $save_dl_error()
 {
     $clear_errbuf();
     const char *ptr = dlerror();
-    if (ptr) snprintf($hndl.buf, _$BUFLEN-1, "%s", ptr);
+    if (ptr) snprintf($hndl.buf, sizeof($hndl.buf)-1, "%s", ptr);
 }
 #endif //!_$WINAPI
 
@@ -90,6 +91,18 @@ _$LINKAGE void $clear_errbuf()
 #ifdef _$WINAPI
     $hndl.buf_formatted[0] = 0;
     $hndl.last_errno = 0;
+#endif
+}
+
+/* Sets the "no library was loaded" error message */
+inline
+_$LINKAGE void $set_error_no_library_loaded()
+{
+#ifdef _$WINAPI
+        $hndl.last_errno = ERROR_INVALID_HANDLE;
+        _tcscpy_s($hndl.buf, sizeof($hndl.buf)-1, _T("no library was loaded"));
+#else
+        strcpy($hndl.buf, "no library was loaded");
 #endif
 }
 /***************************************************************************/
@@ -148,12 +161,10 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 
 #ifdef _$WINAPI
 
-    /* win32 */
-
     (void)new_namespace; /* unused */
+    $hndl.handle = LoadLibraryEx(filename, NULL, flags);
 
-    /* LoadLibraryEx() */
-    if (($hndl.handle = LoadLibraryEx(filename, NULL, flags)) == NULL) {
+    if (!$lib_is_loaded()) {
         $save_error(filename);
         return false;
     }
@@ -183,19 +194,24 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 
 #endif //!_$WINAPI
 
-#ifdef _$AUTO_RELEASE
-    /* register our call to free the library handle with atexit()
-     * so that the library will automatically be freed upon exit */
-    if (!$hndl.call_free_lib_is_registered) {
-        atexit($call_free_lib);
-        $hndl.call_free_lib_is_registered = true;
-    }
-#endif //_$AUTO_RELEASE
+    $register_free_lib();
 
     return true;
 }
 
+/* register our call to free the library handle with atexit()
+ * so that the library will automatically be freed upon exit */
+inline
+_$LINKAGE void $register_free_lib()
+{
 #ifdef _$AUTO_RELEASE
+    if (!$hndl.call_free_lib_is_registered) {
+        atexit($call_free_lib);
+        $hndl.call_free_lib_is_registered = true;
+    }
+#endif
+}
+
 /* If registered with atexit() this function will be called at
  * the program's exit. Function must be of type "void (*)(void)". */
 _$LINKAGE void $call_free_lib()
@@ -205,10 +221,9 @@ _$LINKAGE void $call_free_lib()
         FreeLibrary($hndl.handle);
 #else
         dlclose($hndl.handle);
-#endif //!_$WINAPI
+#endif
     }
 }
-#endif //_$AUTO_RELEASE
 /***************************************************************************/
 
 
@@ -246,14 +261,36 @@ _$LINKAGE bool $free_lib()
         $save_dl_error();
         return false;
     }
-#endif //!_$WINAPI
+#endif
 
     /* set pointers back to NULL */
     $hndl.handle = NULL;
     $hndl.GDO_SYMBOL_ptr_ = NULL;
     $hndl.GDO_OBJ_SYMBOL_ptr_ = NULL;
 
+    /* set back to false */
+    $hndl.GDO_SYMBOL_loaded_ = false;
+    $hndl.GDO_OBJ_SYMBOL_loaded_ = false;
+
     return true;
+}
+/***************************************************************************/
+
+
+
+/***************************************************************************/
+/* check if all symbols are loaded */
+/***************************************************************************/
+_$LINKAGE bool $symbols_loaded()
+{
+    if (true
+        && $hndl.GDO_SYMBOL_loaded_
+        && $hndl.GDO_OBJ_SYMBOL_loaded_
+    ) {
+        return true;
+    }
+
+    return false;
 }
 /***************************************************************************/
 
@@ -267,18 +304,13 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
     $clear_errbuf();
 
     /* already loaded all symbols */
-    if ($hndl.all_symbols_loaded) {
+    if ($symbols_loaded()) {
         return true;
     }
 
     /* no library was loaded */
     if (!$lib_is_loaded()) {
-#ifdef _$WINAPI
-        $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy_s($hndl.buf, _$BUFLEN-1, _T("no library was loaded"));
-#else
-        strcpy($hndl.buf, "no library was loaded");
-#endif
+        $set_error_no_library_loaded();
         return false;
     }
 
@@ -289,59 +321,46 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
      * If we do not ignore errors the function will simply return false on
      * the first error it encounters. */
 
-    bool rv = true;
-
     /* load function pointer addresses */
 @
     /* GDO_SYMBOL */@
     $hndl.GDO_SYMBOL_ptr_ = @
         (GDO_TYPE (*)(GDO_ARGS))@
-            _$SYM("GDO_SYMBOL", &rv);@
-    if (!ignore_errors && !rv) return false;
+            _$SYM("GDO_SYMBOL", &$hndl.GDO_SYMBOL_loaded_);@
+    if (!ignore_errors && !$hndl.GDO_SYMBOL_loaded_) {@
+        return false;@
+    }
 
     /* load object pointer addresses */
 @
     /* GDO_OBJ_SYMBOL */@
-    $hndl.GDO_OBJ_SYMBOL_ptr_ = @
-        (GDO_OBJ_TYPE *)@
-            _$SYM("GDO_OBJ_SYMBOL", &rv);@
-    if (!ignore_errors && !rv) return false;
+    $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+            _$SYM("GDO_OBJ_SYMBOL", &$hndl.GDO_OBJ_SYMBOL_loaded_);@
+    if (!ignore_errors && !$hndl.GDO_OBJ_SYMBOL_loaded_) {@
+        return false;@
+    }
 
-    $hndl.all_symbols_loaded = rv;
+    $clear_errbuf();
 
-    return rv;
+    return $symbols_loaded();
 }
 
-#ifdef _$WINAPI
-_$LINKAGE FARPROC $sym(const char *symbol, const $char_t *msg, bool *rv)
+_$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv)
 {
-    FARPROC ptr = GetProcAddress($hndl.handle, symbol);
+    *rv = false;
 
-    if (*rv == false) {
-        /* a previous call has already failed;
-         * return without error check */
-        return ptr;
-    } else if (!ptr) {
-        *rv = false;
+#ifdef _$WINAPI
+    void *ptr = (void *)GetProcAddress($hndl.handle, symbol);
+
+    if (!ptr) {
         $save_error(msg);
         return NULL;
     }
-
-    return ptr;
-}
 #else //!_$WINAPI
-_$LINKAGE void *_$SYM(const char *symbol, bool *rv)
-{
-    /* clear buffer */
-    (void)dlerror();
+    (void)msg; /* unused */
+    (void)dlerror(); /* clear buffer */
 
     void *ptr = dlsym($hndl.handle, symbol);
-
-    if (*rv == false) {
-        /* a previous call has already failed;
-         * return without error check */
-        return ptr;
-    }
 
     /* NULL can be a valid value (unusual but possible),
      * so call dlerror() to check for errors */
@@ -350,15 +369,15 @@ _$LINKAGE void *_$SYM(const char *symbol, bool *rv)
     if (err) {
         /* must save our error message manually instead of
          * invoking $save_dl_error() */
-        *rv = false;
         $clear_errbuf();
-        snprintf($hndl.buf, _$BUFLEN-1, "%s", err);
+        snprintf($hndl.buf, sizeof($hndl.buf)-1, "%s", err);
         return NULL;
     }
+#endif //!_$WINAPI
 
+    *rv = true;
     return ptr;
 }
-#endif //!_$WINAPI
 /***************************************************************************/
 
 
@@ -370,18 +389,11 @@ _$LINKAGE void *_$SYM(const char *symbol, bool *rv)
 /***************************************************************************/
 _$LINKAGE bool $load_symbol(const char *symbol)
 {
-    bool rv = true;
-
     $clear_errbuf();
 
     /* no library was loaded */
     if (!$lib_is_loaded()) {
-#ifdef _$WINAPI
-        $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy_s($hndl.buf, _$BUFLEN-1, _T("no library was loaded"));
-#else
-        strcpy($hndl.buf, "no library was loaded");
-#endif
+        $set_error_no_library_loaded();
         return false;
     }
 
@@ -389,25 +401,23 @@ _$LINKAGE bool $load_symbol(const char *symbol)
         return false;
     }
 
-
     /* function pointer addresses */
 @
     /* GDO_SYMBOL */@
     if (strcmp("GDO_SYMBOL", symbol) == 0) {@
         $hndl.GDO_SYMBOL_ptr_ =@
             (GDO_TYPE (*)(GDO_ARGS))@
-                _$SYM("GDO_SYMBOL", &rv);@
-        return rv;@
+                _$SYM("GDO_SYMBOL", &$hndl.GDO_SYMBOL_loaded_);@
+        return $hndl.GDO_SYMBOL_loaded_;@
     }
 
     /* load object addresses */
 @
     /* GDO_OBJ_SYMBOL */@
     if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-        $hndl.GDO_OBJ_SYMBOL_ptr_ =@
-            (GDO_OBJ_TYPE *)@
-                _$SYM("GDO_OBJ_SYMBOL", &rv);@
-        return rv;@
+        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+                _$SYM("GDO_OBJ_SYMBOL", &$hndl.GDO_OBJ_SYMBOL_loaded_);@
+        return $hndl.GDO_OBJ_SYMBOL_loaded_;@
     }
 
     return false;
@@ -477,8 +487,7 @@ _$LINKAGE $char_t *$lib_origin()
 
     /* check if library was loaded */
     if (!$lib_is_loaded()) {
-        $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy_s($hndl.buf, _$BUFLEN-1, _T("no library was loaded"));
+        $set_error_no_library_loaded();
         return NULL;
     }
 
@@ -516,8 +525,7 @@ _$LINKAGE $char_t *$lib_origin()
     struct link_map *lm = NULL;
 
     if (!$lib_is_loaded()) {
-        /* library is not loaded */
-        strcpy($hndl.buf, "no library was loaded");
+        $set_error_no_library_loaded();
         return NULL;
     } else if (dlinfo($hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         /* dlinfo() failed */
@@ -547,7 +555,7 @@ _$LINKAGE $char_t *$lib_origin()
 #endif
 
 
-#ifdef _WIN32
+#ifdef _WIN32 // not _$WINAPI !!
 
 #ifdef _UNICODE
 /* convert narrow to wide characters */
