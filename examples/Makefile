@@ -3,9 +3,11 @@ BINS = \
 	example_autoload \
 	example_auto_free \
 	example_cxx \
-	example_cxx_autoload
+	example_cxx_autoload \
+	helloworld_example_dl \
+	helloworld_example_nodl
 
-GENDLOPEN ?= ../build/src/gendlopen
+GENDLOPEN := ../build/src/gendlopen
 SOFLAGS   := -DBUILDING_DLL
 
 ifneq ($(CLANG_CL),)
@@ -13,12 +15,21 @@ CC         = $(CLANG_CL)
 CXX        = $(CLANG_CL)
 BINS      += example_wide example_cxx_wide
 CFLAGS    := -W3 -O2 -DWIN32_LEAN_AND_MEAN
-CXXFLAGS  := $(CFLAGS) /EHsc
+CXXFLAGS  := $(CFLAGS) -EHsc
 LDFLAGS   := -fuse-ld=lld -link -subsystem:console -libpath:$(shell echo $$LIB | sed 's|;| -libpath:|g')
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
 LDSOFLAGS := -dll -implib:$(LIBX)
+LIBEXT    := lib
+OBJEXT    := obj
+
 else
+
+LIBEXT    := a
+OBJEXT    := o
+AR        := ar
+ARFLAGS   := cr
+
 ifneq ($(shell echo $(CXX) | grep mingw),)
 BINS      += example_wide example_cxx_wide
 LIB       := libhelloworld-0.dll
@@ -36,9 +47,11 @@ LIBX      := libhelloworld.so
 SOFLAGS   += -fvisibility=hidden -fPIC
 LDSOFLAGS := -shared -Wl,-soname,$(LIB)
 LDFLAGS   := -Wl,-rpath,'$$ORIGIN' -s
-LIBS      := -ldl
 BINS2      = notify appindicator
 endif
+
+LDFLAGS  += -ldl
+
 endif
 
 # test whether everything is handled
@@ -49,6 +62,16 @@ CXXFLAGS += -DTEST_UNDEFINED_SYMBOL
 BINS2     =
 endif
 
+define compile_cc
+$(CC) $(CFLAGS) $(2) -o $@ $(1) $(LDFLAGS) $(3)
+endef
+define compile_cxx
+$(CXX) $(CXXFLAGS) $(2) -o $@ $(1) $(LDFLAGS) $(3)
+endef
+define gdox
+$(GENDLOPEN) -i $(1).txt --name=$(2) > example_$(1).h
+endef
+
 
 .PHONY: all clean run_tests run_tests2
 
@@ -56,7 +79,7 @@ all: $(BINS) $(BINS2)
 
 clean:
 	-rm -f $(BINS) notify appindicator
-	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a
+	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
 	-rm -f example_*.h example_*.hpp
 
 run_tests: $(BINS)
@@ -78,40 +101,52 @@ libhelloworld.so: $(LIB)
 libhelloworld.dll.a: $(LIB)
 libhelloworld.lib: $(LIB)
 
-$(LIB): helloworld.c
-	$(CC) $(SOFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDSOFLAGS)
+$(LIB):
+	$(call compile_cc,helloworld.c,$(SOFLAGS),$(LDSOFLAGS))
 
-example_1: example_1.c example_1.h
-	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LIBS)
+libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
+	$(AR) $(ARFLAGS) $@ $<
 
-example_auto_free: example_auto_free.c example_auto_free.h
-	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LIBS)
+example_helloworld_static_dl.$(OBJEXT): example_helloworld_static_dl.h
+	$(call compile_cc,example_helloworld_static_dl.c,-c)
 
-example_autoload: example_autoload.c example_autoload.h
-	$(CC) $(CFLAGS) $@.c -o $@ $(LDFLAGS) $(LIBS)
+example_1: example_1.h
+	$(call compile_cc,$@.c)
 
-example_cxx: example_cxx.cpp example_cxx.hpp
-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS) $(LIBS)
+example_auto_free: example_auto_free.h
+	$(call compile_cc,$@.c)
 
-example_cxx_autoload: example_cxx_autoload.cpp example_cxx_autoload.hpp
-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS) $(LIBS)
+example_autoload: example_autoload.h
+	$(call compile_cc,$@.c)
 
-example_wide: example_wide.c example_wide.h
-	$(CC) $(CFLAGS) -DUNICODE -D_UNICODE $(MUNICODE) $@.c -o $@ $(LDFLAGS)
+example_cxx: example_cxx.hpp
+	$(call compile_cxx,$@.cpp)
 
-example_cxx_wide: example_cxx_wide.cpp example_cxx_wide.hpp
-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
+example_cxx_autoload: example_cxx_autoload.hpp
+	$(call compile_cxx,$@.cpp)
+
+example_wide: example_wide.h
+	$(call compile_cc,$@.c,-DUNICODE -D_UNICODE $(MUNICODE))
+
+example_cxx_wide: example_cxx_wide.hpp
+	$(call compile_cxx,$@.cpp)
+
+helloworld_example_nodl: helloworld_example.c
+	$(call compile_cc,helloworld_example.c,,$(LIBX))
+
+helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
+	$(call compile_cc,helloworld_example.c,,libhelloworld_dl.$(LIBEXT))
 
 appindicator: appindicator.c
-	$(GENDLOPEN) -i appindicator.txt --name=xappindicator > example_appindicator_appindicator.h
-	$(GENDLOPEN) -i appindicator-gobject.txt --name=xgobject > example_appindicator_gobject.h
-	$(GENDLOPEN) -i appindicator-gtk.txt --name=xgtk > example_appindicator_gtk.h
-	$(CC) $(CFLAGS) -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1` $@.c -o $@ $(LDFLAGS) $(LIBS)
+	$(call gdox,appindicator,xappindicator)
+	$(call gdox,appindicator_gobject,xgobject)
+	$(call gdox,appindicator_gtk,xgtk)
+	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
 
 notify: notify.c
-	$(GENDLOPEN) -i notify.txt --name=xnotify > example_notify_notify.h
-	$(GENDLOPEN) -i notify-gobject.txt --name=xgobject > example_notify_gobject.h
-	$(CC) $(CFLAGS) -DUSE_DLOPEN=1 `pkg-config --cflags libnotify` $@.c -o $@ $(LDFLAGS) $(LIBS)
+	$(call gdox,notify,xnotify)
+	$(call gdox,notify_gobject,xgobject)
+	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
 
 example_%.h: helloworld.txt
 	$(GENDLOPEN) -i $^ > $@

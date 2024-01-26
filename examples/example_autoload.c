@@ -1,6 +1,9 @@
 #define _UNICODE 1
 #define UNICODE 1
 
+/* disabled [-Wattributes] warnings */
+#define DLL_PUBLIC /**/
+
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions;

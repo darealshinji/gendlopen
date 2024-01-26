@@ -8,7 +8,7 @@
 
 #define XAPPINDICATOR_DEFAULT_LIB "libappindicator.so.1"
 #define XAPPINDICATOR_AUTO_RELEASE
-#include "example_appindicator_appindicator.h"
+#include "example_appindicator.h"
 
 #define XGOBJECT_DEFAULT_LIB "libgobject-2.0.so.0"
 #define XGOBJECT_AUTO_RELEASE
