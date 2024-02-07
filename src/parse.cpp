@@ -147,11 +147,11 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
                 continue;
             }
 
-            for (const auto &p : prototypes) {
+            for (const auto &e : prototypes) {
                 auto copy = line;
 
                 /* don't "return" on "void" functions */
-                if (same_string_case(p.type, "void")) {
+                if (same_string_case(e.type, "void")) {
                     /* keep the indentation pretty */
                     replace_string("GDO_RET ", "", copy);
                     replace_string("GDO_RET", "", copy);
@@ -159,13 +159,13 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
                     replace_string("GDO_RET", "return", copy);
                 }
 
-                if (p.type.ends_with("*")) {
-                    replace_string("GDO_TYPE ", p.type, copy);
+                if (e.type.ends_with("*")) {
+                    replace_string("GDO_TYPE ", e.type, copy);
                 }
-                replace_string("GDO_TYPE", p.type, copy);
-                replace_string("GDO_SYMBOL", p.symbol, copy);
-                replace_string("GDO_ARGS", p.args, copy);
-                replace_string("GDO_NOTYPE_ARGS", p.notype_args, copy);
+                replace_string("GDO_TYPE", e.type, copy);
+                replace_string("GDO_SYMBOL", e.symbol, copy);
+                replace_string("GDO_ARGS", e.args, copy);
+                replace_string("GDO_NOTYPE_ARGS", e.notype_args, copy);
 
                 buf += copy;
             }
@@ -180,10 +180,10 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
                 continue;
             }
 
-            for (const auto &p : objects) {
+            for (const auto &e : objects) {
                 auto copy = line;
-                replace_string("GDO_OBJ_TYPE", p.type, copy);
-                replace_string("GDO_OBJ_SYMBOL", p.symbol, copy);
+                replace_string("GDO_OBJ_TYPE", e.type, copy);
+                replace_string("GDO_OBJ_SYMBOL", e.symbol, copy);
                 buf += copy;
             }
         } else {
