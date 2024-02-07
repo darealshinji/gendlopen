@@ -87,7 +87,7 @@ output files.
 Compiling
 ---------
 
-You can use cmake or you can manually compile the tool:
+You can use GNU make or you can manually compile the tool:
 ``` sh
 gcc src/gen_template_h.c -o gen_template_h
 ./gen_template_h src/templates
@@ -95,7 +95,7 @@ g++ -O3 -Wall -std=c++20 src/generate.cpp src/main.cpp src/parse.cpp src/tokeniz
 ```
 ```
 cl src/gen_template_h.c
-gen_template_h.exe src
+gen_template_h.exe src/templates
 cl -O2 -EHsc -std:c++latest -Fegendlopen src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp
 ```
 
@@ -103,30 +103,16 @@ cl -O2 -EHsc -std:c++latest -Fegendlopen src/generate.cpp src/main.cpp src/parse
 Cross-compiling
 ---------------
 
-You can compile for Windows using MinGW/GCC:
+To cross-compile the tool you must set `$CC` and `$CXX` or `$CLANG_CL` to the host compiler
+and `$CCAUX` to the build C compiler:
 ``` sh
-mkdir build
-cd build
-cmake .. -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-  -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-  -DCMAKE_SYSTEM_NAME=Windows \
-  -DCMAKE_CROSSCOMPILING=ON \
-  -DCMAKE_BUILD_TYPE=Release
+make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ CCAUX=gcc
+make CLANG_CL=clang-cl
 ```
 
-Or you can use clang-cl:
-``` sh
-mkdir build
-cd build
-cmake .. \
-  -DCMAKE_C_COMPILER=clang-cl \
-  -DCMAKE_CXX_COMPILER=clang-cl \
-  -DCMAKE_SYSTEM_NAME=Windows \
-  -DCMAKE_CROSSCOMPILING=ON \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_EXE_LINKER_FLAGS="/manifest:no"
+To cross-compile the examples you must compile the native tool first:
+```sh
+make && make CC=x86_64-w64-mingw32.static-gcc CXX=x86_64-w64-mingw32.static-g++ test
+make && make CLANG_CL=clang-cl test
 ```
-
-The `/manifest:no` option is only needed if CMake's configure phase will otherwise
-fail with error messages related to `mt` or `llvm-mt`.
 

@@ -1,3 +1,8 @@
+STDCXX  := c++11
+
+include ../include.mk
+
+
 BINS = \
 	example_1 \
 	example_autoload \
@@ -7,52 +12,35 @@ BINS = \
 	helloworld_example_dl \
 	helloworld_example_nodl
 
-GENDLOPEN := ../build/src/gendlopen
-SOFLAGS   := -DBUILDING_DLL
-
 ifneq ($(CLANG_CL),)
-CC         = $(CLANG_CL)
-CXX        = $(CLANG_CL)
+# clang-cl
 BINS      += example_wide example_cxx_wide
-CFLAGS    := -W3 -O2 -DWIN32_LEAN_AND_MEAN
-CXXFLAGS  := $(CFLAGS) -EHsc
-LDFLAGS   := -fuse-ld=lld -link -subsystem:console -libpath:$(shell echo $$LIB | sed 's|;| -libpath:|g')
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
 LDSOFLAGS := -dll -implib:$(LIBX)
-LIBEXT    := lib
-OBJEXT    := obj
-
 else
 
-LIBEXT    := a
-OBJEXT    := o
-AR        := ar
-ARFLAGS   := cr
-
 ifneq ($(shell echo $(CXX) | grep mingw),)
+# MinGW
 BINS      += example_wide example_cxx_wide
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.dll.a
-CFLAGS    := -Wall -Wextra -O3 -Wno-cast-function-type -DWIN32_LEAN_AND_MEAN
-CXXFLAGS  := $(CFLAGS) -std=c++11
-MUNICODE  := -municode
+CFLAGS    += -Wno-cast-function-type
+CXXFLAGS  += -Wno-cast-function-type
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
-LDFLAGS   := -static -s
 else
-CFLAGS    := -Wall -Wextra -O3 -Wno-deprecated-declarations -D_GNU_SOURCE
-CXXFLAGS  := $(CFLAGS) -std=c++11
+# Linux and BSD
+BINS2     := appindicator notify
 LIB       := libhelloworld.so.0
 LIBX      := libhelloworld.so
-SOFLAGS   += -fvisibility=hidden -fPIC
+CFLAGS    += -Wno-deprecated-declarations
+LDFLAGS   += -Wl,-rpath,'$$ORIGIN'
 LDSOFLAGS := -shared -Wl,-soname,$(LIB)
-LDFLAGS   := -Wl,-rpath,'$$ORIGIN' -s
-BINS2      = notify appindicator
 endif
 
-LDFLAGS  += -ldl
-
 endif
+
+GENDLOPEN := ../src/gendlopen
 
 # test whether everything is handled
 # correctly if a symbol was not found
@@ -62,12 +50,6 @@ CXXFLAGS += -DTEST_UNDEFINED_SYMBOL
 BINS2     =
 endif
 
-define compile_cc
-$(CC) $(CFLAGS) $(2) -o $@ $(1) $(LDFLAGS) $(3)
-endef
-define compile_cxx
-$(CXX) $(CXXFLAGS) $(2) -o $@ $(1) $(LDFLAGS) $(3)
-endef
 define gdox
 $(GENDLOPEN) -i $(1).txt --name=$(2) > example_$(1).h
 endef
@@ -135,7 +117,7 @@ helloworld_example_nodl: helloworld_example.c
 	$(call compile_cc,helloworld_example.c,,$(LIBX))
 
 helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
-	$(call compile_cc,helloworld_example.c,,libhelloworld_dl.$(LIBEXT))
+	$(call compile_cc,helloworld_example.c,-DBUILDING_STATIC,libhelloworld_dl.$(LIBEXT))
 
 appindicator: appindicator.c
 	$(call gdox,appindicator,xappindicator)
