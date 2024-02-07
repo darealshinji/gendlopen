@@ -87,13 +87,21 @@ output files.
 Compiling
 ---------
 
-You can use GNU make or you can manually compile the tool:
+You can use GNU make (`make` or `gmake`) or on Windows you can use Microsoft nmake:
+``` cmd
+cd src && nmake /f Makefile.nmake
+```
+
+
+Manual compiling
+----------------
+
 ``` sh
 gcc src/gen_template_h.c -o gen_template_h
 ./gen_template_h src/templates
 g++ -O3 -Wall -std=c++20 src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp -o gendlopen -s
 ```
-```
+``` sh
 cl src/gen_template_h.c
 gen_template_h.exe src/templates
 cl -O2 -EHsc -std:c++latest -Fegendlopen src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp
@@ -112,7 +120,7 @@ make CLANG_CL=clang-cl
 
 To cross-compile the examples you must compile the native tool first:
 ```sh
-make && make CC=x86_64-w64-mingw32.static-gcc CXX=x86_64-w64-mingw32.static-g++ test
+make && make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ test
 make && make CLANG_CL=clang-cl test
 ```
 
