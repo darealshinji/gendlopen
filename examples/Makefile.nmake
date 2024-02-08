@@ -1,0 +1,69 @@
+bins = \
+	example_1.exe \
+	example_autoload.exe \
+	example_auto_free.exe \
+	example_cxx.exe \
+	example_cxx_autoload.exe \
+	example_wide.exe \
+	example_cxx_wide.exe
+
+genhdrs_h = \
+	example_1.h \
+	example_autoload.h \
+	example_auto_free.h \
+	example_wide.h
+
+genhdrs_hpp = \
+	example_cxx.hpp \
+	example_cxx_autoload.hpp \
+	example_cxx_wide.hpp
+
+dll = libhelloworld-0.dll
+
+cl        = cl -nologo
+link      = link -nologo
+cflags    = -W2 -O2 -DWIN32_LEAN_AND_MEAN
+cxxflags  = -W2 -O2 -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
+ldflags   = -subsystem:console -release
+gendlopen = ..\src\gendlopen.exe
+
+
+all: $(bins)
+
+clean:
+	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
+	-del /q $(genhdrs_h) $(genhdrs_hpp)
+
+$(bins): $(dll)
+
+libhelloworld.lib: $(dll)
+
+$(dll): helloworld.c
+	$(cl) $(cflags) -DBUILDING_DLL $** -link -dll -out:$(dll) -implib:libhelloworld.lib $(ldflags)
+
+example_1.exe: example_1.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
+
+example_auto_free.exe: example_auto_free.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
+
+example_autoload.exe: example_autoload.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
+
+example_cxx.exe: example_cxx.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
+
+example_cxx_autoload.exe: example_cxx_autoload.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
+
+example_wide.exe: example_wide.h
+	$(cl) $(cflags) -DUNICODE -D_UNICODE $*.c -link -out:$@ $(ldflags)
+
+example_cxx_wide.exe: example_cxx_wide.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
+
+$(genhdrs_h): helloworld.txt
+	$(gendlopen) -i $** > $@
+
+$(genhdrs_hpp): helloworld.txt
+	$(gendlopen) --format=C++ -i $** > $@
