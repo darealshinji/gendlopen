@@ -141,10 +141,8 @@ GDO_COMMON
 
 #include <iostream>
 #include <string>
-#ifdef _$WINAPI
-#include <locale>
-#endif
-#include <cstring>
+#include <stdlib.h>
+#include <string.h>
 
 
 namespace gdo
@@ -186,17 +184,6 @@ class dl
 private:
 
 #ifdef _$WINAPI
-    /* utility wrapper to adapt locale-bound facets for wstring convert */
-    template<class Facet>
-    struct deletable_facet : Facet
-    {
-        template<class ...Args>
-        deletable_facet(Args&& ...args) : Facet(std::forward<Args>(args)...) {}
-        ~deletable_facet() {}
-    };
-
-    using WCharFacet = deletable_facet<std::codecvt<wchar_t, char, std::mbstate_t>>;
-
     HMODULE m_handle = NULL;
     DWORD m_last_error = 0;
     const char *m_errmsg = NULL;
@@ -210,6 +197,60 @@ private:
     int m_flags = default_flags;
     bool m_new_namespace = false;
     bool m_free_lib_in_dtor = true;
+
+
+#ifdef _$WINAPI
+    std::string wchar_to_string(const wchar_t *lpWstr)
+    {
+        size_t mbslen, n;
+        char *buf;
+        std::string str;
+
+        if (!lpWstr || ::wcstombs_s(&mbslen, NULL, 0, lpWstr, 0) != 0 || mbslen == 0) {
+            return {};
+        }
+
+        buf = new char[mbslen + 1];
+        if (!buf) return {};
+
+        if (::wcstombs_s(&n, buf, mbslen+1, lpWstr, mbslen) != 0 || n == 0) {
+            delete buf;
+            return {};
+        }
+
+        buf[mbslen] = '\0';
+        str = buf;
+        delete buf;
+
+        return buf;
+    }
+
+
+    std::wstring char_to_wstring(const char *str)
+    {
+        size_t len, n;
+        wchar_t *buf;
+        std::wstring wstr;
+
+        if (!str || ::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+            return {};
+        }
+
+        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+        if (!buf) return {};
+
+        if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
+            delete buf;
+            return {};
+        }
+
+        buf[len] = L'\0';
+        wstr = buf;
+        delete buf;
+
+        return wstr;
+    }
+#endif // _$WINAPI
 
 
     /* clear error */
@@ -323,11 +364,11 @@ private:
 
 
 #ifdef _$WINAPI
-    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, size_t len) {
+    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
         return ::GetModuleFileNameW(handle, buf, len);
     }
 
-    inline DWORD get_module_filename(HMODULE handle, char *buf, size_t len) {
+    inline DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {
         return ::GetModuleFileNameA(handle, buf, len);
     }
 
@@ -336,9 +377,9 @@ private:
     template<typename T>
     std::basic_string<T> get_origin_from_module_handle()
     {
-        size_t len = 260; /* MAX_PATH */
+        DWORD len = 260; /* MAX_PATH */
         std::basic_string<T> str;
-        T *buf = reinterpret_cast<T*>(malloc(len * sizeof(T)));
+        T *buf = reinterpret_cast<T*>(::malloc(len * sizeof(T)));
 
         if (!buf) {
             save_error();
@@ -662,10 +703,8 @@ public:
             buf.insert(0, ": ");
             buf.insert(0, m_errmsg);
         } else if (m_werrmsg && m_werrmsg[0] != 0) {
-            /* convert wchar_t to char */
-            std::wstring_convert<WCharFacet> conv;
             buf.insert(0, ": ");
-            buf.insert(0, conv.to_bytes(m_werrmsg));
+            buf.insert(0, wchar_to_string(m_werrmsg));
         }
 
         return buf;
@@ -690,10 +729,8 @@ public:
             buf.insert(0, L": ");
             buf.insert(0, m_werrmsg);
         } else if (m_errmsg && m_errmsg[0] != 0) {
-            /* convert char to wchar_t */
-            std::wstring_convert<WCharFacet> conv;
             buf.insert(0, L": ");
-            buf.insert(0, conv.from_bytes(m_errmsg));
+            buf.insert(0, char_to_wstring(m_errmsg));
         }
 
         return buf;

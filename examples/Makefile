@@ -17,6 +17,7 @@ ifneq ($(CLANG_CL),)
 BINS      += example_wide example_cxx_wide
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
+#CXXFLAGS  += -std:c++latest
 LDSOFLAGS := -dll -implib:$(LIBX)
 else
 

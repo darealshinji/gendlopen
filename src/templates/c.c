@@ -483,7 +483,7 @@ _$LINKAGE $char_t *$lib_origin()
 
 #ifdef _$WINAPI
     $char_t *origin;
-    size_t len = 260; /* MAX_PATH */
+    DWORD len = 260; /* MAX_PATH */
 
     /* check if library was loaded */
     if (!$lib_is_loaded()) {
