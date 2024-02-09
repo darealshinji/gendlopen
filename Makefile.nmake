@@ -1,0 +1,15 @@
+bin  = src\gendlopen.exe
+make = nmake -nologo
+
+
+all: $(bin)
+
+clean:
+	cd src && $(make) -f Makefile.nmake clean
+	cd examples && $(make) -f Makefile.nmake clean
+
+$(bin):
+	cd src && $(make) -f Makefile.nmake
+
+test: $(bin)
+	cd examples && $(make) -f Makefile.nmake

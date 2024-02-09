@@ -15,9 +15,9 @@ extern "C" {
     #define _T(x) x
 #endif
 
-_$LINKAGE void $call_free_lib();
-_$LINKAGE void $register_free_lib();
-_$LINKAGE void $clear_errbuf();
+_$LINKAGE void $call_free_lib(void);
+_$LINKAGE void $register_free_lib(void);
+_$LINKAGE void $clear_errbuf(void);
 
 _$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv);
 
@@ -75,7 +75,7 @@ _$LINKAGE void $save_error(const $char_t *msg)
 }
 #else
 /* Save the last message provided by dlerror() */
-_$LINKAGE void $save_dl_error()
+_$LINKAGE void $save_dl_error(void)
 {
     $clear_errbuf();
     const char *ptr = dlerror();
@@ -85,7 +85,7 @@ _$LINKAGE void $save_dl_error()
 
 /* Clear error buffers. */
 inline
-_$LINKAGE void $clear_errbuf()
+_$LINKAGE void $clear_errbuf(void)
 {
     $hndl.buf[0] = 0;
 #ifdef _$WINAPI
@@ -96,7 +96,7 @@ _$LINKAGE void $clear_errbuf()
 
 /* Sets the "no library was loaded" error message */
 inline
-_$LINKAGE void $set_error_no_library_loaded()
+_$LINKAGE void $set_error_no_library_loaded(void)
 {
 #ifdef _$WINAPI
         $hndl.last_errno = ERROR_INVALID_HANDLE;
@@ -113,7 +113,7 @@ _$LINKAGE void $set_error_no_library_loaded()
 /* load default library with default flags */
 /***************************************************************************/
 #ifdef _$DEFAULT_LIB
-_$LINKAGE bool $load_lib()
+_$LINKAGE bool $load_lib(void)
 {
     return $load_lib_args(_$DEFAULT_LIB, _$DEFAULT_FLAGS, false);
 }
@@ -126,7 +126,7 @@ _$LINKAGE bool $load_lib()
 /* load default library with default flags and load the symbols */
 /***************************************************************************/
 #ifdef _$DEFAULT_LIB
-_$LINKAGE bool $load_lib_and_symbols()
+_$LINKAGE bool $load_lib_and_symbols(void)
 {
     return ($load_lib_args(_$DEFAULT_LIB, _$DEFAULT_FLAGS, false) &&
         $load_symbols(false));
@@ -202,7 +202,7 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 /* register our call to free the library handle with atexit()
  * so that the library will automatically be freed upon exit */
 inline
-_$LINKAGE void $register_free_lib()
+_$LINKAGE void $register_free_lib(void)
 {
 #ifdef _$AUTO_RELEASE
     if (!$hndl.call_free_lib_is_registered) {
@@ -214,7 +214,7 @@ _$LINKAGE void $register_free_lib()
 
 /* If registered with atexit() this function will be called at
  * the program's exit. Function must be of type "void (*)(void)". */
-_$LINKAGE void $call_free_lib()
+_$LINKAGE void $call_free_lib(void)
 {
     if ($lib_is_loaded()) {
 #ifdef _$WINAPI
@@ -231,7 +231,7 @@ _$LINKAGE void $call_free_lib()
 /***************************************************************************/
 /* whether the library is currently loaded */
 /***************************************************************************/
-_$LINKAGE bool $lib_is_loaded()
+_$LINKAGE bool $lib_is_loaded(void)
 {
     return ($hndl.handle != NULL);
 }
@@ -242,7 +242,7 @@ _$LINKAGE bool $lib_is_loaded()
 /***************************************************************************/
 /* Free the library handle and set pointers to NULL */
 /***************************************************************************/
-_$LINKAGE bool $free_lib()
+_$LINKAGE bool $free_lib(void)
 {
     $clear_errbuf();
 
@@ -281,7 +281,7 @@ _$LINKAGE bool $free_lib()
 /***************************************************************************/
 /* check if all symbols are loaded */
 /***************************************************************************/
-_$LINKAGE bool $symbols_loaded()
+_$LINKAGE bool $symbols_loaded(void)
 {
     if (true
         && $hndl.GDO_SYMBOL_loaded_
@@ -430,7 +430,7 @@ _$LINKAGE bool $load_symbol(const char *symbol)
 /* retrieve the last saved error message (can be an empty buffer);
  * On Windows the message will be generated from an error code. */
 /***************************************************************************/
-_$LINKAGE const $char_t *$last_error()
+_$LINKAGE const $char_t *$last_error(void)
 {
 #ifdef _$WINAPI
     /* message was already saved */
@@ -477,7 +477,7 @@ _$LINKAGE const $char_t *$last_error()
 /* get the full library path;
  * Result must be deallocated with free(), returns NULL on error. */
 /***************************************************************************/
-_$LINKAGE $char_t *$lib_origin()
+_$LINKAGE $char_t *$lib_origin(void)
 {
     $clear_errbuf();
 

@@ -174,16 +174,16 @@ typedef char $char_t;
 
 
 #ifdef _$DEFAULT_LIB
-_$LINKAGE bool $load_lib();
-_$LINKAGE bool $load_lib_and_symbols();
+_$LINKAGE bool $load_lib(void);
+_$LINKAGE bool $load_lib_and_symbols(void);
 #endif
 _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_namespace);
 _$LINKAGE bool $load_symbols(bool ignore_errors);
 _$LINKAGE bool $load_symbol(const char *symbol);
-_$LINKAGE bool $free_lib();
-_$LINKAGE bool $lib_is_loaded();
-_$LINKAGE const $char_t *$last_error();
-_$LINKAGE $char_t *$lib_origin();
+_$LINKAGE bool $free_lib(void);
+_$LINKAGE bool $lib_is_loaded(void);
+_$LINKAGE const $char_t *$last_error(void);
+_$LINKAGE $char_t *$lib_origin(void);
 
 
 #if !defined(_$WRAP_FUNCTIONS)

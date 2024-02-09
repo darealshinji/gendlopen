@@ -89,7 +89,8 @@ Compiling
 
 You can use GNU make (`make` or `gmake`) or on Windows you can use Microsoft nmake:
 ``` cmd
-cd src && nmake /f Makefile.nmake
+nmake -f Makefile.nmake
+nmake -f Makefile.nmake test
 ```
 
 
