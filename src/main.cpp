@@ -32,8 +32,12 @@ using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
 
+using common::replace_string;
+using common::same_string_case;
 
-static void error_exit(char **argv, const std::string &msg)
+
+static inline
+void error_exit(char **argv, const std::string &msg)
 {
     std::cerr << msg << std::endl;
     std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
@@ -60,8 +64,7 @@ int main(int argc, char **argv)
         "Tool to generate library loading code",
         "About the input file format:\n"
         "* all functions that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)\n"
-        "* function pointers MUST be typedef'd; the typedef can optionally be part of the input file\n"
-        "* argument names must be included if you want to use auto-load features\n"
+        "* argument names must be included\n"
         "* comments are ignored\n"
         "* line-breaks are treated like spaces\n"
         "* any other code will throw an error");

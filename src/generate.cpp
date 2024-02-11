@@ -22,6 +22,10 @@
  * THE SOFTWARE
  */
 
+/**
+ * Generate the output data (STDOUT or save to file).
+ */
+
 #include <iostream>
 #include <fstream>
 #include <filesystem>

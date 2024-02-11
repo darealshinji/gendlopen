@@ -63,6 +63,9 @@ namespace output
 
 /* common inline functions */
 
+namespace common
+{
+
 inline bool same_string_case(const std::string &str1, const char *str2)
 {
 #ifdef _MSC_VER
@@ -86,5 +89,7 @@ inline void replace_string(const std::string &from, const std::string &to, std::
         s.replace(pos, from.size(), to);
     }
 }
+
+} /* namespace common */
 
 #endif //_COMMON_HPP_

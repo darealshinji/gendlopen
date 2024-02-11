@@ -22,6 +22,11 @@
  * THE SOFTWARE
  */
 
+/**
+ * Tokenize the input text files and save the function and object prototypes
+ * into vectors.
+ */
+
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -33,6 +38,10 @@
 
 #include "common.hpp"
 #include "tokenize.hpp"
+
+using common::replace_string;
+using common::same_string_case;
+using common::strip_spaces;
 
 
 /* extract argument names from args list */

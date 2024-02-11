@@ -22,6 +22,10 @@
  * THE SOFTWARE
  */
 
+/**
+ * Parse the embedded template data and substitute the placeholders.
+ */
+
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -29,6 +33,9 @@
 #include "template.h"
 #include "common.hpp"
 #include "gendlopen.hpp"
+
+using common::replace_string;
+using common::same_string_case;
 
 
 static inline
