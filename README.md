@@ -87,11 +87,7 @@ output files.
 Compiling
 ---------
 
-You can use GNU make (`make` or `gmake`) or on Windows you can use Microsoft nmake:
-``` cmd
-nmake -f Makefile.nmake
-nmake -f Makefile.nmake test
-```
+You can use GNU make or on Windows you can use Microsoft nmake.
 
 
 Manual compiling

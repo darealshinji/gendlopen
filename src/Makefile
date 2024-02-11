@@ -1,32 +1,27 @@
-ifneq ($(CLANG_CL),)
-STDCXX  := c++latest
-else
-STDCXX  := c++20
-endif
+# NMake Makefile
 
-include ../include.mk
-
-
-BIN     := gendlopen
-AUXBIN  := gen_template_h
-OBJS    := generate.$(OBJEXT) main.$(OBJEXT) parse.$(OBJEXT) tokenize.$(OBJEXT)
-SRCS    := generate.cpp main.cpp parse.cpp tokenize.cpp
-GENHDRS := template.h
-HDRS    := $(GENHDRS) args.hxx common.hpp gendlopen.hpp tokenize.hpp
+cl       = cl -nologo
+link     = link -nologo
+cxxflags = -W3 -O2 -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
+ldflags  = -subsystem:console -release
+objs     = generate.obj main.obj parse.obj tokenize.obj
 
 
-all: $(BIN)
+all: gendlopen.exe
 
 clean:
-	-rm -f $(BIN) $(AUXBIN) $(GENHDRS) *.exe *.o *.obj
+	-del /q *.exe *.obj template.h
 
-$(SRCS): $(HDRS)
+template.h: gen_template_h.exe
+	$** templates
 
-$(BIN): $(OBJS)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+gen_template_h.exe: gen_template_h.c
+	$(cl) $** -link $(ldflags)
 
-$(AUXBIN): gen_template_h.c
-	$(CCAUX) -o $@ $<
+gendlopen.exe: $(objs)
+	$(link) -out:$@ $** $(ldflags)
 
-template.h: $(AUXBIN)
-	./$(AUXBIN) templates
+$(objs): template.h
+
+.cpp.obj:
+	$(cl) $(cxxflags) -c $*.cpp
