@@ -7,9 +7,10 @@ This is still experimental and the main goal is to simply try out how much can
 be automized and find out how useful it is.
 
 Features:
+ * no build dependencies other than a C and C++ compiler
  * can generate code for C and C++
- * win32 API (LoadLibraryEx()) and POSIX (dlopen())
- * wide characters on win32 API
+ * win32 API `LoadLibraryEx()` and POSIX `dlopen()`
+ * wide and narrow characters on win32 API
  * option to automatically load library and symbols
 
 Limitations:
@@ -121,3 +122,8 @@ make && make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ test
 make && make CLANG_CL=clang-cl test
 ```
 
+
+Links
+-----
+
+A similar albeit less portable approach is the project [dynload-wrapper](https://github.com/hpvb/dynload-wrapper).
