@@ -1,7 +1,7 @@
 ifneq ($(CLANG_CL),)
 STDCXX  := c++latest
 else
-STDCXX  := c++20
+STDCXX  := c++23
 endif
 
 include ../include.mk
@@ -14,6 +14,8 @@ SRCS    := generate.cpp main.cpp parse.cpp tokenize.cpp
 GENHDRS := template.h
 HDRS    := $(GENHDRS) args.hxx common.hpp gendlopen.hpp tokenize.hpp
 
+
+.PHONY: all clean
 
 all: $(BIN)
 

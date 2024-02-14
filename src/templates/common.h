@@ -51,7 +51,7 @@
     #define _$LIB(NAME, API)      "lib" #NAME "." #API ".dylib"
 
 /* IBM AIX;
- * After looking up some manuals it seems tht shared object files (.o)
+ * After looking up some manuals it seems that shared object files (.o)
  * and even whole shared libraries (.so) are stored in archive files (.a)
  * and can be loaded from there with dlopen().
  * Loading .so files directly is apparently possible too

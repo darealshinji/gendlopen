@@ -26,6 +26,7 @@
 #define _COMMON_HPP_
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <ctype.h>
 #include <string.h>
@@ -66,6 +67,7 @@ namespace output
 namespace common
 {
 
+/* case-insensitive string comparison */
 inline bool same_string_case(const std::string &str1, const char *str2)
 {
 #ifdef _MSC_VER
@@ -75,19 +77,32 @@ inline bool same_string_case(const std::string &str1, const char *str2)
 #endif
 }
 
+/* strip white-spaces from front and back of a string */
 inline void strip_spaces(std::string &in)
 {
     while (isspace(in.back())) in.pop_back();
     while (isspace(in.front())) in.erase(0, 1);
 }
 
-/* replace_string(a,b,s) will substitute a with b in s */
+/* replace string "from" with string "to" in string "s" */
 inline void replace_string(const std::string &from, const std::string &to, std::string &s)
 {
     for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
     {
         s.replace(pos, from.size(), to);
     }
+}
+
+/* just in case std::unreachable is not implemented */
+[[noreturn]] inline void unreachable()
+{
+#ifdef __cpp_lib_unreachable
+    std::unreachable();
+#elif defined(_MSC_VER) && !defined(__clang__)
+    __assume(false); // MSVC
+#else
+    __builtin_unreachable(); // GCC, Clang
+#endif
 }
 
 } /* namespace common */

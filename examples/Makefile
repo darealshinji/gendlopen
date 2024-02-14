@@ -1,139 +1,85 @@
-STDCXX  := c++11
+bins = \
+	example_1.exe \
+	example_autoload.exe \
+	example_auto_free.exe \
+	example_cxx.exe \
+	example_cxx_autoload.exe \
+	example_wide.exe \
+	example_cxx_wide.exe \
+	helloworld_example_nodl.exe \
+	helloworld_example_dl.exe
 
-include ../include.mk
+genhdrs_h = \
+	example_1.h \
+	example_autoload.h \
+	example_auto_free.h \
+	example_wide.h \
+	example_helloworld_static_dl.h
 
+genhdrs_hpp = \
+	example_cxx.hpp \
+	example_cxx_autoload.hpp \
+	example_cxx_wide.hpp
 
-BINS = \
-	example_1 \
-	example_autoload \
-	example_auto_free \
-	example_cxx \
-	example_cxx_autoload \
-	helloworld_example_dl \
-	helloworld_example_nodl
+dll = libhelloworld-0.dll
 
-ifneq ($(CLANG_CL),)
-# clang-cl
-BINS      += example_wide example_cxx_wide
-LIB       := libhelloworld-0.dll
-LIBX      := libhelloworld.lib
-#CXXFLAGS  += -std:c++latest
-LDSOFLAGS := -dll -implib:$(LIBX)
-else
-
-ifneq ($(shell echo $(CXX) | grep mingw),)
-# MinGW
-BINS      += example_wide example_cxx_wide
-LIB       := libhelloworld-0.dll
-LIBX      := libhelloworld.dll.a
-CFLAGS    += -Wno-cast-function-type
-CXXFLAGS  += -Wno-cast-function-type
-LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
-else
-# Linux and BSD
-BINS2     := appindicator notify
-LIB       := libhelloworld.so.0
-LIBX      := libhelloworld.so
-CFLAGS    += -Wno-deprecated-declarations
-LDFLAGS   += -Wl,-rpath,'$$ORIGIN'
-LDSOFLAGS := -shared -Wl,-soname,$(LIB)
-endif
-
-endif
-
-GENDLOPEN := ../src/gendlopen
-
-# test whether everything is handled
-# correctly if a symbol was not found
-ifneq ($(TEST_UNDEFINED_SYMBOL),)
-CFLAGS   += -DTEST_UNDEFINED_SYMBOL
-CXXFLAGS += -DTEST_UNDEFINED_SYMBOL
-BINS2     =
-endif
-
-define gdox
-$(GENDLOPEN) -i $(1).txt --name=$(2) > example_$(1).h
-endef
+cl        = cl -nologo
+link      = link -nologo
+lib_exe   = lib -nologo
+cflags    = -W3 -O2 -DWIN32_LEAN_AND_MEAN
+cxxflags  = -W3 -O2 -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
+ldflags   = -subsystem:console -release
+gendlopen = ..\src\gendlopen.exe
 
 
-.PHONY: all clean run_tests run_tests2
-
-all: $(BINS) $(BINS2)
+all: $(bins)
 
 clean:
-	-rm -f $(BINS) notify appindicator
-	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
-	-rm -f example_*.h example_*.hpp
+	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
+	-del /q $(genhdrs_h) $(genhdrs_hpp)
 
-run_tests: $(BINS)
-	@for f in $^; do \
-		echo "./$$f"; ./$$f; echo "return value: $$?"; echo ""; \
-	done
+$(bins): $(dll)
 
-run_tests2: $(BINS2)
-	@for f in $^; do \
-		echo "./$$f"; ./$$f; echo "return value: $$?"; echo ""; \
-	done
+libhelloworld.lib: $(dll)
 
+$(dll): helloworld.c
+	$(cl) $(cflags) -DBUILDING_DLL $** -link -dll -out:$(dll) -implib:libhelloworld.lib $(ldflags)
 
-$(BINS): $(LIBX)
+libhelloworld_dl.lib: example_helloworld_static_dl.obj
+	$(lib_exe) -out:$@ $**
 
-libhelloworld.so: $(LIB)
-	ln -fs $< $@
+example_helloworld_static_dl.obj: example_helloworld_static_dl.h
+	$(cl) $(cflags) -c $*.c
 
-libhelloworld.dll.a: $(LIB)
-libhelloworld.lib: $(LIB)
+helloworld_example_dl.exe: libhelloworld_dl.lib
+	$(cl) $(cflags) -DBUILDING_STATIC helloworld_example.c -link -out:$@ libhelloworld_dl.lib $(ldflags)
 
-$(LIB):
-	$(call compile_cc,helloworld.c,$(SOFLAGS),$(LDSOFLAGS))
+helloworld_example_nodl.exe: libhelloworld.lib
+	$(cl) $(cflags) helloworld_example.c -link -out:$@ libhelloworld.lib $(ldflags)
 
-libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
-	$(AR) $(ARFLAGS) $@ $<
+example_1.exe: example_1.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
 
-example_helloworld_static_dl.$(OBJEXT): example_helloworld_static_dl.h
-	$(call compile_cc,example_helloworld_static_dl.c,-c)
+example_auto_free.exe: example_auto_free.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
 
-example_1: example_1.h
-	$(call compile_cc,$@.c)
+example_autoload.exe: example_autoload.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
 
-example_auto_free: example_auto_free.h
-	$(call compile_cc,$@.c)
+example_cxx.exe: example_cxx.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
 
-example_autoload: example_autoload.h
-	$(call compile_cc,$@.c)
+example_cxx_autoload.exe: example_cxx_autoload.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
 
-example_cxx: example_cxx.hpp
-	$(call compile_cxx,$@.cpp)
+example_wide.exe: example_wide.h
+	$(cl) $(cflags) -DUNICODE -D_UNICODE $*.c -link -out:$@ $(ldflags)
 
-example_cxx_autoload: example_cxx_autoload.hpp
-	$(call compile_cxx,$@.cpp)
+example_cxx_wide.exe: example_cxx_wide.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
 
-example_wide: example_wide.h
-	$(call compile_cc,$@.c,-DUNICODE -D_UNICODE $(MUNICODE))
+$(genhdrs_h): helloworld.txt
+	$(gendlopen) -i $** > $@
 
-example_cxx_wide: example_cxx_wide.hpp
-	$(call compile_cxx,$@.cpp)
-
-helloworld_example_nodl: helloworld_example.c
-	$(call compile_cc,helloworld_example.c,,$(LIBX))
-
-helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
-	$(call compile_cc,helloworld_example.c,-DBUILDING_STATIC,libhelloworld_dl.$(LIBEXT))
-
-appindicator: appindicator.c
-	$(call gdox,appindicator,xappindicator)
-	$(call gdox,appindicator_gobject,xgobject)
-	$(call gdox,appindicator_gtk,xgtk)
-	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
-
-notify: notify.c
-	$(call gdox,notify,xnotify)
-	$(call gdox,notify_gobject,xgobject)
-	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
-
-example_%.h: helloworld.txt
-	$(GENDLOPEN) -i $^ > $@
-
-example_%.hpp: helloworld.txt
-	$(GENDLOPEN) --format=C++ -i $^ > $@
-
+$(genhdrs_hpp): helloworld.txt
+	$(gendlopen) --format=C++ -i $** > $@

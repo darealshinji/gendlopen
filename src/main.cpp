@@ -37,25 +37,40 @@ using common::same_string_case;
 
 
 static inline
-void error_exit(char **argv, const std::string &msg)
+void error_exit(char *prog, const std::string &msg)
 {
-    std::cerr << msg << std::endl;
-    std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
+    std::cerr << msg << "\nTry `" << prog << " --help' for more information." << std::endl;
     std::exit(1);
 }
 
-static output::format str_to_enum(char **argv, const std::string &fmt)
+static output::format str_to_enum(char *prog, const std::string &fmt)
 {
-    if (same_string_case(fmt, "C++")) {
-        return output::cxx;
-    } else if (same_string_case(fmt, "minimal")) {
-        return output::minimal;
-    } else if (!same_string_case(fmt, "C")) {
-        std::string s = "unknown output format: " + fmt;
-        error_exit(argv, s);
+    switch (fmt.front())
+    {
+    case 'C':
+    case 'c':
+        if (same_string_case(fmt, "C++")) {
+            return output::cxx;
+        } else if (same_string_case(fmt, "C")) {
+            return output::c;
+        }
+        break;
+
+    case 'M':
+    case 'm':
+        if (same_string_case(fmt, "minimal")) {
+            return output::minimal;
+        }
+        break;
+
+    default:
+        break;
     }
 
-    return output::c;
+    std::string s = "unknown output format: " + fmt;
+    error_exit(prog, s);
+
+    common::unreachable();
 }
 
 int main(int argc, char **argv)
@@ -109,13 +124,16 @@ int main(int argc, char **argv)
         return 0;
     }
     catch (const args::Error &e) {
-        error_exit(argv, e.what());
+        error_exit(*argv, e.what());
+    }
+    catch (...) {
+        error_exit(*argv, "an unknown error has occurred");
     }
 
-    auto gdo = gendlopen();
+    auto gdo = gendlopen(&argc, &argv);
 
     if (a_format) {
-        gdo.format(str_to_enum(argv, a_format.Get()));
+        gdo.format(str_to_enum(*argv, a_format.Get()));
     }
     gdo.separate(a_separate);
     gdo.force(a_force);

@@ -41,6 +41,8 @@ private:
     output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;
+    int *m_argc = NULL;
+    char ***m_argv = NULL;
 
     bool open_fstream(std::ofstream &ofs, const std::string &ofile);
     std::string parse(const char *data, vproto_t &prototypes, vobj_t &objects);
@@ -62,7 +64,7 @@ private:
 public:
 
     /* c'tor */
-    gendlopen()
+    gendlopen(int *argc, char ***argv) : m_argc(argc), m_argv(argv)
     {}
 
     /* d'tor */

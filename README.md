@@ -18,7 +18,7 @@ Limitations:
  * parameter names must be included
  * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
  * C++11 is the minimum requirement for the generated C++ files
- * C++20 is the minimum requirement to compile the tool
+ * C++23 is the minimum requirement to compile the tool
 
 
 Input format

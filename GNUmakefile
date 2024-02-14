@@ -1,7 +1,7 @@
 BIN := src/gendlopen
 
 
-.PHONY: all clean clean-test test run_tests run_tests2
+.PHONY: $(BIN) all clean clean-test distclean test run_tests run_tests2
 
 all: $(BIN)
 
@@ -10,6 +10,8 @@ clean: clean-test
 
 clean-test:
 	$(MAKE) -C examples clean
+
+distclean: clean
 
 $(BIN):
 	$(MAKE) -C src
