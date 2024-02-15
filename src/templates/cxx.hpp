@@ -392,10 +392,11 @@ private:
             return {};
         }
 
-        /* technically the path could exceed 260 characters, but in reality
+        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+         * technically the path could exceed 260 characters, but in reality
          * it's practically still stuck at the old MAX_PATH value */
-        while (::GetLastError() == ERROR_INSUFFICIENT_BUFFER && len < 16*1024) {
-            len += 1024;
+        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            len = 32*1024;
             buf = reinterpret_cast<T*>(realloc(buf, len * sizeof(T)));
 
             if (get_module_filename(m_handle, buf, len-1) == 0) {

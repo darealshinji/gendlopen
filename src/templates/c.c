@@ -500,10 +500,11 @@ _$LINKAGE $char_t *$lib_origin(void)
         return NULL;
     }
 
-    /* technically the path could exceed 260 characters, but in reality
+    /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+     * technically the path could exceed 260 characters, but in reality
      * it's practically still stuck at the old MAX_PATH value */
-    while (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-        len += 1024;
+    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        len = 32*1024;
         origin = ($char_t *)realloc(origin, len * sizeof($char_t));
 
         if (GetModuleFileName($hndl.handle, origin, len-1) == 0) {
