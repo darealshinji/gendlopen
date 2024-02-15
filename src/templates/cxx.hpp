@@ -147,20 +147,20 @@ GDO_COMMON
 
 namespace gdo
 {
+    /* function pointer typedefs */
     namespace type
     {
         using GDO_SYMBOL = GDO_TYPE (*)(GDO_ARGS);
     }
 
+    /* symbol pointers */
     namespace ptr
     {
-        /* function pointers */
-        type::GDO_SYMBOL GDO_SYMBOL;
-
-        /* object pointers */
-        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL;
+        type::GDO_SYMBOL GDO_SYMBOL = nullptr;
+        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL = nullptr;
     }
 
+    /* whether or not a symbol was loaded */
     namespace loaded
     {
         bool GDO_SYMBOL = false;
@@ -394,7 +394,7 @@ private:
 
         /* technically the path could exceed 260 characters, but in reality
          * it's practically still stuck at the old MAX_PATH value */
-        while (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+        while (::GetLastError() == ERROR_INSUFFICIENT_BUFFER && len < 16*1024) {
             len += 1024;
             buf = reinterpret_cast<T*>(realloc(buf, len * sizeof(T)));
 
@@ -452,11 +452,10 @@ public:
 
     /* c'tor (set filename) */
     dl(const char *filename, int flags=default_flags, bool new_namespace=false)
-    {
-        m_filename = filename;
-        m_flags = flags;
-        m_new_namespace = new_namespace;
-    }
+      : m_filename(filename),
+        m_flags(flags),
+        m_new_namespace(new_namespace)
+    {}
 
 
     /* d'tor */
@@ -547,15 +546,14 @@ public:
             return false;
         }
 
-        /* load function pointer addresses */
+        /* get symbol addresses */
 @
         loaded::GDO_SYMBOL = sym<type::GDO_SYMBOL>(@
             ptr::GDO_SYMBOL, "GDO_SYMBOL");@
         if (!loaded::GDO_SYMBOL && !ignore_errors){@
             return false;@
         }
-
-        /* load object addresses */
+@
         loaded::GDO_OBJ_SYMBOL = sym<GDO_OBJ_TYPE *>(@
             ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@
         if (!loaded::GDO_OBJ_SYMBOL && !ignore_errors) {@
@@ -580,13 +578,13 @@ public:
             return false;
         }
 
-        /* function pointer addresses */
+        /* get symbol address */
+@
         if (strcmp("GDO_SYMBOL", symbol) == 0) {@
             return sym<type::GDO_SYMBOL>(@
                 ptr::GDO_SYMBOL, "GDO_SYMBOL");@
         }
-
-        /* load object addresses */
+@
         if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
             return sym<GDO_OBJ_TYPE *>(@
                 ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@

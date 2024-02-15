@@ -53,7 +53,7 @@ static bool get_argument_names(proto_t &proto)
     std::string out, token;
     vstring_t arg;
 
-    const char *keywords[] = {
+    const char * const keywords[] = {
         "char",
         "int", "long", "short",
         "float", "double",
@@ -66,9 +66,9 @@ static bool get_argument_names(proto_t &proto)
 
     /* compare s with a list of very basic types and keywords
      * to guess if it could be a parameter name */
-    auto is_keyword = [] (const char **list, const std::string &s) -> bool
+    auto is_keyword = [] (const char* const *list, const std::string &s) -> bool
     {
-        for (const char **p = list; *p != NULL; p++) {
+        for (auto p = list; *p != NULL; p++) {
             if (same_string_case(s, *p)) {
                 return true;
             }

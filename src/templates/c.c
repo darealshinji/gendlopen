@@ -43,10 +43,8 @@ typedef struct
     bool call_free_lib_is_registered;
     $char_t buf[4096];
 
-    /* function pointers */
+    /* symbols */
     GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
-
-    /* object pointers */
     GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
 
     bool GDO_SYMBOL_loaded_;
@@ -321,22 +319,20 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
      * If we do not ignore errors the function will simply return false on
      * the first error it encounters. */
 
-    /* load function pointer addresses */
+    /* get symbol addresses */
 @
     /* GDO_SYMBOL */@
     $hndl.GDO_SYMBOL_ptr_ = @
         (GDO_TYPE (*)(GDO_ARGS))@
             _$SYM("GDO_SYMBOL", &$hndl.GDO_SYMBOL_loaded_);@
-    if (!ignore_errors && !$hndl.GDO_SYMBOL_loaded_) {@
+    if (!$hndl.GDO_SYMBOL_loaded_ && !ignore_errors) {@
         return false;@
     }
-
-    /* load object pointer addresses */
 @
     /* GDO_OBJ_SYMBOL */@
     $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
             _$SYM("GDO_OBJ_SYMBOL", &$hndl.GDO_OBJ_SYMBOL_loaded_);@
-    if (!ignore_errors && !$hndl.GDO_OBJ_SYMBOL_loaded_) {@
+    if (!$hndl.GDO_OBJ_SYMBOL_loaded_ && !ignore_errors) {@
         return false;@
     }
 
@@ -401,7 +397,7 @@ _$LINKAGE bool $load_symbol(const char *symbol)
         return false;
     }
 
-    /* function pointer addresses */
+    /* get symbol address */
 @
     /* GDO_SYMBOL */@
     if (strcmp("GDO_SYMBOL", symbol) == 0) {@
@@ -410,8 +406,6 @@ _$LINKAGE bool $load_symbol(const char *symbol)
                 _$SYM("GDO_SYMBOL", &$hndl.GDO_SYMBOL_loaded_);@
         return $hndl.GDO_SYMBOL_loaded_;@
     }
-
-    /* load object addresses */
 @
     /* GDO_OBJ_SYMBOL */@
     if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@

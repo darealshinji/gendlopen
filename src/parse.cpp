@@ -64,9 +64,9 @@ std::string get_indent_end(const std::string &line)
 
 /* check for keyword in list */
 static inline
-bool find_keyword(const std::string &line, const char **list)
+bool find_keyword(const std::string &line, const char* const *list)
 {
-    for (const char **p = list; *p != NULL; p++) {
+    for (auto p = list; *p != NULL; p++) {
         if (line.find(*p) != std::string::npos) {
             return true;
         }
@@ -80,7 +80,7 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
 {
     std::string buf, line;
 
-    const char *function_keywords[] = {
+    const char* const function_keywords[] = {
         "GDO_RET",
         "GDO_TYPE",
         "GDO_SYMBOL",
@@ -89,7 +89,7 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
         NULL
     };
 
-    const char *object_keywords[] = {
+    const char* const object_keywords[] = {
         "GDO_OBJ_TYPE",
         "GDO_OBJ_SYMBOL",
         NULL
@@ -147,9 +147,9 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
             /* function prototypes */
 
             if (prototypes.empty()) {
-                buf += get_indent(line);
-                buf += "/* -- no function prototypes -- */";
-                buf += get_indent_end(line);
+                //buf += get_indent(line);
+                //buf += "/* -- no function prototypes -- */";
+                //buf += get_indent_end(line);
                 line.clear();
                 continue;
             }
@@ -180,9 +180,9 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
             /* object prototypes */
 
             if (objects.empty()) {
-                buf += get_indent(line);
-                buf += "/* -- no object prototypes -- */";
-                buf += get_indent_end(line);
+                //buf += get_indent(line);
+                //buf += "/* -- no object prototypes -- */";
+                //buf += get_indent_end(line);
                 line.clear();
                 continue;
             }
