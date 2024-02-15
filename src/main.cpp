@@ -108,6 +108,10 @@ int main(int argc, char **argv)
         "Set output format: C, C++ or minimal (default is C)",
         {'F', "format"});
 
+    StrValue a_default_lib(args, "STRING",
+        "Set a default library name to load; hyphens are automatically put around",
+        {'l', "default-library"});
+
     Flag a_separate(args, "",
         "Save output into separate header and body files",
         {'s', "separate"});
@@ -135,8 +139,25 @@ int main(int argc, char **argv)
     if (a_format) {
         gdo.format(str_to_enum(*argv, a_format.Get()));
     }
+
+    if (a_default_lib) {
+        auto lib = a_default_lib.Get();
+
+        /* add hyphens */
+        if (lib.back() != '"') {
+            lib += '"';
+        }
+
+        if (lib.front() != '"') {
+            lib.insert(0, 1, '"');
+        }
+
+        gdo.default_lib(lib);
+    }
+
     gdo.separate(a_separate);
     gdo.force(a_force);
+
     gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 
     return 0;

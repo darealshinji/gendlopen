@@ -37,7 +37,7 @@ class gendlopen
 {
 private:
 
-    std::string m_name_upper, m_name_lower, m_guard;
+    std::string m_name_upper, m_name_lower, m_guard, m_default_lib;
     output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;
@@ -56,6 +56,13 @@ private:
         str << license_data;
         str << "#ifndef " << m_guard << '\n';
         str << "#define " << m_guard << "\n\n";
+
+        if (!m_default_lib.empty()) {
+            str << "#ifndef " << m_name_upper << "DEFAULT_LIB\n";
+            str << "#define " << m_name_upper << "DEFAULT_LIB " << m_default_lib << '\n';
+            str << "#endif\n\n";
+        }
+
         str << parse(header_data, prototypes, objects);
         str << parse(body_data, prototypes, objects);
         str << "#endif //" << m_guard << '\n';
@@ -73,6 +80,7 @@ public:
 
     /* set options */
     void format(output::format val) { m_out = val; }
+    void default_lib(const std::string &str) { m_default_lib = str; }
     void separate(bool b) { m_separate = b; }
     void force(bool b) { m_force = b; }
 
