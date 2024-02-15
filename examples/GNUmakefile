@@ -52,7 +52,7 @@ BINS2     =
 endif
 
 define gdox
-$(GENDLOPEN) -i $(1).txt --name=$(2) > example_$(1).h
+$(GENDLOPEN) -i $(1).txt -n $(2) -l $(3) > example_$(1).h
 endef
 
 
@@ -121,14 +121,14 @@ helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
 	$(call compile_cc,helloworld_example.c,-DBUILDING_STATIC,libhelloworld_dl.$(LIBEXT))
 
 appindicator: appindicator.c
-	$(call gdox,appindicator,xappindicator)
-	$(call gdox,appindicator_gobject,xgobject)
-	$(call gdox,appindicator_gtk,xgtk)
+	$(call gdox,appindicator,xappindicator,'"libappindicator.so.1"') # test filename with hyphens
+	$(call gdox,appindicator_gobject,xgobject,libgobject-2.0.so.0)
+	$(call gdox,appindicator_gtk,xgtk,libgtk-x11-2.0.so.0)
 	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
 
 notify: notify.c
-	$(call gdox,notify,xnotify)
-	$(call gdox,notify_gobject,xgobject)
+	$(call gdox,notify,xnotify,libnotify.so.4)
+	$(call gdox,notify_gobject,xgobject,libgobject-2.0.so.0)
 	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
 
 example_%.h: helloworld.txt

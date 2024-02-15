@@ -2,21 +2,10 @@
 
 #include <libnotify/notify.h>
 
-
 #ifdef USE_DLOPEN
-
-#define XNOTIFY_DEFAULT_LIB "libnotify.so.4"
-#define XNOTIFY_AUTO_RELEASE
 #include "example_notify.h"
-
-#define XGOBJECT_DEFAULT_LIB "libgobject-2.0.so.0"
-#define XGOBJECT_AUTO_RELEASE
 #include "example_notify_gobject.h"
-
-#undef G_OBJECT
-#define G_OBJECT(x) (GObject *)x
-
-#endif /* USE_DLOPEN */
+#endif
 
 
 int send_notification(const char *app_name, const char *summary, const char *body, const char *icon)
@@ -42,15 +31,15 @@ int send_notification(const char *app_name, const char *summary, const char *bod
 int main(int, char **argv)
 {
 #ifdef USE_DLOPEN
-  /* libnotify */
-  if (!xnotify_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xnotify_last_error());
-    return 1;
-  }
-
   /* libgobject */
   if (!xgobject_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xgobject_last_error());
+    return 1;
+  }
+
+  /* libnotify */
+  if (!xnotify_load_lib_and_symbols()) {
+    fprintf(stderr, "%s\n", xnotify_last_error());
     return 1;
   }
 #endif /* USE_DLOPEN */

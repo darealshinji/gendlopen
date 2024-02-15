@@ -1,2 +1,8 @@
 /* glib-2.0/gobject/gobject.h */
 void        g_object_unref                    (gpointer        object);
+
+/* glib-2.0/gobject/gtype.h */
+// function was taken from the macro G_OBJECT with the command:
+// gcc `pkg-config --cflags libnotify` -E notify.c
+GTypeInstance*   g_type_check_instance_cast     (GTypeInstance      *instance,
+						 GType               iface_type);

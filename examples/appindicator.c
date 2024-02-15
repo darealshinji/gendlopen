@@ -3,25 +3,11 @@
 #include <gtk/gtk.h>
 #include <libappindicator/app-indicator.h>
 
-
 #ifdef USE_DLOPEN
-
-#define XAPPINDICATOR_DEFAULT_LIB "libappindicator.so.1"
-#define XAPPINDICATOR_AUTO_RELEASE
 #include "example_appindicator.h"
-
-#define XGOBJECT_DEFAULT_LIB "libgobject-2.0.so.0"
-#define XGOBJECT_AUTO_RELEASE
 #include "example_appindicator_gobject.h"
-
-#define XGTK_DEFAULT_LIB "libgtk-x11-2.0.so.0"
-#define XGTK_AUTO_RELEASE
 #include "example_appindicator_gtk.h"
-
-#undef G_OBJECT
-#define G_OBJECT(x) (GObject *)x
-
-#endif /* USE_DLOPEN */
+#endif
 
 
 int indicator(const char *appID, const char *icon, void (*callback)())
@@ -84,12 +70,6 @@ static void callback() {
 int main()
 {
 #ifdef USE_DLOPEN
-  /* libappindicator */
-  if (!xappindicator_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xappindicator_last_error());
-    return 1;
-  }
-
   /* libgobject */
   if (!xgobject_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xgobject_last_error());
@@ -99,6 +79,12 @@ int main()
   /* libgtk */
   if (!xgtk_load_lib_and_symbols()) {
     fprintf(stderr, "%s\n", xgtk_last_error());
+    return 1;
+  }
+
+  /* libappindicator */
+  if (!xappindicator_load_lib_and_symbols()) {
+    fprintf(stderr, "%s\n", xappindicator_last_error());
     return 1;
   }
 #endif /* USE_DLOPEN */
