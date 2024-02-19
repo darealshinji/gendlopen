@@ -41,6 +41,7 @@ private:
     output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;
+    bool m_skip_parameter_names = false;
     int *m_argc = NULL;
     char ***m_argv = NULL;
 
@@ -81,8 +82,9 @@ public:
     /* set options */
     void format(output::format val) { m_out = val; }
     void default_lib(const std::string &str) { m_default_lib = str; }
-    void separate(bool b) { m_separate = b; }
     void force(bool b) { m_force = b; }
+    void separate(bool b) { m_separate = b; }
+    void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
 
     /* generate output */
     void generate(const std::string &ifile, const std::string &ofile, const std::string &name);

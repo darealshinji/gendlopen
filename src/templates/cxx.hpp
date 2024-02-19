@@ -739,6 +739,8 @@ public:
 }; /* end class dl */
 
 
+#ifdef _$HAS_NOTYPE_ARGS
+
     /* anonymous */
     namespace
     {
@@ -751,11 +753,11 @@ public:
             }
         }
 
-#ifdef _$ENABLE_AUTOLOAD
+    #ifdef _$ENABLE_AUTOLOAD
 
-#if !defined(_$DEFAULT_LIB)
-    #error  _$DEFAULT_LIB was not defined!
-#endif
+    #if !defined(_$DEFAULT_LIB)
+    #error "You need to define _$DEFAULT_LIB if you want to make use of _$ENABLE_AUTOLOAD"
+    #endif
 
         auto al = dl();
 
@@ -777,12 +779,12 @@ public:
             }
         }
 
-#else // !_$ENABLE_AUTOLOAD
+    #else // !_$ENABLE_AUTOLOAD
 
         /* dummy */
         void autoload(const char *) {}
 
-#endif // !_$ENABLE_AUTOLOAD
+    #endif // !_$ENABLE_AUTOLOAD
 
         /* used internally by wrapper functions, `symbol' is never NULL */
         void symbol_error(const char *symbol)
@@ -807,6 +809,8 @@ public:
 
     } /* namespace wrapped */
 
+#endif //_$HAS_NOTYPE_ARGS
+
 } /* namespace gdo */
 
 
@@ -818,19 +822,15 @@ _$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     GDO_RET gdo::wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
 }
 
-#else //!_$WRAP_FUNCTIONS
+#elif defined(_$ENABLE_AUTOLOAD)
 
-    #ifdef _$ENABLE_AUTOLOAD
+/* aliases to autoload function names */
+#define GDO_SYMBOL gdo::wrapped::GDO_SYMBOL
 
-        /* aliases to autoload function names */
-        #define GDO_SYMBOL gdo::wrapped::GDO_SYMBOL
+#else
 
-    #else //!_$ENABLE_AUTOLOAD
-
-        /* aliases to raw function pointers */
-        #define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
-
-    #endif //!_$ENABLE_AUTOLOAD
+/* aliases to raw function pointers */
+#define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
 
 #endif //!_$WRAP_FUNCTIONS
 

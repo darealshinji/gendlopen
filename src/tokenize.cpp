@@ -266,7 +266,9 @@ bool tokenize::tokenize_function(const std::string &s)
     strip_spaces(proto.type);
     strip_spaces(proto.args);
 
-    if (!get_argument_names(proto)) {
+    if (m_skip_parameter_names) {
+        proto.notype_args = "/* disabled !! */";
+    } else if (!get_argument_names(proto)) {
         return false;
     }
 
@@ -307,8 +309,10 @@ bool tokenize::tokenize_object(const std::string &s)
 }
 
 /* read input and tokenize */
-bool tokenize::tokenize_file(const std::string &ifile)
+bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names)
 {
+    m_skip_parameter_names = skip_parameter_names;
+
     /* open file for reading */
     m_ifs.open(ifile);
 

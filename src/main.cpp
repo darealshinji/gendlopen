@@ -108,10 +108,6 @@ int main(int argc, char **argv)
         "Set output format: C, C++ or minimal (default is C)",
         {'F', "format"});
 
-    StrValue a_default_lib(args, "STRING",
-        "Set a default library name to load; hyphens are automatically put around",
-        {'l', "default-library"});
-
     Flag a_separate(args, "",
         "Save output into separate header and body files",
         {'s', "separate"});
@@ -119,6 +115,15 @@ int main(int argc, char **argv)
     Flag a_force(args, "",
         "Always overwrite existing files",
         {'f', "force"});
+
+    StrValue a_default_lib(args, "STRING",
+        "Set a default library name to load; hyphens are automatically put around",
+        {"default-library"});
+
+    Flag a_skip_parameter_names(args, "",
+        "Don't try to look for parameter names in function prototypes;"
+        " this will disable any kind of wrapped functions in the output",
+        {"skip-parameter-names"});
 
     try {
         args.ParseCLI(argc, argv);
@@ -155,8 +160,9 @@ int main(int argc, char **argv)
         gdo.default_lib(lib);
     }
 
-    gdo.separate(a_separate);
     gdo.force(a_force);
+    gdo.separate(a_separate);
+    gdo.skip_parameter_names(a_skip_parameter_names);
 
     gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 

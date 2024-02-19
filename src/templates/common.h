@@ -1,3 +1,14 @@
+/* disable wrapped functions if "--skip-parameter-names" was invoked */
+#ifndef _$HAS_NOTYPE_ARGS
+    #ifdef _$WRAP_FUNCTIONS
+        #undef _$WRAP_FUNCTIONS
+    #endif
+    #ifdef _$ENABLE_AUTOLOAD
+        #undef _$ENABLE_AUTOLOAD
+    #endif
+#endif //!_$HAS_NOTYPE_ARGS
+
+
 #if defined(_WIN32) && !defined(_$USE_DLOPEN)
     #define _$WINAPI
 #endif

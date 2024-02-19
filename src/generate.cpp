@@ -111,7 +111,7 @@ void gendlopen::generate(
     tokenize tok;
 
     /* read data */
-    if (!tok.tokenize_file(ifile)) {
+    if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
         std::exit(1);
     }
 

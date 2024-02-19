@@ -133,7 +133,15 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
         }
 
         /* replace common header data first */
-        replace_string("GDO_COMMON", common_header_data, line);
+        std::string s;
+
+        if (m_skip_parameter_names) {
+            s = "//";
+        }
+        s += "#define _$HAS_NOTYPE_ARGS 1\n\n";
+        s += common_header_data;
+
+        replace_string("GDO_COMMON", s, line);
 
         /* check if the line needs to be processed in a loop */
         bool has_func = find_keyword(line, function_keywords);

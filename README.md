@@ -15,7 +15,7 @@ Features:
 
 Limitations:
  * it's not a code analysis tool, so make sure the input is correct
- * parameter names must be included
+ * parameter names must be included if you want to generate wrapper functions
  * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
  * C++11 is the minimum requirement for the generated C++ files
  * C++23 is the minimum requirement to compile the tool
@@ -27,7 +27,6 @@ Input format
 Here's how the input text format must be:
 
  * all symbols that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)
- * parameter names must be included
  * comments are ignored
  * line-breaks are treated as spaces
  * any other code will throw an error

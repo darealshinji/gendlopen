@@ -97,6 +97,7 @@ private:
     vproto_t m_prototypes;
     vobj_t m_objects;
     cin_ifstream m_ifs;
+    bool m_skip_parameter_names = false;
 
     vstring_t read_input();
     bool tokenize_function(const std::string &s);
@@ -113,7 +114,7 @@ public:
     {}
 
     /* tokenize input */
-    bool tokenize_file(const std::string &ifile);
+    bool tokenize_file(const std::string &ifile, bool skip_parameter_names);
 
     /* return prototype vectors */
     vproto_t &prototypes() { return m_prototypes; };
