@@ -1,6 +1,7 @@
-# generated headers
+# generated files
 examples/example_*.h
 examples/example_*.hpp
+examples/example_helloworld_static_dl.c
 template.h
 
 # executables

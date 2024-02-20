@@ -63,7 +63,7 @@ all: $(BINS) $(BINS2)
 clean:
 	-rm -f $(BINS) notify appindicator
 	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
-	-rm -f example_*.h example_*.hpp
+	-rm -f example_*.h example_*.hpp example_helloworld_static_dl.c
 
 run_tests: $(BINS)
 	@for f in $^; do \
@@ -90,8 +90,15 @@ $(LIB):
 libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 	$(AR) $(ARFLAGS) $@ $<
 
-example_helloworld_static_dl.$(OBJEXT): example_helloworld_static_dl.h
-	$(call compile_cc,example_helloworld_static_dl.c,-c)
+example_helloworld_static_dl.c: helloworld.txt
+	$(GENDLOPEN) -i $^ \
+		--include="helloworld.h" \
+		--define="BUILDING_STATIC;GDO_ENABLE_AUTOLOAD=1;GDO_WRAP_FUNCTIONS=1" \
+		--default-library="helloworld:0" > $@
+
+# a static library replacement for libhelloworld.so
+example_helloworld_static_dl.$(OBJEXT): example_helloworld_static_dl.c
+	$(call compile_cc,$<,-c)
 
 example_1: example_1.h
 	$(call compile_cc,$@.c)
@@ -127,9 +134,10 @@ appindicator: appindicator.c
 	$(call gdox,appindicator_gtk,xgtk,libgtk-x11-2.0.so.0,)
 	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
 
+# test filename with colon
 notify: notify.c
-	$(call gdox,notify,xnotify,libnotify.so.4,)
-	$(call gdox,notify_gobject,xgobject,libgobject-2.0.so.0,)
+	$(call gdox,notify,xnotify,notify:4,)
+	$(call gdox,notify_gobject,xgobject,gobject-2.0:0,)
 	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
 
 example_%.h: helloworld.txt

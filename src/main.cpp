@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include "args.hxx"
 #include "common.hpp"
 #include "gendlopen.hpp"
@@ -31,6 +32,7 @@ using StrValue = args::ValueFlag<std::string>;
 using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
+using Opt = args::Options;
 
 using common::replace_string;
 using common::same_string_case;
@@ -73,6 +75,49 @@ static output::format str_to_enum(char *prog, const std::string &fmt)
     common::unreachable();
 }
 
+static std::string parse_includes(const std::string &list)
+{
+    std::string item;
+    std::stringstream out, stream(list);
+
+    while (std::getline(stream, item, ';')) {
+        if (!item.empty()) {
+            out << "#include \"" << item << "\"\n";
+        }
+    }
+
+    if (!out.str().empty()) {
+        out << '\n';
+    }
+
+    return out.str();
+}
+
+static std::string parse_definitions(const std::string &list)
+{
+    std::string item;
+    std::stringstream out, stream(list);
+
+    while (std::getline(stream, item, ';')) {
+        if (item.empty()) {
+            continue;
+        }
+
+        size_t pos = item.find('=');
+
+        if (pos == std::string::npos) {
+            out << "#ifndef " << item << '\n';
+        } else {
+            item.replace(pos, 1, 1, ' ');
+            out << "#ifndef " << item.substr(0, pos) << '\n';
+        }
+        out << "#define " << item << '\n';
+        out << "#endif\n\n";
+    }
+
+    return out.str();
+}
+
 int main(int argc, char **argv)
 {
     ArgumentParser args(
@@ -91,22 +136,43 @@ int main(int argc, char **argv)
     StrValue a_input(args, "FILE",
         "Input file (use \"-\" for STDIN)",
         {'i', "input"},
-        args::Options::Required);
+        Opt::Single | Opt::Required);
 
     StrValue a_output(args, "FILE",
         "Set an output file path (default: STDOUT)",
         {'o', "output"},
-        "-");
+        "-",
+        Opt::Single);
 
     StrValue a_name(args, "STRING",
         "Custom string to be used as prefix in function and macro names or as "
         "C++ namespace (default: gdo)",
         {'n', "name"},
-        "GDO");
+        "GDO",
+        Opt::Single);
 
     StrValue a_format(args, "STRING",
         "Set output format: C, C++ or minimal (default is C)",
-        {'F', "format"});
+        {'F', "format"},
+        Opt::Single);
+
+    StrValue a_default_lib(args, "STRING",
+        "Set a default library name to load; either set the name explicitly "
+        "(i.e. libfoo.so.1) or use the format 'foo:1', which will create a "
+        "system-agnostic filename macro",
+        {"default-library"},
+        Opt::Single);
+
+    StrValue a_include(args, "STRING",
+        "Add a list of semicolon-separated header files to the output",
+        {"include"},
+        Opt::Single);
+
+    StrValue a_define(args, "STRING",
+        "Add a list of semicolon-separated definitions to the output; "
+        "example: FOO;BAR=1;BAZ=BAR",
+        {"define"},
+        Opt::Single);
 
     Flag a_separate(args, "",
         "Save output into separate header and body files",
@@ -116,15 +182,13 @@ int main(int argc, char **argv)
         "Always overwrite existing files",
         {'f', "force"});
 
-    StrValue a_default_lib(args, "STRING",
-        "Set a default library name to load; hyphens are automatically put around",
-        {"default-library"});
-
     Flag a_skip_parameter_names(args, "",
         "Don't try to look for parameter names in function prototypes;"
         " this will disable any kind of wrapped functions in the output",
         {"skip-parameter-names"});
 
+
+    /* parse arguments */
     try {
         args.ParseCLI(argc, argv);
     }
@@ -139,27 +203,30 @@ int main(int argc, char **argv)
         error_exit(*argv, "an unknown error has occurred");
     }
 
+
     auto gdo = gendlopen(&argc, &argv);
 
+    /* --format */
     if (a_format) {
         gdo.format(str_to_enum(*argv, a_format.Get()));
     }
 
+    /* --default-library */
     if (a_default_lib) {
-        auto lib = a_default_lib.Get();
-
-        /* add hyphens */
-        if (lib.back() != '"') {
-            lib += '"';
-        }
-
-        if (lib.front() != '"') {
-            lib.insert(0, 1, '"');
-        }
-
-        gdo.default_lib(lib);
+        gdo.default_lib(a_default_lib.Get());
     }
 
+    /* --define */
+    if (a_define) {
+        gdo.extra_code(parse_definitions(a_define.Get()));
+    }
+
+    /* --include */
+    if (a_include) {
+        gdo.extra_code(parse_includes(a_include.Get()));
+    }
+
+    /* flags */
     gdo.force(a_force);
     gdo.separate(a_separate);
     gdo.skip_parameter_names(a_skip_parameter_names);

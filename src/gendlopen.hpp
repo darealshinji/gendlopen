@@ -37,7 +37,7 @@ class gendlopen
 {
 private:
 
-    std::string m_name_upper, m_name_lower, m_guard, m_default_lib;
+    std::string m_name_upper, m_name_lower, m_guard, m_default_lib, m_extra_code;
     output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;
@@ -64,6 +64,9 @@ public:
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
+
+    /* add extra code */
+    void extra_code(const std::string &s) { m_extra_code += s; }
 
     /* generate output */
     void generate(const std::string &ifile, const std::string &ofile, const std::string &name);
