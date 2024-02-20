@@ -76,7 +76,7 @@ bool find_keyword(const std::string &line, const char* const *list)
 }
 
 /* parse the template data */
-std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &objects)
+std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj_t &objects)
 {
     std::string buf, line;
 
@@ -95,7 +95,7 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
         NULL
     };
 
-    if (!data) {
+    if (data.empty()) {
         return {};
     }
 
@@ -104,7 +104,7 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
         std::exit(1);
     }
 
-    for (const char *p = data; *p != 0; p++)
+    for (const char *p = data.c_str(); *p != 0; p++)
     {
         const char next = *(p+1);
 
@@ -131,17 +131,6 @@ std::string gendlopen::parse(const char *data, vproto_t &prototypes, vobj_t &obj
             line.clear();
             continue;
         }
-
-        /* replace common header data first */
-        std::string s;
-
-        if (m_skip_parameter_names) {
-            s = "//";
-        }
-        s += "#define _$HAS_NOTYPE_ARGS 1\n\n";
-        s += common_header_data;
-
-        replace_string("GDO_COMMON", s, line);
 
         /* check if the line needs to be processed in a loop */
         bool has_func = find_keyword(line, function_keywords);

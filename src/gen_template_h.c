@@ -1,7 +1,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (C) 2023 djcj@gmx.de
+ * Copyright (C) 2023-2024 djcj@gmx.de
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -94,15 +94,20 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    fprintf(fp, "%s\n",   "#ifndef _TEMPLATE_H_");
-    fprintf(fp, "%s\n\n", "#define _TEMPLATE_H_");
-    hexdump("license.h",  "license_data",        fp);
-    hexdump("common.h",   "common_header_data",  fp);
-    hexdump("c.h",        "c_header_data",       fp);
-    hexdump("c.c",        "c_body_data",         fp);
-    hexdump("cxx.hpp",    "cxx_header_data",     fp);
-    hexdump("minimal.h",  "minimal_header_data", fp);
-    fprintf(fp, "%s\n",   "#endif //_TEMPLATE_H_");
+    fprintf(fp, "%s\n",     "#ifndef _TEMPLATE_H_");
+    fprintf(fp, "%s\n\n",   "#define _TEMPLATE_H_");
+
+    hexdump("license.h",    "license_data",        fp);
+    hexdump("common.h",     "common_header_data",  fp);
+    hexdump("c.h",          "c_header_data",       fp);
+    hexdump("c.c",          "c_body_data",         fp);
+    hexdump("c_wrap.c",     "c_wrap_data",         fp);
+    hexdump("cxx.hpp",      "cxx_header_data",     fp);
+    hexdump("cxx2.hpp",     "cxx_header_data2",    fp);
+    hexdump("cxx_wrap.hpp", "cxx_wrap_data",       fp);
+    hexdump("minimal.h",    "minimal_header_data", fp);
+
+    fprintf(fp, "%s\n",     "#endif //_TEMPLATE_H_");
 
     //printf("data written to `%s'\n", out);
     fclose(fp);

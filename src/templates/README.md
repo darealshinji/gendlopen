@@ -6,8 +6,6 @@ The following replacements will be performed in the template code:
 
 `gdo::` and `namespace gdo`: namespace will be replaced if a user-defined prefix was given
 
-`GDO_COMMON`: common header data (`common.h`)
-
 `GDO_TYPEDEFS`: typedef code from the input
 
 

@@ -1,3 +1,4 @@
+
 /***
 
 ******************
@@ -149,14 +150,6 @@ _$LIBEXT
 
 ***/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-GDO_COMMON
-
-
 /* static linkage */
 #ifdef _$STATIC
     #define _$LINKAGE  static
@@ -197,7 +190,3 @@ _$LINKAGE $char_t *$lib_origin(void);
 /* aliases to raw object pointers */
 #define GDO_OBJ_SYMBOL *$hndl.GDO_OBJ_SYMBOL_ptr_
 
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif

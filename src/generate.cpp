@@ -74,7 +74,7 @@ static std::string create_note(int &argc, char ** &argv)
         str << ' ' << argv[i];
     }
 
-    str << "\n\n";
+    str << "\n\n" << license_data << '\n';
 
     return str.str();
 }
@@ -118,20 +118,23 @@ void gendlopen::generate(
     /* output filename */
     std::filesystem::path ofhdr;
     bool use_stdout = (ofile == "-");
+    bool is_c = (m_out == output::cxx) ? false : true;
 
-    if (use_stdout == false) {
+    if (use_stdout) {
+        m_separate = false;
+    } else {
         ofhdr = ofile;
 
-        if (m_out == output::cxx) {
+        if (is_c) {
+            /* C */
+            ofhdr.replace_extension(".h");
+        } else {
             /* C++ */
             auto ext = ofhdr.extension();
 
             if (ext != ".h" && ext != ".hpp" && ext != ".hxx") {
                 ofhdr.replace_extension(".hpp");
             }
-        } else {
-            /* C */
-            ofhdr.replace_extension(".h");
         }
     }
 
@@ -139,10 +142,10 @@ void gendlopen::generate(
     std::string header_name;
 
     if (use_stdout) {
-        if (m_out == output::cxx) {
-            header_name = name + ".hpp";
-        } else {
-            header_name = name + ".h";
+        header_name = name + ".h";
+
+        if (!is_c) {
+            header_name += "pp";
         }
     } else {
         header_name = ofhdr.filename().string();
@@ -154,67 +157,114 @@ void gendlopen::generate(
     m_name_upper = convert_name("", name, toupper);
     m_name_lower = convert_name("", name, tolower);
 
-    /* print or save output */
-
-    const char *header_data = c_header_data;
-    const char *body_data = c_body_data;
+    /* generate output */
+    std::string header_data = common_header_data;
+    std::string body_data;
 
     switch (m_out)
     {
     case output::cxx:
-        header_data = cxx_header_data;
-        body_data = "";
+        /* header + wrap + header2 */
+        header_data += cxx_header_data;
+
+        if (!m_skip_parameter_names) {
+            header_data += cxx_wrap_data;
+        }
+        header_data += cxx_header_data2;
         break;
+
     case output::minimal:
-        header_data = minimal_header_data;
-        body_data = "";
+        header_data += minimal_header_data;
         break;
+
     case output::c:
+        /* header / body + wrap */
+        const char *wrap_data = m_skip_parameter_names ? "" : c_wrap_data;
+        header_data += c_header_data;
+
+        if (m_separate) {
+            body_data = c_body_data;
+            body_data += wrap_data;
+        } else {
+            header_data += c_body_data;
+            header_data += wrap_data;
+        }
         break;
     }
 
     auto proto = tok.prototypes();
     auto objs = tok.objects();
     auto note = create_note(*m_argc, *m_argv);
+    std::stringstream out, out_body;
 
+
+    /* header data */
+
+    out << note;
+    out << "#ifndef " << m_guard << '\n';
+    out << "#define " << m_guard << "\n\n";
+
+    if (!m_default_lib.empty()) {
+        out << "#ifndef " << m_name_upper << "DEFAULT_LIB\n";
+        out << "#define " << m_name_upper << "DEFAULT_LIB " << m_default_lib << '\n';
+        out << "#endif\n\n";
+    }
+
+    if (is_c) {
+        out << "#ifdef __cplusplus\n";
+        out << "extern \"C\" {\n";
+        out << "#endif\n\n";
+    }
+
+    out << parse(header_data, proto, objs);
+
+    if (is_c) {
+        out << '\n';
+        out << "#ifdef __cplusplus\n";
+        out << "} /* extern \"C\" */\n";
+        out << "#endif\n";
+    }
+
+    out << '\n';
+    out << "#endif //" << m_guard << '\n';
+
+    /* body data */
+    if (m_separate) {
+        out_body << note;
+        out_body << "#include \"" << header_name << "\"\n\n";
+        out_body << parse(body_data, proto, objs);
+    }
+
+    /* STDOUT */
     if (use_stdout) {
-        /* STDOUT */
-        std::cout << note;
-        put_header_guards<std::ostream>(std::cout, header_data, body_data, proto, objs);
-    } else {
-        std::ofstream ofs;
+        std::cout << out.str() << std::flush;
+        return;
+    }
 
-        if (!open_fstream(ofs, ofhdr.string())) {
+    /* open file streams */
+    std::ofstream ofs, ofs_body;
+    auto ofbody = ofhdr;
+
+    if (!open_fstream(ofs, ofhdr.string())) {
+        std::exit(1);
+    }
+
+    if (m_separate) {
+        ofbody.replace_extension(is_c ? ".c" : ".cpp");
+
+        if (!open_fstream(ofs_body, ofbody.string())) {
             std::exit(1);
         }
+    }
 
-        if (m_separate) {
-            /* separate files */
-            std::ofstream ofs_body;
-            auto ofbody = ofhdr;
-            ofbody.replace_extension(m_out == output::cxx ? ".cpp" : ".c");
+    /* header */
+    ofs << out.str();
+    std::cout << "saved to file: " << ofhdr << std::endl;
 
-            if (!open_fstream(ofs_body, ofbody.string())) {
-                std::exit(1);
-            }
-
-            /* header */
-            ofs << note;
-            put_header_guards(ofs, header_data, "", proto, objs);
-            std::cout << "saved to file: " << ofhdr << std::endl;
-
-            /* body */
-            ofs_body << note;
-            ofs_body << license_data;
-            ofs_body << "\n#include \"" << header_name << "\"\n\n";
-            ofs_body << parse(body_data, proto, objs);
-            std::cout << "saved to file: " << ofbody << std::endl;
-        } else {
-            /* single file */
-            ofs << note;
-            put_header_guards(ofs, header_data, body_data, proto, objs);
-            std::cout << "saved to file: " << ofhdr << std::endl;
-        }
+    /* body */
+    if (m_separate) {
+        ofs_body << out_body.str();
+        std::cout << "saved to file: " << ofbody << std::endl;
     }
 }
 

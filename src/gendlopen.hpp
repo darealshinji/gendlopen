@@ -46,28 +46,7 @@ private:
     char ***m_argv = NULL;
 
     bool open_fstream(std::ofstream &ofs, const std::string &ofile);
-    std::string parse(const char *data, vproto_t &prototypes, vobj_t &objects);
-
-    /* helper to put header guards around the data and save
-     * them to the provided stream */
-    template<typename T=std::ofstream>
-    void put_header_guards(T &str, const char *header_data, const char *body_data,
-        vproto_t &prototypes, vobj_t &objects)
-    {
-        str << license_data;
-        str << "#ifndef " << m_guard << '\n';
-        str << "#define " << m_guard << "\n\n";
-
-        if (!m_default_lib.empty()) {
-            str << "#ifndef " << m_name_upper << "DEFAULT_LIB\n";
-            str << "#define " << m_name_upper << "DEFAULT_LIB " << m_default_lib << '\n';
-            str << "#endif\n\n";
-        }
-
-        str << parse(header_data, prototypes, objects);
-        str << parse(body_data, prototypes, objects);
-        str << "#endif //" << m_guard << '\n';
-    }
+    std::string parse(const std::string &data, vproto_t &prototypes, vobj_t &objects);
 
 public:
 
