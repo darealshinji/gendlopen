@@ -32,21 +32,49 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
-#include <ctype.h>
 #include <time.h>
 
 #include "template.h"
 #include "gendlopen.hpp"
 
+#define RANGE(c, beg, end)  (c >= beg && c <= end)
+
 
 /* convert input string to be used as prefixes or header guards */
-inline static
-std::string convert_name(const char *prefix, const std::string &in, int (*to_case)(int))
+
+static std::string convert_to_upper(const std::string &in)
 {
-    std::string out = prefix;
+    std::string out;
 
     for (const char &c : in) {
-        out += isalnum(c) ? to_case(c) : '_';
+        if (RANGE(c, 'A', 'Z') || RANGE(c, '0', '9')) {
+            out += c;
+        } else if (RANGE(c, 'a', 'z')) {
+            out += c - ('a'-'A');
+        } else {
+            out += '_';
+        }
+    }
+
+    if (out.back() != '_') {
+        out += '_';
+    }
+
+    return out;
+}
+
+static std::string convert_to_lower(const std::string &in)
+{
+    std::string out;
+
+    for (const char &c : in) {
+        if (RANGE(c, 'a', 'z') || RANGE(c, '0', '9')) {
+            out += c;
+        } else if (RANGE(c, 'A', 'Z')) {
+            out += c + ('a'-'A');
+        } else {
+            out += '_';
+        }
     }
 
     if (out.back() != '_') {
@@ -218,11 +246,12 @@ void gendlopen::generate(
         header_name = ofhdr.filename().string();
     }
 
-    m_guard = convert_name("_", header_name, toupper);
+    m_guard = convert_to_upper(header_name);
+    m_guard.insert(0, 1, '_');
 
     /* name used on variables and macros */
-    m_name_upper = convert_name("", name, toupper);
-    m_name_lower = convert_name("", name, tolower);
+    m_name_upper = convert_to_upper(name);
+    m_name_lower = convert_to_lower(name);
 
 
     /* header data */
