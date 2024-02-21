@@ -91,10 +91,10 @@ libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 	$(AR) $(ARFLAGS) $@ $<
 
 example_helloworld_static_dl.c: helloworld.txt
-	$(GENDLOPEN) -i $^ \
+	$(GENDLOPEN) -i $^ -f -o $@ \
 		--include="helloworld.h" \
 		--define="BUILDING_STATIC;GDO_ENABLE_AUTOLOAD=1;GDO_WRAP_FUNCTIONS=1" \
-		--default-library="helloworld:0" > $@
+		--default-library="helloworld:0"
 
 # a static library replacement for libhelloworld.so
 example_helloworld_static_dl.$(OBJEXT): example_helloworld_static_dl.c
@@ -141,8 +141,8 @@ notify: notify.c
 	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
 
 example_%.h: helloworld.txt
-	$(GENDLOPEN) -i $^ > $@
+	$(GENDLOPEN) -i $^ -f -o $@
 
 example_%.hpp: helloworld.txt
-	$(GENDLOPEN) --format=C++ -i $^ > $@
+	$(GENDLOPEN) --format=C++ -i $^ -f -o $@
 

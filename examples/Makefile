@@ -36,7 +36,7 @@ all: $(bins)
 
 clean:
 	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
-	-del /q $(genhdrs_h) $(genhdrs_hpp)
+	-del /q $(genhdrs_h) $(genhdrs_hpp) example_helloworld_static_dl.c
 
 $(bins): $(dll)
 
@@ -48,7 +48,13 @@ $(dll): helloworld.c
 libhelloworld_dl.lib: example_helloworld_static_dl.obj
 	$(lib_exe) -out:$@ $**
 
-example_helloworld_static_dl.obj: example_helloworld_static_dl.h
+example_helloworld_static_dl.c: helloworld.txt
+	$(gendlopen) -i $** -f -o $@ \
+		--include="helloworld.h" \
+		--define="BUILDING_STATIC;GDO_ENABLE_AUTOLOAD=1;GDO_WRAP_FUNCTIONS=1" \
+		--default-library="helloworld:0"
+
+example_helloworld_static_dl.obj: example_helloworld_static_dl.c
 	$(cl) $(cflags) -c $*.c
 
 helloworld_example_dl.exe: libhelloworld_dl.lib
@@ -79,7 +85,7 @@ example_cxx_wide.exe: example_cxx_wide.hpp
 	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
 
 $(genhdrs_h): helloworld.txt
-	$(gendlopen) -i $** > $@
+	$(gendlopen) -i $** -f -o $@
 
 $(genhdrs_hpp): helloworld.txt
-	$(gendlopen) --format=C++ -i $** > $@
+	$(gendlopen) --format=C++ -i $** -f -o $@

@@ -138,30 +138,74 @@ void gendlopen::generate(
         std::exit(1);
     }
 
+    /* check output type */
+
+    std::string header_data = common_header_data;
+    std::string body_data;
+    bool is_c = true;
+
+    switch (m_out)
+    {
+    case output::cxx:
+        is_c = false;
+
+        /* header + wrap + header2 */
+        header_data += cxx_header_data;
+
+        if (!m_skip_parameter_names) {
+            header_data += cxx_wrap_data;
+        }
+        header_data += cxx_header_data2;
+        break;
+
+    case output::minimal:
+        /* minimal header */
+        header_data += minimal_header_data;
+        break;
+
+    case output::c:
+        const char *wrap_data = m_skip_parameter_names ? "" : c_wrap_data;
+        header_data += c_header_data;
+
+        if (m_separate) {
+            /* header / body + wrap */
+            body_data = c_body_data;
+            body_data += wrap_data;
+        } else {
+            /* header + body + wrap */
+            header_data += c_body_data;
+            header_data += wrap_data;
+        }
+        break;
+    }
+
     /* output filename */
-    std::filesystem::path ofhdr;
+    std::filesystem::path ofhdr(ofile);
+    auto ofbody = ofhdr;
     bool use_stdout = (ofile == "-");
-    bool is_c = (m_out == output::cxx) ? false : true;
 
     if (use_stdout) {
         m_separate = false;
-    } else {
-        ofhdr = ofile;
+    }
 
+    /* rename file extensions only if we save into separate files */
+    if (m_separate) {
         if (is_c) {
             /* C */
             ofhdr.replace_extension(".h");
+            ofbody.replace_extension(".c");
         } else {
             /* C++ */
             auto ext = ofhdr.extension();
 
-            if (ext != ".h" && ext != ".hpp" && ext != ".hxx") {
+            if (ext.empty() || (ext != ".h" && ext != ".H" && ext != ".hpp" && ext != ".hxx")) {
                 ofhdr.replace_extension(".hpp");
             }
+            ofbody.replace_extension(".cpp");
         }
     }
 
-    /* "#include" filename and header guard */
+    /* create "#include" filename and header guard */
     std::string header_name;
 
     if (use_stdout) {
@@ -180,49 +224,13 @@ void gendlopen::generate(
     m_name_upper = convert_name("", name, toupper);
     m_name_lower = convert_name("", name, tolower);
 
-    /* generate output */
-    std::string header_data = common_header_data;
-    std::string body_data;
 
-    switch (m_out)
-    {
-    case output::cxx:
-        /* header + wrap + header2 */
-        header_data += cxx_header_data;
-
-        if (!m_skip_parameter_names) {
-            header_data += cxx_wrap_data;
-        }
-        header_data += cxx_header_data2;
-        break;
-
-    case output::minimal:
-        /* minimal header */
-        header_data += minimal_header_data;
-        break;
-
-    case output::c:
-        /* header / body + wrap */
-        const char *wrap_data = m_skip_parameter_names ? "" : c_wrap_data;
-        header_data += c_header_data;
-
-        if (m_separate) {
-            body_data = c_body_data;
-            body_data += wrap_data;
-        } else {
-            header_data += c_body_data;
-            header_data += wrap_data;
-        }
-        break;
-    }
+    /* header data */
 
     auto proto = tok.prototypes();
     auto objs = tok.objects();
     auto note = create_note(*m_argc, *m_argv);
     std::stringstream out, out_body;
-
-
-    /* header data */
 
     /* notification + license text */
     out << note;
@@ -239,7 +247,7 @@ void gendlopen::generate(
         out << "#endif\n\n";
     }
 
-    /* extra includes and defines */
+    /* extra includes and defines (might be empty) */
     out << m_extra_code;
 
     /* extern "C" */
@@ -271,34 +279,31 @@ void gendlopen::generate(
         out_body << parse(body_data, proto, objs);
     }
 
+
     /* STDOUT */
     if (use_stdout) {
         std::cout << out.str() << std::flush;
         return;
     }
 
+
     /* open file streams */
     std::ofstream ofs, ofs_body;
-    auto ofbody = ofhdr;
 
     if (!open_fstream(ofs, ofhdr.string())) {
         std::exit(1);
     }
 
-    if (m_separate) {
-        ofbody.replace_extension(is_c ? ".c" : ".cpp");
-
-        if (!open_fstream(ofs_body, ofbody.string())) {
-            std::exit(1);
-        }
+    if (m_separate && !open_fstream(ofs_body, ofbody.string())) {
+        std::exit(1);
     }
 
-    /* header */
+    /* write to header file */
     ofs << out.str();
     std::cout << "saved to file: " << ofhdr << std::endl;
 
-    /* body */
-    if (m_separate) {
+    /* write to body file */
+    if (ofs_body.is_open()) {
         ofs_body << out_body.str();
         std::cout << "saved to file: " << ofbody << std::endl;
     }

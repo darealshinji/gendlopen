@@ -231,6 +231,7 @@ int main(int argc, char **argv)
     gdo.separate(a_separate);
     gdo.skip_parameter_names(a_skip_parameter_names);
 
+    /* --input --output --name */
     gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 
     return 0;
