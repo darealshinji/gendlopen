@@ -51,7 +51,7 @@ libhelloworld_dl.lib: example_helloworld_static_dl.obj
 example_helloworld_static_dl.c: helloworld.txt
 	$(gendlopen) -i $** -f -o $@ \
 		--include="helloworld.h" \
-		--define="BUILDING_STATIC;GDO_ENABLE_AUTOLOAD=1;GDO_WRAP_FUNCTIONS=1" \
+		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="helloworld:0"
 
 example_helloworld_static_dl.obj: example_helloworld_static_dl.c

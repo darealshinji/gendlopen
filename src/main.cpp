@@ -29,6 +29,7 @@
 #include "gendlopen.hpp"
 
 using StrValue = args::ValueFlag<std::string>;
+using StrList = args::ValueFlagList<std::string>;
 using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
@@ -47,75 +48,18 @@ void error_exit(char *prog, const std::string &msg)
 
 static output::format str_to_enum(char *prog, const std::string &fmt)
 {
-    switch (fmt.front())
-    {
-    case 'C':
-    case 'c':
-        if (same_string_case(fmt, "C++")) {
-            return output::cxx;
-        } else if (same_string_case(fmt, "C")) {
-            return output::c;
-        }
-        break;
-
-    case 'M':
-    case 'm':
-        if (same_string_case(fmt, "minimal")) {
-            return output::minimal;
-        }
-        break;
-
-    default:
-        break;
+    if (same_string_case(fmt, "C++")) {
+        return output::cxx;
+    } else if (same_string_case(fmt, "C")) {
+        return output::c;
+    } else if (same_string_case(fmt, "minimal")) {
+        return output::minimal;
     }
 
     std::string s = "unknown output format: " + fmt;
     error_exit(prog, s);
 
     common::unreachable();
-}
-
-static std::string parse_includes(const std::string &list)
-{
-    std::string item;
-    std::stringstream out, stream(list);
-
-    while (std::getline(stream, item, ';')) {
-        if (!item.empty()) {
-            out << "#include \"" << item << "\"\n";
-        }
-    }
-
-    if (!out.str().empty()) {
-        out << '\n';
-    }
-
-    return out.str();
-}
-
-static std::string parse_definitions(const std::string &list)
-{
-    std::string item;
-    std::stringstream out, stream(list);
-
-    while (std::getline(stream, item, ';')) {
-        if (item.empty()) {
-            continue;
-        }
-
-        size_t pos = item.find('=');
-
-        if (pos == std::string::npos) {
-            out << "#ifndef " << item << '\n';
-        } else {
-            item.replace(pos, 1, 1, ' ');
-            out << "#ifndef " << item.substr(0, pos) << '\n';
-        }
-        out << "#define " << item << '\n';
-        out << "#endif\n\n";
-    }
-
-    return out.str();
 }
 
 int main(int argc, char **argv)
@@ -163,16 +107,13 @@ int main(int argc, char **argv)
         {"default-library"},
         Opt::Single);
 
-    StrValue a_include(args, "STRING",
-        "Add a list of semicolon-separated header files to the output",
-        {"include"},
-        Opt::Single);
+    StrList a_include(args, "STRING",
+        "Header file to include (can be used multiple times)",
+        {'I', "include"});
 
-    StrValue a_define(args, "STRING",
-        "Add a list of semicolon-separated definitions to the output; "
-        "example: FOO;BAR=1;BAZ=BAR",
-        {"define"},
-        Opt::Single);
+    StrList a_define(args, "STRING",
+        "Add preprocessor definitions to the output (can be used multiple times)",
+        {'D', "define"});
 
     Flag a_separate(args, "",
         "Save output into separate header and body files",
@@ -218,12 +159,16 @@ int main(int argc, char **argv)
 
     /* --define */
     if (a_define) {
-        gdo.extra_code(parse_definitions(a_define.Get()));
+        for (const auto &e : args::get(a_define)) {
+            gdo.add_def(e);
+        }
     }
 
     /* --include */
     if (a_include) {
-        gdo.extra_code(parse_includes(a_include.Get()));
+        for (const auto &e : args::get(a_include)) {
+            gdo.add_inc(e);
+        }
     }
 
     /* flags */

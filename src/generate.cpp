@@ -32,6 +32,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <vector>
 #include <cstring>
 #include <ctime>
 
@@ -117,27 +118,93 @@ static std::string create_note(int &argc, char ** &argv)
     return str.str();
 }
 
-static void format_lib_name(std::string &lib, const std::string &prefix)
+/* create "#define" lines */
+static std::string format_definitions(const std::vector<std::string> &list)
 {
-    size_t pos = lib.find(':');
+    std::stringstream out;
+
+    for (auto e : list) {
+        size_t pos = e.find('=');
+
+        if (pos == std::string::npos) {
+            /* no value given */
+            out << "#ifndef " << e << '\n';
+        } else {
+            /* remove value from "#ifndef" */
+            e.replace(pos, 1, 1, ' ');
+            out << "#ifndef " << e.substr(0, pos) << '\n';
+        }
+        out << "#define " << e << '\n';
+        out << "#endif\n\n";
+    }
+
+    return out.str();
+}
+
+/* create "#include" lines */
+static std::string format_includes(const std::vector<std::string> &list)
+{
+    std::stringstream out;
+
+    for (auto e : list) {
+        std::string header;
+
+        if (e.front() == '<' && e.back() == '>') {
+            /* <foo.h> */
+            header = e;
+        } else {
+            /* "foo.h" */
+            if (e.front() != '"') {
+                header = '"';
+            }
+
+            header += e;
+
+            if (e.back() != '"') {
+                header += '"';
+            }
+        }
+
+        out << "#include " << header << '\n';
+    }
+
+    out << '\n';
+
+    return out.str();
+}
+
+/* create the default library name macro */
+static std::string format_library_name(const std::string &name, const std::string &prefix)
+{
+    std::string out =
+        "#ifndef {pfx}DEFAULT_LIB\n"
+        "#define {pfx}DEFAULT_LIB {lib}\n"
+        "#endif\n\n";
+
+    std::stringstream lib;
+    size_t pos = name.find(':');
 
     if (pos != std::string::npos) {
         /* create macro: "name:0" -> GDO_LIB(name,0) */
-        lib.replace(pos, 1, 1, ',');
-        lib.insert(0, "LIB(");
-        lib.insert(0, prefix);
-        lib += ')';
+        lib << prefix << "LIB(" << name.substr(0, pos) << ','
+            << name.substr(pos+1) << ')';
     } else {
-        /* add hyphens if needed */
-
-        if (lib.back() != '"') {
-            lib += '"';
+        /* use the library name as is; add hyphens if needed */
+        if (name.front() != '"') {
+            lib << '"';
         }
 
-        if (lib.front() != '"') {
-            lib.insert(0, 1, '"');
+        lib << name;
+
+        if (name.back() != '"') {
+            lib << '"';
         }
     }
+
+    common::replace_string("{pfx}", prefix, out);
+    common::replace_string("{lib}", lib.str(), out);
+
+    return out;
 }
 
 /* open file for writing */
@@ -184,16 +251,32 @@ void gendlopen::generate(
 
     switch (m_out)
     {
-    case output::cxx:
-        is_c = false;
+    case output::cxx: {
+            /* header + wrap + header2 */
+            header_data += cxx_header_data;
 
-        /* header + wrap + header2 */
-        header_data += cxx_header_data;
-
-        if (!m_skip_parameter_names) {
-            header_data += cxx_wrap_data;
+            if (!m_skip_parameter_names) {
+                header_data += cxx_wrap_data;
+            }
+            header_data += cxx_header_data2;
+            is_c = false;
         }
-        header_data += cxx_header_data2;
+        break;
+
+    case output::c: {
+            const char *wrap_data = m_skip_parameter_names ? "" : c_wrap_data;
+            header_data += c_header_data;
+
+            if (m_separate) {
+                /* header / body + wrap */
+                body_data = c_body_data;
+                body_data += wrap_data;
+            } else {
+                /* header + body + wrap */
+                header_data += c_body_data;
+                header_data += wrap_data;
+            }
+        }
         break;
 
     case output::minimal:
@@ -201,20 +284,8 @@ void gendlopen::generate(
         header_data += minimal_header_data;
         break;
 
-    case output::c:
-        const char *wrap_data = m_skip_parameter_names ? "" : c_wrap_data;
-        header_data += c_header_data;
-
-        if (m_separate) {
-            /* header / body + wrap */
-            body_data = c_body_data;
-            body_data += wrap_data;
-        } else {
-            /* header + body + wrap */
-            header_data += c_body_data;
-            header_data += wrap_data;
-        }
-        break;
+//  default:
+//      ASSERT();
     }
 
     /* output filename */
@@ -243,7 +314,7 @@ void gendlopen::generate(
         }
     }
 
-    /* create "#include" filename and header guard */
+    /* create header filename and header guard */
     std::string header_name;
 
     if (use_stdout) {
@@ -274,29 +345,33 @@ void gendlopen::generate(
     /* notification + license text */
     out << note;
 
-    /* header guards */
+    /* header guard begin */
     out << "#ifndef " << m_guard << '\n';
     out << "#define " << m_guard << "\n\n";
 
-    /* default library name */
-    if (!m_default_lib.empty()) {
-        format_lib_name(m_default_lib, m_name_upper);
-        out << "#ifndef " << m_name_upper << "DEFAULT_LIB\n";
-        out << "#define " << m_name_upper << "DEFAULT_LIB " << m_default_lib << '\n';
-        out << "#endif\n\n";
+    /* extra definitions */
+    if (!m_definitions.empty()) {
+        out << format_definitions(m_definitions);
     }
 
-    /* extra includes and defines (might be empty) */
-    out << m_extra_code;
+    /* default library name */
+    if (!m_default_lib.empty()) {
+        out << format_library_name(m_default_lib, m_name_upper);
+    }
 
-    /* extern "C" */
+    /* extra includes */
+    if (!m_includes.empty()) {
+        out << format_includes(m_includes);
+    }
+
+    /* extern "C" begin */
     if (is_c) {
         out << "#ifdef __cplusplus\n";
         out << "extern \"C\" {\n";
         out << "#endif\n\n";
     }
 
-    /* header code */
+    /* header code from template */
     out << parse(header_data, proto, objs);
 
     /* extern "C" end */
@@ -307,7 +382,7 @@ void gendlopen::generate(
         out << "#endif\n";
     }
 
-    /* header guard */
+    /* header guard end */
     out << '\n';
     out << "#endif //" << m_guard << '\n';
 
@@ -318,15 +393,14 @@ void gendlopen::generate(
         out_body << parse(body_data, proto, objs);
     }
 
-
-    /* STDOUT */
+    /* print to STDOUT (m_separate is always set false in this case) */
     if (use_stdout) {
         std::cout << out.str() << std::flush;
         return;
     }
 
+    /* write to file(s) */
 
-    /* open file streams */
     std::ofstream ofs, ofs_body;
 
     if (!open_fstream(ofs, ofhdr.string())) {
@@ -337,11 +411,9 @@ void gendlopen::generate(
         std::exit(1);
     }
 
-    /* write to header file */
     ofs << out.str();
     std::cout << "saved to file: " << ofhdr << std::endl;
 
-    /* write to body file */
     if (ofs_body.is_open()) {
         ofs_body << out_body.str();
         std::cout << "saved to file: " << ofbody << std::endl;
