@@ -93,6 +93,13 @@ inline void replace_string(const std::string &from, const std::string &to, std::
     }
 }
 
+/* whether "c" is within the range of "beg" and "end" */
+template<typename T=char>
+inline bool range(T c, T beg, T end)
+{
+    return (c >= beg && c <= end);
+}
+
 /* just in case std::unreachable is not implemented */
 [[noreturn]] inline void unreachable()
 {

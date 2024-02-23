@@ -60,32 +60,47 @@ public:
     }
 
     bool is_open() const {
-        return m_stdin ? true : m_ifs.is_open();
+        return stdin() ? true : m_ifs.is_open();
     }
 
     void close() {
         if (m_ifs.is_open()) m_ifs.close();
     }
 
+    bool stdin() const {
+        return m_stdin;
+    }
+
     std::istream& get(char &c) {
-        return m_stdin ? std::cin.get(c) : m_ifs.get(c);
+        return stdin() ? std::cin.get(c) : m_ifs.get(c);
     }
 
     int peek() {
-        return m_stdin ? std::cin.peek() : m_ifs.peek();
+        return stdin() ? std::cin.peek() : m_ifs.peek();
     }
 
     bool good() const {
-        return m_stdin ? std::cin.good() : m_ifs.good();
+        return stdin() ? std::cin.good() : m_ifs.good();
     }
 
     void ignore()
     {
-        if (m_stdin) {
+        if (stdin()) {
             std::cin.ignore();
         } else {
             m_ifs.ignore();
         }
+    }
+
+    size_t size()
+    {
+        if (stdin()) {
+            return 0;
+        }
+        m_ifs.seekg(0, std::ios_base::end);
+        size_t sz = m_ifs.tellg();
+        m_ifs.seekg(0, std::ios_base::beg);
+        return sz;
     }
 };
 

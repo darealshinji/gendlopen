@@ -42,6 +42,7 @@
 using common::replace_string;
 using common::same_string_case;
 using common::strip_spaces;
+using common::range;
 
 
 /* extract argument names from args list */
@@ -81,12 +82,8 @@ static bool get_argument_names(proto_t &proto)
         return true;
     }
 
-    auto in = proto.args;
-
-    /* needed for parsing */
-    in += " ,";
-
-    std::istringstream iss(in);
+    /* trailing comma is needed for parsing */
+    std::istringstream iss(proto.args + " ,");
 
     /* tokenize argument list */
     while (iss >> token) {
@@ -143,8 +140,9 @@ static bool get_argument_names(proto_t &proto)
 vstring_t tokenize::read_input()
 {
     vstring_t vec;
-    char c, comment = 0;
     std::string line;
+    char c, comment = 0;
+    int nullbytes = 0;
 
     auto add_space = [] (std::string &line)
     {
@@ -224,10 +222,24 @@ vstring_t tokenize::read_input()
             add_space(line);
             break;
 
+        /* null byte */
+        case 0x00:
+            /* ignore a couple of them, otherwise we should assume it's
+             * something like UTF-16 or a binary file */
+            if (++nullbytes > 8) {
+                std::cerr << "error: too many null bytes (\\0) found in input!" << std::endl;
+                std::cerr << "input must be ASCII or UTF-8 formatted text" << std::endl;
+                std::exit(1);
+            }
+            break;
+
         /* add character */
         default:
             /* function name, argument, etc. */
-            if ((c>='a' && c<='z') || (c>='A' && c<='Z') || isdigit(c) || c == '_') {
+            if (range(c, 'a','z') ||
+                range(c, 'A','Z') ||
+                range(c, '0','9') || c == '_')
+            {
                 line += c;
             } else {
                 add_space(line);
@@ -235,6 +247,13 @@ vstring_t tokenize::read_input()
                 line += ' ';
             }
             break;
+        }
+
+        /* stop if the sequence gets unrealistically long */
+        if (line.size() > 1000) {
+            std::cerr << "error: the following sequence is exceeding 1000 bytes:" << std::endl;
+            std::cerr << line << "[...]" << std::endl;
+            std::exit(1);
         }
     }
 
@@ -318,6 +337,15 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
 
     if (!m_ifs.is_open()) {
         std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
+        return false;
+    }
+
+    /* check if input filesize exceeds 10 MB */
+    const size_t sz = m_ifs.size();
+
+    if (m_ifs.size() > (10*1000*1000)) {
+        std::cerr << "error: filesize of " << sz <<  " bytes exceeds limit of 10 MB: "
+            << ifile << std::endl;
         return false;
     }
 

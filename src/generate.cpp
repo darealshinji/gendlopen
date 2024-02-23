@@ -39,7 +39,7 @@
 #include "template.h"
 #include "gendlopen.hpp"
 
-#define RANGE(c, beg, end)  (c >= beg && c <= end)
+using common::range;
 
 
 /* convert input string to be used as prefixes or header guards */
@@ -49,9 +49,9 @@ static std::string convert_to_upper(const std::string &in)
     std::string out;
 
     for (const char &c : in) {
-        if (RANGE(c, 'a', 'z')) {
+        if (range(c, 'a','z')) {
             out += c - ('a'-'A');
-        } else if (RANGE(c, 'A', 'Z') || RANGE(c, '0', '9')) {
+        } else if (range(c, 'A','Z') || range(c, '0','9')) {
             out += c;
         } else {
             out += '_';
@@ -70,9 +70,9 @@ static std::string convert_to_lower(const std::string &in)
     std::string out;
 
     for (const char &c : in) {
-        if (RANGE(c, 'A', 'Z')) {
+        if (range(c, 'A','Z')) {
             out += c + ('a'-'A');
-        } else if (RANGE(c, 'a', 'z') || RANGE(c, '0', '9')) {
+        } else if (range(c, 'a','z') || range(c, '0','9')) {
             out += c;
         } else {
             out += '_';
