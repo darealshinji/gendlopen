@@ -26,8 +26,8 @@ dll = libhelloworld-0.dll
 cl        = cl -nologo
 link      = link -nologo
 lib_exe   = lib -nologo
-cflags    = -W3 -O2 -DWIN32_LEAN_AND_MEAN
-cxxflags  = -W3 -O2 -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
+cflags    = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN
+cxxflags  = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
 ldflags   = -subsystem:console -release
 gendlopen = ..\src\gendlopen.exe
 
@@ -48,9 +48,10 @@ $(dll): helloworld.c
 libhelloworld_dl.lib: example_helloworld_static_dl.obj
 	$(lib_exe) -out:$@ $**
 
+# test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
 	$(gendlopen) -i $** -f -o $@ \
-		--include="helloworld.h" \
+		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="helloworld:0"
 

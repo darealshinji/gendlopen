@@ -90,9 +90,10 @@ $(LIB):
 libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 	$(AR) $(ARFLAGS) $@ $<
 
+# test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@ \
-		--include="helloworld.h" \
+		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="helloworld:0"
 
