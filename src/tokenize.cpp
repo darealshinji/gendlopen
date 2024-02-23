@@ -46,7 +46,7 @@ using common::range;
 
 
 /* extract argument names from args list */
-static bool get_argument_names(proto_t &proto)
+static bool get_parameter_names(proto_t &proto)
 {
     bool fptr_name = false;
     bool fptr_args = false;
@@ -116,6 +116,7 @@ static bool get_argument_names(proto_t &proto)
             {
                 std::cerr << "error: a parameter name is missing: "
                     << proto.symbol << '(' << proto.args << ");" << std::endl;
+                std::cerr << "maybe try again with `--skip-parameter-names'" << std::endl;
                 return false;
             }
 
@@ -228,7 +229,7 @@ vstring_t tokenize::read_input()
              * something like UTF-16 or a binary file */
             if (++nullbytes > 8) {
                 std::cerr << "error: too many null bytes (\\0) found in input!" << std::endl;
-                std::cerr << "input must be ASCII or UTF-8 formatted text" << std::endl;
+                std::cerr << "input text must be ASCII or UTF-8 formatted" << std::endl;
                 std::exit(1);
             }
             break;
@@ -251,8 +252,9 @@ vstring_t tokenize::read_input()
 
         /* stop if the sequence gets unrealistically long */
         if (line.size() > 1000) {
+            line.erase(80, std::string::npos);
             std::cerr << "error: the following sequence is exceeding 1000 bytes:" << std::endl;
-            std::cerr << line << "[...]" << std::endl;
+            std::cerr << line << " <...>" << std::endl;
             std::exit(1);
         }
     }
@@ -286,8 +288,9 @@ bool tokenize::tokenize_function(const std::string &s)
     strip_spaces(proto.args);
 
     if (m_skip_parameter_names) {
+        /* normally unused, but just in case */
         proto.notype_args = "/* disabled !! */";
-    } else if (!get_argument_names(proto)) {
+    } else if (!get_parameter_names(proto)) {
         return false;
     }
 

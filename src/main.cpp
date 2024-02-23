@@ -30,11 +30,10 @@
 
 using StrValue = args::ValueFlag<std::string>;
 using StrList = args::ValueFlagList<std::string>;
+using Opt = args::Options;
 using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
-using Opt = args::Options;
-
 using common::replace_string;
 using common::same_string_case;
 
