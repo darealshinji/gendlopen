@@ -38,6 +38,7 @@ using common::replace_string;
 using common::same_string_case;
 
 
+/*
 static inline
 std::string get_indent(const std::string &line)
 {
@@ -61,6 +62,7 @@ std::string get_indent_end(const std::string &line)
 
     return {};
 }
+*/
 
 /* check for keyword in list */
 static inline
@@ -79,6 +81,7 @@ bool find_keyword(const std::string &line, const char* const *list)
 std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj_t &objects)
 {
     std::string buf, line;
+    bool custom_prefix = false;
 
     const char* const function_keywords[] = {
         "GDO_RET",
@@ -104,6 +107,10 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
         std::exit(1);
     }
 
+    if (m_name_upper != "GDO") {
+        custom_prefix = true;
+    }
+
     for (const char *p = data.c_str(); *p != 0; p++)
     {
         const char next = *(p+1);
@@ -124,8 +131,8 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
         }
 
         /* nothing to replace */
-        if (line.find("GDO_") == std::string::npos &&
-            line.find('$') == std::string::npos)
+        if (line.find("GDO") == std::string::npos &&
+            (custom_prefix && line.find("gdo") == std::string::npos))
         {
             buf += line;
             line.clear();
@@ -199,22 +206,10 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
     }
 
     /* replace the rest */
-    replace_string("_$", m_name_upper, buf);
-    replace_string("$", m_name_lower, buf);
-
-    /* C++ namespace */
-    if (m_out == output::cxx && m_name_lower != "gdo_") {
-        std::string s = "namespace " + m_name_lower;
-        s.pop_back(); /* remove trailing underscore */
-        replace_string("namespace gdo", s, buf);
-
-        s = m_name_lower;
-        s.pop_back(); /* remove trailing underscore */
-        s += "::";
-        replace_string("gdo::", s, buf);
+    if (custom_prefix) {
+        replace_string("GDO", m_name_upper, buf);
+        replace_string("gdo", m_name_lower, buf);
     }
-
-    buf += '\n';
 
     return buf;
 }

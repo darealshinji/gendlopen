@@ -1,8 +1,8 @@
-#if defined _MSC_VER && defined(_$USE_MESSAGE_BOX)
+#if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)
     #pragma comment(lib, "user32.lib")
 #endif
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     #include <tchar.h>
 #endif
 #include <stdio.h>
@@ -14,16 +14,16 @@
 #endif
 
 
-_$LINKAGE void $call_free_lib(void);
-_$LINKAGE void $register_free_lib(void);
-_$LINKAGE void $clear_errbuf(void);
+GDO_LINKAGE void gdo_call_free_lib(void);
+GDO_LINKAGE void gdo_register_free_lib(void);
+GDO_LINKAGE void gdo_clear_errbuf(void);
 
-_$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv);
+GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
 
-#ifdef _$WINAPI
-    #define _$SYM(a, b)  $sym(a, _T(a), b)
+#ifdef GDO_WINAPI
+    #define GDO_SYM(a, b)  gdo_sym(a, _T(a), b)
 #else
-    #define _$SYM(a, b)  $sym(a, NULL, b)
+    #define GDO_SYM(a, b)  gdo_sym(a, NULL, b)
 #endif
 
 
@@ -31,16 +31,16 @@ _$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv);
 /* Our library and symbols handle */
 typedef struct
 {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     HMODULE handle;
     DWORD last_errno;
     /* FormatMessage: according to MSDN the maximum is either 64k or 128k */
-    $char_t buf_formatted[64*1024];
+    gdo_char_t buf_formatted[64*1024];
 #else
     void *handle;
 #endif
     bool call_free_lib_is_registered;
-    $char_t buf[4096];
+    gdo_char_t buf[4096];
 
     /* symbols */
     GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
@@ -49,57 +49,57 @@ typedef struct
     bool GDO_SYMBOL_loaded_;
     bool GDO_OBJ_SYMBOL_loaded_;
 
-} $handle_t;
+} gdo_handle_t;
 
-_$LINKAGE $handle_t $hndl = {0};
+GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 
 
 
 /***************************************************************************/
 /* save error */
 /***************************************************************************/
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
 /* Save the last system error code. A message for additional information
  * can be provided too. */
-_$LINKAGE void $save_error(const $char_t *msg)
+GDO_LINKAGE void gdo_save_error(const gdo_char_t *msg)
 {
-    $clear_errbuf();
-    $hndl.last_errno = GetLastError();
+    gdo_clear_errbuf();
+    gdo_hndl.last_errno = GetLastError();
 
     if (msg) {
-        _sntprintf_s($hndl.buf, sizeof($hndl.buf)-1, _TRUNCATE, _T("%s"), msg);
+        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, _T("%s"), msg);
     }
 }
 #else
 /* Save the last message provided by dlerror() */
-_$LINKAGE void $save_dl_error(void)
+GDO_LINKAGE void gdo_save_dl_error(void)
 {
-    $clear_errbuf();
+    gdo_clear_errbuf();
     const char *ptr = dlerror();
-    if (ptr) snprintf($hndl.buf, sizeof($hndl.buf)-1, "%s", ptr);
+    if (ptr) snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, "%s", ptr);
 }
-#endif //!_$WINAPI
+#endif //!GDO_WINAPI
 
 /* Clear error buffers. */
 inline
-_$LINKAGE void $clear_errbuf(void)
+GDO_LINKAGE void gdo_clear_errbuf(void)
 {
-    $hndl.buf[0] = 0;
-#ifdef _$WINAPI
-    $hndl.buf_formatted[0] = 0;
-    $hndl.last_errno = 0;
+    gdo_hndl.buf[0] = 0;
+#ifdef GDO_WINAPI
+    gdo_hndl.buf_formatted[0] = 0;
+    gdo_hndl.last_errno = 0;
 #endif
 }
 
 /* Sets the "no library was loaded" error message */
 inline
-_$LINKAGE void $set_error_no_library_loaded(void)
+GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 {
-#ifdef _$WINAPI
-        $hndl.last_errno = ERROR_INVALID_HANDLE;
-        _tcscpy_s($hndl.buf, sizeof($hndl.buf)-1, _T("no library was loaded"));
+#ifdef GDO_WINAPI
+        gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
+        _tcscpy_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _T("no library was loaded"));
 #else
-        strcpy($hndl.buf, "no library was loaded");
+        strcpy(gdo_hndl.buf, "no library was loaded");
 #endif
 }
 /***************************************************************************/
@@ -109,10 +109,10 @@ _$LINKAGE void $set_error_no_library_loaded(void)
 /***************************************************************************/
 /* load default library with default flags */
 /***************************************************************************/
-#ifdef _$DEFAULT_LIB
-_$LINKAGE bool $load_lib(void)
+#ifdef GDO_DEFAULT_LIB
+GDO_LINKAGE bool gdo_load_lib(void)
 {
-    return $load_lib_args(_$DEFAULT_LIB, _$DEFAULT_FLAGS, false);
+    return gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false);
 }
 #endif
 /***************************************************************************/
@@ -122,11 +122,11 @@ _$LINKAGE bool $load_lib(void)
 /***************************************************************************/
 /* load default library with default flags and load the symbols */
 /***************************************************************************/
-#ifdef _$DEFAULT_LIB
-_$LINKAGE bool $load_lib_and_symbols(void)
+#ifdef GDO_DEFAULT_LIB
+GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
 {
-    return ($load_lib_args(_$DEFAULT_LIB, _$DEFAULT_FLAGS, false) &&
-        $load_symbols(false));
+    return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&
+        gdo_load_symbols(false));
 }
 #endif
 /***************************************************************************/
@@ -136,9 +136,9 @@ _$LINKAGE bool $load_lib_and_symbols(void)
 /***************************************************************************/
 /* load library by filename with default flags */
 /***************************************************************************/
-_$LINKAGE bool $load_lib_name(const $char_t *filename)
+GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)
 {
-    return $load_lib_args(filename, _$DEFAULT_FLAGS, false);
+    return gdo_load_lib_args(filename, GDO_DEFAULT_FLAGS, false);
 }
 /***************************************************************************/
 
@@ -147,51 +147,51 @@ _$LINKAGE bool $load_lib_name(const $char_t *filename)
 /***************************************************************************/
 /* load the library */
 /***************************************************************************/
-_$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_namespace)
+GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace)
 {
-    $clear_errbuf();
+    gdo_clear_errbuf();
 
     /* check if the library was already loaded */
-    if ($lib_is_loaded()) {
+    if (gdo_lib_is_loaded()) {
         return true;
     }
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
 
     (void)new_namespace; /* unused */
-    $hndl.handle = LoadLibraryEx(filename, NULL, flags);
+    gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
 
-    if (!$lib_is_loaded()) {
-        $save_error(filename);
+    if (!gdo_lib_is_loaded()) {
+        gdo_save_error(filename);
         return false;
     }
 
-#else //!_$WINAPI
+#else //!GDO_WINAPI
 
     /* dlfcn */
 
-#ifdef _$NO_DLMOPEN
+#ifdef GDO_NO_DLMOPEN
     /* dlmopen() disabled */
     (void)new_namespace; /* unused */
-    $hndl.handle = dlopen(filename, flags);
+    gdo_hndl.handle = dlopen(filename, flags);
 #else
     /* call dlmopen() for new namespace, otherwise dlopen() */
     if (new_namespace) {
-        $hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
+        gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
     } else {
-        $hndl.handle = dlopen(filename, flags);
+        gdo_hndl.handle = dlopen(filename, flags);
     }
-#endif //_$NO_DLMOPEN
+#endif //GDO_NO_DLMOPEN
 
     /* check if dl(m)open() was successful */
-    if (!$lib_is_loaded()) {
-        $save_dl_error();
+    if (!gdo_lib_is_loaded()) {
+        gdo_save_dl_error();
         return false;
     }
 
-#endif //!_$WINAPI
+#endif //!GDO_WINAPI
 
-    $register_free_lib();
+    gdo_register_free_lib();
 
     return true;
 }
@@ -199,25 +199,25 @@ _$LINKAGE bool $load_lib_args(const $char_t *filename, int flags, bool new_names
 /* register our call to free the library handle with atexit()
  * so that the library will automatically be freed upon exit */
 inline
-_$LINKAGE void $register_free_lib(void)
+GDO_LINKAGE void gdo_register_free_lib(void)
 {
-#ifdef _$AUTO_RELEASE
-    if (!$hndl.call_free_lib_is_registered) {
-        atexit($call_free_lib);
-        $hndl.call_free_lib_is_registered = true;
+#ifdef GDO_AUTO_RELEASE
+    if (!gdo_hndl.call_free_lib_is_registered) {
+        atexit(gdo_call_free_lib);
+        gdo_hndl.call_free_lib_is_registered = true;
     }
 #endif
 }
 
 /* If registered with atexit() this function will be called at
  * the program's exit. Function must be of type "void (*)(void)". */
-_$LINKAGE void $call_free_lib(void)
+GDO_LINKAGE void gdo_call_free_lib(void)
 {
-    if ($lib_is_loaded()) {
-#ifdef _$WINAPI
-        FreeLibrary($hndl.handle);
+    if (gdo_lib_is_loaded()) {
+#ifdef GDO_WINAPI
+        FreeLibrary(gdo_hndl.handle);
 #else
-        dlclose($hndl.handle);
+        dlclose(gdo_hndl.handle);
 #endif
     }
 }
@@ -228,9 +228,9 @@ _$LINKAGE void $call_free_lib(void)
 /***************************************************************************/
 /* whether the library is currently loaded */
 /***************************************************************************/
-_$LINKAGE bool $lib_is_loaded(void)
+GDO_LINKAGE bool gdo_lib_is_loaded(void)
 {
-    return ($hndl.handle != NULL);
+    return (gdo_hndl.handle != NULL);
 }
 /***************************************************************************/
 
@@ -239,35 +239,35 @@ _$LINKAGE bool $lib_is_loaded(void)
 /***************************************************************************/
 /* Free the library handle and set pointers to NULL */
 /***************************************************************************/
-_$LINKAGE bool $free_lib(void)
+GDO_LINKAGE bool gdo_free_lib(void)
 {
-    $clear_errbuf();
+    gdo_clear_errbuf();
 
-    if (!$lib_is_loaded()) {
+    if (!gdo_lib_is_loaded()) {
         /* nothing to free */
         return true;
     }
 
-#ifdef _$WINAPI
-    if (FreeLibrary($hndl.handle) == FALSE) {
-        $save_error(_T("FreeLibrary()"));
+#ifdef GDO_WINAPI
+    if (FreeLibrary(gdo_hndl.handle) == FALSE) {
+        gdo_save_error(_T("FreeLibrary()"));
         return false;
     }
 #else
-    if (dlclose($hndl.handle) != 0) {
-        $save_dl_error();
+    if (dlclose(gdo_hndl.handle) != 0) {
+        gdo_save_dl_error();
         return false;
     }
 #endif
 
     /* set pointers back to NULL */
-    $hndl.handle = NULL;
-    $hndl.GDO_SYMBOL_ptr_ = NULL;
-    $hndl.GDO_OBJ_SYMBOL_ptr_ = NULL;
+    gdo_hndl.handle = NULL;
+    gdo_hndl.GDO_SYMBOL_ptr_ = NULL;
+    gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = NULL;
 
     /* set back to false */
-    $hndl.GDO_SYMBOL_loaded_ = false;
-    $hndl.GDO_OBJ_SYMBOL_loaded_ = false;
+    gdo_hndl.GDO_SYMBOL_loaded_ = false;
+    gdo_hndl.GDO_OBJ_SYMBOL_loaded_ = false;
 
     return true;
 }
@@ -278,11 +278,11 @@ _$LINKAGE bool $free_lib(void)
 /***************************************************************************/
 /* check if all symbols are loaded */
 /***************************************************************************/
-_$LINKAGE bool $symbols_loaded(void)
+GDO_LINKAGE bool gdo_symbols_loaded(void)
 {
     if (true
-        && $hndl.GDO_SYMBOL_loaded_
-        && $hndl.GDO_OBJ_SYMBOL_loaded_
+        && gdo_hndl.GDO_SYMBOL_loaded_
+        && gdo_hndl.GDO_OBJ_SYMBOL_loaded_
     ) {
         return true;
     }
@@ -296,18 +296,18 @@ _$LINKAGE bool $symbols_loaded(void)
 /***************************************************************************/
 /* load all symbols; can safely be called multiple times. */
 /***************************************************************************/
-_$LINKAGE bool $load_symbols(bool ignore_errors)
+GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 {
-    $clear_errbuf();
+    gdo_clear_errbuf();
 
     /* already loaded all symbols */
-    if ($symbols_loaded()) {
+    if (gdo_symbols_loaded()) {
         return true;
     }
 
     /* no library was loaded */
-    if (!$lib_is_loaded()) {
-        $set_error_no_library_loaded();
+    if (!gdo_lib_is_loaded()) {
+        gdo_set_error_no_library_loaded();
         return false;
     }
 
@@ -321,41 +321,41 @@ _$LINKAGE bool $load_symbols(bool ignore_errors)
     /* get symbol addresses */
 @
     /* GDO_SYMBOL */@
-    $hndl.GDO_SYMBOL_ptr_ = @
+    gdo_hndl.GDO_SYMBOL_ptr_ = @
         (GDO_TYPE (*)(GDO_ARGS))@
-            _$SYM("GDO_SYMBOL", &$hndl.GDO_SYMBOL_loaded_);@
-    if (!$hndl.GDO_SYMBOL_loaded_ && !ignore_errors) {@
+            GDO_SYM("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
+    if (!gdo_hndl.GDO_SYMBOL_loaded_ && !ignore_errors) {@
         return false;@
     }
 @
     /* GDO_OBJ_SYMBOL */@
-    $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-            _$SYM("GDO_OBJ_SYMBOL", &$hndl.GDO_OBJ_SYMBOL_loaded_);@
-    if (!$hndl.GDO_OBJ_SYMBOL_loaded_ && !ignore_errors) {@
+    gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+            GDO_SYM("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
+    if (!gdo_hndl.GDO_OBJ_SYMBOL_loaded_ && !ignore_errors) {@
         return false;@
     }
 
-    $clear_errbuf();
+    gdo_clear_errbuf();
 
-    return $symbols_loaded();
+    return gdo_symbols_loaded();
 }
 
-_$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv)
+GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 {
     *rv = false;
 
-#ifdef _$WINAPI
-    void *ptr = (void *)GetProcAddress($hndl.handle, symbol);
+#ifdef GDO_WINAPI
+    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
-        $save_error(msg);
+        gdo_save_error(msg);
         return NULL;
     }
-#else //!_$WINAPI
+#else //!GDO_WINAPI
     (void)msg; /* unused */
     (void)dlerror(); /* clear buffer */
 
-    void *ptr = dlsym($hndl.handle, symbol);
+    void *ptr = dlsym(gdo_hndl.handle, symbol);
 
     /* NULL can be a valid value (unusual but possible),
      * so call dlerror() to check for errors */
@@ -363,12 +363,12 @@ _$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv)
 
     if (err) {
         /* must save our error message manually instead of
-         * invoking $save_dl_error() */
-        $clear_errbuf();
-        snprintf($hndl.buf, sizeof($hndl.buf)-1, "%s", err);
+         * invoking gdo_save_dl_error() */
+        gdo_clear_errbuf();
+        snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, "%s", err);
         return NULL;
     }
-#endif //!_$WINAPI
+#endif //!GDO_WINAPI
 
     *rv = true;
     return ptr;
@@ -382,13 +382,13 @@ _$LINKAGE void *$sym(const char *symbol, const $char_t *msg, bool *rv)
  * The main intention is to check if a certain symbol is present in a library
  * so you can conditionally enable or disable features in your program. */
 /***************************************************************************/
-_$LINKAGE bool $load_symbol(const char *symbol)
+GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 {
-    $clear_errbuf();
+    gdo_clear_errbuf();
 
     /* no library was loaded */
-    if (!$lib_is_loaded()) {
-        $set_error_no_library_loaded();
+    if (!gdo_lib_is_loaded()) {
+        gdo_set_error_no_library_loaded();
         return false;
     }
 
@@ -400,17 +400,17 @@ _$LINKAGE bool $load_symbol(const char *symbol)
 @
     /* GDO_SYMBOL */@
     if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-        $hndl.GDO_SYMBOL_ptr_ =@
+        gdo_hndl.GDO_SYMBOL_ptr_ =@
             (GDO_TYPE (*)(GDO_ARGS))@
-                _$SYM("GDO_SYMBOL", &$hndl.GDO_SYMBOL_loaded_);@
-        return $hndl.GDO_SYMBOL_loaded_;@
+                GDO_SYM("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
+        return gdo_hndl.GDO_SYMBOL_loaded_;@
     }
 @
     /* GDO_OBJ_SYMBOL */@
     if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-        $hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-                _$SYM("GDO_OBJ_SYMBOL", &$hndl.GDO_OBJ_SYMBOL_loaded_);@
-        return $hndl.GDO_OBJ_SYMBOL_loaded_;@
+        gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+                GDO_SYM("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
+        return gdo_hndl.GDO_OBJ_SYMBOL_loaded_;@
     }
 
     return false;
@@ -423,24 +423,24 @@ _$LINKAGE bool $load_symbol(const char *symbol)
 /* retrieve the last saved error message (can be an empty buffer);
  * On Windows the message will be generated from an error code. */
 /***************************************************************************/
-_$LINKAGE const $char_t *$last_error(void)
+GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     /* message was already saved */
-    if ($hndl.buf_formatted[0] != 0) {
-        return $hndl.buf_formatted;
+    if (gdo_hndl.buf_formatted[0] != 0) {
+        return gdo_hndl.buf_formatted;
     }
 
-    const size_t bufmax = _countof($hndl.buf_formatted) - 1;
-    $char_t *buf = NULL;
-    $char_t *msg = $hndl.buf;
-    $char_t *out = $hndl.buf_formatted;
+    const size_t bufmax = _countof(gdo_hndl.buf_formatted) - 1;
+    gdo_char_t *buf = NULL;
+    gdo_char_t *msg = gdo_hndl.buf;
+    gdo_char_t *out = gdo_hndl.buf_formatted;
 
     /* format the message */
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                     FORMAT_MESSAGE_FROM_SYSTEM |
                     FORMAT_MESSAGE_MAX_WIDTH_MASK,
-                NULL, $hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);
+                NULL, gdo_hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);
 
     if (buf) {
         /* put custom message in front of system error message */
@@ -453,14 +453,14 @@ _$LINKAGE const $char_t *$last_error(void)
     } else {
         /* FormatMessage() failed, just print the error code */
         _sntprintf_s(out, bufmax, _TRUNCATE, _T("Last saved error code: %lu"),
-            $hndl.last_errno);
+            gdo_hndl.last_errno);
     }
 
     return out;
 #else
     /* simply return the buffer */
-    return $hndl.buf;
-#endif //_$WINAPI
+    return gdo_hndl.buf;
+#endif //GDO_WINAPI
 }
 /***************************************************************************/
 
@@ -470,31 +470,31 @@ _$LINKAGE const $char_t *$last_error(void)
 /* get the full library path;
  * Result must be deallocated with free(), returns NULL on error. */
 /***************************************************************************/
-_$LINKAGE $char_t *$lib_origin(void)
+GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 {
-    $clear_errbuf();
+    gdo_clear_errbuf();
 
-#ifdef _$WINAPI
-    $char_t *origin;
+#ifdef GDO_WINAPI
+    gdo_char_t *origin;
     DWORD len = 260; /* MAX_PATH */
 
     /* check if library was loaded */
-    if (!$lib_is_loaded()) {
-        $set_error_no_library_loaded();
+    if (!gdo_lib_is_loaded()) {
+        gdo_set_error_no_library_loaded();
         return NULL;
     }
 
     /* allocate enough space */
-    origin = ($char_t *)malloc(len * sizeof($char_t));
+    origin = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
 
     if (!origin) {
-        $save_error(_T("malloc"));
+        gdo_save_error(_T("malloc"));
         return NULL;
     }
 
     /* receive path from handle */
-    if (GetModuleFileName($hndl.handle, origin, len-1) == 0) {
-        $save_error(_T("GetModuleFileName"));
+    if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {
+        gdo_save_error(_T("GetModuleFileName"));
         free(origin);
         return NULL;
     }
@@ -504,10 +504,10 @@ _$LINKAGE $char_t *$lib_origin(void)
      * it's practically still stuck at the old MAX_PATH value */
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
         len = 32*1024;
-        origin = ($char_t *)realloc(origin, len * sizeof($char_t));
+        origin = (gdo_char_t *)realloc(origin, len * sizeof(gdo_char_t));
 
-        if (GetModuleFileName($hndl.handle, origin, len-1) == 0) {
-            $save_error(_T("GetModuleFileName"));
+        if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {
+            gdo_save_error(_T("GetModuleFileName"));
             free(origin);
             return NULL;
         }
@@ -518,12 +518,12 @@ _$LINKAGE $char_t *$lib_origin(void)
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
 
-    if (!$lib_is_loaded()) {
-        $set_error_no_library_loaded();
+    if (!gdo_lib_is_loaded()) {
+        gdo_set_error_no_library_loaded();
         return NULL;
-    } else if (dlinfo($hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
+    } else if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         /* dlinfo() failed */
-        $save_dl_error();
+        gdo_save_dl_error();
         return NULL;
     }
 
@@ -531,7 +531,7 @@ _$LINKAGE $char_t *$lib_origin(void)
         /* copy string */
         return strdup(lm->l_name);
     }
-#endif //_$WINAPI
+#endif //GDO_WINAPI
 
     return NULL;
 }

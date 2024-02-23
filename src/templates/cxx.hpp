@@ -41,7 +41,7 @@ namespace gdo {
         bool load(const char *filename, int flags=default_flags, bool new_namespace=false);
 
         /* wide character variants for win32 */
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         bool load(const wchar_t *filename, int flags=default_flags);
 #endif
 
@@ -74,13 +74,13 @@ namespace gdo {
 
         /* get full path of loaded library */
         std::string origin();
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         std::wstring origin_w();
 #endif
 
         /* retrieve the last error message */
         std::string error();
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         std::wstring error_w();
 #endif
 
@@ -98,31 +98,31 @@ namespace gdo {
 * The following options may be set through macros: *
 ****************************************************
 
-_$USE_DLOPEN
+GDO_USE_DLOPEN
     If defined `dlopen()' API is used on win32 targets.
     On other targets `dlopen()' is always used.
 
-_$NO_DLMOPEN
+GDO_NO_DLMOPEN
     If defined `dlmopen()` will never be used.
 
-_$DEFAULT_LIB
+GDO_DEFAULT_LIB
     Set a default library name through this macro (including double quote
-    marks). This macro must be defined if you want to set _$ENABLE_AUTOLOAD.
+    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD.
 
-_$ENABLE_AUTOLOAD
+GDO_ENABLE_AUTOLOAD
     Define this macro if you want to use auto-loading wrapper functions.
     This means you don't need to explicitly call library load functions.
-    It requires _$DEFAULT_LIB to be defined.
+    It requires GDO_DEFAULT_LIB to be defined.
     If an error occures during loading these functions throw an error message
     and call `std::exit(1)'!
 
-_$WRAP_FUNCTIONS
+GDO_WRAP_FUNCTIONS
     Use actual wrapped functions instead of a name alias. This is useful if you
     want to create a library to later link an application against.
 
-_$VISIBILITY
+GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with
-    _$WRAP_FUNCTIONS) using this macro.
+    GDO_WRAP_FUNCTIONS) using this macro.
 
 
 
@@ -130,10 +130,10 @@ _$VISIBILITY
 * Helper macros *
 *****************
 
-_$LIB(NAME, API)
+GDO_LIB(NAME, API)
     Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
     including double quote marks.
-    _$LIB(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
+    GDO_LIB(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
 
 ***/
 
@@ -166,11 +166,11 @@ namespace gdo
     }
 
     /* default flags */
-    const int default_flags = _$DEFAULT_FLAGS;
+    const int default_flags = GDO_DEFAULT_FLAGS;
 
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
-    const char * const libext = _$LIBEXTA;
+    const char * const libext = GDO_LIBEXTA;
 
     /* function pointer to error message callback */
     void (*message_callback)(const char *) = nullptr;
@@ -181,7 +181,7 @@ class dl
 {
 private:
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     HMODULE m_handle = NULL;
     DWORD m_last_error = 0;
     const char *m_errmsg = NULL;
@@ -197,7 +197,7 @@ private:
     bool m_free_lib_in_dtor = true;
 
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     std::string wchar_to_string(const wchar_t *lpWstr)
     {
         size_t mbslen, n;
@@ -248,13 +248,13 @@ private:
 
         return wstr;
     }
-#endif // _$WINAPI
+#endif // GDO_WINAPI
 
 
     /* clear error */
     void clear_error()
     {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         m_last_error = 0;
         m_errmsg = NULL;
         m_werrmsg = NULL;
@@ -268,7 +268,7 @@ private:
     /* save last error */
     void save_error(const char *msg=NULL)
     {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         m_last_error = ::GetLastError();
         m_errmsg = msg;
         m_werrmsg = NULL;
@@ -281,7 +281,7 @@ private:
 
 
     /* save last error (wide characters) */
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     void save_error(const wchar_t *msg)
     {
         m_last_error = ::GetLastError();
@@ -296,7 +296,7 @@ private:
     {
         clear_error();
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         m_last_error = ERROR_INVALID_HANDLE;
 #else
         m_last_error = "no library was loaded";
@@ -309,11 +309,11 @@ private:
     {
         m_flags = flags;
 
-#if defined(_$WINAPI)
+#if defined(GDO_WINAPI)
         /* win32 */
         (void)new_namespace;
         m_handle = ::LoadLibraryExA(filename, NULL, m_flags);
-#elif defined(_$NO_DLMOPEN)
+#elif defined(GDO_NO_DLMOPEN)
         /* dlmopen() disabled */
         (void)new_namespace;
         m_handle = ::dlopen(filename, m_flags);
@@ -332,7 +332,7 @@ private:
     template<typename T>
     bool sym(T &ptr, const char *symbol)
     {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
 
         if (!ptr) {
@@ -361,7 +361,7 @@ private:
     }
 
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
         return ::GetModuleFileNameW(handle, buf, len);
     }
@@ -439,7 +439,7 @@ private:
 
         return str;
     }
-#endif //_$WINAPI
+#endif //GDO_WINAPI
 
 
 public:
@@ -461,7 +461,7 @@ public:
     ~dl()
     {
         if (m_free_lib_in_dtor && lib_loaded()) {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
             ::FreeLibrary(m_handle);
 #else
             ::dlclose(m_handle);
@@ -486,7 +486,7 @@ public:
     }
 
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     /* load library (wide characters version) */
     bool load(const wchar_t *filename, int flags=default_flags)
     {
@@ -615,7 +615,7 @@ public:
             return true;
         }
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         bool ret = (::FreeLibrary(m_handle) == TRUE);
 #else
         bool ret = (::dlclose(m_handle) == 0);
@@ -654,7 +654,7 @@ public:
             return {};
         }
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         return get_origin_from_module_handle<char>();
 #else
         struct link_map *lm = NULL;
@@ -667,11 +667,11 @@ public:
         }
 
         return {};
-#endif //_$WINAPI
+#endif //GDO_WINAPI
     }
 
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     /* get path of loaded library (wide characters version) */
     std::wstring origin_w()
     {
@@ -682,13 +682,13 @@ public:
 
         return get_origin_from_module_handle<wchar_t>();
     }
-#endif //_$WINAPI
+#endif //GDO_WINAPI
 
 
     /* retrieve the last error */
     std::string error()
     {
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
         auto buf = format_last_error_message<char>();
 
         if (buf.empty()) {
@@ -707,11 +707,11 @@ public:
         return buf;
 #else
         return m_last_error;
-#endif //_$WINAPI
+#endif //GDO_WINAPI
     }
 
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     /* retrieve the last error (wide characters version) */
     std::wstring error_w()
     {
@@ -732,7 +732,7 @@ public:
 
         return buf;
     }
-#endif //_$WINAPI
+#endif //GDO_WINAPI
 
 }; /* end class dl */
 

@@ -39,7 +39,7 @@ class gendlopen
 private:
 
     std::vector<std::string> m_definitions, m_includes;
-    std::string m_name_upper, m_name_lower, m_guard, m_default_lib;
+    std::string m_name_upper, m_name_lower, m_default_lib;
     output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;

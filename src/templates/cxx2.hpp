@@ -1,10 +1,10 @@
 
-#if !defined(_$WRAP_FUNCTIONS) && !defined(_$ENABLE_AUTOLOAD)
+#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
 
-#endif //!_$WRAP_FUNCTIONS && !_$ENABLE_AUTOLOAD
+#endif //!GDO_WRAP_FUNCTIONS && !GDO_ENABLE_AUTOLOAD
 
 
 /* aliases to raw object pointers */

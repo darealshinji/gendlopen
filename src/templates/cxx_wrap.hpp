@@ -13,10 +13,10 @@ namespace gdo
             }
         }
 
-    #ifdef _$ENABLE_AUTOLOAD
+    #ifdef GDO_ENABLE_AUTOLOAD
 
-    #if !defined(_$DEFAULT_LIB)
-    #error "You need to define _$DEFAULT_LIB if you want to make use of _$ENABLE_AUTOLOAD"
+    #if !defined(GDO_DEFAULT_LIB)
+    #error "You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD"
     #endif
 
         auto al = dl();
@@ -24,8 +24,8 @@ namespace gdo
         /* used internally by wrapper functions, `calling_function' is never NULL */
         void autoload(const char *calling_function)
         {
-            if (!al.load(_$DEFAULT_LIB)) {
-                std::string msg = "error loading library `" _$DEFAULT_LIB "':\n"
+            if (!al.load(GDO_DEFAULT_LIB)) {
+                std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n"
                     + al.error();
                 print_error(msg);
                 std::exit(1);
@@ -39,12 +39,12 @@ namespace gdo
             }
         }
 
-    #else // !_$ENABLE_AUTOLOAD
+    #else // !GDO_ENABLE_AUTOLOAD
 
         /* dummy */
         void autoload(const char *) {}
 
-    #endif // !_$ENABLE_AUTOLOAD
+    #endif // !GDO_ENABLE_AUTOLOAD
 
         /* used internally by wrapper functions, `symbol' is never NULL */
         void symbol_error(const char *symbol)
@@ -72,15 +72,15 @@ namespace gdo
 } /* namespace gdo */
 
 
-#ifdef _$WRAP_FUNCTIONS
+#ifdef GDO_WRAP_FUNCTIONS
 
 /* function wrappers */
 @
-_$VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     GDO_RET gdo::wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
 }
 
-#elif defined(_$ENABLE_AUTOLOAD)
+#elif defined(GDO_ENABLE_AUTOLOAD)
 
 /* aliases to autoload function names */
 #define GDO_SYMBOL gdo::wrapped::GDO_SYMBOL

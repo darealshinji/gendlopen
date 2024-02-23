@@ -40,6 +40,7 @@
 #include "gendlopen.hpp"
 
 using common::range;
+using common::replace_string;
 
 
 /* convert input string to be used as prefixes or header guards */
@@ -58,10 +59,6 @@ static std::string convert_to_upper(const std::string &in)
         }
     }
 
-    if (out.back() != '_') {
-        out += '_';
-    }
-
     return out;
 }
 
@@ -77,10 +74,6 @@ static std::string convert_to_lower(const std::string &in)
         } else {
             out += '_';
         }
-    }
-
-    if (out.back() != '_') {
-        out += '_';
     }
 
     return out;
@@ -131,9 +124,12 @@ static std::string format_definitions(const std::vector<std::string> &list)
             out << "#ifndef " << e << '\n';
         } else {
             /* remove value from "#ifndef" */
-            e.replace(pos, 1, 1, ' ');
             out << "#ifndef " << e.substr(0, pos) << '\n';
+
+            /* replace '=' with space */
+            e.replace(pos, 1, 1, ' ');
         }
+
         out << "#define " << e << '\n';
         out << "#endif\n\n";
     }
@@ -147,25 +143,15 @@ static std::string format_includes(const std::vector<std::string> &list)
     std::stringstream out;
 
     for (auto e : list) {
-        std::string header;
-
         if (e.front() == '<' && e.back() == '>') {
             /* <foo.h> */
-            header = e;
+            out << "#include " << e << '\n';
         } else {
             /* "foo.h" */
-            if (e.front() != '"') {
-                header = '"';
-            }
-
-            header += e;
-
-            if (e.back() != '"') {
-                header += '"';
-            }
+            const char *q1 = (e.front() == '"') ? "" : "\"";
+            const char *q2 = (e.back() == '"') ? "" : "\"";
+            out << "#include " << q1 << e << q2 << '\n';
         }
-
-        out << "#include " << header << '\n';
     }
 
     out << '\n';
@@ -177,8 +163,8 @@ static std::string format_includes(const std::vector<std::string> &list)
 static std::string format_library_name(const std::string &name, const std::string &prefix)
 {
     std::string out =
-        "#ifndef {pfx}DEFAULT_LIB\n"
-        "#define {pfx}DEFAULT_LIB {lib}\n"
+        "#ifndef {pfx}_DEFAULT_LIB\n"
+        "#define {pfx}_DEFAULT_LIB {lib}\n"
         "#endif\n\n";
 
     std::stringstream lib;
@@ -186,7 +172,7 @@ static std::string format_library_name(const std::string &name, const std::strin
 
     if (pos != std::string::npos) {
         /* create macro: "name:0" -> GDO_LIB(name,0) */
-        lib << prefix << "LIB(" << name.substr(0, pos) << ','
+        lib << prefix << "_LIB(" << name.substr(0, pos) << ','
             << name.substr(pos+1) << ')';
     } else {
         /* use the library name as is; add hyphens if needed */
@@ -201,8 +187,8 @@ static std::string format_library_name(const std::string &name, const std::strin
         }
     }
 
-    common::replace_string("{pfx}", prefix, out);
-    common::replace_string("{lib}", lib.str(), out);
+    replace_string("{pfx}", prefix, out);
+    replace_string("{lib}", lib.str(), out);
 
     return out;
 }
@@ -327,8 +313,7 @@ void gendlopen::generate(
         header_name = ofhdr.filename().string();
     }
 
-    m_guard = convert_to_upper(header_name);
-    m_guard.insert(0, 1, '_');
+    auto header_guard = convert_to_upper(header_name);
 
     /* name used on variables and macros */
     m_name_upper = convert_to_upper(name);
@@ -346,8 +331,8 @@ void gendlopen::generate(
     out << note;
 
     /* header guard begin */
-    out << "#ifndef " << m_guard << '\n';
-    out << "#define " << m_guard << "\n\n";
+    out << "#ifndef _" << header_guard << "_\n";
+    out << "#define _" << header_guard << "_\n\n";
 
     /* extra definitions */
     if (!m_definitions.empty()) {
@@ -384,7 +369,7 @@ void gendlopen::generate(
 
     /* header guard end */
     out << '\n';
-    out << "#endif //" << m_guard << '\n';
+    out << "#endif //_" << header_guard << "_\n";
 
     /* body data */
     if (m_separate) {

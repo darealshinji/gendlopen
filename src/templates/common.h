@@ -1,9 +1,9 @@
-#if defined(_WIN32) && !defined(_$USE_DLOPEN)
-    #define _$WINAPI
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+    #define GDO_WINAPI
 #endif
 
 
-#ifdef _$WINAPI
+#ifdef GDO_WINAPI
     #include <windows.h>
 #else
     #ifdef _GNU_SOURCE
@@ -19,8 +19,8 @@
 
 
 /* set the symbol visibility manually */
-#ifndef _$VISIBILITY
-    #define _$VISIBILITY  /**/
+#ifndef GDO_VISIBILITY
+    #define GDO_VISIBILITY  /**/
 #endif
 
 
@@ -29,25 +29,25 @@
 /* Windows */
 #if defined(_WIN32)
     /* ANSI */
-    #define _$LIBEXTA             "dll"
-    #define _$LIBA(NAME, API)     "lib" #NAME "-" #API ".dll"
+    #define GDO_LIBEXTA             "dll"
+    #define GDO_LIBA(NAME, API)     "lib" #NAME "-" #API ".dll"
 
     /* WCHAR */
-    #define _$LIBEXTW             L"dll"
-    #define _$LIBW(NAME, API)     L"lib" #NAME "-" #API ".dll"
+    #define GDO_LIBEXTW             L"dll"
+    #define GDO_LIBW(NAME, API)     L"lib" #NAME "-" #API ".dll"
 
     #ifdef _UNICODE
-        #define _$LIBEXT          _$LIBEXTW
-        #define _$LIB(NAME, API)  _$LIBW(NAME, API)
+        #define GDO_LIBEXT          GDO_LIBEXTW
+        #define GDO_LIB(NAME, API)  GDO_LIBW(NAME, API)
     #else
-        #define _$LIBEXT          _$LIBEXTA
-        #define _$LIB(NAME, API)  _$LIBA(NAME, API)
+        #define GDO_LIBEXT          GDO_LIBEXTA
+        #define GDO_LIB(NAME, API)  GDO_LIBA(NAME, API)
     #endif
 
 /* Darwin (macOS, iOS) */
 #elif defined(__APPLE__)
-    #define _$LIBEXT              "dylib"
-    #define _$LIB(NAME, API)      "lib" #NAME "." #API ".dylib"
+    #define GDO_LIBEXT              "dylib"
+    #define GDO_LIB(NAME, API)      "lib" #NAME "." #API ".dylib"
 
 /* IBM AIX;
  * After looking up some manuals it seems that shared object files (.o)
@@ -56,25 +56,25 @@
  * Loading .so files directly is apparently possible too
  * but by default .a files are treated as shared libraries. */
 #elif defined(_AIX)
-    #define _$LIBEXT              "a"
-    #define _$LIB(NAME, API)      "lib" #NAME ".a"
+    #define GDO_LIBEXT              "a"
+    #define GDO_LIB(NAME, API)      "lib" #NAME ".a"
 
 /* ELF systems */
 #else
-    #define _$LIBEXT              "so"
-    #define _$LIB(NAME, API)      "lib" #NAME ".so." #API
+    #define GDO_LIBEXT              "so"
+    #define GDO_LIB(NAME, API)      "lib" #NAME ".so." #API
 #endif
 
-#ifndef _$LIBEXTA
-#define _$LIBEXTA _$LIBEXT
+#ifndef GDO_LIBEXTA
+#define GDO_LIBEXTA GDO_LIBEXT
 #endif
 
 
 /* default flags */
-#ifdef _$WINAPI
-    #define _$DEFAULT_FLAGS  0
+#ifdef GDO_WINAPI
+    #define GDO_DEFAULT_FLAGS  0
 #else
-    #define _$DEFAULT_FLAGS  RTLD_LAZY
+    #define GDO_DEFAULT_FLAGS  RTLD_LAZY
 #endif
 
 
