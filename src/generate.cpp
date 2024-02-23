@@ -148,8 +148,8 @@ static std::string format_includes(const std::vector<std::string> &list)
             out << "#include " << e << '\n';
         } else {
             /* "foo.h" */
-            const char *q1 = (e.front() == '"') ? "" : "\"";
-            const char *q2 = (e.back() == '"') ? "" : "\"";
+            const char * const q1 = (e.front() == '"') ? "" : "\"";
+            const char * const q2 = (e.back() == '"') ? "" : "\"";
             out << "#include " << q1 << e << q2 << '\n';
         }
     }
@@ -168,7 +168,7 @@ static std::string format_library_name(const std::string &name, const std::strin
         "#endif\n\n";
 
     std::stringstream lib;
-    size_t pos = name.find(':');
+    const size_t pos = name.find(':');
 
     if (pos != std::string::npos) {
         /* create macro: "name:0" -> GDO_LIB(name,0) */
@@ -231,6 +231,11 @@ void gendlopen::generate(
 
     /* check output type */
 
+    const char *wrap_data = "\n"
+        "/*******************************************************************/\n"
+        "/*  wrapped functions were disabled with `--skip-parameter-names'  */\n"
+        "/*******************************************************************/\n";
+
     std::string header_data = common_header_data;
     std::string body_data;
     bool is_c = true;
@@ -242,16 +247,21 @@ void gendlopen::generate(
             header_data += cxx_header_data;
 
             if (!m_skip_parameter_names) {
-                header_data += cxx_wrap_data;
+                wrap_data = cxx_wrap_data;
             }
+
+            header_data += wrap_data;
             header_data += cxx_header_data2;
             is_c = false;
         }
         break;
 
     case output::c: {
-            const char *wrap_data = m_skip_parameter_names ? "" : c_wrap_data;
             header_data += c_header_data;
+
+            if (!m_skip_parameter_names) {
+                wrap_data = c_wrap_data;
+            }
 
             if (m_separate) {
                 /* header / body + wrap */
