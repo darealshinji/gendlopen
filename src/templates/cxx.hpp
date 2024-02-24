@@ -105,6 +105,9 @@ GDO_USE_DLOPEN
 GDO_NO_DLMOPEN
     If defined `dlmopen()` will never be used.
 
+GDO_DEFAULT_FLAGS
+    Override the default flags to use when loading a library.
+
 GDO_DEFAULT_LIB
     Set a default library name through this macro (including double quote
     marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD.

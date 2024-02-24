@@ -71,10 +71,12 @@
 
 
 /* default flags */
-#ifdef GDO_WINAPI
-    #define GDO_DEFAULT_FLAGS  0
-#else
-    #define GDO_DEFAULT_FLAGS  RTLD_LAZY
+#ifndef GDO_DEFAULT_FLAGS
+    #ifdef GDO_WINAPI
+        #define GDO_DEFAULT_FLAGS  0
+    #else
+        #define GDO_DEFAULT_FLAGS  RTLD_LAZY
+    #endif
 #endif
 
 

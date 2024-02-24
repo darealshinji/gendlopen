@@ -107,6 +107,9 @@ GDO_STATIC
     If defined static linkage (the `static' keyword) is used for all
     functions.
 
+GDO_DEFAULT_FLAGS
+    Override the default flags to use when loading a library.
+
 GDO_DEFAULT_LIB
     Set a default library name through this macro (including double quote
     marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD
