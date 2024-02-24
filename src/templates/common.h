@@ -6,10 +6,9 @@
 #ifdef GDO_WINAPI
     #include <windows.h>
 #else
-    #ifdef _GNU_SOURCE
-    #undef _GNU_SOURCE
+    #if defined(__GLIBC__) && !defined(_GNU_SOURCE)
+        #define _GNU_SOURCE 1
     #endif
-    #define _GNU_SOURCE 1
     #include <link.h>
     #include <dlfcn.h>
 #endif
