@@ -31,17 +31,16 @@ int send_notification(const char *app_name, const char *summary, const char *bod
 int main(int, char **argv)
 {
 #ifdef USE_DLOPEN
-  /* libgobject */
-  if (!xgobject_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xgobject_last_error());
-    return 1;
+
+#define XLOAD(x) \
+  if (!x##_load_lib_and_symbols()) { \
+    fprintf(stderr, "%s\n", x##_last_error()); \
+    return 1; \
   }
 
-  /* libnotify */
-  if (!xnotify_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xnotify_last_error());
-    return 1;
-  }
+  XLOAD(xgobject)
+  XLOAD(xnotify)
+
 #endif /* USE_DLOPEN */
 
   return send_notification(argv[0], "Hello", "Hi there!", NULL);

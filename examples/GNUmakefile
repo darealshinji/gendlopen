@@ -31,7 +31,7 @@ CXXFLAGS  += -Wno-cast-function-type
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
 else
 # Linux and BSD
-BINS2     := appindicator notify
+BINS2     := notify appindicator
 LIB       := libhelloworld.so.0
 LIBX      := libhelloworld.so
 CFLAGS    += -Wno-deprecated-declarations
@@ -51,8 +51,14 @@ CXXFLAGS += -DTEST_UNDEFINED_SYMBOL
 BINS2     =
 endif
 
+define toupper
+$(shell printf '$(1)' | tr a-z A-Z)
+endef
+
+# -D$(call toupper,$(2))_AUTO_RELEASE=1
 define gdox
-$(GENDLOPEN) -i $(1).txt -n $(2) --default-library $(3) $(4) > example_$(1).h
+$(GENDLOPEN) -i $(1).txt -n $(2) --default-library $(3) $(4) \
+	-f -o example_$(1).h
 endef
 
 

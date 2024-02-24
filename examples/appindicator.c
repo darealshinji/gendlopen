@@ -70,23 +70,17 @@ static void callback() {
 int main()
 {
 #ifdef USE_DLOPEN
-  /* libgobject */
-  if (!xgobject_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xgobject_last_error());
-    return 1;
+
+#define XLOAD(x) \
+  if (!x##_load_lib_and_symbols()) { \
+    fprintf(stderr, "%s\n", x##_last_error()); \
+    return 1; \
   }
 
-  /* libgtk */
-  if (!xgtk_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xgtk_last_error());
-    return 1;
-  }
+  XLOAD(xgobject)
+  XLOAD(xgtk)
+  XLOAD(xappindicator)
 
-  /* libappindicator */
-  if (!xappindicator_load_lib_and_symbols()) {
-    fprintf(stderr, "%s\n", xappindicator_last_error());
-    return 1;
-  }
 #endif /* USE_DLOPEN */
 
   return indicator(NULL, NULL, callback);
