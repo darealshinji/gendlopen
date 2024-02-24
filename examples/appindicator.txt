@@ -1,8 +1,14 @@
 // testing "--skip-parameter-names"
-AppIndicator                   *app_indicator_new                (const gchar          * /* id */,
-                                                                  const gchar          * /* icon_name */,
-                                                                  AppIndicatorCategory   /* category */);
-void                            app_indicator_set_status         (AppIndicator       * /* self */,
-                                                                  AppIndicatorStatus   /* status */);
-void                            app_indicator_set_menu           (AppIndicator       * /* self */,
-                                                                  GtkMenu            * /* menu */);
+AppIndicator *app_indicator_new        (const gchar*, const gchar*, AppIndicatorCategory);
+void          app_indicator_set_status (AppIndicator*, AppIndicatorStatus);
+void          app_indicator_set_menu   (AppIndicator*, GtkMenu*);
+
+/*
+AppIndicator                   *app_indicator_new                (const gchar          *id,
+                                                                  const gchar          *icon_name,
+                                                                  AppIndicatorCategory  category);
+void                            app_indicator_set_status         (AppIndicator       *self,
+                                                                  AppIndicatorStatus  status);
+void                            app_indicator_set_menu           (AppIndicator       *self,
+                                                                  GtkMenu            *menu);
+*/

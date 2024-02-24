@@ -82,10 +82,19 @@ GDO_LINKAGE void gdo_win32_show_last_error_in_messagebox(const char *function, c
  * and handle errors. */
 GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 {
-    /* load library+symbols and return if successful */
+    /* load library + symbols and return if successful */
     if (gdo_load_lib_and_symbols()) {
         return;
     }
+
+    /* load library (new namespace) + symbols and return if successful */
+/*
+    if (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, true) &&
+        gdo_load_symbols(false))
+    {
+        return;
+    }
+*/
 
     /* an error has occured: display an error message */
 

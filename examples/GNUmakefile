@@ -55,7 +55,7 @@ define toupper
 $(shell printf '$(1)' | tr a-z A-Z)
 endef
 
-# -D$(call toupper,$(2))_AUTO_RELEASE=1
+# -D$(call toupper,$(2))_ENABLE_AUTOLOAD=1
 define gdox
 $(GENDLOPEN) -i $(1).txt -n $(2) --default-library $(3) $(4) \
 	-f -o example_$(1).h

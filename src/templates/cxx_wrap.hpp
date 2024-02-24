@@ -13,18 +13,27 @@ namespace gdo
             }
         }
 
+        /* used internally by wrapper functions, `symbol' is never NULL */
+        void symbol_error(const char *symbol)
+        {
+            std::string msg = "error: symbol `" + std::string(symbol)
+                + "' was not loaded";
+            print_error(msg);
+            std::exit(1);
+        }
+
     #ifdef GDO_ENABLE_AUTOLOAD
 
     #if !defined(GDO_DEFAULT_LIB)
     #error "You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD"
     #endif
 
-        auto al = dl();
+        auto al = dl(GDO_DEFAULT_LIB);
 
         /* used internally by wrapper functions, `calling_function' is never NULL */
         void autoload(const char *calling_function)
         {
-            if (!al.load(GDO_DEFAULT_LIB)) {
+            if (!al.load()) {
                 std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n"
                     + al.error();
                 print_error(msg);
@@ -45,15 +54,6 @@ namespace gdo
         void autoload(const char *) {}
 
     #endif // !GDO_ENABLE_AUTOLOAD
-
-        /* used internally by wrapper functions, `symbol' is never NULL */
-        void symbol_error(const char *symbol)
-        {
-            std::string msg = "error: symbol `" + std::string(symbol)
-                + "' was not loaded";
-            print_error(msg);
-            std::exit(1);
-        }
 
     } /* anonymous namespace */
 

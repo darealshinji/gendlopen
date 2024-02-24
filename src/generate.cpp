@@ -232,9 +232,9 @@ void gendlopen::generate(
     /* check output type */
 
     const char *wrap_data = "\n"
-        "/*******************************************************************/\n"
-        "/*  wrapped functions were disabled with `--skip-parameter-names'  */\n"
-        "/*******************************************************************/\n";
+        "#ifdef GDO_WRAP_FUNCTIONS\n"
+        "#error \"GDO_WRAP_FUNCTIONS\" defined but wrapped functions were disabled by \"--skip-parameter-names\"\n"
+        "#endif\n";
 
     std::string header_data = common_header_data;
     std::string body_data;

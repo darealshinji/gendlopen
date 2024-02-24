@@ -4,6 +4,9 @@
 #include <libappindicator/app-indicator.h>
 
 #ifdef USE_DLOPEN
+//#define XAPPINDICATOR_ENABLE_AUTOLOAD 1
+//#define XGOBJECT_ENABLE_AUTOLOAD 1
+//#define XGTK_ENABLE_AUTOLOAD 1
 #include "example_appindicator.h"
 #include "example_appindicator_gobject.h"
 #include "example_appindicator_gtk.h"

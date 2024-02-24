@@ -3,6 +3,8 @@
 #include <libnotify/notify.h>
 
 #ifdef USE_DLOPEN
+#define XNOTIFY_ENABLE_AUTOLOAD 1
+#define XGOBJECT_ENABLE_AUTOLOAD 1
 #include "example_notify.h"
 #include "example_notify_gobject.h"
 #endif
@@ -30,20 +32,6 @@ int send_notification(const char *app_name, const char *summary, const char *bod
 
 int main(int, char **argv)
 {
-#ifdef USE_DLOPEN
-
-#define XLOAD(x) \
-  if (!x##_load_lib_and_symbols()) { \
-    fprintf(stderr, "%s\n", x##_last_error()); \
-    return 1; \
-  }
-
-  XLOAD(xgobject)
-  XLOAD(xnotify)
-
-#endif /* USE_DLOPEN */
-
   return send_notification(argv[0], "Hello", "Hi there!", NULL);
 }
-
 

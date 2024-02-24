@@ -161,6 +161,12 @@ GDO_LIBEXT
 #endif
 
 
+/* enable wrapped functions if auto-loading was enabled */
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_WRAP_FUNCTIONS)
+    #define GDO_WRAP_FUNCTIONS 1
+#endif
+
+
 /* char / wchar_t */
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 typedef wchar_t gdo_char_t;
