@@ -10,6 +10,9 @@ clean:
 	cd src && $(make) clean
 	cd examples && $(make) clean
 
+clean-test:
+	cd examples && $(make) clean
+
 $(bin):
 	cd src && $(make)
 

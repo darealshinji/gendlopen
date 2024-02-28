@@ -35,7 +35,7 @@ BINS2     := notify appindicator
 LIB       := libhelloworld.so.0
 LIBX      := libhelloworld.so
 CFLAGS    += -Wno-deprecated-declarations
-LDFLAGS   += -Wl,-rpath,'$$ORIGIN'
+LDFLAGS   += -ldl -Wl,-rpath,'$$ORIGIN'
 LDSOFLAGS := -shared -Wl,-soname,$(LIB)
 endif
 
@@ -99,7 +99,7 @@ libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 # test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@ \
-		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' \
+		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' -I"'helloworld.h'" \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="helloworld:0"
 

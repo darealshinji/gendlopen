@@ -35,13 +35,16 @@ Here's how the input text format must be:
 Example
 -------
 
-Let's assume you want to load `int foo(foo_t *f)` and `void bar(bar_t b)` from `foo.so`.
+Let's assume you want to load `int foobar_foo(foo_t *f)` and `void foobar_bar(bar_t b)` from `foo.so`.
 First create a text file with the prototypes, each function prototype ending on a semicolon:
 
 ``` C
-int foo(foo_t *f);
-void bar(bar_t b);
+int foobar_foo(foo_t *f);
+void foobar_bar(bar_t b);
 ```
+
+You can also generate this text file from a Clang AST dump using the provided `parse-clang-ast` tool:<br>
+`clang -Xclang -ast-dump foobar.h | parse-clang-ast prefix foobar_ > foo.txt`
 
 Create a header file `load_foo.h` from the input:
 `gendlopen --input=foo.txt --output=load_foo.h`
@@ -57,8 +60,8 @@ Include it in your source file and use the provided functions to load the symbol
     }
 
     /* your code */
-    foo(x);
-    bar(y);
+    foobar_foo(x);
+    foobar_bar(y);
 
     /* free library */
     gdo_free_lib();
@@ -75,8 +78,8 @@ Or in C++ using the `gdo::dl` class:
     }
 
     /* your code */
-    foo(x);
-    bar(y);
+    foobar_foo(x);
+    foobar_bar(y);
 ```
 
 You can find more information in the files from the `examples` directory or

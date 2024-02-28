@@ -28,7 +28,6 @@ CFLAGS    := -Wall -Wextra -O3 -I. -D_GNU_SOURCE
 CXXFLAGS  := $(CFLAGS) -std=$(STDCXX)
 SOFLAGS   += -fvisibility=hidden -fPIC
 LDFLAGS   := -s
-LDFLAGS   += -ldl
 endif
 
 endif

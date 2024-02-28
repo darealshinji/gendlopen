@@ -35,7 +35,7 @@ gendlopen = ..\src\gendlopen.exe
 all: $(bins)
 
 clean:
-	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
+	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj *.exp
 	-del /q $(genhdrs_h) $(genhdrs_hpp) example_helloworld_static_dl.c
 
 $(bins): $(dll)
@@ -51,7 +51,7 @@ libhelloworld_dl.lib: example_helloworld_static_dl.obj
 # test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
 	$(gendlopen) -i $** -f -o $@ \
-		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' \
+		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' -I"'helloworld.h'" \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="helloworld:0"
 
