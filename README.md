@@ -44,7 +44,7 @@ void foobar_bar(bar_t b);
 ```
 
 You can also generate this text file from a Clang AST dump using the provided `parse-clang-ast` tool:<br>
-`clang -Xclang -ast-dump foobar.h | parse-clang-ast prefix foobar_ > foo.txt`
+`clang -Xclang -ast-dump -fansi-escape-codes foobar.h | parse-clang-ast prefix foobar_ > foo.txt`
 
 Create a header file `load_foo.h` from the input:
 `gendlopen --input=foo.txt --output=load_foo.h`

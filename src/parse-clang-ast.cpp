@@ -24,9 +24,8 @@
 
 #include <iostream>
 #include <regex>
-#include <cassert>
-#include <cstring>
 #include <stdio.h>
+#include <string.h>
 #include "common.hpp"
 
 #define COL(x)   "\x1B\\[" #x "m"
@@ -65,7 +64,8 @@ FunctionVarDecl_t GetFunctionVarDecl(const std::string &line, const char *prefix
     const std::regex reg("^.*?"
         CFGREEN "(Function|Var)Decl" C0 ".*?"
         CFBLUE  " (.*?)" C0 " "  /* symbol */
-        CGREEN  "'(.*?)'.*");    /* type */
+        CGREEN  "'(.*?)'.*"      /* type */
+    );
 
     std::smatch m;
 
@@ -88,8 +88,10 @@ FunctionVarDecl_t GetFunctionVarDecl(const std::string &line, const char *prefix
         /* function declaration */
         const auto &s = m[3].str();
         const auto pos = s.find('(');
-        assert(pos != std::string::npos);
 
+        if (pos == std::string::npos) {
+            return {};
+        }
         decl.is_func = true;
         decl.type = s.substr(0, pos);
         decl.param_novars = s.substr(pos + 1);
@@ -110,7 +112,8 @@ bool GetParmVarDecl(ParmVarDecl_t &decl, size_t &count)
 {
     const std::regex reg("^.*?"
         CFGREEN "ParmVarDecl" C0 ".*?"
-        CGREEN  "'(.*?)'.*");  /* type */
+        CGREEN  "'(.*?)'.*"  /* type */
+    );
 
     std::smatch m;
     std::string buf;
@@ -162,6 +165,7 @@ int parse_clang_ast(const char *prefix, const char *symbol)
     if (c != 0 && !common::range(c,'a','z') && !common::range(c,'A','Z') && c != '_') {
         std::cerr << "error: given symbol name starts with illegal ASCII character: "
             << c << std::endl;
+        ::fclose(stdin);
         return 1;
     }
 
@@ -203,7 +207,7 @@ int parse_clang_ast(const char *prefix, const char *symbol)
 void print_help(const char *argv0)
 {
     std::cerr << "Read clang AST data from standard input and create machine readable\n"
-		"C prototypes writing to standard output.\n"
+        "C prototypes writing to standard output.\n"
         "\n"
         "Usage:\n"
         "  " << argv0 << " --help\n"
@@ -212,7 +216,7 @@ void print_help(const char *argv0)
         "  " << argv0 << " all             search for all symbols\n"
         "\n"
         "examples:\n"
-        "  clang -Xclang -ast-dump [...] HEADER-FILE | " << argv0 << " all\n"
+        "  clang -Xclang -ast-dump -fansi-escape-codes [...] HEADER-FILE | " << argv0 << " all\n"
         "  " << argv0 << " prefix mylibraryapi_ < AST-DUMP-FILE\n"
         << std::endl;
 }
@@ -239,7 +243,7 @@ int main(int argc, char **argv)
         }
     }
 
-    std::cerr << "error: wrong or missing command line options\n"
+    std::cerr << "error: incorrect or missing command line options\n"
         "try `" << argv[0] << " --help'" << std::endl;
 
     /* close a possibly open pipe input stream before exit */
