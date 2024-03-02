@@ -49,10 +49,10 @@ You can also generate this text file from a Clang AST dump using the provided `p
 Create a header file `load_foo.h` from the input:
 `gendlopen --input=foo.txt --output=load_foo.h`
 
-Include it in your source file and use the provided functions to load the symbols:
+Include `load_foo.h` it in your source file and use the provided functions to load the symbols:
 ``` C
     /* load library and symbols */
-    if (!gdo_load_lib_name("foo.so") || !gdo_load_symbols())
+    if (!gdo_load_lib_name("foo.so") || !gdo_load_symbols(false))
     {
         fprintf(stderr, "%s\n", gdo_last_error());
         gdo_free_lib();
@@ -83,8 +83,7 @@ Or in C++ using the `gdo::dl` class:
 ```
 
 You can find more information in the files from the `examples` directory or
-in the files `template_c.h` and `template_cxx.hpp` as well as the generated
-output files.
+in the template files in `src/templates` as well as in the generated output files.
 
 
 Compiling
@@ -92,35 +91,22 @@ Compiling
 
 You can use GNU make or on Windows you can use Microsoft nmake.
 
-
-Manual compiling
-----------------
-
+To cross-compile the tool with GNU make you must set `$CC` and `$CXX` or `$CLANG_CL`
+to the host compiler and `$CCAUX` to the build C compiler:
 ``` sh
-gcc src/gen_template_h.c -o gen_template_h
-./gen_template_h src/templates
-g++ -O3 -Wall -std=c++20 src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp -o gendlopen -s
-```
-``` sh
-cl src/gen_template_h.c
-gen_template_h.exe src/templates
-cl -O2 -EHsc -std:c++latest -Fegendlopen src/generate.cpp src/main.cpp src/parse.cpp src/tokenize.cpp
-```
-
-
-Cross-compiling
----------------
-
-To cross-compile the tool you must set `$CC` and `$CXX` or `$CLANG_CL` to the host compiler
-and `$CCAUX` to the build C compiler:
-``` sh
+# MinGW
 make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ CCAUX=gcc
+
+# clang-cl
 make CLANG_CL=clang-cl
 ```
 
 To cross-compile the examples you must compile the native tool first:
 ```sh
+# MinGW
 make && make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ test
+
+# clang-cl
 make && make CLANG_CL=clang-cl test
 ```
 

@@ -29,7 +29,7 @@ $(BIN): $(OBJS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 $(BIN2): parse-clang-ast.cpp
-	$(call compile_cxx,$^,-DNDEBUG)
+	$(call compile_cxx,$^)
 
 $(AUXBIN): gen_template_h.c
 	$(CCAUX) -Wall -O2 -o $@ $<

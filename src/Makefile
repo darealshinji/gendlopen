@@ -23,7 +23,7 @@ gendlopen.exe: $(objs)
 	$(link) -out:$@ $** $(ldflags)
 
 parse-clang-ast.exe: parse-clang-ast.cpp
-	$(cl) $(cxxflags) -DNDEBUG $** -link -out:$@ $(ldflags)
+	$(cl) $(cxxflags) $** -link -out:$@ $(ldflags)
 
 $(objs): template.h
 

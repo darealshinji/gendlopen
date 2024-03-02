@@ -24,78 +24,110 @@
 
 #include <iostream>
 #include <regex>
+#include <vector>
 #include <stdio.h>
 #include <string.h>
 #include "common.hpp"
 
-#define COL(x)   "\x1B\\[" #x "m"
-
 /* ANSI color codes used in the Clang AST output */
-#define C0       COL(0)      /* default */
-#define CGREEN   COL(0;32)   /* green */
-#define CORANGE  COL(0;33)   /* orange */
-#define CBLUE    COL(0;34)   /* blue */
-#define CFGREEN  COL(0;1;32) /* fat green */
-#define CFBLUE   COL(0;1;36) /* fat blue */
 
-#ifdef NDEBUG
-#define DEBUG_PRINT(x)  /**/
-#else
-#define DEBUG_PRINT(x)  std::cout << x << std::endl
-#endif
+/* escaped variants for regex */
+#define COL(x)    "\x1B\\[" #x "m"
+#define C0        COL(0)        /* default */
+#define CGREEN    COL(0;32)     /* green */
+#define CFGREEN   COL(0;1;32)   /* fat green */
+#define CFBLUE    COL(0;1;36)   /* fat blue */
 
+/* unescaped variants for std::cout */
+#define sCOL(x)   "\x1B[" #x "m"
+#define sC0       sCOL(0)       /* default */
+#define sCORANGE  sCOL(0;33)    /* orange */
+#define sCFGREEN  sCOL(0;1;32)  /* fat green */
+
+
+namespace ast
+{
+
+typedef enum {
+    M_NONE,
+    M_ALL,
+    M_PREFIX,
+    M_LIST,
+    M_SINGLE
+} mode_t;
 
 typedef struct {
     bool is_func;
     std::string symbol;
     std::string type;
-    std::string param_novars;
-} FunctionVarDecl_t;
+} decl_t;
 
-typedef struct {
-    std::string param;
-    std::string varsonly;
-} ParmVarDecl_t;
 
+/* check if a symbol begins with an illegal character */
+inline void check_illegal_character(const char *sym)
+{
+    if (!common::range(sym[0], 'a', 'z') && !common::range(sym[0], 'A', 'Z') && sym[0] != '_') {
+        std::cerr << "error: given symbol name `" << sym
+            << "' starts with illegal ASCII character!" << std::endl;
+        std::exit(1);
+    }
+}
 
 /* get function or variable declaration */
-FunctionVarDecl_t GetFunctionVarDecl(const std::string &line, const char *prefix, const char *symbol)
+decl_t get_declarations(const std::string &line, mode_t mode, const char *symbol, vstring_t &vec)
 {
+    decl_t decl;
+    std::smatch m;
+
     const std::regex reg("^.*?"
         CFGREEN "(Function|Var)Decl" C0 ".*?"
         CFBLUE  " (.*?)" C0 " "  /* symbol */
         CGREEN  "'(.*?)'.*"      /* type */
     );
 
-    std::smatch m;
-
     if (!std::regex_match(line, m, reg) || m.size() != 4) {
         return {};
     }
 
-    if (prefix && !m[2].str().starts_with(prefix)) {
-        return {};
+    switch(mode)
+    {
+    case M_PREFIX:
+        if (!m[2].str().starts_with(symbol)) {
+            return {};
+        }
+        break;
+
+    case M_SINGLE:
+        if (m[2] != symbol) {
+            return {};
+        }
+        break;
+
+    case M_LIST:
+        /* returns how many times the element was
+         * found and erased from vector */
+        if (std::erase(vec, m[2]) == 0) {
+            return {};
+        }
+        break;
+
+    default:
+        break;
     }
 
-    if (symbol && m[2].str() != symbol) {
-        return {};
-    }
-
-    FunctionVarDecl_t decl;
     decl.symbol = m[2];
 
     if (m[1].str().front() == 'F') {
         /* function declaration */
-        const auto &s = m[3].str();
-        const auto pos = s.find('(');
+        auto pos = m[3].str().find('(');
 
         if (pos == std::string::npos) {
             return {};
         }
         decl.is_func = true;
-        decl.type = s.substr(0, pos);
-        decl.param_novars = s.substr(pos + 1);
-        decl.param_novars.pop_back();
+        decl.type = m[3].str().substr(0, pos);
+        //decl.param_novars = m[3].str().substr(pos + 1);
+        //decl.param_novars.pop_back();
     } else {
         /* variable declaration */
         decl.is_func = false;
@@ -108,7 +140,7 @@ FunctionVarDecl_t GetFunctionVarDecl(const std::string &line, const char *prefix
 }
 
 /* get function parameter declaration */
-bool GetParmVarDecl(ParmVarDecl_t &decl, size_t &count)
+bool get_parameters(std::string &param, size_t &count)
 {
     const std::regex reg("^.*?"
         CFGREEN "ParmVarDecl" C0 ".*?"
@@ -124,130 +156,198 @@ bool GetParmVarDecl(ParmVarDecl_t &decl, size_t &count)
         return false;
     }
 
-    const auto &s = m[1].str();
-    const std::string var = "arg" + std::to_string(++count);
-    decl.varsonly += var + ", ";
+    std::string var = "arg" + std::to_string(++count);
 
     /* search for function pointer */
-    const auto pos = s.find("(*)");
+    auto pos = m[1].str().find("(*)");
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        decl.param += s + var + ", ";
+        param += m[1].str() + ' ';
+        param += var + ", ";
     } else {
         /* function pointer */
-        std::string fptr = s;
-        fptr.insert(pos + 2, var);
-        decl.param += fptr + ", ";
+        buf = m[1].str();
+        buf.insert(pos + 2, var);
+        param += buf + ", ";
     }
 
     return true;
 }
 
-int parse_clang_ast(const char *prefix, const char *symbol)
+void parse(mode_t mode, const char *sym, vstring_t &vec)
 {
     std::string line;
-    char c = 0;
 
-    auto strip_end = [] (std::string &s)
-    {
-        if (s.ends_with(", ")) {
-            s.erase(s.size()-2);
-        }
+    auto err_exit = [] (const char *msg) {
+        std::cerr << "error: " << msg << std::endl;
+        std::exit(1);
     };
 
-    if (prefix) {
-        c = prefix[0];
-    } else if (symbol) {
-        c = symbol[0];
+    /* check first line */
+
+    if (!std::getline(std::cin, line)) {
+        err_exit("std::getline()");
     }
 
-    if (c != 0 && !common::range(c,'a','z') && !common::range(c,'A','Z') && c != '_') {
-        std::cerr << "error: given symbol name starts with illegal ASCII character: "
-            << c << std::endl;
-        ::fclose(stdin);
-        return 1;
+    if (line.empty()) {
+        err_exit("empty line");
     }
 
-    while (std::getline(std::cin, line)) {
-        auto decl = GetFunctionVarDecl(line, prefix, symbol);
+    const char* const first_line = sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x";
+
+    if (!line.starts_with(first_line)) {
+        err_exit("file is missing TranslationUnitDecl line");
+    }
+
+    /* parse lines */
+    while (std::getline(std::cin, line))
+    {
+        if (line.empty()) {
+            err_exit("empty line");
+        }
+
+        auto decl = get_declarations(line, mode, sym, vec);
 
         if (decl.symbol.empty()) {
+            /* nothing found */
             continue;
         } else if (decl.is_func) {
-            ParmVarDecl_t decl2;
+            /* function */
+            std::string param;
             size_t count = 0;
 
-            if (!decl.param_novars.empty() &&
-                !common::same_string_case(decl.param_novars, "void"))
-            {
-                while (GetParmVarDecl(decl2, count)) {}
-                strip_end(decl2.param);
-                strip_end(decl2.varsonly);
+            while (get_parameters(param, count)) {}
+
+            if (param.ends_with(", ")) {
+                param.erase(param.size()-2);
             }
 
-            DEBUG_PRINT("\n//function "
-                << decl.type << " | "
-                << decl.symbol << " | ("
-                << decl2.param << ") | ("
-                << decl.param_novars << ") | ("
-                << decl2.varsonly << ") ;");
-
-            std::cout << decl.type << ' ' << decl.symbol
-                << " (" << decl2.param << ");" << std::endl;
+            std::cout << decl.type << ' ' << decl.symbol << " (" << param << ");" << std::endl;
         } else {
-            DEBUG_PRINT("\n//variable " << decl.type << " | " << decl.symbol << " ;");
+            /* variable */
             std::cout << decl.type << ' ' << decl.symbol << ";" << std::endl;
+        }
+
+        /* stop if the vector is empty */
+        if (mode == M_LIST && vec.empty()) {
+            return;
         }
     }
 
-    return 0;
+    /* inform if symbols were not found */
+    if (mode == M_LIST && !vec.empty()) {
+        std::cerr << "warning: the following symbols were not found:";
+
+        for (const auto &e : vec) {
+            std::cerr << ' ' << e;
+        }
+        std::cerr << std::endl;
+    }
 }
 
-void print_help(const char *argv0)
+/* turn comma-separated list into vector */
+void vectorize_list(vstring_t &vec, const char *symbols)
 {
-    std::cerr << "Read clang AST data from standard input and create machine readable\n"
-        "C prototypes writing to standard output.\n"
-        "\n"
-        "Usage:\n"
-        "  " << argv0 << " --help\n"
-        "  " << argv0 << " prefix PFX      search for symbols beginning with PFX\n"
-        "  " << argv0 << " symbol SYM      search for the symbol SYM\n"
-        "  " << argv0 << " all             search for all symbols\n"
-        "\n"
-        "examples:\n"
-        "  clang -Xclang -ast-dump -fansi-escape-codes [...] HEADER-FILE | " << argv0 << " all\n"
-        "  " << argv0 << " prefix mylibraryapi_ < AST-DUMP-FILE\n"
-        << std::endl;
+    std::string token;
+    std::string str = symbols;
+
+    /* replace separators with space */
+    for (char &c : str) {
+        if (c == ',') c = ' ';
+    }
+
+    std::istringstream iss(str);
+
+    while (iss >> token) {
+        check_illegal_character(token.c_str());
+        vec.push_back(token);
+    }
+
+    if (vec.empty()) {
+        std::cerr << "error: empty list provided: " << symbols << std::endl;
+        std::exit(1);
+    }
+
+    /* sort and remove duplicates */
+    std::sort(vec.begin(), vec.end());
+    vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
 }
 
+} /* namespace ast */
+
+namespace help
+{
+    void print(const char *argv0)
+    {
+        std::cerr << "Read clang AST data from standard input and create machine readable\n"
+            "C prototypes writing to standard output.\n"
+            "\n"
+            "Usage:\n"
+            "  " << argv0 << " --help\n"
+            "  " << argv0 << " all                   get all symbols\n"
+            "  " << argv0 << " prefix PFX            get all symbols that begin with PFX\n"
+            "  " << argv0 << " list SYM1[,SYM2,...]  search for one or more symbols in a comma-separated list\n"
+            "\n"
+            "examples:\n"
+            "  clang -Xclang -ast-dump -fansi-escape-codes [...] HEADER-FILE | " << argv0 << " all\n"
+            "  " << argv0 << " prefix mylibraryapi_ < AST-DUMP-FILE\n"
+            << std::endl;
+    }
+}
 
 int main(int argc, char **argv)
 {
-    auto arg1eq = [argv] (const char *s) -> bool {
-        return (::strcmp(argv[1], s) == 0);
-    };
+    vstring_t vec;
+    const char *sym = NULL;
+    ast::mode_t mode = ast::M_NONE;
 
-    if (argc == 2) {
-        if (arg1eq("all")) {
-            return parse_clang_ast(NULL, NULL);
-        } else if (arg1eq("--help")) {
-            print_help(argv[0]);
+    switch (argc)
+    {
+    case 2:
+        if (::strcmp(argv[1], "all") == 0) {
+            mode = ast::M_ALL;
+        } else if (::strcmp(argv[1], "--help") == 0) {
+            help::print(argv[0]);
             return 0;
         }
-    } else if (argc == 3) {
-        if (arg1eq("prefix")) {
-            return parse_clang_ast(argv[2], NULL);
-        } else if (arg1eq("symbol")) {
-            return parse_clang_ast(NULL, argv[2]);
+        break;
+
+    case 3:
+        sym = argv[2];
+
+        if (::strcmp(argv[1], "prefix") == 0) {
+            mode = ast::M_PREFIX;
+        } else if (::strcmp(argv[1], "list") == 0) {
+            mode = ::strchr(sym, ',') ? ast::M_LIST : ast::M_SINGLE;
         }
+        break;
+
+    default:
+        break;
     }
 
-    std::cerr << "error: incorrect or missing command line options\n"
-        "try `" << argv[0] << " --help'" << std::endl;
+    switch (mode)
+    {
+    case ast::M_PREFIX:
+    case ast::M_SINGLE:
+        ast::check_illegal_character(sym);
+        break;
 
-    /* close a possibly open pipe input stream before exit */
-    ::fclose(stdin);
+    case ast::M_LIST:
+        ast::vectorize_list(vec, sym);
+        break;
 
-    return 1;
+    case ast::M_ALL:
+        break;
+
+    case ast::M_NONE:
+        std::cerr << "error: incorrect or missing command line options" << std::endl;
+        std::cerr << "try `" << argv[0] << " --help'" << std::endl;
+        return 1;
+    }
+
+    ast::parse(mode, sym, vec);
+
+    return 0;
 }

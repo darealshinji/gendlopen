@@ -12,7 +12,7 @@ int main()
     gdo::dl loader( GDO_LIB(helloworld,0) );
 
     /* load library and symbols */
-    if (!loader.load() || !loader.load_symbols()) {
+    if (!loader.load_lib_and_symbols()) {
         std::cerr << loader.error() << std::endl;
         return 1;
     }
