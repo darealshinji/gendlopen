@@ -1,4 +1,5 @@
 CCAUX     := $(CC)
+CLANG     := clang
 
 STDCXX    ?= c++11
 SOFLAGS   := -DBUILDING_DLL

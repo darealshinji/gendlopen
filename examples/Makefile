@@ -9,6 +9,8 @@ bins = \
 	helloworld_example_nodl.exe \
 	helloworld_example_dl.exe
 
+bins2 = uuid_win.exe
+
 genhdrs_h = \
 	example_1.h \
 	example_autoload.h \
@@ -23,20 +25,23 @@ genhdrs_hpp = \
 
 dll = libhelloworld-0.dll
 
-cl        = cl -nologo
-link      = link -nologo
-lib_exe   = lib -nologo
-cflags    = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN
-cxxflags  = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
-ldflags   = -subsystem:console -release
-gendlopen = ..\src\gendlopen.exe
+cl       = cl -nologo
+clang    = clang
+link     = link -nologo
+lib_exe  = lib -nologo
+cflags   = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN
+cxxflags = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
+ldflags  = -subsystem:console -release
+
+gendlopen       = ..\src\gendlopen.exe
+parse_clang_ast = ..\src\parse-clang-ast.exe
 
 
-all: $(bins)
+all: $(bins) $(bins2)
 
 clean:
 	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj *.exp
-	-del /q $(genhdrs_h) $(genhdrs_hpp) example_helloworld_static_dl.c
+	-del /q $(genhdrs_h) $(genhdrs_hpp) uuid_*_dl.h example_helloworld_static_dl.c
 
 $(bins): $(dll)
 
@@ -84,6 +89,14 @@ example_wide.exe: example_wide.h
 
 example_cxx_wide.exe: example_cxx_wide.hpp
 	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
+
+uuid_win_dl.h:
+	$(clang) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
+	  $(parse_clang_ast) list UuidCreate,UuidToStringA,RpcStringFreeA | \
+	  $(gendlopen) -i- --default-library rpcrt4.dll -f -o $@
+
+uuid_win.exe: uuid_win_dl.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
 
 $(genhdrs_h): helloworld.txt
 	$(gendlopen) -i $** -f -o $@

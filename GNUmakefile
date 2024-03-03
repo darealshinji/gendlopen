@@ -19,6 +19,9 @@ $(BIN):
 test: $(BIN)
 	$(MAKE) -C examples
 
+test_all: $(BIN)
+	$(MAKE) -C examples $@
+
 run_tests: $(BIN)
 	$(MAKE) -C examples $@
 

@@ -15,6 +15,7 @@ BINS = \
 ifneq ($(CLANG_CL),)
 # clang-cl
 BINS      += example_wide example_cxx_wide
+BINS3     := uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
 #CXXFLAGS  += -std:c++latest
@@ -24,14 +25,15 @@ else
 ifneq ($(shell echo $(CXX) | grep mingw),)
 # MinGW
 BINS      += example_wide example_cxx_wide
+BINS2     := uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.dll.a
 CFLAGS    += -Wno-cast-function-type
 CXXFLAGS  += -Wno-cast-function-type
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
 else
-# Linux and BSD
-BINS2     := notify appindicator
+# *nix
+BINS2     := notify appindicator uuid_nix
 LIB       := libhelloworld.so.0
 LIBX      := libhelloworld.so
 CFLAGS    += -Wno-deprecated-declarations
@@ -41,7 +43,8 @@ endif
 
 endif
 
-GENDLOPEN := ../src/gendlopen
+GENDLOPEN       := ../src/gendlopen
+PARSE_CLANG_AST := ../src/parse-clang-ast
 
 # test whether everything is handled
 # correctly if a symbol was not found
@@ -64,12 +67,15 @@ endef
 
 .PHONY: all clean run_tests run_tests2
 
-all: $(BINS) $(BINS2)
+all: $(BINS)
+
+test_all: $(BINS) $(BINS2)
 
 clean:
-	-rm -f $(BINS) notify appindicator
+	-rm -f $(BINS) notify appindicator uuid_nix
 	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
-	-rm -f example_*.h example_*.hpp example_helloworld_static_dl.c
+	-rm -f example_*.h example_*.hpp
+	-rm -f uuid_*_dl.h example_helloworld_static_dl.c
 
 run_tests: $(BINS)
 	@for f in $^; do \
@@ -129,7 +135,7 @@ example_cxx_wide: example_cxx_wide.hpp
 	$(call compile_cxx,$@.cpp)
 
 helloworld_example_nodl: helloworld_example.c
-	$(call compile_cc,helloworld_example.c,,$(LIBX))
+	$(call compile_cc,$<,,$(LIBX))
 
 helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
 	$(call compile_cc,helloworld_example.c,-DBUILDING_STATIC,libhelloworld_dl.$(LIBEXT))
@@ -139,13 +145,25 @@ appindicator: appindicator.c
 	$(call gdox,appindicator,xappindicator,'"libappindicator.so.1"',--skip-parameter-names)
 	$(call gdox,appindicator_gobject,xgobject,libgobject-2.0.so.0,)
 	$(call gdox,appindicator_gtk,xgtk,libgtk-x11-2.0.so.0,)
-	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
+	$(call compile_cc, $<, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
 
 # test filename with colon
 notify: notify.c
 	$(call gdox,notify,xnotify,notify:4,)
 	$(call gdox,notify_gobject,xgobject,gobject-2.0:0,)
-	$(call compile_cc, $@.c, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
+	$(call compile_cc, $<, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
+
+uuid_nix: uuid_nix.c
+	$(CLANG) -Xclang -ast-dump -I/usr/include/uuid $@.h | \
+	  $(PARSE_CLANG_AST) list uuid_generate_random,uuid_is_null,uuid_unparse_lower | \
+	  $(GENDLOPEN) -i- --default-library libuuid.so.1 -f -o $@_dl.h
+	$(call compile_cc,$<,-I/usr/include/uuid)
+
+uuid_win: uuid_win.c
+	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $@.h | \
+	  $(PARSE_CLANG_AST) list UuidCreate,UuidToStringA,RpcStringFreeA | \
+	  $(GENDLOPEN) -i- --default-library rpcrt4.dll -f -o $@_dl.h
+	$(call compile_cc,$<)
 
 example_%.h: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@

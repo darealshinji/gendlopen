@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <regex>
+#include <sstream>
 #include <vector>
 #include <stdio.h>
 #include <string.h>

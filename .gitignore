@@ -16,6 +16,7 @@ examples/appindicator
 examples/notify
 gen_template_h
 gendlopen
+parse-clang-ast
 
 # binary files
 *.o
