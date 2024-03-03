@@ -240,33 +240,19 @@ bool gendlopen::open_fstream(std::ofstream &ofs, const std::string &ofile)
     return true;
 }
 
-void gendlopen::generate(
-    const std::string &ifile,
-    const std::string &ofile,
-    const std::string &name)
+/* create template data (concatenate) */
+void gendlopen::create_template_data(std::string &header_data, std::string &body_data)
 {
-    tokenize tok;
-
-    /* read data */
-    if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
-        std::exit(1);
-    }
-
-    /* check output type */
-
     const char *wrap_data = "\n"
         "#ifdef GDO_WRAP_FUNCTIONS\n"
         "#error \"GDO_WRAP_FUNCTIONS\" defined but wrapped functions were disabled by \"--skip-parameter-names\"\n"
         "#endif\n";
 
-    std::string header_data = common_header_data;
-    std::string body_data;
-    bool is_c = true;
-
     switch (m_out)
     {
     case output::cxx: {
             /* header + wrap + header2 */
+            header_data = common_header_data;
             header_data += cxx_header_data;
 
             if (!m_skip_parameter_names) {
@@ -275,11 +261,11 @@ void gendlopen::generate(
 
             header_data += wrap_data;
             header_data += cxx_header_data2;
-            is_c = false;
         }
-        break;
+        return;
 
     case output::c: {
+            header_data = common_header_data;
             header_data += c_header_data;
 
             if (!m_skip_parameter_names) {
@@ -296,21 +282,38 @@ void gendlopen::generate(
                 header_data += wrap_data;
             }
         }
-        break;
+        return;
 
     case output::minimal:
         /* minimal header */
-        header_data += minimal_header_data;
-        break;
-
-//  default:
-//      ASSERT();
+        header_data = minimal_header_data;
+        return;
     }
+
+    common::unreachable();
+}
+
+void gendlopen::generate(
+    const std::string &ifile,
+    const std::string &ofile,
+    const std::string &name)
+{
+    std::string header_data, body_data;
+    tokenize tok;
+
+    /* read data */
+    if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
+        std::exit(1);
+    }
+
+    /* create template data */
+    create_template_data(header_data, body_data);
 
     /* output filename */
     std::filesystem::path ofhdr(ofile);
     auto ofbody = ofhdr;
     bool use_stdout = (ofile == "-");
+    bool is_c = (m_out != output::cxx);
 
     if (use_stdout) {
         m_separate = false;

@@ -48,6 +48,7 @@ private:
     char ***m_argv = NULL;
 
     bool open_fstream(std::ofstream &ofs, const std::string &ofile);
+    void create_template_data(std::string &header_data, std::string &body_data);
     std::string parse(const std::string &data, vproto_t &prototypes, vobj_t &objects);
 
 public:

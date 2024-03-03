@@ -7,6 +7,7 @@ BINS = \
 	example_1 \
 	example_autoload \
 	example_auto_free \
+	example_minimal \
 	example_cxx \
 	example_cxx_autoload \
 	helloworld_example_dl \
@@ -122,6 +123,9 @@ example_auto_free: example_auto_free.h
 example_autoload: example_autoload.h
 	$(call compile_cc,$@.c)
 
+example_minimal: example_minimal.h
+	$(call compile_cc,$@.c)
+
 example_cxx: example_cxx.hpp
 	$(call compile_cxx,$@.cpp)
 
@@ -164,6 +168,9 @@ uuid_win: uuid_win.c
 	  $(PARSE_CLANG_AST) list UuidCreate,UuidToStringA,RpcStringFreeA | \
 	  $(GENDLOPEN) -i- --default-library rpcrt4.dll -f -o $@_dl.h
 	$(call compile_cc,$<)
+
+example_minimal.h: helloworld.txt
+	$(GENDLOPEN) --format=minimal -i $^ -f -o $@
 
 example_%.h: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@
