@@ -14,7 +14,7 @@ clean:
 	-del /q *.exe *.obj template.h
 
 template.h: gen_template_h.exe
-	$** templates
+	$** ..\templates
 
 gen_template_h.exe: gen_template_h.c
 	$(cl) $(cflags) $** -link -out:$@ $(ldflags)

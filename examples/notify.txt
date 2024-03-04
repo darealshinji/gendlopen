@@ -1,6 +1,7 @@
 /* libnotify/notify.h */
 gboolean        notify_init (const char *app_name);
 void            notify_uninit (void);
+gboolean        notify_is_initted (void);
 
 /* libnotify/notification.h */
 NotifyNotification *notify_notification_new                  (const char         *summary,

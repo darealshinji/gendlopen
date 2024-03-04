@@ -2,6 +2,7 @@
 examples/example_*.h
 examples/example_*.hpp
 examples/example_helloworld_static_dl.c
+examples/uuid_*_dl.h
 template.h
 
 # executables
@@ -10,10 +11,12 @@ examples/example_autoload
 examples/example_auto_free
 examples/example_cxx
 examples/example_cxx_autoload
+examples/example_minimal
 examples/helloworld_example_dl
 examples/helloworld_example_nodl
 examples/appindicator
 examples/notify
+examples/uuid_nix
 gen_template_h
 gendlopen
 parse-clang-ast

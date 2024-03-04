@@ -35,4 +35,4 @@ $(AUXBIN): gen_template_h.c
 	$(CCAUX) -Wall -O2 -o $@ $<
 
 template.h: $(AUXBIN)
-	./$(AUXBIN) templates
+	./$(AUXBIN) ../templates

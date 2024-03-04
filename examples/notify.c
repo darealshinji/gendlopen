@@ -1,6 +1,7 @@
 /* a more complex real-life example */
 
 #include <libnotify/notify.h>
+#include <assert.h>
 
 #ifdef USE_DLOPEN
 #define XNOTIFY_ENABLE_AUTOLOAD 1
@@ -12,7 +13,9 @@
 
 int send_notification(const char *app_name, const char *summary, const char *body, const char *icon)
 {
-  if (!app_name || !*app_name || !summary || !*summary || !notify_init(app_name)) {
+  assert(app_name && *app_name && summary && *summary);
+
+  if (!notify_init(app_name) || !notify_is_initted()) {
     return 1;
   }
 

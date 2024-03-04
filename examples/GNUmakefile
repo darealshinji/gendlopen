@@ -15,8 +15,7 @@ BINS = \
 
 ifneq ($(CLANG_CL),)
 # clang-cl
-BINS      += example_wide example_cxx_wide
-BINS3     := uuid_win
+BINS      += example_wide example_cxx_wide uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
 #CXXFLAGS  += -std:c++latest
@@ -25,8 +24,7 @@ else
 
 ifneq ($(shell echo $(CXX) | grep mingw),)
 # MinGW
-BINS      += example_wide example_cxx_wide
-BINS2     := uuid_win
+BINS      += example_wide example_cxx_wide uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.dll.a
 CFLAGS    += -Wno-cast-function-type
@@ -34,7 +32,8 @@ CXXFLAGS  += -Wno-cast-function-type
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
 else
 # *nix
-BINS2     := notify appindicator uuid_nix
+BINS      += uuid_nix
+BINS2     := notify appindicator
 LIB       := libhelloworld.so.0
 LIBX      := libhelloworld.so
 CFLAGS    += -Wno-deprecated-declarations
@@ -149,19 +148,21 @@ appindicator: appindicator.c
 	$(call gdox,appindicator,xappindicator,'"libappindicator.so.1"',--skip-parameter-names)
 	$(call gdox,appindicator_gobject,xgobject,libgobject-2.0.so.0,)
 	$(call gdox,appindicator_gtk,xgtk,libgtk-x11-2.0.so.0,)
-	$(call compile_cc, $<, -DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
+	$(call compile_cc,$<,-DUSE_DLOPEN=1 -I../thirdparty `pkg-config --cflags gtk+-2.0 gobject-2.0`)
+#	$(call compile_cc,$<,-DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
 
 # test filename with colon
 notify: notify.c
 	$(call gdox,notify,xnotify,notify:4,)
 	$(call gdox,notify_gobject,xgobject,gobject-2.0:0,)
-	$(call compile_cc, $<, -DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
+	$(call compile_cc,$<,-DUSE_DLOPEN=1 -I../thirdparty `pkg-config --cflags gobject-2.0`)
+#	$(call compile_cc, $<,-DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
 
 uuid_nix: uuid_nix.c
-	$(CLANG) -Xclang -ast-dump -I/usr/include/uuid $@.h | \
+	$(CLANG) -Xclang -ast-dump -I../thirdparty/uuid $@.h | \
 	  $(PARSE_CLANG_AST) list uuid_generate_random,uuid_is_null,uuid_unparse_lower | \
 	  $(GENDLOPEN) -i- --default-library libuuid.so.1 -f -o $@_dl.h
-	$(call compile_cc,$<,-I/usr/include/uuid)
+	$(call compile_cc,$<,-I../thirdparty/uuid)
 
 uuid_win: uuid_win.c
 	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $@.h | \
