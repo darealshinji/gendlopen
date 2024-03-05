@@ -14,10 +14,9 @@ namespace gdo
         }
 
         /* used internally by wrapper functions, `symbol' is never NULL */
-        void symbol_error(const char *symbol)
+        [[noreturn]] void symbol_error(const char *symbol)
         {
-            std::string msg = "error: symbol `" + std::string(symbol)
-                + "' was not loaded";
+            std::string msg = "error: symbol `" + std::string(symbol) + "' was not loaded";
             print_error(msg);
             std::exit(1);
         }
@@ -85,4 +84,13 @@ GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 /* aliases to autoload function names */
 #define GDO_SYMBOL gdo::wrapped::GDO_SYMBOL
 
-#endif
+#else
+
+/* aliases to raw function pointers */
+#define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
+
+#endif //GDO_WRAP_FUNCTIONS
+
+
+/* aliases to raw object pointers */
+#define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL

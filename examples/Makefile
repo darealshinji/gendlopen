@@ -56,9 +56,9 @@ libhelloworld_dl.lib: example_helloworld_static_dl.obj
 # test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
 	$(gendlopen) -i $** -f -o $@ \
-		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' -I"'helloworld.h'" \
+		-I"<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
-		--default-library="helloworld:0"
+		--default-library="LIBNAME(helloworld,0)"
 
 example_helloworld_static_dl.obj: example_helloworld_static_dl.c
 	$(cl) $(cflags) -c $*.c
@@ -93,7 +93,7 @@ example_cxx_wide.exe: example_cxx_wide.hpp
 uuid_win_dl.h:
 	$(clang) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
 	  $(parse_clang_ast) list UuidCreate,UuidToStringA,RpcStringFreeA | \
-	  $(gendlopen) -i- --default-library rpcrt4.dll -f -o $@
+	  $(gendlopen) -i- --default-library "QUOTE_STRING(rpcrt4.dll)" -f -o $@
 
 uuid_win.exe: uuid_win_dl.h
 	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)

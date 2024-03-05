@@ -9,7 +9,7 @@
 int main()
 {
     /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( GDO_LIB(helloworld,0) );
+    gdo::dl loader( gdo::libname("helloworld", 0) );
 
     /* load library and symbols */
     if (!loader.load_lib_and_symbols()) {
@@ -22,7 +22,7 @@ alternatively the object can be initialized without arguments
 and the filename is then specified during loading:
 
     gdo::dl loader;
-    if (!loader.load("libhelloworld.so.0") || ...
+    if (!loader.load( gdo::libname("helloworld", 0) ) || ...
 */
 
     /* get and print the full library path */

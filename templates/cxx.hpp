@@ -5,10 +5,8 @@
 /*           quick overview           */
 /**************************************/
 
-namespace gdo {
-
-/*** constants ***/
-
+namespace gdo
+{
     /* API-agnostic default flags */
     const int default_flags;
 
@@ -19,9 +17,13 @@ namespace gdo {
     /* function pointer to error message callback */
     void (*message_callback)(const char *) = nullptr;
 
+    /* Create versioned library names for DLLs, dylibs and DSOs.
+     * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+    const char *libname(const char *name, unsigned int api);
 
-    class dl {
 
+    class dl
+    {
     /*** constructors ***/
 
         /* empty c'tor */
@@ -127,17 +129,6 @@ GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with
     GDO_WRAP_FUNCTIONS) using this macro.
 
-
-
-*****************
-* Helper macros *
-*****************
-
-GDO_LIB(NAME, API)
-    Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
-    including double quote marks.
-    GDO_LIB(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
-
 ***/
 
 #include <iostream>
@@ -168,15 +159,42 @@ namespace gdo
         bool GDO_OBJ_SYMBOL = false;
     }
 
+    /* function pointer to error message callback */
+    void (*message_callback)(const char *) = nullptr;
+
     /* default flags */
     const int default_flags = GDO_DEFAULT_FLAGS;
 
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
-    const char * const libext = GDO_LIBEXTA;
+    const char * const libext = LIBEXTA;
 
-    /* function pointer to error message callback */
-    void (*message_callback)(const char *) = nullptr;
+
+    /* Create versioned library names for DLLs, dylibs and DSOs.
+     * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+    const char *libname(const char *name, unsigned int api)
+    {
+        static std::string s = "lib";
+        s += name;
+
+#if defined(_WIN32)
+        s += '-';
+        s += std::to_string(api);
+        s += ".dll";
+#elif defined(__APPLE__)
+        s += '.';
+        s += std::to_string(api);
+        s += ".dylib";
+#elif defined(_AIX)
+        (void)api;
+        s += ".a";
+#else /* ELF */
+        s += ".so.";
+        s += std::to_string(api);
+#endif
+
+        return s.c_str();
+    }
 
 
 /* library loader class */
@@ -740,3 +758,14 @@ public:
 }; /* end class dl */
 
 } /* namespace gdo */
+
+
+#if !defined(_GDO_WRAP_CODE_WAS_GENERATED)
+
+/* aliases to raw function pointers */
+#define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
+
+/* aliases to raw object pointers */
+#define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL
+
+#endif //!_GDO_WRAP_CODE_WAS_GENERATED

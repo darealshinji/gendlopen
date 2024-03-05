@@ -12,8 +12,8 @@ void cb(const char *msg)
 int main()
 {
     /* filename of the library we want to load;
-     * using the macro `GDO_LIB` for cross-platform compatibility */
-    const gdo_char_t *filename = GDO_LIB(helloworld,0);
+     * using the macro `LIBNAME` for cross-platform compatibility */
+    const gdo_char_t *filename = LIBNAME(helloworld,0);
 
     /* flags that will be passed to dlopen() or LoadLibraryEx() */
     int flags = GDO_DEFAULT_FLAGS;

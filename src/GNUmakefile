@@ -1,7 +1,7 @@
 ifneq ($(CLANG_CL),)
 STDCXX  := c++latest
 else
-STDCXX  := c++23
+STDCXX  := c++20
 endif
 
 include ../include.mk

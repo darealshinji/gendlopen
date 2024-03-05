@@ -34,6 +34,13 @@
 #include <strings.h>
 #endif
 
+#ifdef _MSC_VER
+#define ASSUME(x)  __assume(x)
+#else
+#define ASSUME(x)  [[assume(x)]]
+#endif
+
+
 /* typedefs */
 
 typedef struct {
@@ -97,6 +104,8 @@ inline void replace_string(const std::string &from, const std::string &to, std::
 template<typename T=char>
 inline bool range(T c, T beg, T end)
 {
+    ASSUME(beg < end);
+
     return (c >= beg && c <= end);
 }
 

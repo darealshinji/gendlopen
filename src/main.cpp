@@ -38,14 +38,14 @@ using common::replace_string;
 using common::same_string_case;
 
 
-static inline
-void error_exit(char *prog, const std::string &msg)
+[[noreturn]] static inline
+void error_exit(char * const prog, const std::string &msg)
 {
     std::cerr << msg << "\nTry `" << prog << " --help' for more information." << std::endl;
     std::exit(1);
 }
 
-static output::format str_to_enum(char *prog, const std::string &fmt)
+static output::format str_to_enum(char * const prog, const std::string &fmt)
 {
     if (same_string_case(fmt, "C++")) {
         return output::cxx;
@@ -100,14 +100,14 @@ int main(int argc, char **argv)
         Opt::Single);
 
     StrValue a_default_lib(args, "STRING",
-        "Set a default library name to load; either set the name explicitly "
-        "(i.e. libfoo.so.1) or use the format 'foo:1', which will create a "
-        "system-agnostic filename macro",
+        "Set a default library name to load; "
+        "hint: use the macro QUOTE_STRING(...) to put quotes around the library name",
         {"default-library"},
         Opt::Single);
 
     StrList a_include(args, "STRING",
-        "Header file to include (can be used multiple times)",
+        "Header file to include (can be used multiple times); "
+        "hint: use the macro QUOTE_STRING(...) to put quotes around the header name",
         {'I', "include"});
 
     StrList a_define(args, "STRING",
@@ -175,8 +175,5 @@ int main(int argc, char **argv)
     gdo.separate(a_separate);
     gdo.skip_parameter_names(a_skip_parameter_names);
 
-    /* --input --output --name */
-    gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
-
-    return 0;
+    return gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 }

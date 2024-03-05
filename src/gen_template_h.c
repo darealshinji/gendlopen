@@ -98,12 +98,12 @@ int main(int argc, char **argv)
     fprintf(fp, "%s\n\n",   "#define _TEMPLATE_H_");
 
     hexdump("license.h",    "license_data",        fp);
+    hexdump("filename_macros.h", "filename_macros_data", fp);
     hexdump("common.h",     "common_header_data",  fp);
     hexdump("c.h",          "c_header_data",       fp);
     hexdump("c.c",          "c_body_data",         fp);
     hexdump("c_wrap.c",     "c_wrap_data",         fp);
     hexdump("cxx.hpp",      "cxx_header_data",     fp);
-    hexdump("cxx2.hpp",     "cxx_header_data2",    fp);
     hexdump("cxx_wrap.hpp", "cxx_wrap_data",       fp);
     hexdump("minimal.h",    "minimal_header_data", fp);
 

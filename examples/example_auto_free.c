@@ -18,7 +18,7 @@ int main()
     /* this code is practically identical to example_1.c except
      * that there is no explicit call to gdo_free_lib() */
 
-    if (!gdo_load_lib_args(GDO_LIB(helloworld,0), GDO_DEFAULT_FLAGS, true) ||
+    if (!gdo_load_lib_args(LIBNAME(helloworld,0), GDO_DEFAULT_FLAGS, true) ||
         !gdo_load_symbols(false))
     {
         fprintf(stderr, "%s\n", gdo_last_error());

@@ -73,7 +73,7 @@ public:
     void add_inc(const std::string &s) { m_includes.push_back(s); }
 
     /* generate output */
-    void generate(const std::string &ifile, const std::string &ofile, const std::string &name);
+    int generate(const std::string &ifile, const std::string &ofile, const std::string &name);
 
 };
 

@@ -142,12 +142,12 @@ GDO_VISIBILITY
 GDO_DEFAULT_FLAGS
     Default flags for `dlopen()' or `LoadLibraryEx()'
 
-GDO_LIB(NAME, API)
+LIBNAME(NAME, API)
     Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
     including double quote marks.
-    GDO_LIB(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
+    LIBNAME(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
 
-GDO_LIBEXT
+LIBEXT
     Shared library file extension without dot ("dll", "dylib" or "so").
     Useful i.e. on plugins.
 

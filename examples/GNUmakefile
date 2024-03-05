@@ -18,7 +18,7 @@ ifneq ($(CLANG_CL),)
 BINS      += example_wide example_cxx_wide uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
-#CXXFLAGS  += -std:c++latest
+CXXFLAGS  += -std:c++latest
 LDSOFLAGS := -dll -implib:$(LIBX)
 else
 
@@ -102,12 +102,11 @@ $(LIB):
 libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 	$(AR) $(ARFLAGS) $@ $<
 
-# test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@ \
-		-I"<helloworld.h>" -I"helloworld.h" -I'"helloworld.h"' -I"'helloworld.h'" \
+		-I"<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
-		--default-library="helloworld:0"
+		--default-library="LIBNAME(helloworld,0)"
 
 # a static library replacement for libhelloworld.so
 example_helloworld_static_dl.$(OBJEXT): example_helloworld_static_dl.c
@@ -143,33 +142,6 @@ helloworld_example_nodl: helloworld_example.c
 helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
 	$(call compile_cc,helloworld_example.c,-DBUILDING_STATIC,libhelloworld_dl.$(LIBEXT))
 
-# test filename with hyphens and "--skip-parameter-names"
-appindicator: appindicator.c
-	$(call gdox,appindicator,xappindicator,'"libappindicator.so.1"',--skip-parameter-names)
-	$(call gdox,appindicator_gobject,xgobject,libgobject-2.0.so.0,)
-	$(call gdox,appindicator_gtk,xgtk,libgtk-x11-2.0.so.0,)
-	$(call compile_cc,$<,-DUSE_DLOPEN=1 -I../thirdparty `pkg-config --cflags gtk+-2.0 gobject-2.0`)
-#	$(call compile_cc,$<,-DUSE_DLOPEN=1 `pkg-config --cflags appindicator-0.1`)
-
-# test filename with colon
-notify: notify.c
-	$(call gdox,notify,xnotify,notify:4,)
-	$(call gdox,notify_gobject,xgobject,gobject-2.0:0,)
-	$(call compile_cc,$<,-DUSE_DLOPEN=1 -I../thirdparty `pkg-config --cflags gobject-2.0`)
-#	$(call compile_cc, $<,-DUSE_DLOPEN=1 `pkg-config --cflags libnotify`)
-
-uuid_nix: uuid_nix.c
-	$(CLANG) -Xclang -ast-dump -I../thirdparty/uuid $@.h | \
-	  $(PARSE_CLANG_AST) list uuid_generate_random,uuid_is_null,uuid_unparse_lower | \
-	  $(GENDLOPEN) -i- --default-library libuuid.so.1 -f -o $@_dl.h
-	$(call compile_cc,$<,-I../thirdparty/uuid)
-
-uuid_win: uuid_win.c
-	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $@.h | \
-	  $(PARSE_CLANG_AST) list UuidCreate,UuidToStringA,RpcStringFreeA | \
-	  $(GENDLOPEN) -i- --default-library rpcrt4.dll -f -o $@_dl.h
-	$(call compile_cc,$<)
-
 example_minimal.h: helloworld.txt
 	$(GENDLOPEN) --format=minimal -i $^ -f -o $@
 
@@ -178,4 +150,46 @@ example_%.h: helloworld.txt
 
 example_%.hpp: helloworld.txt
 	$(GENDLOPEN) --format=C++ -i $^ -f -o $@
+
+
+# appindicator
+
+example_appindicator.h: appindicator.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xappindicator --default-library "QUOTE_STRING(libappindicator.so.1)" --skip-parameter-names
+
+example_appindicator_gtk.h: appindicator_gtk.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgtk --default-library "QUOTE_STRING(libgtk-x11-2.0.so.0)"
+
+example_appindicator_gobject.h: appindicator_gobject.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgobject --default-library "QUOTE_STRING(libgobject-2.0.so.0)"
+
+appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h
+	$(call compile_cc,appindicator.c,-DUSE_DLOPEN=1 -I../thirdparty `pkg-config --cflags gtk+-2.0 gobject-2.0`)
+
+
+# libnotify
+
+example_notify.h: notify.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xnotify --default-library "LIBNAME(notify,4)"
+
+example_notify_gobject.h: notify_gobject.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgobject --default-library "LIBNAME(gobject-2.0,0)"
+
+notify: example_notify.h example_notify_gobject.h
+	$(call compile_cc,notify.c,-DUSE_DLOPEN=1 -I../thirdparty `pkg-config --cflags gobject-2.0`)
+
+
+# UUID
+
+uuid_nix: uuid_nix.c
+	$(CLANG) -Xclang -ast-dump -I../thirdparty/uuid $@.h | \
+	  $(PARSE_CLANG_AST) list uuid_generate_random,uuid_is_null,uuid_unparse_lower | \
+	  $(GENDLOPEN) -i- --default-library "QUOTE_STRING(libuuid.so.1)" -f -o $@_dl.h
+	$(call compile_cc,$<,-I../thirdparty/uuid)
+
+uuid_win: uuid_win.c
+	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $@.h | \
+	  $(PARSE_CLANG_AST) list UuidCreate,UuidToStringA,RpcStringFreeA | \
+	  $(GENDLOPEN) -i- --default-library rpcrt4.dll -f -o $@_dl.h
+	$(call compile_cc,$<)
 

@@ -112,6 +112,8 @@ static std::string create_note(int &argc, char ** &argv)
     out << "// It was created by gendlopen on " << std::put_time(tm, "%c %Z") << '\n';
     out << "// using the following flags:\n\n";
 
+    ASSUME(argc > 0);
+
     for (int i=1; i < argc; i++) {
         /* split long lines */
         if ((line.size() + std::strlen(argv[i]) + 3) >= 80) {
@@ -155,6 +157,7 @@ static std::string format_definitions(const std::vector<std::string> &list)
 }
 
 /* create "#include" lines */
+/*
 static std::string format_includes(const std::vector<std::string> &list)
 {
     std::stringstream out;
@@ -169,10 +172,10 @@ static std::string format_includes(const std::vector<std::string> &list)
         }
 
         if (e.front() == '<' && e.back() == '>') {
-            /* <foo.h> */
+            // <foo.h>
             out << "#include " << e << '\n';
         } else {
-            /* "foo.h" */
+            // "foo.h"
             out << "#include \"" << e << "\"\n";
         }
     }
@@ -181,40 +184,43 @@ static std::string format_includes(const std::vector<std::string> &list)
 
     return out.str();
 }
+*/
 
 /* create the default library name macro */
+/*
 static std::string format_library_name(const std::string &name, const std::string &prefix)
 {
-    std::string out =
-        "#ifndef {pfx}_DEFAULT_LIB\n"
-        "#define {pfx}_DEFAULT_LIB {lib}\n"
-        "#endif\n\n";
+    // path delimiters mean it's a path and not just a library name
+    // and commas mess up the macro
+#ifdef _WIN32
+    const char *unwanted = "\\/,";
+#else
+    const char *unwanted = "/,";
+#endif
 
-    std::stringstream lib;
-    const size_t pos = name.find(':');
+    std::stringstream lib, out;
+    std::smatch m;
 
-    if (pos != std::string::npos) {
-        /* create macro: "name:0" -> GDO_LIB(name,0) */
-        lib << prefix << "_LIB(" << name.substr(0, pos) << ','
-            << name.substr(pos+1) << ')';
+    if (std::regex_match(name, m, std::regex("(.+),(\\d+)")) &&
+        m.size() == 3 &&
+        m[1].str().find_first_of(unwanted) == std::string::npos)
+    {
+        // create macro GDO_LIB(xxx,0)
+        lib << prefix << "_LIB(" << name << ')';
     } else {
-        /* use the library name as is; add hyphens if needed */
-        if (name.front() != '"') {
-            lib << '"';
-        }
-
+        // use the library name as is; add quotation marks if needed
+        if (name.front() != '"') lib << '"';
         lib << name;
-
-        if (name.back() != '"') {
-            lib << '"';
-        }
+        if (name.back() != '"') lib << '"';
     }
 
-    replace_string("{pfx}", prefix, out);
-    replace_string("{lib}", lib.str(), out);
+    out << "#ifndef " << prefix << "_DEFAULT_LIB\n";
+    out << "#define " << prefix << "_DEFAULT_LIB " << lib.str() << "\n";
+    out << "#endif\n\n";
 
-    return out;
+    return out.str();
 }
+*/
 
 /* open file for writing */
 bool gendlopen::open_fstream(std::ofstream &ofs, const std::string &ofile)
@@ -243,43 +249,46 @@ bool gendlopen::open_fstream(std::ofstream &ofs, const std::string &ofile)
 /* create template data (concatenate) */
 void gendlopen::create_template_data(std::string &header_data, std::string &body_data)
 {
-    const char *wrap_data = "\n"
+    const char *warning = "\n"
         "#ifdef GDO_WRAP_FUNCTIONS\n"
         "#error \"GDO_WRAP_FUNCTIONS\" defined but wrapped functions were disabled by \"--skip-parameter-names\"\n"
         "#endif\n";
 
     switch (m_out)
     {
-    case output::cxx: {
-            /* header + wrap + header2 */
+    case output::cxx:
+        {
             header_data = common_header_data;
-            header_data += cxx_header_data;
 
-            if (!m_skip_parameter_names) {
-                wrap_data = cxx_wrap_data;
+            if (m_skip_parameter_names) {
+                header_data += cxx_header_data;
+                header_data += warning;
+            } else {
+                header_data += "#define _GDO_WRAP_CODE_WAS_GENERATED\n\n";
+                header_data += cxx_header_data;
+                header_data += cxx_wrap_data;
             }
-
-            header_data += wrap_data;
-            header_data += cxx_header_data2;
         }
         return;
 
-    case output::c: {
+    case output::c:
+        {
+            if (m_skip_parameter_names) {
+                body_data = c_body_data;
+                body_data += warning;
+            } else {
+                body_data = "#define _GDO_WRAP_CODE_WAS_GENERATED\n\n";
+                body_data += c_body_data;
+                body_data += c_wrap_data;
+            }
+
             header_data = common_header_data;
             header_data += c_header_data;
 
-            if (!m_skip_parameter_names) {
-                wrap_data = c_wrap_data;
-            }
-
-            if (m_separate) {
-                /* header / body + wrap */
-                body_data = c_body_data;
-                body_data += wrap_data;
-            } else {
-                /* header + body + wrap */
-                header_data += c_body_data;
-                header_data += wrap_data;
+            if (!m_separate) {
+                header_data += body_data;
+                body_data.clear();
+                body_data.shrink_to_fit();
             }
         }
         return;
@@ -293,21 +302,17 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
     common::unreachable();
 }
 
-void gendlopen::generate(
+int gendlopen::generate(
     const std::string &ifile,
     const std::string &ofile,
     const std::string &name)
 {
-    std::string header_data, body_data;
     tokenize tok;
 
     /* read data */
     if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
-        std::exit(1);
+        return 1;
     }
-
-    /* create template data */
-    create_template_data(header_data, body_data);
 
     /* output filename */
     std::filesystem::path ofhdr(ofile);
@@ -356,19 +361,19 @@ void gendlopen::generate(
     m_name_lower = convert_to_lower(name);
 
 
-    /* header data */
-
-    auto proto = tok.prototypes();
-    auto objs = tok.objects();
-    auto note = create_note(*m_argc, *m_argv);
-    std::stringstream out, out_body;
+    /************** header begin ***************/
 
     /* notification + license text */
+    std::stringstream out;
+    const auto note = create_note(*m_argc, *m_argv);
     out << note;
 
     /* header guard begin */
     out << "#ifndef _" << header_guard << "_\n";
     out << "#define _" << header_guard << "_\n\n";
+
+    /* insert filename macros before definitions and headers */
+    out << filename_macros_data << '\n';
 
     /* extra definitions */
     if (!m_definitions.empty()) {
@@ -377,12 +382,16 @@ void gendlopen::generate(
 
     /* default library name */
     if (!m_default_lib.empty()) {
-        out << format_library_name(m_default_lib, m_name_upper);
+        out << "#ifndef " << m_name_upper << "_DEFAULT_LIB\n";
+        out << "#define " << m_name_upper << "_DEFAULT_LIB " << m_default_lib << "\n";
+        out << "#endif\n\n";
     }
 
     /* extra includes */
     if (!m_includes.empty()) {
-        out << format_includes(m_includes);
+        for (const auto &e : m_includes) {
+            out << "#include " << e << '\n';
+        }
     }
 
     /* extern "C" begin */
@@ -392,7 +401,13 @@ void gendlopen::generate(
         out << "#endif\n\n";
     }
 
-    /* header code from template */
+    /* create template code */
+    std::string header_data, body_data;
+    create_template_data(header_data, body_data);
+
+    /* parse header template */
+    auto proto = tok.prototypes();
+    auto objs = tok.objects();
     out << parse(header_data, proto, objs);
 
     /* extern "C" end */
@@ -407,7 +422,11 @@ void gendlopen::generate(
     out << '\n';
     out << "#endif //_" << header_guard << "_\n";
 
+    /************** header end ***************/
+
     /* body data */
+    std::stringstream out_body;
+
     if (m_separate) {
         out_body << note;
         out_body << "#include \"" << header_name << "\"\n\n";
@@ -417,7 +436,7 @@ void gendlopen::generate(
     /* print to STDOUT (m_separate is always set false in this case) */
     if (use_stdout) {
         std::cout << out.str() << std::flush;
-        return;
+        return 0;
     }
 
     /* write to file(s) */
@@ -425,11 +444,11 @@ void gendlopen::generate(
     std::ofstream ofs, ofs_body;
 
     if (!open_fstream(ofs, ofhdr.string())) {
-        std::exit(1);
+        return 1;
     }
 
     if (m_separate && !open_fstream(ofs_body, ofbody.string())) {
-        std::exit(1);
+        return 1;
     }
 
     ofs << out.str();
@@ -439,5 +458,7 @@ void gendlopen::generate(
         ofs_body << out_body.str();
         std::cout << "saved to file: " << ofbody << std::endl;
     }
+
+    return 0;
 }
 
