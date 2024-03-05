@@ -20,6 +20,9 @@ namespace gdo
     /* Create versioned library names for DLLs, dylibs and DSOs.
      * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
     const char *libname(const char *name, unsigned int api);
+#ifdef GDO_WINAPI
+    const wchar_t *libname(const wchar_t *name, unsigned int api);
+#endif
 
 
     class dl
@@ -195,6 +198,20 @@ namespace gdo
 
         return s.c_str();
     }
+
+#ifdef GDO_WINAPI
+    const wchar_t *libname(const wchar_t *name, unsigned int api)
+    {
+        static std::wstring s = L"lib";
+
+        s += name;
+        s += L'-';
+        s += std::to_wstring(api);
+        s += L".dll";
+
+        return s.c_str();
+    }
+#endif //GDO_WINAPI
 
 
 /* library loader class */
