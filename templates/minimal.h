@@ -1,3 +1,8 @@
+/* whether to use WinAPI */
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+    #define GDO_WINAPI
+#endif
+
 #ifdef GDO_WINAPI
     #include <windows.h>
     #define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)
