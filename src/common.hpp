@@ -34,10 +34,13 @@
 #include <strings.h>
 #endif
 
-#ifdef _MSC_VER
-#define ASSUME(x)  __assume(x)
-#else
-#define ASSUME(x)  [[assume(x)]]
+/* not supported by all compilers yet */
+//#define ASSUME(x)  [[assume(x)]]        // generic C++
+//#define ASSUME(x)  [[gnu::assume(x)]]   // GNU C++
+//#define ASSUME(x)  __assume(x)          // MSVC
+//#define ASSUME(x)  __builtin_assume(x)  // Clang
+#ifndef ASSUME
+#define ASSUME(x)  /**/
 #endif
 
 
