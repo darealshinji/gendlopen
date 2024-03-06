@@ -41,7 +41,7 @@ all: $(bins) $(bins2)
 
 clean:
 	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj *.exp
-	-del /q $(genhdrs_h) $(genhdrs_hpp) uuid_*_dl.h example_helloworld_static_dl.c
+	-del /q $(genhdrs_h) $(genhdrs_hpp) uuid_*_dl.h example_helloworld_static_dl.*
 
 $(bins): $(dll)
 
@@ -55,7 +55,7 @@ libhelloworld_dl.lib: example_helloworld_static_dl.obj
 
 # test different ways to add an include header line
 example_helloworld_static_dl.c: helloworld.txt
-	$(gendlopen) -i $** -f -o $@ \
+	$(gendlopen) -i $** -f -o $@ --separate \
 		-I"<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="LIBNAME(helloworld,0)"

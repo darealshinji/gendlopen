@@ -75,7 +75,7 @@ clean:
 	-rm -f $(BINS) notify appindicator uuid_nix
 	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
 	-rm -f example_*.h example_*.hpp
-	-rm -f uuid_*_dl.h example_helloworld_static_dl.c
+	-rm -f uuid_*_dl.h example_helloworld_static_dl.*
 
 run_tests: $(BINS)
 	@for f in $^; do \
@@ -103,7 +103,7 @@ libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 	$(AR) $(ARFLAGS) $@ $<
 
 example_helloworld_static_dl.c: helloworld.txt
-	$(GENDLOPEN) -i $^ -f -o $@ \
+	$(GENDLOPEN) -i $^ -f -o $@ --separate \
 		-I"<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
 		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
 		--default-library="LIBNAME(helloworld,0)"
