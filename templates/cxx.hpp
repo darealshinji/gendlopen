@@ -423,17 +423,10 @@ private:
     std::basic_string<T> get_origin_from_module_handle()
     {
         DWORD len = 260; /* MAX_PATH */
-        std::basic_string<T> str;
-        T *buf = reinterpret_cast<T*>(::malloc(len * sizeof(T)));
+        std::basic_string<T> buf(len, 0);
 
-        if (!buf) {
+        if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
             save_error();
-            return {};
-        }
-
-        if (get_module_filename(m_handle, buf, len-1) == 0) {
-            save_error();
-            ::free(buf);
             return {};
         }
 
@@ -442,28 +435,24 @@ private:
          * it's practically still stuck at the old MAX_PATH value */
         if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
             len = 32*1024;
-            buf = reinterpret_cast<T*>(realloc(buf, len * sizeof(T)));
+            buf.reserve(len);
 
-            if (get_module_filename(m_handle, buf, len-1) == 0) {
+            if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
                 save_error();
-                ::free(buf);
                 return {};
             }
         }
 
-        str = buf;
-        ::free(buf);
-
-        return str;
+        return buf;
     }
 
 
-    inline DWORD format_message(DWORD flags, LPWSTR buf) {
-        return ::FormatMessageW(flags, NULL, m_last_error, 0, buf, 0, NULL);
+    inline DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {
+        return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);
     }
 
-    inline DWORD format_message(DWORD flags, LPSTR buf) {
-        return ::FormatMessageA(flags, NULL, m_last_error, 0, buf, 0, NULL);
+    inline DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {
+        return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);
     }
 
 
@@ -474,10 +463,11 @@ private:
         std::basic_string<T> str;
         T *buf = NULL;
 
-        format_message(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM |
-                        FORMAT_MESSAGE_MAX_WIDTH_MASK,
-                    reinterpret_cast<T*>(&buf));
+        const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                            FORMAT_MESSAGE_FROM_SYSTEM |
+                            FORMAT_MESSAGE_MAX_WIDTH_MASK;
+
+        format_message(flags, m_last_error, reinterpret_cast<T*>(&buf));
 
         if (buf) {
             str = buf;

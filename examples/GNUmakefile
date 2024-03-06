@@ -15,7 +15,8 @@ BINS = \
 
 ifneq ($(CLANG_CL),)
 # clang-cl
-BINS      += example_wide example_cxx_wide uuid_win
+BINS      += example_wide example_cxx_wide
+BINS2     := uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
 CXXFLAGS  += -std:c++latest
@@ -24,7 +25,8 @@ else
 
 ifneq ($(shell echo $(CXX) | grep mingw),)
 # MinGW
-BINS      += example_wide example_cxx_wide uuid_win
+BINS      += example_wide example_cxx_wide
+BINS2     := uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.dll.a
 CFLAGS    += -Wno-cast-function-type
