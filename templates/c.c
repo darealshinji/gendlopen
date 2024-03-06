@@ -5,6 +5,7 @@
 #ifdef GDO_WINAPI
     #include <tchar.h>
 #endif
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,12 +20,12 @@ GDO_LINKAGE void gdo_call_free_lib(void);
 GDO_LINKAGE void gdo_register_free_lib(void);
 GDO_LINKAGE void gdo_clear_errbuf(void);
 
-GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
-
 #ifdef GDO_WINAPI
-    #define GDO_SYM(a, b)  gdo_sym(a, _T(a), b)
+GDO_LINKAGE FARPROC gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
+#define _gdo_sym(a, b)  gdo_sym(a, _T(a), b)
 #else
-    #define GDO_SYM(a, b)  gdo_sym(a, NULL, b)
+GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv);
+#define _gdo_sym(a, b)  gdo_sym(a, b)
 #endif
 
 
@@ -55,13 +56,14 @@ typedef struct
 GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 
 
+
 /*****************************************************************************/
 /*                                save error                                 */
 /*****************************************************************************/
 #ifdef GDO_WINAPI
 /* Save the last system error code. A message for additional information
  * can be provided too. */
-GDO_LINKAGE void gdo_save_error(const gdo_char_t *msg)
+GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
 {
     gdo_clear_errbuf();
     gdo_hndl.last_errno = GetLastError();
@@ -72,7 +74,7 @@ GDO_LINKAGE void gdo_save_error(const gdo_char_t *msg)
 }
 #else
 /* Save the last message provided by dlerror() */
-GDO_LINKAGE void gdo_save_dl_error(void)
+GDO_LINKAGE void gdo_save_dlerror(void)
 {
     gdo_clear_errbuf();
     const char *ptr = dlerror();
@@ -162,7 +164,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
     gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
 
     if (!gdo_lib_is_loaded()) {
-        gdo_save_error(filename);
+        gdo_save_GetLastError(filename);
         return false;
     }
 
@@ -185,7 +187,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 
     /* check if dl(m)open() was successful */
     if (!gdo_lib_is_loaded()) {
-        gdo_save_dl_error();
+        gdo_save_dlerror();
         return false;
     }
 
@@ -249,12 +251,12 @@ GDO_LINKAGE bool gdo_free_lib(void)
 
 #ifdef GDO_WINAPI
     if (FreeLibrary(gdo_hndl.handle) == FALSE) {
-        gdo_save_error(_T("FreeLibrary()"));
+        gdo_save_GetLastError(_T("FreeLibrary()"));
         return false;
     }
 #else
     if (dlclose(gdo_hndl.handle) != 0) {
-        gdo_save_dl_error();
+        gdo_save_dlerror();
         return false;
     }
 #endif
@@ -322,14 +324,14 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     /* GDO_SYMBOL */@
     gdo_hndl.GDO_SYMBOL_ptr_ = @
         (GDO_TYPE (*)(GDO_ARGS))@
-            GDO_SYM("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
+            _gdo_sym("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
     if (!gdo_hndl.GDO_SYMBOL_loaded_ && !ignore_errors) {@
         return false;@
     }
 @
     /* GDO_OBJ_SYMBOL */@
     gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-            GDO_SYM("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
+            _gdo_sym("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
     if (!gdo_hndl.GDO_OBJ_SYMBOL_loaded_ && !ignore_errors) {@
         return false;@
     }
@@ -339,20 +341,31 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     return gdo_symbols_loaded();
 }
 
-GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
+#ifdef GDO_WINAPI
+
+GDO_LINKAGE FARPROC gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 {
     *rv = false;
 
-#ifdef GDO_WINAPI
-    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
+    FARPROC ptr = GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
-        gdo_save_error(msg);
+        gdo_save_GetLastError(msg);
         return NULL;
     }
+
+    *rv = true;
+    return ptr;
+}
+
 #else //!GDO_WINAPI
-    (void)msg; /* unused */
-    (void)dlerror(); /* clear buffer */
+
+GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv)
+{
+    *rv = false;
+
+    /* clear buffer */
+    (void)dlerror();
 
     void *ptr = dlsym(gdo_hndl.handle, symbol);
 
@@ -362,16 +375,17 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 
     if (err) {
         /* must save our error message manually instead of
-         * invoking gdo_save_dl_error() */
+         * invoking gdo_save_dlerror() */
         gdo_clear_errbuf();
         snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, "%s", err);
         return NULL;
     }
-#endif //!GDO_WINAPI
 
     *rv = true;
     return ptr;
 }
+
+#endif //!GDO_WINAPI
 /*****************************************************************************/
 
 
@@ -402,14 +416,14 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
     if (strcmp("GDO_SYMBOL", symbol) == 0) {@
         gdo_hndl.GDO_SYMBOL_ptr_ =@
             (GDO_TYPE (*)(GDO_ARGS))@
-                GDO_SYM("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
+                _gdo_sym("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
         return gdo_hndl.GDO_SYMBOL_loaded_;@
     }
 @
     /* GDO_OBJ_SYMBOL */@
     if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
         gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-                GDO_SYM("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
+                _gdo_sym("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
         return gdo_hndl.GDO_OBJ_SYMBOL_loaded_;@
     }
 
@@ -488,15 +502,11 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
     /* allocate enough space */
     origin = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
-
-    if (!origin) {
-        gdo_save_error(_T("malloc"));
-        return NULL;
-    }
+    assert(origin != NULL);
 
     /* receive path from handle */
     if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {
-        gdo_save_error(_T("GetModuleFileName"));
+        gdo_save_GetLastError(_T("GetModuleFileName"));
         free(origin);
         return NULL;
     }
@@ -507,9 +517,10 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
         len = 32*1024;
         origin = (gdo_char_t *)realloc(origin, len * sizeof(gdo_char_t));
+        assert(origin != NULL);
 
         if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {
-            gdo_save_error(_T("GetModuleFileName"));
+            gdo_save_GetLastError(_T("GetModuleFileName"));
             free(origin);
             return NULL;
         }
@@ -525,7 +536,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     } else if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         /* dlinfo() failed */
-        gdo_save_dl_error();
+        gdo_save_dlerror();
         return NULL;
     }
 
@@ -569,8 +580,8 @@ GDO_LINKAGE wchar_t *gdo_convert_str_to_wcs(const char *str)
         return NULL;
     }
 
-    buf = malloc((len + 1) * sizeof(wchar_t));
-    if (!buf) return NULL;
+    buf = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
+    assert(buf != NULL);
 
     if (mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
         free(buf);
@@ -602,7 +613,8 @@ GDO_LINKAGE void gdo_win32_show_last_error_in_messagebox(const char *function, c
 
     /* allocate message buffer */
     const size_t len = _tcslen(fmt) + _tcslen(pfunc) + _tcslen(symbol) + _tcslen(err);
-    gdo_char_t *buf = malloc((len + 1) * sizeof(gdo_char_t));
+    gdo_char_t *buf = (gdo_char_t *)malloc((len + 1) * sizeof(gdo_char_t));
+    assert(buf != NULL);
 
     /* save message to buffer */
     _sntprintf_s(buf, len, _TRUNCATE, fmt, pfunc, symbol, err);
