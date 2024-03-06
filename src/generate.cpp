@@ -38,6 +38,7 @@
 #include <ctime>
 
 #include "template.h"
+#include "generate.hpp"
 #include "gendlopen.hpp"
 
 using common::range;
@@ -89,7 +90,7 @@ inline static tm *create_localtime()
 	auto ptr = &buf;
 
 	errno_t err = ::localtime_s(ptr, &t);
-	assert("localtime_s()" && err == 0);
+	assert((void)"localtime_s()" && err == 0);
 	(void)err;
 #else
 	auto ptr = std::localtime(&t);
@@ -223,10 +224,11 @@ static std::string format_library_name(const std::string &name, const std::strin
 */
 
 /* open file for writing */
-bool gendlopen::open_fstream(std::ofstream &ofs, const std::string &ofile)
+bool gendlopen::open_fstream(cout_ofstream &ofs, const std::string &ofile)
 {
-    if (!m_force) {
-        ofs.open(ofile.c_str(), std::ios::in);
+    /* check if file already exists by opening it for reading */
+    if (!m_force && ofile != "-") {
+        ofs.open(ofile, std::ios::in);
 
         if (ofs.is_open()) {
             std::cerr << "error: file already exists: " << ofile << std::endl;
@@ -236,7 +238,8 @@ bool gendlopen::open_fstream(std::ofstream &ofs, const std::string &ofile)
         ofs.close();
     }
 
-    ofs.open(ofile.c_str(), std::ios::out | std::ios::trunc);
+    /* open file for writing and truncate it */
+    ofs.open(ofile, std::ios::out | std::ios::trunc);
 
     if (!ofs.is_open()) {
         std::cerr << "error: failed to open file for writing: " << ofile << std::endl;
@@ -343,8 +346,14 @@ int gendlopen::generate(
 
     /************** header begin ***************/
 
+    /* open file */
+    cout_ofstream out;
+
+    if (!open_fstream(out, ofhdr.string())) {
+        return 1;
+    }
+
     /* notification + license text */
-    std::stringstream out;
     const auto note = create_note(*m_argc, *m_argv);
     out << note;
 
@@ -403,45 +412,31 @@ int gendlopen::generate(
     out << '\n';
     out << "#endif //_" << header_guard << "_\n";
 
-    /* print to STDOUT */
-    if (use_stdout) {
-        std::cout << out.str() << std::flush;
-        return 0;
+    if (!use_stdout) {
+        std::cout << "saved to file: " << ofhdr << std::endl;
     }
-
-    /* write to file */
-
-    std::ofstream ofs;
-
-    if (!open_fstream(ofs, ofhdr.string())) {
-        return 1;
-    }
-
-    ofs << out.str();
-    ofs.close();
-    std::cout << "saved to file: " << ofhdr << std::endl;
 
     if (!m_separate) {
         return 0;
     }
+
+    out.close();
 
     /************** header end ***************/
 
 
     /* body data */
 
-    std::stringstream out_body;
-    std::ofstream ofs_body;
+    cout_ofstream out_body;
+
+    if (!open_fstream(out_body, ofbody.string())) {
+        return 1;
+    }
 
     out_body << note;
     out_body << "#include \"" << header_name << "\"\n\n";
     out_body << parse(body_data, proto, objs);
 
-    if (!open_fstream(ofs_body, ofbody.string())) {
-        return 1;
-    }
-
-    ofs_body << out_body.str();
     std::cout << "saved to file: " << ofbody << std::endl;
 
     return 0;
