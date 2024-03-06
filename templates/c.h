@@ -188,12 +188,12 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
 
-#if !defined(GDO_WRAP_FUNCTIONS)
+#if !defined(_GDO_HAS_WRAP_CODE) || !defined(GDO_WRAP_FUNCTIONS)
 
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo_hndl.GDO_SYMBOL_ptr_
 
-#endif //!GDO_WRAP_FUNCTIONS
+#endif // !_GDO_HAS_WRAP_CODE || !GDO_WRAP_FUNCTIONS
 
 
 /* aliases to raw object pointers */

@@ -249,52 +249,41 @@ bool gendlopen::open_fstream(std::ofstream &ofs, const std::string &ofile)
 /* create template data (concatenate) */
 void gendlopen::create_template_data(std::string &header_data, std::string &body_data)
 {
-    const char *warning = "\n"
-        "#ifdef GDO_WRAP_FUNCTIONS\n"
-        "#error \"GDO_WRAP_FUNCTIONS\" defined but wrapped functions were disabled by \"--skip-parameter-names\"\n"
-        "#endif\n";
+    const char *macro;
+
+    if (m_skip_parameter_names) {
+        macro = "/* wrap code disabled */\n"
+                "//#define _GDO_HAS_WRAP_CODE\n\n";
+    } else {
+        macro = "/* wrap code enabled */\n"
+                "#define _GDO_HAS_WRAP_CODE\n\n";
+    }
 
     switch (m_out)
     {
     case output::cxx:
         {
-            header_data = common_header_data;
-
-            if (m_skip_parameter_names) {
-                header_data += cxx_header_data;
-                header_data += warning;
-            } else {
-                header_data += "#define _GDO_WRAP_CODE_WAS_GENERATED\n\n";
-                header_data += cxx_header_data;
-                header_data += cxx_wrap_data;
-            }
+            header_data = macro;
+            header_data += common_header_data;
+            header_data += cxx_header_data;
         }
         return;
 
     case output::c:
         {
-            if (m_skip_parameter_names) {
-                body_data = c_body_data;
-                body_data += warning;
-            } else {
-                body_data = "#define _GDO_WRAP_CODE_WAS_GENERATED\n\n";
-                body_data += c_body_data;
-                body_data += c_wrap_data;
-            }
-
-            header_data = common_header_data;
+            header_data = macro;
+            header_data += common_header_data;
             header_data += c_header_data;
 
-            if (!m_separate) {
-                header_data += body_data;
-                body_data.clear();
-                body_data.shrink_to_fit();
+            if (m_separate) {
+                body_data = c_body_data;
+            } else {
+                header_data += c_body_data;
             }
         }
         return;
 
     case output::minimal:
-        /* minimal header */
         header_data = minimal_header_data;
         return;
     }
@@ -317,8 +306,8 @@ int gendlopen::generate(
     /* output filename */
     std::filesystem::path ofhdr(ofile);
     auto ofbody = ofhdr;
-    bool use_stdout = (ofile == "-");
-    bool is_c = (m_out != output::cxx);
+    const bool use_stdout = (ofile == "-");
+    const bool is_c = (m_out != output::cxx);
 
     if (use_stdout) {
         m_separate = false;
@@ -327,16 +316,10 @@ int gendlopen::generate(
     /* rename file extensions only if we save into separate files */
     if (m_separate) {
         if (is_c) {
-            /* C */
             ofhdr.replace_extension(".h");
             ofbody.replace_extension(".c");
         } else {
-            /* C++ */
-            auto ext = ofhdr.extension();
-
-            if (ext.empty() || (ext != ".h" && ext != ".H" && ext != ".hpp" && ext != ".hxx")) {
-                ofhdr.replace_extension(".hpp");
-            }
+            ofhdr.replace_extension(".hpp");
             ofbody.replace_extension(".cpp");
         }
     }
@@ -345,11 +328,8 @@ int gendlopen::generate(
     std::string header_name;
 
     if (use_stdout) {
-        header_name = name + ".h";
-
-        if (!is_c) {
-            header_name += "pp";
-        }
+        header_name = name;
+        header_name += is_c ? ".h" : ".hpp";
     } else {
         header_name = ofhdr.filename().string();
     }
@@ -392,6 +372,7 @@ int gendlopen::generate(
         for (const auto &e : m_includes) {
             out << "#include " << e << '\n';
         }
+        out << '\n';
     }
 
     /* extern "C" begin */
@@ -422,42 +403,46 @@ int gendlopen::generate(
     out << '\n';
     out << "#endif //_" << header_guard << "_\n";
 
-    /************** header end ***************/
-
-    /* body data */
-    std::stringstream out_body;
-
-    if (m_separate) {
-        out_body << note;
-        out_body << "#include \"" << header_name << "\"\n\n";
-        out_body << parse(body_data, proto, objs);
-    }
-
-    /* print to STDOUT (m_separate is always set false in this case) */
+    /* print to STDOUT */
     if (use_stdout) {
         std::cout << out.str() << std::flush;
         return 0;
     }
 
-    /* write to file(s) */
+    /* write to file */
 
-    std::ofstream ofs, ofs_body;
+    std::ofstream ofs;
 
     if (!open_fstream(ofs, ofhdr.string())) {
         return 1;
     }
 
-    if (m_separate && !open_fstream(ofs_body, ofbody.string())) {
+    ofs << out.str();
+    ofs.close();
+    std::cout << "saved to file: " << ofhdr << std::endl;
+
+    if (!m_separate) {
+        return 0;
+    }
+
+    /************** header end ***************/
+
+
+    /* body data */
+
+    std::stringstream out_body;
+    std::ofstream ofs_body;
+
+    out_body << note;
+    out_body << "#include \"" << header_name << "\"\n\n";
+    out_body << parse(body_data, proto, objs);
+
+    if (!open_fstream(ofs_body, ofbody.string())) {
         return 1;
     }
 
-    ofs << out.str();
-    std::cout << "saved to file: " << ofhdr << std::endl;
-
-    if (ofs_body.is_open()) {
-        ofs_body << out_body.str();
-        std::cout << "saved to file: " << ofbody << std::endl;
-    }
+    ofs_body << out_body.str();
+    std::cout << "saved to file: " << ofbody << std::endl;
 
     return 0;
 }

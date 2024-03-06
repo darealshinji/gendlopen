@@ -14,6 +14,7 @@
 #endif
 
 
+/* forward declarations */
 GDO_LINKAGE void gdo_call_free_lib(void);
 GDO_LINKAGE void gdo_register_free_lib(void);
 GDO_LINKAGE void gdo_clear_errbuf(void);
@@ -54,10 +55,9 @@ typedef struct
 GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 
 
-
-/***************************************************************************/
-/* save error */
-/***************************************************************************/
+/*****************************************************************************/
+/*                                save error                                 */
+/*****************************************************************************/
 #ifdef GDO_WINAPI
 /* Save the last system error code. A message for additional information
  * can be provided too. */
@@ -102,26 +102,26 @@ GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
         strcpy(gdo_hndl.buf, "no library was loaded");
 #endif
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* load default library with default flags */
-/***************************************************************************/
+/*****************************************************************************/
+/*                load default library with default flags                    */
+/*****************************************************************************/
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib(void)
 {
     return gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false);
 }
 #endif
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* load default library with default flags and load the symbols */
-/***************************************************************************/
+/*****************************************************************************/
+/*       load default library with default flags and load the symbols        */
+/*****************************************************************************/
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
 {
@@ -129,24 +129,24 @@ GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
         gdo_load_symbols(false));
 }
 #endif
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* load library by filename with default flags */
-/***************************************************************************/
+/*****************************************************************************/
+/*            load library by filename with default flags                    */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)
 {
     return gdo_load_lib_args(filename, GDO_DEFAULT_FLAGS, false);
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* load the library */
-/***************************************************************************/
+/*****************************************************************************/
+/*                          load the library                                 */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace)
 {
     gdo_clear_errbuf();
@@ -221,24 +221,23 @@ GDO_LINKAGE void gdo_call_free_lib(void)
 #endif
     }
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
-
-/***************************************************************************/
-/* whether the library is currently loaded */
-/***************************************************************************/
+/*****************************************************************************/
+/*                whether the library is currently loaded                    */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_lib_is_loaded(void)
 {
     return (gdo_hndl.handle != NULL);
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* Free the library handle and set pointers to NULL */
-/***************************************************************************/
+/*****************************************************************************/
+/*          Free the library handle and set pointers to NULL                 */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_free_lib(void)
 {
     gdo_clear_errbuf();
@@ -271,13 +270,13 @@ GDO_LINKAGE bool gdo_free_lib(void)
 
     return true;
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* check if all symbols are loaded */
-/***************************************************************************/
+/*****************************************************************************/
+/*                    check if all symbols are loaded                        */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_symbols_loaded(void)
 {
     if (true
@@ -289,13 +288,13 @@ GDO_LINKAGE bool gdo_symbols_loaded(void)
 
     return false;
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* load all symbols; can safely be called multiple times. */
-/***************************************************************************/
+/*****************************************************************************/
+/*          load all symbols; can safely be called multiple times            */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 {
     gdo_clear_errbuf();
@@ -373,15 +372,16 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
     *rv = true;
     return ptr;
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* load a specific symbol;
- * The main intention is to check if a certain symbol is present in a library
- * so you can conditionally enable or disable features in your program. */
-/***************************************************************************/
+/*****************************************************************************/
+/*                        load a specific symbol                             */
+/*                                                                           */
+/* The main intention is to check if a certain symbol is present in a        */
+/* library so that you can conditionally enable or disable features.         */
+/*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 {
     gdo_clear_errbuf();
@@ -415,14 +415,15 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 
     return false;
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* retrieve the last saved error message (can be an empty buffer);
- * On Windows the message will be generated from an error code. */
-/***************************************************************************/
+/*****************************************************************************/
+/* retrieve the last saved error message (can be an empty buffer)            */
+/*                                                                           */
+/* For WinAPI the message will be generated from an error code.              */
+/*****************************************************************************/
 GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 {
 #ifdef GDO_WINAPI
@@ -462,14 +463,15 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     return gdo_hndl.buf;
 #endif //GDO_WINAPI
 }
-/***************************************************************************/
+/*****************************************************************************/
 
 
 
-/***************************************************************************/
-/* get the full library path;
- * Result must be deallocated with free(), returns NULL on error. */
-/***************************************************************************/
+/*****************************************************************************/
+/*                       get the full library path                           */
+/*                                                                           */
+/* Result must be deallocated with free(), returns NULL on error.            */
+/*****************************************************************************/
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 {
     gdo_clear_errbuf();
@@ -535,4 +537,146 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
     return NULL;
 }
-/***************************************************************************/
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+/*                                wrap code                                  */
+/*****************************************************************************/
+#ifdef _GDO_HAS_WRAP_CODE
+
+/* autoload functions */
+#ifdef GDO_ENABLE_AUTOLOAD
+
+#if !defined(GDO_DEFAULT_LIB)
+#error "You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD"
+#endif
+
+
+#ifdef _WIN32 // not GDO_WINAPI !!
+
+#ifdef _UNICODE
+/* convert narrow to wide characters */
+GDO_LINKAGE wchar_t *gdo_convert_str_to_wcs(const char *str)
+{
+    size_t len, n;
+    wchar_t *buf;
+
+    if (!str) return NULL;
+
+    if (mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+        return NULL;
+    }
+
+    buf = malloc((len + 1) * sizeof(wchar_t));
+    if (!buf) return NULL;
+
+    if (mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
+        free(buf);
+        return NULL;
+    }
+
+    buf[len] = L'\0';
+
+    return buf;
+}
+#endif //_UNICODE
+
+#ifdef GDO_USE_MESSAGE_BOX
+/* Windows: show message in a MessageBox window */
+GDO_LINKAGE void gdo_win32_show_last_error_in_messagebox(const char *function, const gdo_char_t *symbol)
+{
+    const gdo_char_t *err = gdo_last_error();
+    const gdo_char_t *pfunc;
+    /* double newline at end */
+    const gdo_char_t *fmt = _T("error in wrapper function `%s' for symbol `%s':\n\n%s");
+
+#ifdef _UNICODE
+    /* convert function name to wide characters
+     * (we cannot receive the function name in a wide character format) */
+    pfunc = gdo_convert_str_to_wcs(function);
+#else
+    pfunc = function;
+#endif //_UNICODE
+
+    /* allocate message buffer */
+    const size_t len = _tcslen(fmt) + _tcslen(pfunc) + _tcslen(symbol) + _tcslen(err);
+    gdo_char_t *buf = malloc((len + 1) * sizeof(gdo_char_t));
+
+    /* save message to buffer */
+    _sntprintf_s(buf, len, _TRUNCATE, fmt, pfunc, symbol, err);
+
+    /* show message */
+    MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
+
+    /* free buffers */
+#ifdef _UNICODE
+    free((gdo_char_t *)pfunc);
+#endif
+    free(buf);
+}
+#endif //GDO_USE_MESSAGE_BOX
+
+#endif //_WIN32
+
+
+/* This function is used by the wrapper functions to perform the loading
+ * and handle errors. */
+GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
+{
+    /* load library + symbols and return if successful */
+    if (gdo_load_lib_and_symbols()) {
+        return;
+    }
+
+    /* load library (new namespace) + symbols and return if successful */
+/*
+    if (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, true) &&
+        gdo_load_symbols(false))
+    {
+        return;
+    }
+*/
+
+    /* an error has occured: display an error message */
+
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+    gdo_win32_show_last_error_in_messagebox(function, symbol);
+#elif defined(_WIN32) && defined(_UNICODE)
+    /* Windows: output to console (wide characters) */
+    fwprintf(stderr, L"error in wrapper function `%hs' for symbol `%ls':\n%ls\n",
+        function, symbol, gdo_last_error());
+#else
+    /* default: UTF-8 output to console (any operating system) */
+    fprintf(stderr, "error in wrapper function `%s' for symbol `%s':\n%s\n",
+        function, symbol, gdo_last_error());
+#endif //_WIN32 && GDO_USE_MESSAGE_BOX
+
+    /* free library handle and exit */
+    gdo_free_lib();
+    exit(1);
+}
+
+#else //!GDO_ENABLE_AUTOLOAD
+
+#define gdo_quick_load(a,b)  /**/
+
+#endif //!GDO_ENABLE_AUTOLOAD
+/*****************************************************************************/
+
+
+/* wrapped functions */
+
+#ifdef GDO_WRAP_FUNCTIONS
+@
+GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+    gdo_quick_load(__FUNCTION__, _T("GDO_SYMBOL"));@
+    GDO_RET gdo_hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
+}
+
+#endif //GDO_WRAP_FUNCTIONS
+
+
+#endif //_GDO_HAS_WRAP_CODE
+/***************************** end of wrap code ******************************/

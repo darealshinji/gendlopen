@@ -44,7 +44,7 @@ static void hexdump(const char *in, const char *varName, FILE *fpOut)
 
     if ((fp = fopen(in, "rb")) == NULL) {
         perror("fopen()");
-        fprintf(stderr, "(%s)\n", in);
+        fprintf(stderr, "-> %s\n", in);
         exit(1);
     }
 
@@ -94,20 +94,18 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    fprintf(fp, "%s\n",     "#ifndef _TEMPLATE_H_");
-    fprintf(fp, "%s\n\n",   "#define _TEMPLATE_H_");
+    fprintf(fp, "%s\n", "#ifndef _TEMPLATE_H_");
+    fprintf(fp, "%s\n", "#define _TEMPLATE_H_\n");
 
-    hexdump("license.h",    "license_data",        fp);
     hexdump("filename_macros.h", "filename_macros_data", fp);
-    hexdump("common.h",     "common_header_data",  fp);
-    hexdump("c.h",          "c_header_data",       fp);
-    hexdump("c.c",          "c_body_data",         fp);
-    hexdump("c_wrap.c",     "c_wrap_data",         fp);
-    hexdump("cxx.hpp",      "cxx_header_data",     fp);
-    hexdump("cxx_wrap.hpp", "cxx_wrap_data",       fp);
-    hexdump("minimal.h",    "minimal_header_data", fp);
+    hexdump("license.h",         "license_data",         fp);
+    hexdump("common.h",          "common_header_data",   fp);
+    hexdump("c.h",               "c_header_data",        fp);
+    hexdump("c.c",               "c_body_data",          fp);
+    hexdump("cxx.hpp",           "cxx_header_data",      fp);
+    hexdump("minimal.h",         "minimal_header_data",  fp);
 
-    fprintf(fp, "%s\n",     "#endif //_TEMPLATE_H_");
+    fprintf(fp, "%s\n", "#endif //_TEMPLATE_H_");
 
     //printf("data written to `%s'\n", out);
     fclose(fp);
