@@ -29,7 +29,7 @@ int main()
     gdo::message_callback = print_error;
 
     auto cb = [] (const char *msg) {
-        std::cout << msg << std::endl;
+        std::cout << "Custom callback >>> " << msg << std::endl;
     };
 
     helloworld *hw = helloworld_init();

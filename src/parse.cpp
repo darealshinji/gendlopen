@@ -145,7 +145,8 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
 
         if (has_func && has_obj) {
             /* error */
-            std::cerr << "error: cannot use function and object prototypes in the same line" << std::endl;
+            std::cerr << "error: cannot use function and object prototypes in the same line(s):\n";
+            std::cerr << line << std::endl;
             std::exit(1);
         } else if (has_func) {
             /* function prototypes */

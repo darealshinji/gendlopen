@@ -30,33 +30,6 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv);
 
 
 
-/* Our library and symbols handle */
-typedef struct
-{
-#ifdef GDO_WINAPI
-    HMODULE handle;
-    DWORD last_errno;
-    /* FormatMessage: according to MSDN the maximum is either 64k or 128k */
-    gdo_char_t buf_formatted[64*1024];
-#else
-    void *handle;
-#endif
-    bool call_free_lib_is_registered;
-    gdo_char_t buf[4096];
-
-    /* symbols */
-    GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
-    GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
-
-    bool GDO_SYMBOL_loaded_;
-    bool GDO_OBJ_SYMBOL_loaded_;
-
-} gdo_handle_t;
-
-GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
-
-
-
 /*****************************************************************************/
 /*                                save error                                 */
 /*****************************************************************************/
@@ -678,7 +651,8 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 /*****************************************************************************/
 
 
-/* wrapped functions */
+/* wrapped functions
+ * (creating wrapped symbols doesn't work well with pointers to objects) */
 
 #ifdef GDO_WRAP_FUNCTIONS
 @

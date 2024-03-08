@@ -175,6 +175,32 @@ typedef char gdo_char_t;
 #endif
 
 
+/* Our library and symbols handle */
+typedef struct
+{
+#ifdef GDO_WINAPI
+    HMODULE handle;
+    DWORD last_errno;
+    /* FormatMessage: according to MSDN the maximum is either 64k or 128k */
+    gdo_char_t buf_formatted[64*1024];
+#else
+    void *handle;
+#endif
+    bool call_free_lib_is_registered;
+    gdo_char_t buf[4096];
+
+    /* symbols */
+    GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
+    GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
+
+    bool GDO_SYMBOL_loaded_;
+    bool GDO_OBJ_SYMBOL_loaded_;
+
+} gdo_handle_t;
+
+
+GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
+
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib(void);
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void);
@@ -186,6 +212,7 @@ GDO_LINKAGE bool gdo_free_lib(void);
 GDO_LINKAGE bool gdo_lib_is_loaded(void);
 GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
+
 
 
 #if !defined(_GDO_HAS_WRAP_CODE) || !defined(GDO_WRAP_FUNCTIONS)

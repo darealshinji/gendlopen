@@ -29,8 +29,10 @@ void helloworld_hello(helloworld *hw)
 void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
 {
     if (hw && helloworld_cb) {
-        memcpy(hw->str, "hello world\0", 13);
+        memcpy(hw->str, "hello world\0", 12);
         helloworld_cb(hw->str);
+    } else {
+        fprintf(stderr, "helloworld_cb == NULL\n");
     }
 }
 

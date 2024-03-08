@@ -836,7 +836,8 @@ public:
     } /* anonymous namespace */
 
 
-    /* wrapped functions */
+    /* wrapped functions
+     * (creating wrapped symbols doesn't work well with pointers to objects) */
     namespace wrapped
     {
         GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
@@ -850,7 +851,7 @@ public:
 #endif //_GDO_HAS_WRAP_CODE
 /***************************** end of wrap code ******************************/
 
-}
+} /* namespace gdo */
 /***************************** end of namespace ******************************/
 
 
