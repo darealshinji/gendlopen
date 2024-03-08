@@ -115,3 +115,5 @@ Links
 -----
 
 A similar albeit less portable approach is the project [dynload-wrapper](https://github.com/hpvb/dynload-wrapper).
+
+If you want to use `dlopen()` on Windows try [dlfcn-win32](https://github.com/dlfcn-win32/dlfcn-win32).
