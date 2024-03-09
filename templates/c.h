@@ -193,7 +193,7 @@ typedef struct
     void *handle;
 #endif
     bool call_free_lib_is_registered;
-    gdo_char_t buf[4096];
+    gdo_char_t buf[8*1024];
 
     /* symbols */
     GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
