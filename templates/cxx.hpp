@@ -384,36 +384,48 @@ private:
 
 
     /* load symbol address */
-    template<typename T>
-    bool sym(T &ptr, const char *symbol)
-    {
 #ifdef GDO_WINAPI
-        ptr = reinterpret_cast<T>(::GetProcAddress(m_handle, symbol));
+    FARPROC sym(const char *symbol, bool &rv)
+    {
+        clear_error();
+
+        FARPROC ptr = ::GetProcAddress(m_handle, symbol);
 
         if (!ptr) {
             save_error(symbol);
-            return false;
+            rv = false;
+            return nullptr;
         }
+
+        rv = true;
+        return ptr;
+    }
 #else
-        ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
+    void *sym(const char *symbol, bool &rv)
+    {
+        clear_error();
+
+        void *ptr = ::dlsym(m_handle, symbol);
 
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
-        const char *errptr = ::dlerror();
+        if (!ptr) {
+            const char *err = ::dlerror();
 
-        if (errptr) {
-            /* save error message */
-            m_errmsg = errptr;
-
-            /* clear error */
-            ::dlerror();
-
-            return false;
+            if (err) {
+                /* must save our error message manually instead of
+                 * invoking save_error() */
+                m_errmsg = err;
+                ::dlerror();  /* clear error */
+                rv = false;
+                return nullptr;
+            }
         }
-#endif
 
-        return true;
+        rv = true;
+        return ptr;
     }
+#endif //GDO_WINAPI
 
 
 #ifdef GDO_WINAPI
@@ -592,14 +604,14 @@ public:
 
         /* get symbol addresses */
 @
-        loaded::GDO_SYMBOL = sym<type::GDO_SYMBOL>(@
-            ptr::GDO_SYMBOL, "GDO_SYMBOL");@
-        if (!loaded::GDO_SYMBOL && !ignore_errors){@
+        ptr::GDO_SYMBOL = reinterpret_cast<type::GDO_SYMBOL>(@
+            sym("GDO_SYMBOL", loaded::GDO_SYMBOL));@
+        if (!loaded::GDO_SYMBOL && !ignore_errors) {@
             return false;@
         }
 @
-        loaded::GDO_OBJ_SYMBOL = sym<GDO_OBJ_TYPE *>(@
-            ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@
+        ptr::GDO_OBJ_SYMBOL = reinterpret_cast<GDO_OBJ_TYPE *>(@
+            sym("GDO_OBJ_SYMBOL", loaded::GDO_OBJ_SYMBOL));@
         if (!loaded::GDO_OBJ_SYMBOL && !ignore_errors) {@
             return false;@
         }
@@ -618,22 +630,22 @@ public:
         if (!lib_loaded()) {
             set_error_invalid_handle();
             return false;
-        } else if (!symbol || !*symbol) {
-            return false;
         }
 
         /* get symbol address */
+        if (symbol && *symbol) {
 @
-        if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-            loaded::GDO_SYMBOL = sym<type::GDO_SYMBOL>(@
-                ptr::GDO_SYMBOL, "GDO_SYMBOL");@
-            return loaded::GDO_SYMBOL;@
-        }
+            if (strcmp("GDO_SYMBOL", symbol) == 0) {@
+                ptr::GDO_SYMBOL = reinterpret_cast<type::GDO_SYMBOL>(@
+                    sym("GDO_SYMBOL", loaded::GDO_SYMBOL));@
+                return loaded::GDO_SYMBOL;@
+            }
 @
-        if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-            loaded::GDO_OBJ_SYMBOL = sym<GDO_OBJ_TYPE *>(@
-                ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@
-            return loaded::GDO_OBJ_SYMBOL;@
+            if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
+                ptr::GDO_OBJ_SYMBOL = reinterpret_cast<GDO_OBJ_TYPE *>(@
+                    sym("GDO_OBJ_SYMBOL", loaded::GDO_OBJ_SYMBOL));@
+                return loaded::GDO_OBJ_SYMBOL;@
+            }
         }
 
         clear_error();

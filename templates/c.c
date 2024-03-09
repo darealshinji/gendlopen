@@ -63,6 +63,8 @@ GDO_LINKAGE void gdo_clear_errbuf(void)
 #ifdef GDO_WINAPI
     gdo_hndl.buf_formatted[0] = 0;
     gdo_hndl.last_errno = 0;
+#else
+    dlerror();
 #endif
 }
 
@@ -318,12 +320,13 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 
 GDO_LINKAGE FARPROC gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 {
-    *rv = false;
+    gdo_clear_errbuf();
 
     FARPROC ptr = GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
         gdo_save_GetLastError(msg);
+        *rv = false;
         return NULL;
     }
 
@@ -335,23 +338,24 @@ GDO_LINKAGE FARPROC gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 
 GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv)
 {
-    *rv = false;
-
-    /* clear buffer */
-    (void)dlerror();
+    gdo_clear_errbuf();
 
     void *ptr = dlsym(gdo_hndl.handle, symbol);
 
     /* NULL can be a valid value (unusual but possible),
      * so call dlerror() to check for errors */
-    const char *err = dlerror();
+    if (!ptr) {
+        const char *err = dlerror();
 
-    if (err) {
-        /* must save our error message manually instead of
-         * invoking gdo_save_dlerror() */
-        gdo_clear_errbuf();
-        snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, "%s", err);
-        return NULL;
+        if (err) {
+            /* must save our error message manually instead of
+             * invoking gdo_save_dlerror() */
+            gdo_clear_errbuf();
+            snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, "%s", err);
+
+            *rv = false;
+            return NULL;
+        }
     }
 
     *rv = true;
