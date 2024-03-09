@@ -139,6 +139,10 @@ GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with GDO_WRAP_FUNCTIONS)
     using this macro.
 
+GDO_USE_MESSAGE_BOX
+    If win32 API is used and GDO_ENABLE_AUTOLOAD was activated this will enable
+    error messages from auto-loading to be displayed in MessageBox windows.
+
 
 
 *****************

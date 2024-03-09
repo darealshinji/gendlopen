@@ -21,3 +21,7 @@ times with code from the input (used to generate typedefs, prototyes, etc.):
 
 Any remaining instances of `GDO` and `gdo` will be replaced with a user-defined
 prefix (converted to uppercase and lowercase).
+
+
+The macro `GDO_HAS_WRAP_CODE` will remain undefined unless `--skip-parameter-names`
+was invoked.

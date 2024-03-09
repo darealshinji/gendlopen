@@ -250,29 +250,29 @@ class dl
 {
 private:
 
-#ifdef GDO_WINAPI
-    HMODULE m_handle = NULL;
-    DWORD m_last_error = 0;
-    std::string m_errmsg;
-    std::wstring m_werrmsg;
-#else
-    void *m_handle = NULL;
-    std::string m_errmsg;
-#endif
-
-    const char *m_filename = NULL;
+    const char *m_filename = nullptr;
     int m_flags = default_flags;
     bool m_new_namespace = false;
     bool m_free_lib_in_dtor = true;
 
-
 #ifdef GDO_WINAPI
+
+    /* library handle */
+    HMODULE m_handle = nullptr;
+
+    /* error message */
+    DWORD m_last_error = 0;
+    std::string m_errmsg;
+    std::wstring m_werrmsg;
+
+
+    /* wstring to string */
     std::string wstr_to_str(const std::wstring &wstr)
     {
         size_t len, n;
         std::string buf;
 
-        if (wstr.empty() || ::wcstombs_s(&len, NULL, 0, wstr.c_str(), 0) != 0 ||
+        if (wstr.empty() || ::wcstombs_s(&len, nullptr, 0, wstr.c_str(), 0) != 0 ||
             len == 0)
         {
             return {};
@@ -288,12 +288,13 @@ private:
     }
 
 
+    /* string to wstring */
     std::wstring str_to_wstr(const std::string &str)
     {
         size_t len, n;
         std::wstring buf;
 
-        if (str.empty() || ::mbstowcs_s(&len, NULL, 0, str.c_str(), 0) != 0
+        if (str.empty() || ::mbstowcs_s(&len, nullptr, 0, str.c_str(), 0) != 0
             || len == 0)
         {
             return {};
@@ -307,87 +308,50 @@ private:
 
         return buf;
     }
-#endif // GDO_WINAPI
 
 
     /* clear error */
     void clear_error()
     {
         m_errmsg.clear();
-#ifdef GDO_WINAPI
         m_werrmsg.clear();
         m_last_error = 0;
-#else
-        (UNUSED_RESULT) ::dlerror();
-#endif
     }
 
 
     /* save last error */
-    void save_error(const char *msg=NULL)
+    void save_error(const char *msg = nullptr)
     {
-#ifdef GDO_WINAPI
         m_last_error = ::GetLastError();
         m_errmsg = msg ? msg : "";
         m_werrmsg.clear();
-#else
-        (UNUSED) msg;
-        auto ptr = ::dlerror();
-        m_errmsg = ptr ? ptr : "";
-#endif
     }
 
-
-    /* save last error (wide characters) */
-#ifdef GDO_WINAPI
     void save_error(const wchar_t *msg)
     {
         m_last_error = ::GetLastError();
         m_errmsg.clear();
         m_werrmsg = msg ? msg : L"";
     }
-#endif
 
 
     /* if m_handle is NULL */
     void set_error_invalid_handle()
     {
         clear_error();
-
-#ifdef GDO_WINAPI
         m_last_error = ERROR_INVALID_HANDLE;
-#else
-        m_errmsg = "no library was loaded";
-#endif
     }
 
 
     /* load library */
-    void load_lib(const char *filename, int flags, bool new_namespace)
+    void load_lib(const char *filename, int flags, bool /*unused*/)
     {
         m_flags = flags;
-
-#if defined(GDO_WINAPI)
-        /* win32 */
-        (UNUSED) new_namespace;
-        m_handle = ::LoadLibraryExA(filename, NULL, m_flags);
-#elif defined(GDO_NO_DLMOPEN)
-        /* dlmopen() disabled */
-        (UNUSED) new_namespace;
-        m_handle = ::dlopen(filename, m_flags);
-#else
-        /* dlmopen() for new namespace or dlopen() */
-        if (new_namespace) {
-            m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);
-        } else {
-            m_handle = ::dlopen(filename, m_flags);
-        }
-#endif
+        m_handle = ::LoadLibraryExA(filename, nullptr, m_flags);
     }
 
 
     /* load symbol address */
-#ifdef GDO_WINAPI
     FARPROC sym(const char *symbol, bool &rv)
     {
         clear_error();
@@ -403,7 +367,146 @@ private:
         rv = true;
         return ptr;
     }
+
+
+    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
+        return ::GetModuleFileNameW(handle, buf, len);
+    }
+
+    inline DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {
+        return ::GetModuleFileNameA(handle, buf, len);
+    }
+
+
+    /* get the module's full path using GetModuleFileName() */
+    template<typename T>
+    std::basic_string<T> get_origin_from_module_handle()
+    {
+        if (!lib_loaded()) {
+            set_error_invalid_handle();
+            return {};
+        }
+
+        DWORD len = 260; /* MAX_PATH */
+        std::basic_string<T> buf(len, 0);
+
+        if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
+            save_error();
+            return {};
+        }
+
+        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
+         * technically the path could exceed 260 characters, but in reality
+         * it's practically still stuck at the old MAX_PATH value */
+        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+            len = 32*1024;
+            buf.clear();
+            buf.resize(len);
+
+            if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
+                save_error();
+                return {};
+            }
+
+            buf.shrink_to_fit();
+        }
+
+        return buf;
+    }
+
+
+    inline DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {
+        return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);
+    }
+
+    inline DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {
+        return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);
+    }
+
+
+    /* return a formatted error message */
+    template<typename T>
+    std::basic_string<T> format_last_error_message()
+    {
+        std::basic_string<T> str;
+        T *buf = nullptr;
+
+        const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                            FORMAT_MESSAGE_FROM_SYSTEM |
+                            FORMAT_MESSAGE_MAX_WIDTH_MASK;
+
+        format_message(flags, m_last_error, reinterpret_cast<T*>(&buf));
+
+        if (buf) {
+            str = buf;
+            ::LocalFree(buf);
+        }
+
+        return str;
+    }
+
+
 #else
+/*********************************** dlfcn ***********************************/
+
+
+    /* library handle */
+    void *m_handle = nullptr;
+
+    /* error message */
+    std::string m_errmsg;
+
+
+    /* clear error */
+    void clear_error()
+    {
+        m_errmsg.clear();
+        (UNUSED_RESULT) ::dlerror();
+    }
+
+
+    /* save last error */
+    void save_error()
+    {
+        auto ptr = ::dlerror();
+        m_errmsg = ptr ? ptr : "";
+    }
+
+    void save_error(const char *)
+    {
+        save_error();
+    }
+
+
+    /* if m_handle is NULL */
+    void set_error_invalid_handle()
+    {
+        clear_error();
+        m_errmsg = "no library was loaded";
+    }
+
+
+    /* load library */
+    void load_lib(const char *filename, int flags, bool new_namespace)
+    {
+        m_flags = flags;
+
+#ifdef GDO_NO_DLMOPEN
+        /* dlmopen() disabled */
+        (UNUSED) new_namespace;
+        m_handle = ::dlopen(filename, m_flags);
+#else
+        /* dlmopen() for new namespace or dlopen() */
+        if (new_namespace) {
+            m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);
+        } else {
+            m_handle = ::dlopen(filename, m_flags);
+        }
+#endif // GDO_NO_DLMOPEN
+    }
+
+
+    /* load symbol address */
     void *sym(const char *symbol, bool &rv)
     {
         clear_error();
@@ -413,7 +516,7 @@ private:
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
         if (!ptr) {
-            const char *err = ::dlerror();
+            auto err = ::dlerror();
 
             if (err) {
                 /* must save our error message manually instead of
@@ -431,78 +534,8 @@ private:
         rv = true;
         return ptr;
     }
-#endif //GDO_WINAPI
 
-
-#ifdef GDO_WINAPI
-    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
-        return ::GetModuleFileNameW(handle, buf, len);
-    }
-
-    inline DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {
-        return ::GetModuleFileNameA(handle, buf, len);
-    }
-
-
-    /* get the module's full path using GetModuleFileName() */
-    template<typename T=char>
-    std::basic_string<T> get_origin_from_module_handle()
-    {
-        DWORD len = 260; /* MAX_PATH */
-        std::basic_string<T> buf(len, 0);
-
-        if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
-            save_error();
-            return {};
-        }
-
-        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
-         * technically the path could exceed 260 characters, but in reality
-         * it's practically still stuck at the old MAX_PATH value */
-        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            len = 32*1024;
-            buf.reserve(len);
-
-            if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
-                save_error();
-                return {};
-            }
-        }
-
-        return buf;
-    }
-
-
-    inline DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {
-        return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);
-    }
-
-    inline DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {
-        return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);
-    }
-
-
-    /* return a formatted error message */
-    template<typename T=char>
-    std::basic_string<T> format_last_error_message()
-    {
-        std::basic_string<T> str;
-        T *buf = NULL;
-
-        const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                            FORMAT_MESSAGE_FROM_SYSTEM |
-                            FORMAT_MESSAGE_MAX_WIDTH_MASK;
-
-        format_message(flags, m_last_error, reinterpret_cast<T*>(&buf));
-
-        if (buf) {
-            str = buf;
-            ::LocalFree(buf);
-        }
-
-        return str;
-    }
-#endif //GDO_WINAPI
+#endif // !GDO_WINAPI
 
 
 public:
@@ -525,9 +558,9 @@ public:
     {
         if (m_free_lib_in_dtor && lib_loaded()) {
 #ifdef GDO_WINAPI
-            ::FreeLibrary(m_handle);
+            (UNUSED_RESULT) ::FreeLibrary(m_handle);
 #else
-            ::dlclose(m_handle);
+            (UNUSED_RESULT) ::dlclose(m_handle);
 #endif
         }
     }
@@ -565,7 +598,7 @@ public:
 
         return lib_loaded();
     }
-#endif
+#endif //GDO_WINAPI
 
 
     /* load library */
@@ -719,50 +752,24 @@ public:
     }
 
 
+#ifdef GDO_WINAPI
+
     /* get path of loaded library */
     std::string origin()
     {
-        if (!lib_loaded()) {
-            set_error_invalid_handle();
-            return {};
-        }
-
-#ifdef GDO_WINAPI
-        return get_origin_from_module_handle();
-#else
-        struct link_map *lm = NULL;
-
-        int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
-        save_error();
-
-        if (ret != -1 && lm->l_name) {
-            return lm->l_name;
-        }
-
-        return {};
-#endif //GDO_WINAPI
+        return get_origin_from_module_handle<char>();
     }
 
-
-#ifdef GDO_WINAPI
-    /* get path of loaded library (wide characters version) */
     std::wstring origin_w()
     {
-        if (!lib_loaded()) {
-            set_error_invalid_handle();
-            return {};
-        }
-
         return get_origin_from_module_handle<wchar_t>();
     }
-#endif //GDO_WINAPI
 
 
     /* retrieve the last error */
     std::string error()
     {
-#ifdef GDO_WINAPI
-        std::string buf = format_last_error_message();
+        std::string buf = format_last_error_message<char>();
 
         if (buf.empty()) {
             buf = "Last saved error code: ";
@@ -778,14 +785,8 @@ public:
         }
 
         return buf;
-#else
-        return m_errmsg;
-#endif //GDO_WINAPI
     }
 
-
-#ifdef GDO_WINAPI
-    /* retrieve the last error (wide characters version) */
     std::wstring error_w()
     {
         std::wstring buf = format_last_error_message<wchar_t>();
@@ -805,7 +806,40 @@ public:
 
         return buf;
     }
-#endif //GDO_WINAPI
+
+
+#else
+/*********************************** dlfcn ***********************************/
+
+
+    /* get path of loaded library */
+    std::string origin()
+    {
+        if (!lib_loaded()) {
+            set_error_invalid_handle();
+            return {};
+        }
+
+        struct link_map *lm = nullptr;
+
+        int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
+        save_error();
+
+        if (ret != -1 && lm->l_name) {
+            return lm->l_name;
+        }
+
+        return {};
+    }
+
+
+    /* retrieve the last error */
+    std::string error()
+    {
+        return m_errmsg;
+    }
+
+#endif // !GDO_WINAPI
 
 };
 /******************************* end of class ********************************/
@@ -816,8 +850,7 @@ public:
 /*****************************************************************************/
 #ifdef GDO_HAS_WRAP_CODE
 
-    /* anonymous */
-    namespace
+    namespace /* anonymous */
     {
         void print_error(const std::string &msg)
         {
@@ -835,7 +868,7 @@ public:
             print_error(msg);
             std::exit(1);
         }
-    }
+    } /* anonymous namespace */
 
 
     /* wrapped functions
@@ -854,13 +887,12 @@ public:
 
     namespace autoload
     {
-        /* anonymous */
-        namespace
+        namespace /* anonymous */
         {
             auto al = dl(GDO_DEFAULT_LIB);
 
-            /* used internally by wrapper functions, arguments are never NULL */
-            void autoload_lib_and_symbols(const char *calling_function, const char *symbol)
+            /* used internally by wrapper functions, symbol is never NULL */
+            void quick_load(const char *symbol)
             {
                 if (!al.load()) {
                     std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n" + al.error();
@@ -875,7 +907,7 @@ public:
         #endif
                 {
                     std::string msg = "error in auto-loading wrapper function `gdo::autoload::";
-                    msg += calling_function;
+                    msg += symbol;
                     msg += "': " + al.error();
                     print_error(msg);
                     std::exit(1);
@@ -885,7 +917,7 @@ public:
 
 
         GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-            autoload_lib_and_symbols(__FUNCTION__, "GDO_SYMBOL");@
+            quick_load("GDO_SYMBOL");@
             GDO_RET wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
         }@
 
