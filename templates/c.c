@@ -14,6 +14,9 @@
     #define _T(x) x
 #endif
 
+typedef void GDO_UNUSED;
+typedef void GDO_UNUSED_RESULT;
+
 
 /* forward declarations */
 GDO_LINKAGE void gdo_call_free_lib(void);
@@ -64,7 +67,7 @@ GDO_LINKAGE void gdo_clear_errbuf(void)
     gdo_hndl.buf_formatted[0] = 0;
     gdo_hndl.last_errno = 0;
 #else
-    dlerror();
+    (GDO_UNUSED_RESULT) dlerror();
 #endif
 }
 
@@ -135,7 +138,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 
 #ifdef GDO_WINAPI
 
-    (void)new_namespace; /* unused */
+    (GDO_UNUSED) new_namespace;
     gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
 
     if (!gdo_lib_is_loaded()) {
@@ -149,7 +152,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 
 #ifdef GDO_NO_DLMOPEN
     /* dlmopen() disabled */
-    (void)new_namespace; /* unused */
+    (GDO_UNUSED) new_namespace;
     gdo_hndl.handle = dlopen(filename, flags);
 #else
     /* call dlmopen() for new namespace, otherwise dlopen() */
@@ -578,7 +581,7 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
         return;
     }
 #else
-    (void)function;
+    (GDO_UNUSED) function;
 
     /* return immediately if everything is already loaded,
      * otherwise load library + all symbols */

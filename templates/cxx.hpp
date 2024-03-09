@@ -159,7 +159,7 @@ GDO_VISIBILITY
 #endif
 
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
-#error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of DO_DELAYLOAD
+#error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
 
 
@@ -168,6 +168,9 @@ GDO_VISIBILITY
 /*****************************************************************************/
 namespace gdo
 {
+    using UNUSED = void;
+    using UNUSED_RESULT = void;
+
     /* function pointer typedefs */
     namespace type
     {
@@ -215,7 +218,7 @@ namespace gdo
         s += std::to_string(api);
         s += ".dylib";
 #elif defined(_AIX)
-        (void)api;
+        (UNUSED) api;
         s += ".a";
 #else /* ELF */
         s += ".so.";
@@ -315,7 +318,7 @@ private:
         m_werrmsg.clear();
         m_last_error = 0;
 #else
-        ::dlerror();
+        (UNUSED_RESULT) ::dlerror();
 #endif
     }
 
@@ -328,7 +331,7 @@ private:
         m_errmsg = msg ? msg : "";
         m_werrmsg.clear();
 #else
-        (void)msg;
+        (UNUSED) msg;
         auto ptr = ::dlerror();
         m_errmsg = ptr ? ptr : "";
 #endif
@@ -366,11 +369,11 @@ private:
 
 #if defined(GDO_WINAPI)
         /* win32 */
-        (void)new_namespace;
+        (UNUSED) new_namespace;
         m_handle = ::LoadLibraryExA(filename, NULL, m_flags);
 #elif defined(GDO_NO_DLMOPEN)
         /* dlmopen() disabled */
-        (void)new_namespace;
+        (UNUSED) new_namespace;
         m_handle = ::dlopen(filename, m_flags);
 #else
         /* dlmopen() for new namespace or dlopen() */
@@ -416,7 +419,10 @@ private:
                 /* must save our error message manually instead of
                  * invoking save_error() */
                 m_errmsg = err;
-                ::dlerror();  /* clear error */
+
+                /* clear error */
+                (UNUSED_RESULT) ::dlerror();
+
                 rv = false;
                 return nullptr;
             }
