@@ -115,19 +115,25 @@ GDO_DEFAULT_LIB
     marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD
     or if you want to use the `gdo_load_lib()' function.
 
-GDO_ENABLE_AUTOLOAD
-    Define this macro if you want to use auto-loading wrapper functions.
-    This means you don't need to explicitly call library load functions.
-    It requires GDO_DEFAULT_LIB to be defined.
-    If an error occures during loading these functions throw an error message
-    and call `exit(1)'!
-
-GDO_AUTO_RELEASE
-    If defined the library handle will automatically be released on program exit.
-
 GDO_WRAP_FUNCTIONS
     Use actual wrapped functions instead of a name alias. This is useful if you
     want to create a library to later link an application against.
+
+GDO_ENABLE_AUTOLOAD
+    Define this macro if you want to use auto-loading wrapper functions.
+    This means you don't need to explicitly call library load functions.
+    The first wrapper function called will load all symbols at once.
+    It requires GDO_DEFAULT_LIB to be defined.
+    If an error occures during loading these functions print an error message
+    and call `exit(1)'!
+
+GDO_DELAYLOAD
+    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its
+    wrapper function is called instead of all symbols.
+    It requires GDO_ENABLE_AUTOLOAD to be defined.
+
+GDO_AUTO_RELEASE
+    If defined the library handle will automatically be released on program exit.
 
 GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with GDO_WRAP_FUNCTIONS)
@@ -215,12 +221,12 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
 
 
-#if !defined(_GDO_HAS_WRAP_CODE) || !defined(GDO_WRAP_FUNCTIONS)
+#if !defined(GDO_HAS_WRAP_CODE) || !defined(GDO_WRAP_FUNCTIONS)
 
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo_hndl.GDO_SYMBOL_ptr_
 
-#endif // !_GDO_HAS_WRAP_CODE || !GDO_WRAP_FUNCTIONS
+#endif // !GDO_HAS_WRAP_CODE || !GDO_WRAP_FUNCTIONS
 
 
 /* aliases to raw object pointers */

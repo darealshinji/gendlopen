@@ -2,16 +2,18 @@
 #pragma comment(lib, "user32.lib")
 #endif
 
+#define BUILDING_STATIC
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions */
 #define GDO_ENABLE_AUTOLOAD 1
+#define GDO_DELAYLOAD       1
 
 /* define a default library to load */
 #define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
 
 /* include generated header file */
-#include "example_cxx.hpp"
+#include "example_cxx_autoload.hpp"
 
 
 void print_error(const char *msg)
@@ -33,8 +35,14 @@ int main()
     };
 
     helloworld *hw = helloworld_init();
+
+#ifdef GDO_DELAYLOAD
+    helloworld_hello2(hw, cb);
+#else
     helloworld_callback = cb;
     helloworld_hello(hw);
+#endif
+
     helloworld_release(hw);
 
     return 0;

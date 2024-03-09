@@ -256,10 +256,10 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
 
     if (m_skip_parameter_names) {
         macro = "/* wrap code disabled */\n"
-                "//#define _GDO_HAS_WRAP_CODE\n\n";
+                "//#define GDO_HAS_WRAP_CODE\n\n";
     } else {
         macro = "/* wrap code enabled */\n"
-                "#define _GDO_HAS_WRAP_CODE\n\n";
+                "#define GDO_HAS_WRAP_CODE\n\n";
     }
 
     switch (m_out)

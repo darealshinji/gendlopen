@@ -379,26 +379,33 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         return false;
     }
 
-    if (!symbol || !*symbol) {
-        return false;
+    /* get symbol address */
+    if (symbol && *symbol) {
+@
+        /* GDO_SYMBOL */@
+        if (strcmp("GDO_SYMBOL", symbol) == 0) {@
+            gdo_hndl.GDO_SYMBOL_ptr_ =@
+                (GDO_TYPE (*)(GDO_ARGS))@
+                    _gdo_sym("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
+            return gdo_hndl.GDO_SYMBOL_loaded_;@
+        }
+@
+        /* GDO_OBJ_SYMBOL */@
+        if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
+            gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
+                    _gdo_sym("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
+            return gdo_hndl.GDO_OBJ_SYMBOL_loaded_;@
+        }
     }
 
-    /* get symbol address */
-@
-    /* GDO_SYMBOL */@
-    if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-        gdo_hndl.GDO_SYMBOL_ptr_ =@
-            (GDO_TYPE (*)(GDO_ARGS))@
-                _gdo_sym("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
-        return gdo_hndl.GDO_SYMBOL_loaded_;@
-    }
-@
-    /* GDO_OBJ_SYMBOL */@
-    if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-        gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-                _gdo_sym("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
-        return gdo_hndl.GDO_OBJ_SYMBOL_loaded_;@
-    }
+#ifdef GDO_WINAPI
+    gdo_hndl.last_errno = ERROR_NOT_FOUND;
+    _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE,
+        _T("symbol not among lookup list: %s"), symbol);
+#else
+    snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1,
+        "symbol not among lookup list: %s", symbol);
+#endif
 
     return false;
 }
@@ -528,7 +535,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-#ifdef _GDO_HAS_WRAP_CODE
+#ifdef GDO_HAS_WRAP_CODE
 
 /* autoload functions */
 #ifdef GDO_ENABLE_AUTOLOAD
@@ -538,105 +545,58 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #endif
 
 
-#ifdef _WIN32 // not GDO_WINAPI !!
-
-#ifdef _UNICODE
-/* convert narrow to wide characters */
-GDO_LINKAGE wchar_t *gdo_convert_str_to_wcs(const char *str)
-{
-    size_t len, n;
-    wchar_t *buf;
-
-    if (!str) return NULL;
-
-    if (mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
-        return NULL;
-    }
-
-    buf = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
-    assert(buf != NULL);
-
-    if (mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
-        free(buf);
-        return NULL;
-    }
-
-    buf[len] = L'\0';
-
-    return buf;
-}
-#endif //_UNICODE
-
-#ifdef GDO_USE_MESSAGE_BOX
+#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 /* Windows: show message in a MessageBox window */
-GDO_LINKAGE void gdo_win32_show_last_error_in_messagebox(const char *function, const gdo_char_t *symbol)
+GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
+    const gdo_char_t *fmt = _T("error in wrapper function for symbol `%s':\n\n%s");
     const gdo_char_t *err = gdo_last_error();
-    const gdo_char_t *pfunc;
-    /* double newline at end */
-    const gdo_char_t *fmt = _T("error in wrapper function `%s' for symbol `%s':\n\n%s");
 
-#ifdef _UNICODE
-    /* convert function name to wide characters
-     * (we cannot receive the function name in a wide character format) */
-    pfunc = gdo_convert_str_to_wcs(function);
-#else
-    pfunc = function;
-#endif //_UNICODE
-
-    /* allocate message buffer */
-    const size_t len = _tcslen(fmt) + _tcslen(pfunc) + _tcslen(symbol) + _tcslen(err);
+    const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err);
     gdo_char_t *buf = (gdo_char_t *)malloc((len + 1) * sizeof(gdo_char_t));
     assert(buf != NULL);
 
-    /* save message to buffer */
-    _sntprintf_s(buf, len, _TRUNCATE, fmt, pfunc, symbol, err);
-
-    /* show message */
+    _sntprintf_s(buf, len, _TRUNCATE, fmt, symbol, err);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 
-    /* free buffers */
-#ifdef _UNICODE
-    free((gdo_char_t *)pfunc);
-#endif
     free(buf);
 }
-#endif //GDO_USE_MESSAGE_BOX
-
-#endif //_WIN32
+#endif //GDO_OS_WIN32 && GDO_USE_MESSAGE_BOX
 
 
 /* This function is used by the wrapper functions to perform the loading
  * and handle errors. */
 GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 {
-    /* load library + symbols and return if successful */
-    if (gdo_load_lib_and_symbols()) {
+#ifdef GDO_DELAYLOAD
+    /* load library + requested symbol */
+    if (gdo_load_lib() && gdo_load_symbol(function)) {
         return;
     }
+#else
+    (void)function;
 
-    /* load library (new namespace) + symbols and return if successful */
-/*
-    if (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, true) &&
-        gdo_load_symbols(false))
-    {
+    /* return immediately if everything is already loaded,
+     * otherwise load library + all symbols */
+    if (gdo_symbols_loaded() || gdo_load_lib_and_symbols()) {
         return;
     }
-*/
+#endif
 
     /* an error has occured: display an error message */
 
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-    gdo_win32_show_last_error_in_messagebox(function, symbol);
-#elif defined(_WIN32) && defined(_UNICODE)
+#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+    /* Windows: popup message box window */
+    gdo_win32_last_error_messagebox(symbol);
+#elif defined(GDO_OS_WIN32) && defined(_UNICODE)
     /* Windows: output to console (wide characters) */
-    fwprintf(stderr, L"error in wrapper function `%hs' for symbol `%ls':\n%ls\n",
-        function, symbol, gdo_last_error());
+    fwprintf(stderr, L"error in wrapper function for symbol `%s':\n%s\n",
+        symbol, gdo_last_error());
 #else
     /* default: UTF-8 output to console (any operating system) */
-    fprintf(stderr, "error in wrapper function `%s' for symbol `%s':\n%s\n",
-        function, symbol, gdo_last_error());
-#endif //_WIN32 && GDO_USE_MESSAGE_BOX
+    fprintf(stderr, "error in wrapper function for symbol `%s':\n%s\n",
+        symbol, gdo_last_error());
+#endif //GDO_OS_WIN32 && GDO_USE_MESSAGE_BOX
 
     /* free library handle and exit */
     gdo_free_lib();
@@ -657,12 +617,12 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 #ifdef GDO_WRAP_FUNCTIONS
 @
 GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-    gdo_quick_load(__FUNCTION__, _T("GDO_SYMBOL"));@
+    gdo_quick_load("GDO_SYMBOL", _T("GDO_SYMBOL"));@
     GDO_RET gdo_hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
 }
 
 #endif //GDO_WRAP_FUNCTIONS
 
 
-#endif //_GDO_HAS_WRAP_CODE
+#endif //GDO_HAS_WRAP_CODE
 /***************************** end of wrap code ******************************/

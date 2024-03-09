@@ -7,9 +7,11 @@
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions;
+ * enable delayloading (each function is only loaded when it's first used);
  * the library handle is automatically released on exit */
 #define GDO_ENABLE_AUTOLOAD 1
 #define GDO_WRAP_FUNCTIONS  1
+#define GDO_DELAYLOAD       1
 
 /* show error messages for errors that occurred during
  * auto-loading in a message box window */
@@ -24,7 +26,7 @@
 
 void cb(const char *msg)
 {
-    puts(msg);
+    printf("Custom callback >>> %s\n", msg);
 }
 
 int main()
@@ -32,8 +34,14 @@ int main()
     /* no extra code needs to be added here */
 
     helloworld *hw = helloworld_init();
+
+#ifdef GDO_DELAYLOAD
+    helloworld_hello2(hw, cb);
+#else
     helloworld_callback = cb;
     helloworld_hello(hw);
+#endif
+
     helloworld_release(hw);
 
     return 0;

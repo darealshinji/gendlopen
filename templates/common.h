@@ -1,5 +1,8 @@
 /* whether to use WinAPI */
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+#ifdef _WIN32
+    #define GDO_OS_WIN32
+#endif
+#if defined(GDO_OS_WIN32) && !defined(GDO_USE_DLOPEN)
     #define GDO_WINAPI
 #endif
 

@@ -117,16 +117,22 @@ GDO_DEFAULT_LIB
     Set a default library name through this macro (including double quote
     marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD.
 
-GDO_ENABLE_AUTOLOAD
-    Define this macro if you want to use auto-loading wrapper functions.
-    This means you don't need to explicitly call library load functions.
-    It requires GDO_DEFAULT_LIB to be defined.
-    If an error occures during loading these functions throw an error message
-    and call `std::exit(1)'!
-
 GDO_WRAP_FUNCTIONS
     Use actual wrapped functions instead of a name alias. This is useful if you
     want to create a library to later link an application against.
+
+GDO_ENABLE_AUTOLOAD
+    Define this macro if you want to use auto-loading wrapper functions.
+    This means you don't need to explicitly call library load functions.
+    The first wrapper function called will load all symbols at once.
+    It requires GDO_DEFAULT_LIB to be defined.
+    If an error occures during loading these functions print an error message
+    and call `std::exit(1)'!
+
+GDO_DELAYLOAD
+    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its
+    wrapper function is called instead of all symbols.
+    It requires GDO_ENABLE_AUTOLOAD to be defined.
 
 GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with
@@ -139,8 +145,21 @@ GDO_VISIBILITY
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(GDO_WRAP_FUNCTIONS) && !defined(_GDO_HAS_WRAP_CODE)
+
+#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_HAS_WRAP_CODE)
 #error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-parameter-names"
+#endif
+
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_HAS_WRAP_CODE)
+#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-parameter-names"
+#endif
+
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
+#error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
+#endif
+
+#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
+#error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of DO_DELAYLOAD
 #endif
 
 
@@ -231,11 +250,11 @@ private:
 #ifdef GDO_WINAPI
     HMODULE m_handle = NULL;
     DWORD m_last_error = 0;
-    const char *m_errmsg = NULL;
-    const wchar_t *m_werrmsg = NULL;
+    std::string m_errmsg;
+    std::wstring m_werrmsg;
 #else
     void *m_handle = NULL;
-    std::string m_last_error;
+    std::string m_errmsg;
 #endif
 
     const char *m_filename = NULL;
@@ -245,55 +264,45 @@ private:
 
 
 #ifdef GDO_WINAPI
-    std::string wchar_to_string(const wchar_t *lpWstr)
+    std::string wstr_to_str(const std::wstring &wstr)
     {
-        size_t mbslen, n;
-        char *buf;
-        std::string str;
+        size_t len, n;
+        std::string buf;
 
-        if (!lpWstr || ::wcstombs_s(&mbslen, NULL, 0, lpWstr, 0) != 0 || mbslen == 0) {
+        if (wstr.empty() || ::wcstombs_s(&len, NULL, 0, wstr.c_str(), 0) != 0 ||
+            len == 0)
+        {
             return {};
         }
 
-        buf = new char[mbslen + 1];
-        if (!buf) return {};
+        buf.reserve(len+1);
 
-        if (::wcstombs_s(&n, buf, mbslen+1, lpWstr, mbslen) != 0 || n == 0) {
-            delete buf;
+        if (::wcstombs_s(&n, &buf[0], len+1, wstr.c_str(), len) != 0 || n == 0) {
             return {};
         }
-
-        buf[mbslen] = '\0';
-        str = buf;
-        delete buf;
 
         return buf;
     }
 
 
-    std::wstring char_to_wstring(const char *str)
+    std::wstring str_to_wstr(const std::string &str)
     {
         size_t len, n;
-        wchar_t *buf;
-        std::wstring wstr;
+        std::wstring buf;
 
-        if (!str || ::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+        if (str.empty() || ::mbstowcs_s(&len, NULL, 0, str.c_str(), 0) != 0
+            || len == 0)
+        {
             return {};
         }
 
-        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
-        if (!buf) return {};
+        buf.reserve(len+1);
 
-        if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
-            delete buf;
+        if (::mbstowcs_s(&n, &buf[0], len+1, str.c_str(), len) != 0 || n == 0) {
             return {};
         }
 
-        buf[len] = L'\0';
-        wstr = buf;
-        delete buf;
-
-        return wstr;
+        return buf;
     }
 #endif // GDO_WINAPI
 
@@ -301,12 +310,11 @@ private:
     /* clear error */
     void clear_error()
     {
+        m_errmsg.clear();
 #ifdef GDO_WINAPI
+        m_werrmsg.clear();
         m_last_error = 0;
-        m_errmsg = NULL;
-        m_werrmsg = NULL;
 #else
-        m_last_error = "";
         ::dlerror();
 #endif
     }
@@ -317,12 +325,12 @@ private:
     {
 #ifdef GDO_WINAPI
         m_last_error = ::GetLastError();
-        m_errmsg = msg;
-        m_werrmsg = NULL;
+        m_errmsg = msg ? msg : "";
+        m_werrmsg.clear();
 #else
         (void)msg;
-        const char *ptr = ::dlerror();
-        m_last_error = ptr ? ptr : "";
+        auto ptr = ::dlerror();
+        m_errmsg = ptr ? ptr : "";
 #endif
     }
 
@@ -332,8 +340,8 @@ private:
     void save_error(const wchar_t *msg)
     {
         m_last_error = ::GetLastError();
-        m_werrmsg = msg;
-        m_errmsg = NULL;
+        m_errmsg.clear();
+        m_werrmsg = msg ? msg : L"";
     }
 #endif
 
@@ -346,7 +354,7 @@ private:
 #ifdef GDO_WINAPI
         m_last_error = ERROR_INVALID_HANDLE;
 #else
-        m_last_error = "no library was loaded";
+        m_errmsg = "no library was loaded";
 #endif
     }
 
@@ -395,7 +403,7 @@ private:
 
         if (errptr) {
             /* save error message */
-            m_last_error = errptr;
+            m_errmsg = errptr;
 
             /* clear error */
             ::dlerror();
@@ -419,7 +427,7 @@ private:
 
 
     /* get the module's full path using GetModuleFileName() */
-    template<typename T>
+    template<typename T=char>
     std::basic_string<T> get_origin_from_module_handle()
     {
         DWORD len = 260; /* MAX_PATH */
@@ -457,7 +465,7 @@ private:
 
 
     /* return a formatted error message */
-    template<typename T>
+    template<typename T=char>
     std::basic_string<T> format_last_error_message()
     {
         std::basic_string<T> str;
@@ -617,14 +625,24 @@ public:
         /* get symbol address */
 @
         if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-            return sym<type::GDO_SYMBOL>(@
+            loaded::GDO_SYMBOL = sym<type::GDO_SYMBOL>(@
                 ptr::GDO_SYMBOL, "GDO_SYMBOL");@
+            return loaded::GDO_SYMBOL;@
         }
 @
         if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-            return sym<GDO_OBJ_TYPE *>(@
+            loaded::GDO_OBJ_SYMBOL = sym<GDO_OBJ_TYPE *>(@
                 ptr::GDO_OBJ_SYMBOL, "GDO_OBJ_SYMBOL");@
+            return loaded::GDO_OBJ_SYMBOL;@
         }
+
+        clear_error();
+
+#ifdef GDO_WINAPI
+        m_last_error = ERROR_NOT_FOUND;
+#endif
+        m_errmsg = "symbol not among lookup list: ";
+        m_errmsg += symbol;
 
         return false;
     }
@@ -692,7 +710,7 @@ public:
         }
 
 #ifdef GDO_WINAPI
-        return get_origin_from_module_handle<char>();
+        return get_origin_from_module_handle();
 #else
         struct link_map *lm = NULL;
 
@@ -726,24 +744,24 @@ public:
     std::string error()
     {
 #ifdef GDO_WINAPI
-        auto buf = format_last_error_message<char>();
+        std::string buf = format_last_error_message();
 
         if (buf.empty()) {
             buf = "Last saved error code: ";
             buf += std::to_string(m_last_error);
         }
 
-        if (m_errmsg && m_errmsg[0] != 0) {
+        if (!m_errmsg.empty()) {
             buf.insert(0, ": ");
             buf.insert(0, m_errmsg);
-        } else if (m_werrmsg && m_werrmsg[0] != 0) {
+        } else if (!m_werrmsg.empty()) {
             buf.insert(0, ": ");
-            buf.insert(0, wchar_to_string(m_werrmsg));
+            buf.insert(0, wstr_to_str(m_werrmsg));
         }
 
         return buf;
 #else
-        return m_last_error;
+        return m_errmsg;
 #endif //GDO_WINAPI
     }
 
@@ -752,19 +770,19 @@ public:
     /* retrieve the last error (wide characters version) */
     std::wstring error_w()
     {
-        auto buf = format_last_error_message<wchar_t>();
+        std::wstring buf = format_last_error_message<wchar_t>();
 
         if (buf.empty()) {
             buf = L"Last saved error code: ";
             buf += std::to_wstring(m_last_error);
         }
 
-        if (m_werrmsg && m_werrmsg[0] != 0) {
+        if (!m_werrmsg.empty()) {
             buf.insert(0, L": ");
             buf.insert(0, m_werrmsg);
-        } else if (m_errmsg && m_errmsg[0] != 0) {
+        } else if (!m_errmsg.empty()) {
             buf.insert(0, L": ");
-            buf.insert(0, char_to_wstring(m_errmsg));
+            buf.insert(0, str_to_wstr(m_errmsg));
         }
 
         return buf;
@@ -778,7 +796,7 @@ public:
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-#ifdef _GDO_HAS_WRAP_CODE
+#ifdef GDO_HAS_WRAP_CODE
 
     /* anonymous */
     namespace
@@ -799,41 +817,7 @@ public:
             print_error(msg);
             std::exit(1);
         }
-
-    #ifdef GDO_ENABLE_AUTOLOAD
-
-    #if !defined(GDO_DEFAULT_LIB)
-    #error "You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD"
-    #endif
-
-        auto al = dl(GDO_DEFAULT_LIB);
-
-        /* used internally by wrapper functions, `calling_function' is never NULL */
-        void autoload(const char *calling_function)
-        {
-            if (!al.load()) {
-                std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n"
-                    + al.error();
-                print_error(msg);
-                std::exit(1);
-            }
-
-            if (!al.load_symbols()) {
-                std::string msg = "error in auto-loading wrapper function `"
-                    + std::string(calling_function) + "': " + al.error();
-                print_error(msg);
-                std::exit(1);
-            }
-        }
-
-    #else // !GDO_ENABLE_AUTOLOAD
-
-        /* dummy */
-        void autoload(const char *) {}
-
-    #endif // !GDO_ENABLE_AUTOLOAD
-
-    } /* anonymous namespace */
+    }
 
 
     /* wrapped functions
@@ -841,14 +825,57 @@ public:
     namespace wrapped
     {
         GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-            autoload(__FUNCTION__);@
             if (!loaded::GDO_SYMBOL) symbol_error("GDO_SYMBOL");@
             GDO_RET ptr::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
         }@
 
     } /* namespace wrapped */
 
-#endif //_GDO_HAS_WRAP_CODE
+
+#ifdef GDO_ENABLE_AUTOLOAD
+
+    namespace autoload
+    {
+        /* anonymous */
+        namespace
+        {
+            auto al = dl(GDO_DEFAULT_LIB);
+
+            /* used internally by wrapper functions, arguments are never NULL */
+            void autoload_lib_and_symbols(const char *calling_function, const char *symbol)
+            {
+                if (!al.load()) {
+                    std::string msg = "error loading library `" GDO_DEFAULT_LIB "':\n" + al.error();
+                    print_error(msg);
+                    std::exit(1);
+                }
+
+        #ifdef GDO_DELAYLOAD
+            if (!al.load_symbol(symbol))
+        #else
+            if (!al.load_symbols())
+        #endif
+                {
+                    std::string msg = "error in auto-loading wrapper function `gdo::autoload::";
+                    msg += calling_function;
+                    msg += "': " + al.error();
+                    print_error(msg);
+                    std::exit(1);
+                }
+            }
+        } /* anonymous namespace */
+
+
+        GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+            autoload_lib_and_symbols(__FUNCTION__, "GDO_SYMBOL");@
+            GDO_RET wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+        }@
+
+    } /* namespace autoload */
+
+#endif //GDO_ENABLE_AUTOLOAD
+
+#endif //GDO_HAS_WRAP_CODE
 /***************************** end of wrap code ******************************/
 
 } /* namespace gdo */
@@ -856,7 +883,7 @@ public:
 
 
 
-#if defined(_GDO_HAS_WRAP_CODE) && defined(GDO_WRAP_FUNCTIONS)
+#if defined(GDO_HAS_WRAP_CODE) && defined(GDO_WRAP_FUNCTIONS)
 
 /* function wrappers */
 @
@@ -864,10 +891,13 @@ GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     GDO_RET gdo::wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
 }
 
-#elif defined(_GDO_HAS_WRAP_CODE) && defined(GDO_ENABLE_AUTOLOAD)
+#elif defined(GDO_HAS_WRAP_CODE) && defined(GDO_ENABLE_AUTOLOAD)
 
-/* aliases to autoload function names */
-#define GDO_SYMBOL gdo::wrapped::GDO_SYMBOL
+/* autoload function wrappers */
+@
+GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
+    GDO_RET gdo::autoload::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+}
 
 #else
 
