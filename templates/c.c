@@ -45,7 +45,7 @@ GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
     gdo_hndl.last_errno = GetLastError();
 
     if (msg) {
-        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, _T("%s"), msg);
+        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, _T("%Ts"), msg);
     }
 }
 #else
@@ -408,7 +408,7 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 #ifdef GDO_WINAPI
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
     _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE,
-        _T("symbol not among lookup list: %s"), symbol);
+        _T("symbol not among lookup list: %hs"), symbol);
 #else
     snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1,
         "symbol not among lookup list: %s", symbol);
@@ -447,9 +447,9 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     if (buf) {
         /* put custom message in front of system error message */
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < bufmax) {
-            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%s: %s"), msg, buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%Ts: %Ts"), msg, buf);
         } else {
-            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%s"), buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%Ts"), buf);
         }
         LocalFree(buf);
     } else {
@@ -556,7 +556,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 /* Windows: show message in a MessageBox window */
 GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
-    const gdo_char_t *fmt = _T("error in wrapper function for symbol `%s':\n\n%s");
+    const gdo_char_t *fmt = _T("error in wrapper function for symbol `%Ts':\n\n%Ts");
     const gdo_char_t *err = gdo_last_error();
 
     const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err);
@@ -597,7 +597,7 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
     gdo_win32_last_error_messagebox(symbol);
 #elif defined(GDO_OS_WIN32) && defined(_UNICODE)
     /* Windows: output to console (wide characters) */
-    fwprintf(stderr, L"error in wrapper function for symbol `%s':\n%s\n",
+    fwprintf(stderr, L"error in wrapper function for symbol `%Ts':\n%Ts\n",
         symbol, gdo_last_error());
 #else
     /* default: UTF-8 output to console (any operating system) */
