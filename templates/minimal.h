@@ -7,7 +7,7 @@
     #include <windows.h>
     #define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)
     #define GDO_FREE_LIB(handle)         FreeLibrary(handle)
-    #define GDO_GET_SYM(handle, symbol)  GetProcAddress(handle, symbol)
+    #define GDO_GET_SYM(handle, symbol)  ((void *)GetProcAddress(handle, symbol))
 #else
     #include <dlfcn.h>
     #define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)

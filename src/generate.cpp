@@ -90,7 +90,7 @@ inline static tm *create_localtime()
 	auto ptr = &buf;
 
 	errno_t err = ::localtime_s(ptr, &t);
-	assert((void)"localtime_s()" && err == 0);
+	assert("localtime_s()" && err == 0);
 	(void)err;
 #else
 	auto ptr = std::localtime(&t);

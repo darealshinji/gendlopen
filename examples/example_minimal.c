@@ -13,7 +13,7 @@ void cb(const char *msg)
 int main()
 {
     /* quick load */
-    if (!gdo_load_library_and_symbols("libhelloworld.so.0")) {
+    if (!gdo_load_library_and_symbols( LIBNAME(helloworld,0) )) {
         fprintf(stderr, "failed to load library\n");
         return 1;
     }

@@ -24,7 +24,7 @@ GDO_LINKAGE void gdo_register_free_lib(void);
 GDO_LINKAGE void gdo_clear_errbuf(void);
 
 #ifdef GDO_WINAPI
-GDO_LINKAGE FARPROC gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
+GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
 #define _gdo_sym(a, b)  gdo_sym(a, _T(a), b)
 #else
 GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv);
@@ -321,11 +321,11 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 
 #ifdef GDO_WINAPI
 
-GDO_LINKAGE FARPROC gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
+GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 {
     gdo_clear_errbuf();
 
-    FARPROC ptr = GetProcAddress(gdo_hndl.handle, symbol);
+    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
         gdo_save_GetLastError(msg);

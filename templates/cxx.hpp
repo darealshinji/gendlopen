@@ -352,11 +352,11 @@ private:
 
 
     /* load symbol address */
-    FARPROC sym(const char *symbol, bool &rv)
+    void *sym(const char *symbol, bool &rv)
     {
         clear_error();
 
-        FARPROC ptr = ::GetProcAddress(m_handle, symbol);
+        void *ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
 
         if (!ptr) {
             save_error(symbol);

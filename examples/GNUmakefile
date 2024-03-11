@@ -29,8 +29,6 @@ BINS      += example_wide example_cxx_wide
 BINS2     := uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.dll.a
-CFLAGS    += -Wno-cast-function-type
-CXXFLAGS  += -Wno-cast-function-type
 LDSOFLAGS := -shared -Wl,--out-implib,$(LIBX)
 else
 # *nix

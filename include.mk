@@ -8,8 +8,8 @@ OBJEXT    := o
 ifneq ($(CLANG_CL),)
 CC         = $(CLANG_CL)
 CXX        = $(CLANG_CL)
-CFLAGS    := -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN
-CXXFLAGS  := $(CFLAGS) -EHsc
+CFLAGS    := -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN -Wno-unused-command-line-argument
+CXXFLAGS  := $(CFLAGS) -std:$(STDCXX) -EHsc
 LDFLAGS   := -fuse-ld=lld -link -subsystem:console -libpath:$(shell echo $$LIB | sed 's|;| -libpath:|g')
 LIBEXT    := lib
 
