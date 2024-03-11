@@ -15,10 +15,6 @@
     #define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
 #endif
 
-#ifndef __cplusplus
-    #include <stdbool.h>
-#endif
-
 #ifdef GDO_STATIC
     #define GDO_LINKAGE  static
 #else
@@ -50,12 +46,13 @@ typedef struct
 GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 
 
-GDO_LINKAGE bool gdo_load_library_and_symbols(const char *filename)
+/* returns NULL on success and an error message if loading failed */
+GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 {
     gdo_hndl.handle = GDO_LOAD_LIB(filename);
 
     if (!gdo_hndl.handle) {
-        return false;
+        return "failed to load library";
     }
 @
     /* GDO_SYMBOL */@
@@ -64,7 +61,7 @@ GDO_LINKAGE bool gdo_load_library_and_symbols(const char *filename)
             GDO_GET_SYM(gdo_hndl.handle, "GDO_SYMBOL");@
     if (!gdo_hndl.GDO_SYMBOL_ptr_) {@
         GDO_FREE_LIB(gdo_hndl.handle);@
-        return false;@
+        return "failed to load symbol: GDO_SYMBOL";@
     }
 @
     /* GDO_OBJ_SYMBOL */@
@@ -72,8 +69,8 @@ GDO_LINKAGE bool gdo_load_library_and_symbols(const char *filename)
         GDO_GET_SYM(gdo_hndl.handle, "GDO_OBJ_SYMBOL");@
     if (!gdo_hndl.GDO_OBJ_SYMBOL_ptr_) {@
         GDO_FREE_LIB(gdo_hndl.handle);@
-        return false;@
+        return "failed to load symbol: GDO_OBJ_SYMBOL";@
     }
 
-    return true;
+    return NULL;
 }

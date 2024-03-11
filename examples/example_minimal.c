@@ -12,9 +12,12 @@ void cb(const char *msg)
 
 int main()
 {
-    /* quick load */
-    if (!gdo_load_library_and_symbols( LIBNAME(helloworld,0) )) {
-        fprintf(stderr, "failed to load library\n");
+    /* quick load and error check */
+    const char *lib = LIBNAME(helloworld,0);
+    const char *err = gdo_load_library_and_symbols(lib);
+
+    if (err) {
+        fprintf(stderr, "error: %s: %s\n", lib, err);
         return 1;
     }
 
