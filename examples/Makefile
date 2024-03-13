@@ -2,8 +2,10 @@ bins = \
 	example_1.exe \
 	example_autoload.exe \
 	example_auto_free.exe \
+	example_minimal.exe \
 	example_cxx.exe \
 	example_cxx_autoload.exe \
+	example_cxx_minimal.exe \
 	example_wide.exe \
 	example_cxx_wide.exe \
 	helloworld_example_nodl.exe \
@@ -42,6 +44,7 @@ all: $(bins) $(bins2)
 clean:
 	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj *.exp
 	-del /q $(genhdrs_h) $(genhdrs_hpp) uuid_*_dl.h example_helloworld_static_dl.*
+	-del /q example_minimal.h example_cxx_minimal.hpp
 
 $(bins): $(dll)
 
@@ -78,10 +81,16 @@ example_auto_free.exe: example_auto_free.h
 example_autoload.exe: example_autoload.h
 	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
 
+example_minimal.exe: example_minimal.h
+	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
+
 example_cxx.exe: example_cxx.hpp
 	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
 
 example_cxx_autoload.exe: example_cxx_autoload.hpp
+	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
+
+example_cxx_minimal.exe: example_cxx_minimal.hpp
 	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
 
 example_wide.exe: example_wide.h
@@ -97,6 +106,12 @@ uuid_win_dl.h:
 
 uuid_win.exe: uuid_win_dl.h
 	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
+
+example_minimal.h: helloworld.txt
+	$(gendlopen) --format=minimal -i $** -f -o $@
+
+example_cxx_minimal.hpp: helloworld.txt
+	$(gendlopen) --format=minimal-cxx -i $** -f -o $@
 
 $(genhdrs_h): helloworld.txt
 	$(gendlopen) -i $** -f -o $@

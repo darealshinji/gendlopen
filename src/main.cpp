@@ -47,12 +47,20 @@ void error_exit(char * const prog, const std::string &msg)
 
 static output::format str_to_enum(char * const prog, const std::string &fmt)
 {
-    if (same_string_case(fmt, "C++")) {
+    if (same_string_case(fmt, "C++") ||
+        same_string_case(fmt, "CPP") ||
+        same_string_case(fmt, "CXX"))
+    {
         return output::cxx;
     } else if (same_string_case(fmt, "C")) {
         return output::c;
     } else if (same_string_case(fmt, "minimal")) {
         return output::minimal;
+    } else if (same_string_case(fmt, "minimal-C++") ||
+        same_string_case(fmt, "minimal-CPP") ||
+        same_string_case(fmt, "minimal-CXX"))
+    {
+        return output::minimal_cxx;
     }
 
     std::string s = "unknown output format: " + fmt;
@@ -95,7 +103,7 @@ int main(int argc, char **argv)
         Opt::Single);
 
     StrValue a_format(args, "STRING",
-        "Set output format: C, C++ or minimal (default is C)",
+        "Set output format: C, C++, minimal or minimal-C++ (default is C)",
         {'F', "format"},
         Opt::Single);
 

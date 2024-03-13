@@ -10,6 +10,7 @@ BINS = \
 	example_minimal \
 	example_cxx \
 	example_cxx_autoload \
+	example_cxx_minimal \
 	helloworld_example_dl \
 	helloworld_example_nodl
 
@@ -19,7 +20,8 @@ BINS      += example_wide example_cxx_wide
 BINS2     := uuid_win
 LIB       := libhelloworld-0.dll
 LIBX      := libhelloworld.lib
-CXXFLAGS  += -std:c++latest
+CFLAGS    += -Wno-unused-command-line-argument
+CXXFLAGS  += -Wno-unused-command-line-argument
 LDSOFLAGS := -dll -implib:$(LIBX)
 else
 
@@ -136,6 +138,9 @@ example_wide: example_wide.h
 example_cxx_wide: example_cxx_wide.hpp
 	$(call compile_cxx,$@.cpp)
 
+example_cxx_minimal: example_cxx_minimal.hpp
+	$(call compile_cxx,$@.cpp)
+
 helloworld_example_nodl: helloworld_example.c
 	$(call compile_cc,$<,,$(LIBX))
 
@@ -144,6 +149,9 @@ helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
 
 example_minimal.h: helloworld.txt
 	$(GENDLOPEN) --format=minimal -i $^ -f -o $@
+
+example_cxx_minimal.hpp: helloworld.txt
+	$(GENDLOPEN) --format=minimal-cxx -i $^ -f -o $@
 
 example_%.h: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@

@@ -67,7 +67,8 @@ namespace output
     typedef enum {
         c,
         cxx,
-        minimal
+        minimal,
+        minimal_cxx
     } format;
 }
 

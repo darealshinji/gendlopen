@@ -287,7 +287,11 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
         return;
 
     case output::minimal:
-        header_data = minimal_header_data;
+        header_data = min_c_header_data;
+        return;
+
+    case output::minimal_cxx:
+        header_data = min_cxx_header_data;
         return;
     }
 

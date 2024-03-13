@@ -30,7 +30,7 @@
 
 
 /* Our library and symbols handle */
-typedef struct
+typedef struct gdo_handle
 {
 #ifdef GDO_WINAPI
     HMODULE handle;
