@@ -25,7 +25,7 @@ CXXFLAGS  := $(CFLAGS) -std=$(STDCXX)
 MUNICODE  := -municode
 LDFLAGS   := -static -s
 else
-CFLAGS    := -Wall -Wextra -O3 -I. -D_GNU_SOURCE
+CFLAGS    := -Wall -Wextra -O3 -I.
 CXXFLAGS  := $(CFLAGS) -std=$(STDCXX)
 SOFLAGS   += -fvisibility=hidden -fPIC
 LDFLAGS   := -s

@@ -38,7 +38,7 @@ BINS      += uuid_nix
 BINS2     := notify appindicator
 LIB       := libhelloworld.so.0
 LIBX      := libhelloworld.so
-CFLAGS    += -Wno-deprecated-declarations
+CFLAGS    += -Wno-deprecated-declarations -D_GNU_SOURCE
 LDFLAGS   += -ldl -Wl,-rpath,'$$ORIGIN'
 LDSOFLAGS := -shared -Wl,-soname,$(LIB)
 endif

@@ -19,6 +19,30 @@
 
 
 
+/***
+
+A small C++ library loader that throws exceptions on error.
+
+Usage:
+
+    try {
+        gdo::load_library_and_symbols( LIBNAME(helloworld,0) );
+    }
+    catch (const gdo::LibraryError &e) {
+        std::cerr << "error: failed to load library: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (const gdo::SymbolError &e) {
+        std::cerr << "error: failed to load symbol: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "an unknown error has occurred" << std::endl;
+        return 1;
+    }
+
+***/
+
 namespace gdo
 {
     /* Our library and symbols handle */
@@ -108,7 +132,13 @@ namespace gdo
         handle.handle = load_lib(filename);
 
         if (!handle.handle) {
-            throw LibraryError(filename ? filename : "<NULL>");
+            if (filename == NULL) {
+                filename = "<NULL>";
+            } else if (*filename == 0) {
+                filename = "<EMPTY>";
+            }
+
+            throw LibraryError(filename);
         }
     @
         /* GDO_SYMBOL */@
