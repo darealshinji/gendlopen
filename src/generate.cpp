@@ -310,11 +310,23 @@ int gendlopen::generate(
         return 1;
     }
 
+    /* is output C or C++? */
+    bool is_c = true;
+
+    switch (m_out)
+    {
+    case output::cxx:
+    case output::minimal_cxx:
+        is_c = false;
+        break;
+    default:
+        break;
+    }
+
     /* output filename */
     std::filesystem::path ofhdr(ofile);
     auto ofbody = ofhdr;
     const bool use_stdout = (ofile == "-");
-    const bool is_c = (m_out != output::cxx);
 
     if (use_stdout) {
         m_separate = false;
