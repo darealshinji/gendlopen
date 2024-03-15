@@ -37,7 +37,6 @@
 #include <cstring>
 #include <ctime>
 
-#include "template.h"
 #include "generate.hpp"
 #include "gendlopen.hpp"
 
