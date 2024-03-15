@@ -11,13 +11,6 @@
     #include <dlfcn.h>
 #endif
 
-#ifdef GDO_STATIC
-    #define GDO_LINKAGE  static
-#else
-    #define GDO_LINKAGE  /**/
-#endif
-
-
 
 /***
 
@@ -45,65 +38,57 @@ Usage:
 
 namespace gdo
 {
-    /* Our library and symbols handle */
-    typedef struct handle
+    /* symbol pointers */
+    namespace ptr
     {
-#ifdef GDO_WINAPI
-        HMODULE handle;
-#else
-        void *handle;
-#endif
-
-        GDO_TYPE (*GDO_SYMBOL_ptr_)(GDO_ARGS);
-        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL_ptr_;
-
-    } handle_t;
-
-    GDO_LINKAGE handle_t handle =
-    {
-        .handle = nullptr,
-        .GDO_SYMBOL_ptr_ = nullptr,
-        .GDO_OBJ_SYMBOL_ptr_ = nullptr
-    };
-
+        GDO_TYPE (*GDO_SYMBOL)(GDO_ARGS) = nullptr;
+        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL = nullptr;
+    }
 
 #ifdef GDO_WINAPI
 
-    GDO_LINKAGE inline
-    HMODULE load_lib(const char *filename, int flags=0) {
+    /* library handle */
+    HMODULE handle = nullptr;
+
+    /* load library */
+    inline HMODULE load_lib(const char *filename, int flags=0) {
         return ::LoadLibraryExA(filename, nullptr, flags);
     }
 
-    GDO_LINKAGE inline
-    bool free_lib(HMODULE handle) {
+    /* free library */
+    inline bool free_lib(HMODULE handle) {
         return (::FreeLibrary(handle) == TRUE);
     }
 
-    GDO_LINKAGE inline
-    void *get_symbol(HMODULE handle, const char *symbol) {
+    /* get symbol */
+    inline void *get_symbol(HMODULE handle, const char *symbol) {
         return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));
     }
 
 #else /* dlfcn */
 
-    GDO_LINKAGE inline
-    void *load_lib(const char *filename, int flags=RTLD_LAZY) {
+    /* library handle */
+    void *handle = nullptr;
+
+    /* load library */
+    inline void *load_lib(const char *filename, int flags=RTLD_LAZY) {
         return ::dlopen(filename, flags);
     }
 
-    GDO_LINKAGE inline
-    bool free_lib(void *handle) {
+    /* free library */
+    inline bool free_lib(void *handle) {
         return (::dlclose(handle) == 0);
     }
 
-    GDO_LINKAGE inline
-    void *get_symbol(void *handle, const char *symbol) {
+    /* get symbol */
+    inline void *get_symbol(void *handle, const char *symbol) {
         return ::dlsym(handle, symbol);
     }
 
 #endif //GDO_WINAPI
 
 
+    /* base error class */
     class Error : public std::runtime_error
     {
         public:
@@ -111,6 +96,7 @@ namespace gdo
             virtual ~Error() {}
     };
 
+    /* library loading error */
     class LibraryError : public Error
     {
         public:
@@ -118,6 +104,7 @@ namespace gdo
             virtual ~LibraryError() {}
     };
 
+    /* symbol loading error */
     class SymbolError : public Error
     {
         public:
@@ -129,9 +116,9 @@ namespace gdo
     /* throw an exception on error */
     void load_library_and_symbols(const char *filename) noexcept(false)
     {
-        handle.handle = load_lib(filename);
+        handle = load_lib(filename);
 
-        if (!handle.handle) {
+        if (!handle) {
             if (filename == NULL) {
                 filename = "<NULL>";
             } else if (*filename == 0) {
@@ -142,20 +129,20 @@ namespace gdo
         }
     @
         /* GDO_SYMBOL */@
-        handle.GDO_SYMBOL_ptr_ =@
+        ptr::GDO_SYMBOL =@
             reinterpret_cast<GDO_TYPE (*)(GDO_ARGS)>(@
-                get_symbol(handle.handle, "GDO_SYMBOL"));@
-        if (!handle.GDO_SYMBOL_ptr_) {@
-            free_lib(handle.handle);@
+                get_symbol(handle, "GDO_SYMBOL"));@
+        if (!ptr::GDO_SYMBOL) {@
+            free_lib(handle);@
             throw SymbolError("GDO_SYMBOL");@
         }
     @
         /* GDO_OBJ_SYMBOL */@
-        handle.GDO_OBJ_SYMBOL_ptr_ =
+        ptr::GDO_OBJ_SYMBOL =@
             reinterpret_cast<GDO_OBJ_TYPE *>(@
-                get_symbol(handle.handle, "GDO_OBJ_SYMBOL"));@
-        if (!handle.GDO_OBJ_SYMBOL_ptr_) {@
-            free_lib(handle.handle);@
+                get_symbol(handle, "GDO_OBJ_SYMBOL"));@
+        if (!ptr::GDO_OBJ_SYMBOL) {@
+            free_lib(handle);@
             throw SymbolError("GDO_OBJ_SYMBOL");@
         }
     }
@@ -164,8 +151,7 @@ namespace gdo
 
 
 /* aliases to raw function pointers */
-#define GDO_SYMBOL gdo::handle.GDO_SYMBOL_ptr_
+#define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
 
 /* aliases to raw object pointers */
-#define GDO_OBJ_SYMBOL *gdo::handle.GDO_OBJ_SYMBOL_ptr_
-
+#define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL
