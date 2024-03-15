@@ -205,7 +205,7 @@ namespace gdo
      * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
     std::string libname(const std::string &name, unsigned int api)
     {
-#if defined(_WIN32)  // not GDO_WINAPI!
+#if defined(GDO_OS_WIN32)
         std::string s = "lib" + (name + ('-' + (std::to_string(api) + ".dll")));
 #elif defined(__APPLE__)
         std::string s = "lib" + (name + ('.' + (std::to_string(api) + ".dylib")));
