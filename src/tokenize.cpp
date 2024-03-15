@@ -344,6 +344,7 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
     }
 
     /* check if input filesize exceeds 10 MB */
+    /*
     const size_t sz = m_ifs.size();
 
     if (m_ifs.size() > (10*1000*1000)) {
@@ -351,6 +352,7 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
             << ifile << std::endl;
         return false;
     }
+    */
 
     /* read and tokenize input */
     vstring_t vec = read_input();

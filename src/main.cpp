@@ -71,7 +71,8 @@ static output::format str_to_enum(char * const prog, const std::string &fmt)
 
 int main(int argc, char **argv)
 {
-    ArgumentParser args(
+    ArgumentParser args("Tool to generate library loading code");
+/*
         "Tool to generate library loading code",
         "About the input file format:\n"
         "* all functions that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)\n"
@@ -79,61 +80,85 @@ int main(int argc, char **argv)
         "* comments are ignored\n"
         "* line-breaks are treated like spaces\n"
         "* any other code will throw an error");
+*/
 
     HelpFlag a_help(args, "",
-        "Display this help menu",
+        "show this help",
         {'h', "help"});
 
     StrValue a_input(args, "FILE",
-        "Input file (use \"-\" for STDIN)",
+        "input file (\"-\" = STDIN)",
         {'i', "input"},
         Opt::Single | Opt::Required);
 
     StrValue a_output(args, "FILE",
-        "Set an output file path (default: STDOUT)",
+        "output file (default: STDOUT)",
         {'o', "output"},
         "-",
         Opt::Single);
 
     StrValue a_name(args, "STRING",
-        "Custom string to be used as prefix in function and macro names or as "
-        "C++ namespace (default: gdo)",
+        "use STRING in names of functions, macros and namespaces",
+        //"Custom string to be used as prefix in function and macro names or as "
+        //"C++ namespace (default: gdo).",
         {'n', "name"},
         "GDO",
         Opt::Single);
 
     StrValue a_format(args, "STRING",
-        "Set output format: C, C++, minimal or minimal-C++ (default is C)",
+        "output format: c (default), c++, minimal, minimal-c++",
+        //"Set output format: C, C++, minimal or minimal-C++ (default is C).",
         {'F', "format"},
         Opt::Single);
 
     StrValue a_default_lib(args, "STRING",
-        "Set a default library name to load; "
-        "hint: use the macro QUOTE_STRING(...) to put quotes around the library name",
+        "default library to load",
+        //"Set a default library name to load. "
+        //"Hint: use the macro QUOTE_STRING(...) to put quotes around the library name.",
         {"default-library"},
         Opt::Single);
 
     StrList a_include(args, "STRING",
-        "Header file to include (can be used multiple times); "
-        "hint: use the macro QUOTE_STRING(...) to put quotes around the header name",
+        "header to include (can be used multiple times)",
+        //"Header file to include (can be used multiple times) "
+        //"Hint: use the macro QUOTE_STRING(...) to put quotes around the header name.",
         {'I', "include"});
 
     StrList a_define(args, "STRING",
-        "Add preprocessor definitions to the output (can be used multiple times)",
+        "define preprocessor macro (can be used multiple times)",
+        //"Add preprocessor definitions to the output (can be used multiple times).",
         {'D', "define"});
 
     Flag a_separate(args, "",
-        "Save output into separate header and body files",
+        "save into header and body files",
+        //"Save output into separate header and body files.",
         {'s', "separate"});
 
     Flag a_force(args, "",
-        "Always overwrite existing files",
+        "overwrite existing files",
+        //"Always overwrite existing files.",
         {'f', "force"});
 
     Flag a_skip_parameter_names(args, "",
-        "Don't try to look for parameter names in function prototypes;"
-        " this will disable any kind of wrapped functions in the output",
+        "skip parameter name lookup in function prototypes",
+        //"Don't try to look for parameter names in function prototypes. "
+        //"This will disable any kind of wrapped functions in the output.",
         {"skip-parameter-names"});
+
+    Flag a_clang_ast(args, "",
+        "input is Clang AST file",
+        //"Treat input as a Clang abstract syntax tree file. "
+        //"The input should include ANSI escape codes and can be created like this: "
+        //"clang -Xclang -ast-dump -fansi-escape-codes [...] header-file.h",
+        {"clang-ast"});
+
+    StrValue a_prefix(args, "STRING",
+        "use only symbols prefixed with STRING",
+        {"prefix"});
+
+    StrList a_symbol(args, "STRING",
+        "list symbols to use (rules out `--prefix')",
+        {'S', "symbol"});
 
 
     /* parse arguments */
@@ -178,10 +203,33 @@ int main(int argc, char **argv)
         }
     }
 
+    /* --prefix and --symbol */
+    if (a_prefix && a_symbol) {
+        error_exit(*argv, "cannot use --prefix and --symbol together");
+    }
+
+    /* --prefix */
+    if (a_prefix) {
+        gdo.prefix(a_prefix.Get());
+    }
+
+    /* --symbol */
+    if (a_symbol) {
+        for (const auto &e : args::get(a_symbol)) {
+            gdo.add_sym(e);
+        }
+    }
+
     /* flags */
     gdo.force(a_force);
     gdo.separate(a_separate);
     gdo.skip_parameter_names(a_skip_parameter_names);
+    gdo.clang_ast(a_clang_ast);
+
+    /* --clang-ast */
+    if (a_clang_ast) {
+        error_exit(*argv, "not implemented yet");
+    }
 
     return gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
 }

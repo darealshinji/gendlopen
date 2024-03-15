@@ -39,17 +39,19 @@ class gendlopen
 {
 private:
 
-    std::vector<std::string> m_definitions, m_includes;
-    std::string m_name_upper, m_name_lower, m_default_lib;
+    vstring_t m_definitions, m_includes, m_symbols;
+    std::string m_name_upper, m_name_lower, m_default_lib, m_prefix;
     output::format m_out = output::c;
     bool m_force = false;
     bool m_separate = false;
     bool m_skip_parameter_names = false;
+    bool m_clang_ast = false;
     int *m_argc = NULL;
     char ***m_argv = NULL;
 
     bool open_fstream(cout_ofstream &ofs, const std::string &ofile);
     void create_template_data(std::string &header_data, std::string &body_data);
+    void copy_symbols(tokenize &tok, vproto_t &vproto, vobj_t &vobjs);
     std::string parse(const std::string &data, vproto_t &prototypes, vobj_t &objects);
 
 public:
@@ -64,14 +66,17 @@ public:
 
     /* set options */
     void format(output::format val) { m_out = val; }
-    void default_lib(const std::string &str) { m_default_lib = str; }
+    void default_lib(const std::string &s) { m_default_lib = s; }
+    void prefix(const std::string &s) { m_prefix = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
+    void clang_ast(bool b) { m_clang_ast = b; }
 
     /* add code */
     void add_def(const std::string &s) { m_definitions.push_back(s); }
     void add_inc(const std::string &s) { m_includes.push_back(s); }
+    void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
     int generate(const std::string &ifile, const std::string &ofile, const std::string &name);

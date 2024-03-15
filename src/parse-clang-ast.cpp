@@ -22,6 +22,7 @@
  * THE SOFTWARE
  */
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <regex>
@@ -382,7 +383,9 @@ int main(int argc, char **argv)
 
     file = "-"; // stdin
 
-    ast::parse(file, mode, sym, vproto, vobj);
+    if (!ast::parse(file, mode, sym, vproto, vobj)) {
+        return 1;
+    }
 
     for (const auto &e : vproto) {
         std::cout << e.type << ' ' << e.symbol

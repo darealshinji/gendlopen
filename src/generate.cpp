@@ -26,6 +26,7 @@
  * Generate the output data (STDOUT or save to file).
  */
 
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -297,17 +298,72 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
     common::unreachable();
 }
 
+void gendlopen::copy_symbols(tokenize &tok, vproto_t &vproto, vobj_t &vobjs)
+{
+    if (!m_prefix.empty()) {
+        /* copy only symbols beginning with prefix */
+        auto vproto0 = tok.prototypes();
+        auto vobjs0 = tok.objects();
+
+        for (const auto &e : vproto0) {
+            if (e.symbol.starts_with(m_prefix)) {
+                vproto.push_back(e);
+            }
+        }
+
+        for (const auto &e : vobjs0) {
+            if (e.symbol.starts_with(m_prefix)) {
+                vobjs.push_back(e);
+            }
+        }
+    } else if (!m_symbols.empty()) {
+        /* copy only symbols whose names are on the m_symbols vector list */
+        auto vproto0 = tok.prototypes();
+        auto vobjs0 = tok.objects();
+
+        for (const auto &e : vproto0) {
+            if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
+                vproto.push_back(e);
+            }
+        }
+
+        for (const auto &e : vobjs0) {
+            if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
+                vobjs.push_back(e);
+            }
+        }
+    } else {
+        /* copy all symbols */
+        vproto = tok.prototypes();
+        vobjs = tok.objects();
+    }
+}
+
+/* generate output */
 int gendlopen::generate(
     const std::string &ifile,
     const std::string &ofile,
     const std::string &name)
 {
     tokenize tok;
+    vproto_t vproto;
+    vobj_t vobjs;
+
+    /* sort and remove duplicates */
+    auto sort_vstring = [] (vstring_t &vec) {
+        std::sort(vec.begin(), vec.end());
+        vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
+    };
+
+    sort_vstring(m_definitions);
+    sort_vstring(m_symbols);
 
     /* read data */
     if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
         return 1;
     }
+
+    copy_symbols(tok, vproto, vobjs);
 
     /* is output C or C++? */
     bool is_c = true;
@@ -411,9 +467,7 @@ int gendlopen::generate(
     create_template_data(header_data, body_data);
 
     /* parse header template */
-    auto proto = tok.prototypes();
-    auto objs = tok.objects();
-    out << parse(header_data, proto, objs);
+    out << parse(header_data, vproto, vobjs);
 
     /* extern "C" end */
     if (is_c) {
@@ -450,7 +504,7 @@ int gendlopen::generate(
 
     out_body << note;
     out_body << "#include \"" << header_name << "\"\n\n";
-    out_body << parse(body_data, proto, objs);
+    out_body << parse(body_data, vproto, vobjs);
 
     std::cout << "saved to file: " << ofbody << std::endl;
 
