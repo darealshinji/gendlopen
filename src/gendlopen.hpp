@@ -29,9 +29,8 @@
 #include <string>
 #include <vector>
 
-#include "template.h"
 #include "common.hpp"
-#include "generate.hpp"
+#include "cout_ofstream.hpp"
 #include "tokenize.hpp"
 
 

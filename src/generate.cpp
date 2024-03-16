@@ -38,7 +38,8 @@
 #include <cstring>
 #include <ctime>
 
-#include "generate.hpp"
+#include "template.h"
+#include "cout_ofstream.hpp"
 #include "gendlopen.hpp"
 
 using common::range;

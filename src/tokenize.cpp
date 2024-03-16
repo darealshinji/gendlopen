@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 
+#include "cin_ifstream.hpp"
 #include "common.hpp"
 #include "tokenize.hpp"
 
@@ -336,23 +337,10 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
     m_skip_parameter_names = skip_parameter_names;
 
     /* open file for reading */
-    m_ifs.open(ifile);
-
-    if (!m_ifs.is_open()) {
+    if (!m_ifs.open(ifile)) {
         std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
         return false;
     }
-
-    /* check if input filesize exceeds 10 MB */
-    /*
-    const size_t sz = m_ifs.size();
-
-    if (m_ifs.size() > (10*1000*1000)) {
-        std::cerr << "error: filesize of " << sz <<  " bytes exceeds limit of 10 MB: "
-            << ifile << std::endl;
-        return false;
-    }
-    */
 
     /* read and tokenize input */
     vstring_t vec = read_input();

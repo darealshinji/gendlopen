@@ -10,10 +10,7 @@ include ../include.mk
 BIN    := gendlopen
 AUXBIN := gen_template_h
 
-SRCS := main.cpp generate.cpp parse.cpp parse-clang-ast.cpp tokenize.cpp
-HDRS := args.hxx common.hpp gendlopen.hpp tokenize.hpp template.h
-
-OBJS := main.$(OBJEXT) \
+OBJS   := main.$(OBJEXT) \
 	generate.$(OBJEXT) \
 	parse.$(OBJEXT) \
 	parse-clang-ast.$(OBJEXT) \
@@ -28,13 +25,13 @@ all: $(BIN)
 clean:
 	-rm -f $(BIN) $(AUXBIN) template.h *.exe *.o *.obj
 
-$(SRCS): $(HDRS)
-
 $(BIN): $(OBJS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 $(AUXBIN): gen_template_h.c
 	$(CCAUX) -Wall -O2 -o $@ $<
+
+generate.cpp: template.h
 
 template.h: $(AUXBIN)
 	./$(AUXBIN) ../templates

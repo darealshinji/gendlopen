@@ -30,7 +30,6 @@
 #include <string>
 #include <stdlib.h>
 
-#include "template.h"
 #include "common.hpp"
 #include "gendlopen.hpp"
 

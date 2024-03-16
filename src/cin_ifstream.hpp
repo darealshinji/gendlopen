@@ -22,62 +22,86 @@
  * THE SOFTWARE
  */
 
-#ifndef _GENERATE_HPP_
-#define _GENERATE_HPP_
+#ifndef _CIN_IFSTREAM_HPP_
+#define _CIN_IFSTREAM_HPP_
 
 #include <iostream>
 #include <fstream>
 #include <string>
 
 
-class cout_ofstream
+/* wrapper class to enable reading input from
+ * a file or std::cin using the same object */
+class cin_ifstream
 {
 private:
 
-    bool m_stdout = false;
-    std::ofstream m_ofs;
+    bool m_stdin = false;
+    std::ifstream m_ifs;
 
 public:
 
-    cout_ofstream() {}
+    cin_ifstream()
+    {}
 
-    ~cout_ofstream() {
+    cin_ifstream(const std::string &file)
+    {
+        open(file);
+    }
+
+    ~cin_ifstream()
+    {
         close();
     }
 
-    bool open(const std::string &file, std::ios::openmode mode = std::ios::out)
+    /* read from std::cin if input is "-" */
+    bool open(const std::string &file)
     {
         if (file == "-") {
-            m_stdout = true;
+            m_stdin = true;
         } else {
-            m_ofs.open(file.c_str(), mode);
+            m_ifs.open(file.c_str());
         }
-
         return is_open();
     }
 
     bool is_open() const {
-        return m_stdout ? true : m_ofs.is_open();
+        return m_stdin ? true : m_ifs.is_open();
     }
 
-    void close()
+    void close() {
+        if (m_ifs.is_open()) m_ifs.close();
+    }
+
+    std::istream& get(char &c) {
+        return m_stdin ? std::cin.get(c) : m_ifs.get(c);
+    }
+
+    int peek() {
+        return m_stdin ? std::cin.peek() : m_ifs.peek();
+    }
+
+    bool good() const {
+        return m_stdin ? std::cin.good() : m_ifs.good();
+    }
+
+    void ignore()
     {
-        if (m_stdout) {
-            std::cout << std::flush;
-        } else if (m_ofs.is_open()) {
-            m_ofs.close();
+        if (m_stdin) {
+            std::cin.ignore();
+        } else {
+            m_ifs.ignore();
         }
     }
 
-    template<class T>
-    std::ostream& operator<<(const T &obj)
+    bool getline(std::string &line)
     {
-        if (m_stdout) {
-            return std::cout << obj;
+        if (m_stdin) {
+            return (std::getline(std::cin, line)) ? true : false;
         }
-        return m_ofs << obj;
-    }
+
+        return (std::getline(m_ifs, line)) ? true : false;
+    };
 };
 
-
-#endif //_GENERATE_HPP_
+#endif //_CIN_IFSTREAM_HPP_

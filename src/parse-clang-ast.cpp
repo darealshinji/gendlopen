@@ -22,6 +22,8 @@
  * THE SOFTWARE
  */
 
+/* read prototypes from a Clang AST file */
+
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -30,6 +32,7 @@
 #include <vector>
 #include <stdio.h>
 #include <string.h>
+#include "cin_ifstream.hpp"
 #include "gendlopen.hpp"
 
 
@@ -157,25 +160,13 @@ static bool get_parameters(const std::string &line, std::string &param, size_t &
 bool gendlopen::parse_ast(const std::string &ifile)
 {
     std::string line;
-    std::ifstream ifs;
+    cin_ifstream ifs;
     ast::mode_t mode = ast::M_ALL;
 
-    /* getline for filestream or stdin */
-    auto xgetline = [] (std::ifstream &ifs, std::string &line) -> bool {
-        if (ifs.is_open()) {
-            return (std::getline(ifs, line)) ? true : false;
-        }
-        return (std::getline(std::cin, line)) ? true : false;
-    };
-
-    if (ifile != "-") {
-        /* open file for reading */
-        ifs.open(ifile);
-
-        if (!ifs.is_open()) {
-            std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
-            return false;
-        }
+    /* open file for reading */
+    if (!ifs.open(ifile)) {
+        std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
+        return false;
     }
 
     /* handle mode */
@@ -187,7 +178,7 @@ bool gendlopen::parse_ast(const std::string &ifile)
 
     /* check first line */
 
-    xgetline(ifs, line);
+    ifs.getline(line);
 
     if (line.empty()) {
         std::cerr << "error: empty line" << std::endl;
@@ -202,7 +193,7 @@ bool gendlopen::parse_ast(const std::string &ifile)
     }
 
     /* parse lines */
-    while (xgetline(ifs, line))
+    while (ifs.getline(line))
     {
 JMP1:
         if (line.empty()) {
@@ -221,7 +212,7 @@ JMP1:
             size_t count = 0;
 
             /* read next line(s) */
-            while (xgetline(ifs, line) && get_parameters(line, param, count))
+            while (ifs.getline(line) && get_parameters(line, param, count))
             {}
 
             if (param.ends_with(", ")) {

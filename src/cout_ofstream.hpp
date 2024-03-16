@@ -22,47 +22,62 @@
  * THE SOFTWARE
  */
 
-#ifndef _TOKENIZE_HPP_
-#define _TOKENIZE_HPP_
+#ifndef _COUT_OFSTREAM_HPP_
+#define _COUT_OFSTREAM_HPP_
 
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <vector>
-
-#include "common.hpp"
-#include "cin_ifstream.hpp"
 
 
-class tokenize
+class cout_ofstream
 {
 private:
 
-    vproto_t m_prototypes;
-    vobj_t m_objects;
-    cin_ifstream m_ifs;
-    bool m_skip_parameter_names = false;
-
-    vstring_t read_input();
-    bool tokenize_function(const std::string &s);
-    bool tokenize_object(const std::string &s);
+    bool m_stdout = false;
+    std::ofstream m_ofs;
 
 public:
 
-    /* c'tor */
-    tokenize()
-    {}
+    cout_ofstream() {}
 
-    /* d'tor */
-    virtual ~tokenize()
-    {}
+    ~cout_ofstream() {
+        close();
+    }
 
-    /* tokenize input */
-    bool tokenize_file(const std::string &ifile, bool skip_parameter_names);
+    bool open(const std::string &file, std::ios::openmode mode = std::ios::out)
+    {
+        if (file == "-") {
+            m_stdout = true;
+        } else {
+            m_ofs.open(file.c_str(), mode);
+        }
 
-    /* return prototype vectors */
-    vproto_t &prototypes() { return m_prototypes; };
-    vobj_t &objects() { return m_objects; };
+        return is_open();
+    }
+
+    bool is_open() const {
+        return m_stdout ? true : m_ofs.is_open();
+    }
+
+    void close()
+    {
+        if (m_stdout) {
+            std::cout << std::flush;
+        } else if (m_ofs.is_open()) {
+            m_ofs.close();
+        }
+    }
+
+    template<class T>
+    std::ostream& operator<<(const T &obj)
+    {
+        if (m_stdout) {
+            return std::cout << obj;
+        }
+        return m_ofs << obj;
+    }
 };
 
-#endif //_TOKENIZE_HPP_
+
+#endif //_COUT_OFSTREAM_HPP_
