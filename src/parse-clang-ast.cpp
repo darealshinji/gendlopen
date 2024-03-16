@@ -30,8 +30,8 @@
 #include <vector>
 #include <stdio.h>
 #include <string.h>
-#include "common.hpp"
-#include "parse-clang-ast.hpp"
+#include "gendlopen.hpp"
+
 
 /* ANSI color codes used in the Clang AST output */
 
@@ -49,43 +49,28 @@
 #define sCFGREEN  sCOL(0;1;32)  /* fat green */
 
 
-typedef struct {
-    bool is_func;
-    std::string symbol;
-    std::string type;
-    std::string param_novars;
-} decl_t;
-
-
-namespace /* anonymous */
+namespace ast
 {
-    /* check if a symbol begins with an illegal character */
-    inline void check_begins_with_illegal_character(const std::string &sym)
-    {
-        if (!common::range(sym.front(), 'a', 'z') &&
-            !common::range(sym.front(), 'A', 'Z') &&
-            sym.front() != '_')
-        {
-            std::cerr << "error: given symbol name `" << sym
-                << "' starts with illegal ASCII character!" << std::endl;
-            std::exit(1);
-        }
-    }
+    typedef enum {
+        M_NONE,
+        M_ALL,
+        M_PREFIX,
+        M_LIST
+    } mode_t;
 
-    /* getline for filestream or stdin */
-    inline bool xgetline(std::ifstream &ifs, std::string &line)
-    {
-        if (ifs.is_open()) {
-            return (std::getline(ifs, line)) ? true : false;
-        }
-        return (std::getline(std::cin, line)) ? true : false;
-    }
+    typedef struct {
+        bool is_func;
+        std::string symbol;
+        std::string type;
+        std::string param_novars;
+    } decl_t;
 }
 
+
 /* get function or variable declaration */
-static decl_t get_declarations(const std::string &line, mode_t mode, const std::string &symbol, vstring_t &vec)
+static ast::decl_t get_declarations(const std::string &line, ast::mode_t mode, const std::string &symbol, vstring_t &list)
 {
-    decl_t decl;
+    ast::decl_t decl;
     std::smatch m;
 
     const std::regex reg("^.*?"
@@ -98,34 +83,16 @@ static decl_t get_declarations(const std::string &line, mode_t mode, const std::
         return {};
     }
 
-    switch(mode)
-    {
-    case ast::M_PREFIX:
+    if (mode == ast::M_PREFIX) {
         if (!m[2].str().starts_with(symbol)) {
             return {};
         }
-        break;
-
-    case ast::M_SINGLE:
-        if (m[2] != symbol) {
-            return {};
-        }
-        break;
-
-    case ast::M_LIST:
+    } else if (mode == ast::M_LIST) {
         /* returns how many times the element was
          * found and erased from vector */
-        if (std::erase(vec, m[2]) == 0) {
+        if (std::erase(list, m[2]) == 0) {
             return {};
         }
-        break;
-
-    case ast::M_ALL:
-        break;
-
-    case ast::M_NONE:
-        common::unreachable();
-        break;
     }
 
     decl.symbol = m[2];
@@ -186,40 +153,20 @@ static bool get_parameters(const std::string &line, std::string &param, size_t &
     return true;
 }
 
-/* turn comma-separated list into vector */
-static void vectorize_list(vstring_t &vec, const std::string &symbols)
-{
-    std::string token;
-    std::string copy = symbols;
-
-    /* replace separators with space */
-    for (char &c : copy) {
-        if (c == ',') c = ' ';
-    }
-
-    std::istringstream iss(copy);
-
-    while (iss >> token) {
-        check_begins_with_illegal_character(token);
-        vec.push_back(token);
-    }
-
-    if (vec.empty()) {
-        std::cerr << "error: empty list provided: " << symbols << std::endl;
-        std::exit(1);
-    }
-
-    /* sort and remove duplicates */
-    std::sort(vec.begin(), vec.end());
-    vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
-}
-
 /* parse Clang AST */
-bool ast::parse(const std::string &ifile, mode_t mode, const std::string &sym, vproto_t &vproto, vobj_t &vobj)
+bool gendlopen::parse_ast(const std::string &ifile)
 {
     std::string line;
     std::ifstream ifs;
-    vstring_t vlist;
+    ast::mode_t mode = ast::M_ALL;
+
+    /* getline for filestream or stdin */
+    auto xgetline = [] (std::ifstream &ifs, std::string &line) -> bool {
+        if (ifs.is_open()) {
+            return (std::getline(ifs, line)) ? true : false;
+        }
+        return (std::getline(std::cin, line)) ? true : false;
+    };
 
     if (ifile != "-") {
         /* open file for reading */
@@ -232,23 +179,10 @@ bool ast::parse(const std::string &ifile, mode_t mode, const std::string &sym, v
     }
 
     /* handle mode */
-    switch (mode)
-    {
-    case M_PREFIX:
-    case M_SINGLE:
-        check_begins_with_illegal_character(sym);
-        break;
-
-    case M_LIST:
-        vectorize_list(vlist, sym);
-        break;
-
-    case M_ALL:
-        break;
-
-    case M_NONE:
-        common::unreachable();
-        std::abort();
+    if (!m_prefix.empty()) {
+        mode = ast::M_PREFIX;
+    } else if (!m_symbols.empty()) {
+        mode = ast::M_LIST;
     }
 
     /* check first line */
@@ -270,132 +204,47 @@ bool ast::parse(const std::string &ifile, mode_t mode, const std::string &sym, v
     /* parse lines */
     while (xgetline(ifs, line))
     {
-        bool loop = true;
-
+JMP1:
         if (line.empty()) {
-            std::cerr << "error: empty line" << std::endl;
-            return false;
+            /* assume end of file */
+            return true;
         }
 
-        while (loop == true)
-        {
-            auto decl = get_declarations(line, mode, sym, vlist);
+        auto decl = get_declarations(line, mode, m_prefix, m_symbols);
 
-            if (decl.symbol.empty()) {
-                /* nothing found */
-                loop = false;
-            } else if (decl.is_func) {
-                /* function: get parameters */
-                std::string param;
-                size_t count = 0;
+        if (decl.symbol.empty()) {
+            /* nothing found */
+            continue;
+        } else if (decl.is_func) {
+            /* save values and continue to read params */
+            std::string param;
+            size_t count = 0;
 
-                while (xgetline(ifs, line) && get_parameters(line, param, count))
-                {}
+            /* read next line(s) */
+            while (xgetline(ifs, line) && get_parameters(line, param, count))
+            {}
 
-                if (param.ends_with(", ")) {
-                    param.erase(param.size()-2);
-                }
-
-                proto_t proto = { decl.type, decl.symbol, param, decl.param_novars };
-                vproto.emplace_back(proto);
-            } else {
-                /* variable */
-                obj_t obj = { decl.type, decl.symbol };
-                vobj.emplace_back(obj);
-                loop = false;
+            if (param.ends_with(", ")) {
+                param.erase(param.size()-2);
             }
 
-            /* stop if the vector is empty */
-            if (mode == M_LIST && vlist.empty()) {
-                return true;
-            }
-        }
-    }
+            proto_t proto = { decl.type, decl.symbol, param, decl.param_novars };
+            m_prototypes.push_back(proto);
 
-    /* inform if symbols were not found */
-    if (mode == M_LIST && !vlist.empty()) {
-        std::cerr << "warning: the following symbols were not found:";
-
-        for (const auto &e : vlist) {
-            std::cerr << ' ' << e;
+            /* continue to analyze the current line in buffer */
+            goto JMP1;
+        } else {
+            /* variable */
+            obj_t obj = { decl.type, decl.symbol };
+            m_objects.push_back(obj);
         }
-        std::cerr << std::endl;
+
+        /* stop if the vector is empty */
+        if (mode == ast::M_LIST && m_symbols.empty()) {
+            return true;
+        }
     }
 
     return true;
-}
-
-
-static void print_help(const char *argv0)
-{
-    std::cerr << "Read clang AST data from standard input and create machine readable\n"
-        "C prototypes writing to standard output.\n"
-        "\n"
-        "Usage:\n"
-        "  " << argv0 << " --help\n"
-        "  " << argv0 << " all                   get all symbols\n"
-        "  " << argv0 << " prefix PFX            get all symbols that begin with PFX\n"
-        "  " << argv0 << " list SYM1[,SYM2,...]  search for one or more symbols in a comma-separated list\n"
-        "\n"
-        "examples:\n"
-        "  clang -Xclang -ast-dump -fansi-escape-codes [...] HEADER-FILE | " << argv0 << " all\n"
-        "  " << argv0 << " prefix mylibraryapi_ < AST-DUMP-FILE\n"
-        << std::endl;
-}
-
-
-int main(int argc, char **argv)
-{
-    vproto_t vproto;
-    vobj_t vobj;
-    std::string sym, file;
-    ast::mode_t mode = ast::M_NONE;
-
-    switch (argc)
-    {
-    case 2:
-        if (::strcmp(argv[1], "all") == 0) {
-            mode = ast::M_ALL;
-        } else if (::strcmp(argv[1], "--help") == 0) {
-            print_help(argv[0]);
-            return 0;
-        }
-        break;
-
-    case 3:
-        if (::strcmp(argv[1], "prefix") == 0) {
-            mode = ast::M_PREFIX;
-        } else if (::strcmp(argv[1], "list") == 0) {
-            mode = ::strchr(argv[2], ',') ? ast::M_LIST : ast::M_SINGLE;
-        }
-        sym = argv[2];
-        break;
-
-    default:
-        break;
-    }
-
-    if (mode == ast::M_NONE) {
-        std::cerr << "error: incorrect or missing command line options" << std::endl;
-        std::cerr << "try `" << argv[0] << " --help'" << std::endl;
-        return 1;
-    }
-
-    file = "-"; // stdin
-
-    if (!ast::parse(file, mode, sym, vproto, vobj)) {
-        return 1;
-    }
-
-    for (const auto &e : vproto) {
-        std::cout << e.type << ' ' << e.symbol
-            << '(' << e.args << ");  // " << e.notype_args << std::endl;
-    }
-
-    for (const auto &e : vobj) {
-        std::cout << e.type << ' ' << e.symbol << ';' << std::endl;
-    }
-
-    return 0;
 }
 

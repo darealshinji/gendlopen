@@ -11,6 +11,7 @@ examples/example_autoload
 examples/example_auto_free
 examples/example_cxx
 examples/example_cxx_autoload
+examples/example_cxx_minimal
 examples/example_minimal
 examples/helloworld_example_dl
 examples/helloworld_example_nodl
@@ -19,7 +20,6 @@ examples/notify
 examples/uuid_nix
 gen_template_h
 gendlopen
-parse-clang-ast
 
 # binary files
 *.o

@@ -224,12 +224,22 @@ int main(int argc, char **argv)
     gdo.force(a_force);
     gdo.separate(a_separate);
     gdo.skip_parameter_names(a_skip_parameter_names);
-    gdo.clang_ast(a_clang_ast);
 
-    /* --clang-ast */
     if (a_clang_ast) {
-        error_exit(*argv, "not implemented yet");
+        /* parse input as Clang AST */
+        if (!gdo.parse_ast(a_input.Get())) {
+            return 1;
+        }
+    } else {
+        /* use our regular tokenizer */
+        tokenize tok;
+
+        if (!tok.tokenize_file(a_input.Get(), a_skip_parameter_names)) {
+            return 1;
+        }
+        gdo.copy_symbols(tok);
     }
 
-    return gdo.generate(a_input.Get(), a_output.Get(), a_name.Get());
+    /* generate output */
+    return gdo.generate(a_output.Get(), a_name.Get());
 }

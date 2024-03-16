@@ -78,7 +78,7 @@ bool find_keyword(const std::string &line, const char* const *list)
 }
 
 /* parse the template data */
-std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj_t &objects)
+std::string gendlopen::parse(const std::string &data)
 {
     std::string buf, line;
     bool custom_prefix = false;
@@ -102,7 +102,7 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
         return {};
     }
 
-    if (prototypes.empty() && objects.empty()) {
+    if (m_prototypes.empty() && m_objects.empty()) {
         std::cerr << "error: no function or object prototypes" << std::endl;
         std::exit(1);
     }
@@ -151,7 +151,7 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
         } else if (has_func) {
             /* function prototypes */
 
-            if (prototypes.empty()) {
+            if (m_prototypes.empty()) {
                 //buf += get_indent(line);
                 //buf += "/* -- no function prototypes -- */";
                 //buf += get_indent_end(line);
@@ -159,7 +159,7 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
                 continue;
             }
 
-            for (const auto &e : prototypes) {
+            for (const auto &e : m_prototypes) {
                 auto copy = line;
 
                 /* don't "return" on "void" functions */
@@ -184,7 +184,7 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
         } else if (has_obj) {
             /* object prototypes */
 
-            if (objects.empty()) {
+            if (m_objects.empty()) {
                 //buf += get_indent(line);
                 //buf += "/* -- no object prototypes -- */";
                 //buf += get_indent_end(line);
@@ -192,7 +192,7 @@ std::string gendlopen::parse(const std::string &data, vproto_t &prototypes, vobj
                 continue;
             }
 
-            for (const auto &e : objects) {
+            for (const auto &e : m_objects) {
                 auto copy = line;
                 replace_string("GDO_OBJ_TYPE", e.type, copy);
                 replace_string("GDO_OBJ_SYMBOL", e.symbol, copy);

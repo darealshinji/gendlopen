@@ -7,28 +7,31 @@ endif
 include ../include.mk
 
 
-BIN     := gendlopen
-BIN2    := parse-clang-ast
-AUXBIN  := gen_template_h
-OBJS    := generate.$(OBJEXT) main.$(OBJEXT) parse.$(OBJEXT) tokenize.$(OBJEXT)
-SRCS    := generate.cpp main.cpp parse.cpp tokenize.cpp
-HDRS    := args.hxx common.hpp gendlopen.hpp tokenize.hpp parse-clang-ast.hpp template.h
+BIN    := gendlopen
+AUXBIN := gen_template_h
+
+SRCS := main.cpp generate.cpp parse.cpp parse-clang-ast.cpp tokenize.cpp
+HDRS := args.hxx common.hpp gendlopen.hpp tokenize.hpp template.h
+
+OBJS := main.$(OBJEXT) \
+	generate.$(OBJEXT) \
+	parse.$(OBJEXT) \
+	parse-clang-ast.$(OBJEXT) \
+	tokenize.$(OBJEXT) \
+	$(NULL)
 
 
 .PHONY: all clean
 
-all: $(BIN) $(BIN2)
+all: $(BIN)
 
 clean:
-	-rm -f $(BIN) $(BIN2) $(AUXBIN) template.h *.exe *.o *.obj
+	-rm -f $(BIN) $(AUXBIN) template.h *.exe *.o *.obj
 
 $(SRCS): $(HDRS)
 
 $(BIN): $(OBJS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
-
-$(BIN2): parse-clang-ast.cpp
-	$(call compile_cxx,$^)
 
 $(AUXBIN): gen_template_h.c
 	$(CCAUX) -Wall -O2 -o $@ $<

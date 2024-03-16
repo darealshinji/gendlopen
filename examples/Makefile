@@ -35,8 +35,7 @@ cflags   = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN
 cxxflags = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
 ldflags  = -subsystem:console -release
 
-gendlopen       = ..\src\gendlopen.exe
-parse_clang_ast = ..\src\parse-clang-ast.exe
+gendlopen = ..\src\gendlopen.exe
 
 
 all: $(bins) $(bins2)
@@ -101,8 +100,9 @@ example_cxx_wide.exe: example_cxx_wide.hpp
 
 uuid_win_dl.h:
 	$(clang) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
-	  $(parse_clang_ast) list UuidCreate,UuidToStringA,RpcStringFreeA | \
-	  $(gendlopen) -i- --default-library "QUOTE_STRING(rpcrt4.dll)" -f -o $@
+	  $(gendlopen) -i- --default-library "QUOTE_STRING(rpcrt4.dll)" \
+	  --clang-ast -SUuidCreate -SUuidToStringA -SRpcStringFreeA \
+	  -f -o $@
 
 uuid_win.exe: uuid_win_dl.h
 	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)

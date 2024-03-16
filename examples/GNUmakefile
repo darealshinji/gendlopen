@@ -45,8 +45,7 @@ endif
 
 endif
 
-GENDLOPEN       := ../src/gendlopen
-PARSE_CLANG_AST := ../src/parse-clang-ast
+GENDLOPEN := ../src/gendlopen
 
 # test whether everything is handled
 # correctly if a symbol was not found
@@ -191,13 +190,15 @@ notify: example_notify.h example_notify_gobject.h
 
 uuid_nix: uuid_nix.c
 	$(CLANG) -Xclang -ast-dump -I../thirdparty/uuid $@.h | \
-	  $(PARSE_CLANG_AST) list uuid_generate_random,uuid_is_null,uuid_unparse_lower | \
-	  $(GENDLOPEN) -i- --default-library "QUOTE_STRING(libuuid.so.1)" -f -o $@_dl.h
+	  $(GENDLOPEN) -i- --default-library "QUOTE_STRING(libuuid.so.1)" \
+	  --clang-ast -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower \
+	  -f -o $@_dl.h
 	$(call compile_cc,$<,-I../thirdparty/uuid)
 
 uuid_win: uuid_win.c
 	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $@.h | \
-	  $(PARSE_CLANG_AST) list UuidCreate,UuidToStringA,RpcStringFreeA | \
-	  $(GENDLOPEN) -i- --default-library rpcrt4.dll -f -o $@_dl.h
+	  $(GENDLOPEN) -i- --default-library rpcrt4.dll \
+	  --clang-ast -SUuidCreate -SUuidToStringA -SRpcStringFreeA
+	  -f -o $@_dl.h
 	$(call compile_cc,$<)
 

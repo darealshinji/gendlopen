@@ -157,72 +157,6 @@ static std::string format_definitions(const std::vector<std::string> &list)
     return out.str();
 }
 
-/* create "#include" lines */
-/*
-static std::string format_includes(const std::vector<std::string> &list)
-{
-    std::stringstream out;
-
-    for (auto e : list) {
-        while (e.back() == '"' || e.back() == '\'') {
-            e.pop_back();
-        }
-
-        while (e.front() == '"' || e.front() == '\'') {
-            e.erase(0, 1);
-        }
-
-        if (e.front() == '<' && e.back() == '>') {
-            // <foo.h>
-            out << "#include " << e << '\n';
-        } else {
-            // "foo.h"
-            out << "#include \"" << e << "\"\n";
-        }
-    }
-
-    out << '\n';
-
-    return out.str();
-}
-*/
-
-/* create the default library name macro */
-/*
-static std::string format_library_name(const std::string &name, const std::string &prefix)
-{
-    // path delimiters mean it's a path and not just a library name
-    // and commas mess up the macro
-#ifdef _WIN32
-    const char *unwanted = "\\/,";
-#else
-    const char *unwanted = "/,";
-#endif
-
-    std::stringstream lib, out;
-    std::smatch m;
-
-    if (std::regex_match(name, m, std::regex("(.+),(\\d+)")) &&
-        m.size() == 3 &&
-        m[1].str().find_first_of(unwanted) == std::string::npos)
-    {
-        // create macro GDO_LIB(xxx,0)
-        lib << prefix << "_LIB(" << name << ')';
-    } else {
-        // use the library name as is; add quotation marks if needed
-        if (name.front() != '"') lib << '"';
-        lib << name;
-        if (name.back() != '"') lib << '"';
-    }
-
-    out << "#ifndef " << prefix << "_DEFAULT_LIB\n";
-    out << "#define " << prefix << "_DEFAULT_LIB " << lib.str() << "\n";
-    out << "#endif\n\n";
-
-    return out.str();
-}
-*/
-
 /* open file for writing */
 bool gendlopen::open_fstream(cout_ofstream &ofs, const std::string &ofile)
 {
@@ -298,57 +232,50 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
     common::unreachable();
 }
 
-void gendlopen::copy_symbols(tokenize &tok, vproto_t &vproto, vobj_t &vobjs)
+void gendlopen::copy_symbols(tokenize &tok)
 {
     if (!m_prefix.empty()) {
         /* copy only symbols beginning with prefix */
-        auto vproto0 = tok.prototypes();
-        auto vobjs0 = tok.objects();
+        auto m_prototypes0 = tok.prototypes();
+        auto m_objects0 = tok.objects();
 
-        for (const auto &e : vproto0) {
+        for (const auto &e : m_prototypes0) {
             if (e.symbol.starts_with(m_prefix)) {
-                vproto.push_back(e);
+                m_prototypes.push_back(e);
             }
         }
 
-        for (const auto &e : vobjs0) {
+        for (const auto &e : m_objects0) {
             if (e.symbol.starts_with(m_prefix)) {
-                vobjs.push_back(e);
+                m_objects.push_back(e);
             }
         }
     } else if (!m_symbols.empty()) {
         /* copy only symbols whose names are on the m_symbols vector list */
-        auto vproto0 = tok.prototypes();
-        auto vobjs0 = tok.objects();
+        auto m_prototypes0 = tok.prototypes();
+        auto m_objects0 = tok.objects();
 
-        for (const auto &e : vproto0) {
+        for (const auto &e : m_prototypes0) {
             if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                vproto.push_back(e);
+                m_prototypes.push_back(e);
             }
         }
 
-        for (const auto &e : vobjs0) {
+        for (const auto &e : m_objects0) {
             if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                vobjs.push_back(e);
+                m_objects.push_back(e);
             }
         }
     } else {
         /* copy all symbols */
-        vproto = tok.prototypes();
-        vobjs = tok.objects();
+        m_prototypes = tok.prototypes();
+        m_objects = tok.objects();
     }
 }
 
 /* generate output */
-int gendlopen::generate(
-    const std::string &ifile,
-    const std::string &ofile,
-    const std::string &name)
+int gendlopen::generate(const std::string &ofile, const std::string &name)
 {
-    tokenize tok;
-    vproto_t vproto;
-    vobj_t vobjs;
-
     /* sort and remove duplicates */
     auto sort_vstring = [] (vstring_t &vec) {
         std::sort(vec.begin(), vec.end());
@@ -358,25 +285,8 @@ int gendlopen::generate(
     sort_vstring(m_definitions);
     sort_vstring(m_symbols);
 
-    /* read data */
-    if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
-        return 1;
-    }
-
-    copy_symbols(tok, vproto, vobjs);
-
     /* is output C or C++? */
-    bool is_c = true;
-
-    switch (m_out)
-    {
-    case output::cxx:
-    case output::minimal_cxx:
-        is_c = false;
-        break;
-    default:
-        break;
-    }
+    bool is_c = (m_out != output::cxx && m_out != output::minimal_cxx);
 
     /* output filename */
     std::filesystem::path ofhdr(ofile);
@@ -467,7 +377,7 @@ int gendlopen::generate(
     create_template_data(header_data, body_data);
 
     /* parse header template */
-    out << parse(header_data, vproto, vobjs);
+    out << parse(header_data);
 
     /* extern "C" end */
     if (is_c) {
@@ -504,7 +414,7 @@ int gendlopen::generate(
 
     out_body << note;
     out_body << "#include \"" << header_name << "\"\n\n";
-    out_body << parse(body_data, vproto, vobjs);
+    out_body << parse(body_data);
 
     std::cout << "saved to file: " << ofbody << std::endl;
 

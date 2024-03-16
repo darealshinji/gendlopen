@@ -31,6 +31,12 @@ Here's how the input text format must be:
  * line-breaks are treated as spaces
  * any other code will throw an error
 
+Alternatively the input text can be a Clang AST file with ANSI escape codes.
+You can create one with a command like this:<br>
+`clang -Xclang -ast-dump -fansi-escape-codes foobar.h > foo.txt`
+
+It's recommended to use the options `--symbol` or `--prefix` if you want to parse a Clang AST file.
+
 
 Example
 -------
@@ -43,11 +49,8 @@ int foobar_foo(foo_t *f);
 void foobar_bar(bar_t b);
 ```
 
-You can also generate this text file from a Clang AST dump using the provided `parse-clang-ast` tool:<br>
-`clang -Xclang -ast-dump -fansi-escape-codes foobar.h | parse-clang-ast prefix foobar_ > foo.txt`
-
 Create a header file `load_foo.h` from the input:
-`gendlopen --input=foo.txt --output=load_foo.h`
+`gendlopen --input=foo.txt --prefix=foobar_ --output=load_foo.h`
 
 Include `load_foo.h` it in your source file and use the provided functions to load the symbols:
 ``` C
