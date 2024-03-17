@@ -46,6 +46,27 @@ using common::range;
 using common::replace_string;
 
 
+namespace
+{
+    inline tm *create_localtime()
+    {
+        time_t t = std::time(nullptr);
+
+#ifdef _MSC_VER
+        static struct tm buf = {0};
+        auto ptr = &buf;
+
+        errno_t err = ::localtime_s(ptr, &t);
+        assert("localtime_s()" && err == 0);
+        (void)err;
+#else
+        auto ptr = std::localtime(&t);
+#endif
+
+        return ptr;
+    }
+}
+
 /* convert input string to be used as prefixes or header guards */
 
 static std::string convert_to_upper(const std::string &in)
@@ -80,24 +101,6 @@ static std::string convert_to_lower(const std::string &in)
     }
 
     return out;
-}
-
-inline static tm *create_localtime()
-{
-    time_t t = std::time(nullptr);
-
-#ifdef _MSC_VER
-	static struct tm buf = {0};
-	auto ptr = &buf;
-
-	errno_t err = ::localtime_s(ptr, &t);
-	assert("localtime_s()" && err == 0);
-	(void)err;
-#else
-	auto ptr = std::localtime(&t);
-#endif
-
-	return ptr;
 }
 
 /* create a note to put at the beginning of the output */
@@ -237,36 +240,30 @@ void gendlopen::copy_symbols(tokenize &tok)
 {
     if (!m_prefix.empty()) {
         /* copy only symbols beginning with prefix */
-        auto m_prototypes0 = tok.prototypes();
-        auto m_objects0 = tok.objects();
 
-        for (const auto &e : m_prototypes0) {
-            if (e.symbol.starts_with(m_prefix)) {
-                m_prototypes.push_back(e);
+        auto pb_prefix = [this] (const vproto_t &from, vproto_t &to) {
+            for (const auto &e : from) {
+                if (e.symbol.starts_with(m_prefix)) {
+                    to.push_back(e);
+                }
             }
-        }
+        };
 
-        for (const auto &e : m_objects0) {
-            if (e.symbol.starts_with(m_prefix)) {
-                m_objects.push_back(e);
-            }
-        }
+        pb_prefix(tok.prototypes(), m_prototypes);
+        pb_prefix(tok.objects(), m_objects);
     } else if (!m_symbols.empty()) {
         /* copy only symbols whose names are on the m_symbols vector list */
-        auto m_prototypes0 = tok.prototypes();
-        auto m_objects0 = tok.objects();
 
-        for (const auto &e : m_prototypes0) {
-            if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                m_prototypes.push_back(e);
+        auto pb_equal = [this] (const vproto_t &from, vproto_t &to) {
+            for (const auto &e : from) {
+                if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
+                    to.push_back(e);
+                }
             }
-        }
+        };
 
-        for (const auto &e : m_objects0) {
-            if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                m_objects.push_back(e);
-            }
-        }
+        pb_equal(tok.prototypes(), m_prototypes);
+        pb_equal(tok.objects(), m_objects);
     } else {
         /* copy all symbols */
         m_prototypes = tok.prototypes();

@@ -38,36 +38,52 @@ using common::replace_string;
 using common::same_string_case;
 
 
-[[noreturn]] static inline
-void error_exit(char * const prog, const std::string &msg)
+/* anonymous */
+namespace
 {
-    std::cerr << msg << "\nTry `" << prog << " --help' for more information." << std::endl;
-    std::exit(1);
-}
-
-static output::format str_to_enum(char * const prog, const std::string &fmt)
-{
-    if (same_string_case(fmt, "C++") ||
-        same_string_case(fmt, "CPP") ||
-        same_string_case(fmt, "CXX"))
+    [[noreturn]] inline
+    void error_exit(char * const prog, const std::string &msg)
     {
-        return output::cxx;
-    } else if (same_string_case(fmt, "C")) {
-        return output::c;
-    } else if (same_string_case(fmt, "minimal")) {
-        return output::minimal;
-    } else if (same_string_case(fmt, "minimal-C++") ||
-        same_string_case(fmt, "minimal-CPP") ||
-        same_string_case(fmt, "minimal-CXX"))
-    {
-        return output::minimal_cxx;
+        std::cerr << msg << "\nTry `" << prog << " --help' for more information." << std::endl;
+        std::exit(1);
     }
 
-    std::string s = "unknown output format: " + fmt;
-    error_exit(prog, s);
+    output::format str_to_enum(char * const prog, const std::string &fmt)
+    {
+        switch (fmt.front())
+        {
+        case 'c':
+        case 'C':
+        case 'm':
+        case 'M':
+            if (same_string_case(fmt, "C++") ||
+                same_string_case(fmt, "CPP") ||
+                same_string_case(fmt, "CXX"))
+            {
+                return output::cxx;
+            } else if (same_string_case(fmt, "C")) {
+                return output::c;
+            } else if (same_string_case(fmt, "minimal")) {
+                return output::minimal;
+            } else if (same_string_case(fmt, "minimal-C++") ||
+                same_string_case(fmt, "minimal-CPP") ||
+                same_string_case(fmt, "minimal-CXX"))
+            {
+                return output::minimal_cxx;
+            }
+            break;
+        default:
+            break;
+        }
 
-    common::unreachable();
-}
+        std::string s = "unknown output format: " + fmt;
+        error_exit(prog, s);
+
+        common::unreachable();
+    }
+
+} /* anonymous namespace */
+
 
 int main(int argc, char **argv)
 {
@@ -86,23 +102,29 @@ int main(int argc, char **argv)
         "show this help",
         {'h', "help"});
 
+/*
+    HelpFlag a_full_help(args, "",
+        "show full help with additional info",
+        {"full-help"});
+*/
+
     StrValue a_input(args, "FILE",
-        "input file (\"-\" = STDIN)",
+        "input file",
         {'i', "input"},
         Opt::Single | Opt::Required);
 
     StrValue a_output(args, "FILE",
-        "output file (default: STDOUT)",
+        "output file",
         {'o', "output"},
         "-",
         Opt::Single);
 
     StrValue a_name(args, "STRING",
-        "use STRING in names of functions, macros and namespaces",
+        "use STRING in names of functions, macros and namespaces (default: gdo)",
         //"Custom string to be used as prefix in function and macro names or as "
         //"C++ namespace (default: gdo).",
         {'n', "name"},
-        "GDO",
+        "gdo",
         Opt::Single);
 
     StrValue a_format(args, "STRING",
@@ -115,17 +137,17 @@ int main(int argc, char **argv)
         "default library to load",
         //"Set a default library name to load. "
         //"Hint: use the macro QUOTE_STRING(...) to put quotes around the library name.",
-        {"default-library"},
+        {'l', "default-library"},
         Opt::Single);
 
     StrList a_include(args, "STRING",
-        "header to include (can be used multiple times)",
+        "header to include",
         //"Header file to include (can be used multiple times) "
         //"Hint: use the macro QUOTE_STRING(...) to put quotes around the header name.",
         {'I', "include"});
 
     StrList a_define(args, "STRING",
-        "define preprocessor macro (can be used multiple times)",
+        "define preprocessor macro",
         //"Add preprocessor definitions to the output (can be used multiple times).",
         {'D', "define"});
 
@@ -157,7 +179,7 @@ int main(int argc, char **argv)
         {"prefix"});
 
     StrList a_symbol(args, "STRING",
-        "list symbols to use (rules out `--prefix')",
+        "use this symbol (cannot be used with `--prefix')",
         {'S', "symbol"});
 
 
@@ -166,7 +188,14 @@ int main(int argc, char **argv)
         args.ParseCLI(argc, argv);
     }
     catch (const args::Help&) {
-        std::cout << args;
+        /*
+        if (a_full_help) {
+            std::cout << "FULL HELP!!!" << std::endl;
+        } else {
+            std::cout << args << std::flush;
+        }
+        */
+        std::cout << args << std::flush;
         return 0;
     }
     catch (const args::Error &e) {

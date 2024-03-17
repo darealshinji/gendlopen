@@ -49,8 +49,13 @@ using common::range;
 /* extract argument names from args list */
 static bool get_parameter_names(proto_t &proto)
 {
-    bool fptr_name = false;
-    bool fptr_args = false;
+    typedef enum {
+        e_normal = 0,
+        e_fptr_name = 1,
+        e_fptr_args = 2
+    } e_type_t;
+
+    e_type_t search = e_normal;
     int scope = 0;
     std::string out, token;
     vstring_t arg;
@@ -61,7 +66,8 @@ static bool get_parameter_names(proto_t &proto)
         "float", "double",
         "signed", "unsigned",
         "const", "volatile",
-        "struct",
+        "struct", "union", "enum",
+        "restrict",
         "void",
         NULL
     };
@@ -88,7 +94,7 @@ static bool get_parameter_names(proto_t &proto)
 
     /* tokenize argument list */
     while (iss >> token) {
-        if (fptr_args) {
+        if (search == e_fptr_args) {
             /* skip through function pointer arguments list */
             if (token == "(") {
                 scope++;
@@ -98,18 +104,18 @@ static bool get_parameter_names(proto_t &proto)
 
             if (scope < 1) {
                 scope = 0;
-                fptr_name = fptr_args = false;
+                search = e_normal;
             }
-        } else if (fptr_name) {
+        } else if (search == e_fptr_name) {
             /* function pointer name */
             if (token == ")") {
-                fptr_args = true;
+                search = e_fptr_args;
             } else {
                 arg.push_back(token);
             }
         } else if (token == "(") {
             /* begin of a function pointer name */
-            fptr_name = true;
+            search = e_fptr_name;
         } else if (token == ",") {
             /* argument list separator */
             if (arg.size() < 2 || arg.back().back() == '*' ||
@@ -144,7 +150,7 @@ vstring_t tokenize::read_input()
     vstring_t vec;
     std::string line;
     char c, comment = 0;
-    int nullbytes = 0;
+    uint8_t nullbytes = 0;
 
     auto add_space = [] (std::string &line)
     {
@@ -318,7 +324,7 @@ bool tokenize::tokenize_object(const std::string &s)
         return false;
     }
 
-    obj_t obj = { m[1], m[2] };
+    proto_t obj = { m[1], m[2], {}, {} };
     strip_spaces(obj.type);
 
     /* remove "extern" keyword */

@@ -39,11 +39,8 @@ class gendlopen
 private:
 
     vstring_t m_definitions, m_includes, m_symbols;
-    vproto_t m_prototypes;
-    vobj_t m_objects;
-
+    vproto_t m_prototypes, m_objects;
     std::string m_name_upper, m_name_lower, m_default_lib, m_prefix;
-
     output::format m_out = output::c;
 
     bool m_force = false;
@@ -54,6 +51,7 @@ private:
 
     bool open_fstream(cout_ofstream &ofs, const std::string &ofile);
     void create_template_data(std::string &header_data, std::string &body_data);
+    bool parse_line(cin_ifstream &ifs, std::string &line, int mode);
     std::string parse(const std::string &data);
 
 public:

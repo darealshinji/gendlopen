@@ -52,28 +52,25 @@
 #define sCFGREEN  sCOL(0;1;32)  /* fat green */
 
 
-namespace ast
-{
-    typedef enum {
-        M_NONE,
-        M_ALL,
-        M_PREFIX,
-        M_LIST
-    } mode_t;
+enum {
+    M_NONE,
+    M_ALL,
+    M_PREFIX,
+    M_LIST
+};
 
-    typedef struct {
-        bool is_func;
-        std::string symbol;
-        std::string type;
-        std::string param_novars;
-    } decl_t;
-}
+typedef struct decl {
+    bool is_func;
+    std::string symbol;
+    std::string type;
+    std::string param_novars;
+} decl_t;
 
 
 /* get function or variable declaration */
-static ast::decl_t get_declarations(const std::string &line, ast::mode_t mode, const std::string &symbol, vstring_t &list)
+static decl_t get_declarations(const std::string &line, int mode, const std::string &symbol, vstring_t &list)
 {
-    ast::decl_t decl;
+    decl_t decl;
     std::smatch m;
 
     const std::regex reg("^.*?"
@@ -86,11 +83,11 @@ static ast::decl_t get_declarations(const std::string &line, ast::mode_t mode, c
         return {};
     }
 
-    if (mode == ast::M_PREFIX) {
+    if (mode == M_PREFIX) {
         if (!m[2].str().starts_with(symbol)) {
             return {};
         }
-    } else if (mode == ast::M_LIST) {
+    } else if (mode == M_LIST) {
         /* returns how many times the element was
          * found and erased from vector */
         if (std::erase(list, m[2]) == 0) {
@@ -156,12 +153,44 @@ static bool get_parameters(const std::string &line, std::string &param, size_t &
     return true;
 }
 
+/* returns true if a function declaration was found */
+bool gendlopen::parse_line(cin_ifstream &ifs, std::string &line, int mode)
+{
+    auto decl = get_declarations(line, mode, m_prefix, m_symbols);
+
+    if (decl.is_func) {
+        /* function */
+        std::string param;
+        size_t count = 0;
+
+        /* read next lines for parameters */
+        while (ifs.getline(line) && get_parameters(line, param, count))
+        {}
+
+        if (param.ends_with(", ")) {
+            param.erase(param.size()-2);
+        }
+
+        proto_t proto = { decl.type, decl.symbol, param, decl.param_novars };
+        m_prototypes.push_back(proto);
+
+        /* continue to analyze the current line stored in buffer */
+        return true;
+    } else if (!decl.symbol.empty()) {
+        /* variable */
+        proto_t obj = { decl.type, decl.symbol, {}, {} };
+        m_objects.push_back(obj);
+    }
+
+    return false;
+}
+
 /* parse Clang AST */
 bool gendlopen::parse_ast(const std::string &ifile)
 {
     std::string line;
     cin_ifstream ifs;
-    ast::mode_t mode = ast::M_ALL;
+    int mode = M_ALL;
 
     /* open file for reading */
     if (!ifs.open(ifile)) {
@@ -171,9 +200,9 @@ bool gendlopen::parse_ast(const std::string &ifile)
 
     /* handle mode */
     if (!m_prefix.empty()) {
-        mode = ast::M_PREFIX;
+        mode = M_PREFIX;
     } else if (!m_symbols.empty()) {
-        mode = ast::M_LIST;
+        mode = M_LIST;
     }
 
     /* check first line */
@@ -185,9 +214,7 @@ bool gendlopen::parse_ast(const std::string &ifile)
         return false;
     }
 
-    const char* const first_line = sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x";
-
-    if (!line.starts_with(first_line)) {
+    if (!line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
         std::cerr << "error: file is missing TranslationUnitDecl line" << std::endl;
         return false;
     }
@@ -195,44 +222,21 @@ bool gendlopen::parse_ast(const std::string &ifile)
     /* parse lines */
     while (ifs.getline(line))
     {
-JMP1:
-        if (line.empty()) {
+        bool loop = true;
+
+        while (loop)
+        {
             /* assume end of file */
-            return true;
-        }
-
-        auto decl = get_declarations(line, mode, m_prefix, m_symbols);
-
-        if (decl.symbol.empty()) {
-            /* nothing found */
-            continue;
-        } else if (decl.is_func) {
-            /* save values and continue to read params */
-            std::string param;
-            size_t count = 0;
-
-            /* read next line(s) */
-            while (ifs.getline(line) && get_parameters(line, param, count))
-            {}
-
-            if (param.ends_with(", ")) {
-                param.erase(param.size()-2);
+            if (line.empty()) {
+                return true;
             }
 
-            proto_t proto = { decl.type, decl.symbol, param, decl.param_novars };
-            m_prototypes.push_back(proto);
+            loop = parse_line(ifs, line, mode);
 
-            /* continue to analyze the current line in buffer */
-            goto JMP1;
-        } else {
-            /* variable */
-            obj_t obj = { decl.type, decl.symbol };
-            m_objects.push_back(obj);
-        }
-
-        /* stop if the vector is empty */
-        if (mode == ast::M_LIST && m_symbols.empty()) {
-            return true;
+            /* stop if the vector is empty */
+            if (mode == M_LIST && m_symbols.empty()) {
+                return true;
+            }
         }
     }
 

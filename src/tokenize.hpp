@@ -38,8 +38,7 @@ class tokenize
 {
 private:
 
-    vproto_t m_prototypes;
-    vobj_t m_objects;
+    vproto_t m_prototypes, m_objects;
     cin_ifstream m_ifs;
     bool m_skip_parameter_names = false;
 
@@ -62,7 +61,7 @@ public:
 
     /* return prototype vectors */
     vproto_t &prototypes() { return m_prototypes; };
-    vobj_t &objects() { return m_objects; };
+    vproto_t &objects() { return m_objects; };
 };
 
 #endif //_TOKENIZE_HPP_

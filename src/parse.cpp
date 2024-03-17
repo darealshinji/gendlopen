@@ -37,43 +37,19 @@ using common::replace_string;
 using common::same_string_case;
 
 
-/*
-static inline
-std::string get_indent(const std::string &line)
+namespace
 {
-    auto pos = line.find_first_not_of(" \t\n\r\v\f");
-
-    if (pos != std::string::npos) {
-        return line.substr(0, pos);
-    }
-
-    return {};
-}
-
-static inline
-std::string get_indent_end(const std::string &line)
-{
-    auto pos = line.find_last_not_of(" \t\n\r\v\f");
-
-    if (pos != std::string::npos) {
-        return line.substr(pos + 1);
-    }
-
-    return {};
-}
-*/
-
-/* check for keyword in list */
-static inline
-bool find_keyword(const std::string &line, const char* const *list)
-{
-    for (auto p = list; *p != NULL; p++) {
-        if (line.find(*p) != std::string::npos) {
-            return true;
+    /* check for keyword in list */
+    inline bool find_keyword(const std::string &line, const char* const *list)
+    {
+        for (auto p = list; *p != NULL; p++) {
+            if (line.find(*p) != std::string::npos) {
+                return true;
+            }
         }
-    }
 
-    return false;
+        return false;
+    }
 }
 
 /* parse the template data */
@@ -151,9 +127,6 @@ std::string gendlopen::parse(const std::string &data)
             /* function prototypes */
 
             if (m_prototypes.empty()) {
-                //buf += get_indent(line);
-                //buf += "/* -- no function prototypes -- */";
-                //buf += get_indent_end(line);
                 line.clear();
                 continue;
             }
@@ -184,9 +157,6 @@ std::string gendlopen::parse(const std::string &data)
             /* object prototypes */
 
             if (m_objects.empty()) {
-                //buf += get_indent(line);
-                //buf += "/* -- no object prototypes -- */";
-                //buf += get_indent_end(line);
                 line.clear();
                 continue;
             }
