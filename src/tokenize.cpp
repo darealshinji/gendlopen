@@ -152,15 +152,19 @@ vstring_t tokenize::read_input()
     char c, comment = 0;
     uint8_t nullbytes = 0;
 
-    auto add_space = [] (std::string &line)
-    {
+    auto add_space = [] (std::string &line) {
         if (!line.empty() && line.back() != ' ') {
             line += ' ';
         }
     };
 
-    auto save_line = [] (std::string &line, vstring_t &vec)
-    {
+    auto add_element = [add_space] (std::string &line, char c) {
+        add_space(line);
+        line += c;
+        line += ' ';
+    };
+
+    auto save_line = [] (std::string &line, vstring_t &vec) {
         strip_spaces(line);
 
         if (!line.empty()) {
@@ -193,10 +197,7 @@ vstring_t tokenize::read_input()
                 m_ifs.ignore();
                 comment = '\n';
             } else {
-                /* add character */
-                add_space(line);
-                line += c;
-                line += ' ';
+                add_element(line, c);
             }
             break;
 
@@ -206,20 +207,15 @@ vstring_t tokenize::read_input()
                 m_ifs.ignore();
                 comment = 0;
             } else if (comment == 0) {
-                /* add character */
-                add_space(line);
-                line += c;
-                line += ' ';
+                add_element(line, c);
             }
             break;
 
         case '\n':
             if (comment == '\n') {
-                /* commentary end */
-                comment = 0;
+                comment = 0; /* commentary end */
             }
-            add_space(line);
-            break;
+            [[fallthrough]];
 
         /* space */
         case ' ':
@@ -250,9 +246,7 @@ vstring_t tokenize::read_input()
             {
                 line += c;
             } else {
-                add_space(line);
-                line += c;
-                line += ' ';
+                add_element(line, c);
             }
             break;
         }
