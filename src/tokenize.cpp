@@ -46,8 +46,11 @@ using common::strip_spaces;
 using common::range;
 
 
+namespace /* anonymous */
+{
+
 /* extract argument names from args list */
-static bool get_parameter_names(proto_t &proto)
+bool get_parameter_names(proto_t &proto)
 {
     typedef enum {
         e_normal = 0,
@@ -145,9 +148,8 @@ static bool get_parameter_names(proto_t &proto)
 }
 
 /* read input and strip comments */
-vstring_t tokenize::read_input()
+bool read_input(cin_ifstream &ifs, vstring_t &vec)
 {
-    vstring_t vec;
     std::string line;
     char c, comment = 0;
     uint8_t nullbytes = 0;
@@ -174,7 +176,7 @@ vstring_t tokenize::read_input()
     };
 
     /* read input into vector */
-    while (m_ifs.get(c) && m_ifs.good())
+    while (ifs.get(c) && ifs.good())
     {
         if (comment != 0 && comment != c) {
             continue;
@@ -188,13 +190,13 @@ vstring_t tokenize::read_input()
             break;
 
         case '/':
-            if (m_ifs.peek() == '*') {
+            if (ifs.peek() == '*') {
                 /* commentary begin */
-                m_ifs.ignore();
+                ifs.ignore();
                 comment = '*';
-            } else if (m_ifs.peek() == '/') {
+            } else if (ifs.peek() == '/') {
                 /* commentary begin */
-                m_ifs.ignore();
+                ifs.ignore();
                 comment = '\n';
             } else {
                 add_element(line, c);
@@ -202,9 +204,9 @@ vstring_t tokenize::read_input()
             break;
 
         case '*':
-            if (comment == '*' && m_ifs.peek() == '/') {
+            if (comment == '*' && ifs.peek() == '/') {
                 /* commentary end */
-                m_ifs.ignore();
+                ifs.ignore();
                 comment = 0;
             } else if (comment == 0) {
                 add_element(line, c);
@@ -233,7 +235,7 @@ vstring_t tokenize::read_input()
             if (++nullbytes > 8) {
                 std::cerr << "error: too many null bytes (\\0) found in input!" << std::endl;
                 std::cerr << "input text must be ASCII or UTF-8 formatted" << std::endl;
-                std::exit(1);
+                return false;
             }
             break;
 
@@ -256,20 +258,18 @@ vstring_t tokenize::read_input()
             line.erase(80, std::string::npos);
             std::cerr << "error: the following sequence is exceeding 1000 bytes:" << std::endl;
             std::cerr << line << " <...>" << std::endl;
-            std::exit(1);
+            return false;
         }
     }
 
     /* in case the last prototype didn't end on semicolon */
     save_line(line, vec);
 
-    m_ifs.close();
-
-    return vec;
+    return true;
 }
 
 /* assume a function prototype and tokenize */
-bool tokenize::tokenize_function(const std::string &s)
+bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_parameter_names)
 {
     const std::regex reg(
         "(.*?[\\*|\\s])"  /* type */
@@ -288,7 +288,7 @@ bool tokenize::tokenize_function(const std::string &s)
     strip_spaces(proto.type);
     strip_spaces(proto.args);
 
-    if (m_skip_parameter_names) {
+    if (skip_parameter_names) {
         /* normally unused, but just in case */
         proto.notype_args = "/* disabled !! */";
     } else if (!get_parameter_names(proto)) {
@@ -299,13 +299,13 @@ bool tokenize::tokenize_function(const std::string &s)
         proto.args = "void";
     }
 
-    m_prototypes.push_back(proto);
+    prototypes.push_back(proto);
 
     return true;
 }
 
 /* assume an object prototype and tokenize */
-bool tokenize::tokenize_object(const std::string &s)
+bool tokenize_object(const std::string &s, vproto_t &objects)
 {
     const std::regex reg(
         "(.*?[\\*|\\s])"  /* type */
@@ -326,28 +326,90 @@ bool tokenize::tokenize_object(const std::string &s)
         obj.type.erase(0, 7);
     }
 
-    m_objects.push_back(obj);
+    objects.push_back(obj);
 
     return true;
+}
+
+} /* end anonymous namespace */
+
+
+void tokenize::copy_symbols(
+    const std::string &prefix,
+    const vstring_t &symbols,
+    vproto_t &prototypes,
+    vproto_t &objects)
+{
+    /* add to vector only if the symbol wasn't already saved */
+    auto pb_if_unique = [] (vproto_t &vec, const proto_t &proto) {
+        for (const auto &e : vec) {
+            if (e.symbol == proto.symbol) {
+                return;
+            }
+        }
+        vec.push_back(proto);
+    };
+
+    /* copy symbols beginning with prefix */
+    auto copy_if_prefixed = [pb_if_unique] (const std::string &pfx, const vproto_t &from, vproto_t &to) {
+        for (const auto &e : from) {
+            if (e.symbol.starts_with(pfx)) {
+                pb_if_unique(to, e);
+            }
+        }
+    };
+
+    /* copy symbols whose names are on the symbols vector list */
+    auto copy_if_whitelisted = [pb_if_unique] (const vstring_t &list, const vproto_t &from, vproto_t &to) {
+        for (const auto &e : from) {
+            if (std::find(list.begin(), list.end(), e.symbol) != list.end()) {
+                pb_if_unique(to, e);
+            }
+        }
+    };
+
+    /* copy all symbols */
+    if (prefix.empty() && symbols.empty()) {
+        prototypes = m_prototypes;
+        objects = m_objects;
+        return;
+    }
+
+    if (!prefix.empty()) {
+        copy_if_prefixed(prefix, m_prototypes, prototypes);
+        copy_if_prefixed(prefix, m_objects, objects);
+    }
+
+    if (!symbols.empty()) {
+        copy_if_whitelisted(symbols, m_prototypes, prototypes);
+        copy_if_whitelisted(symbols, m_objects, objects);
+    }
 }
 
 /* read input and tokenize */
 bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names)
 {
-    m_skip_parameter_names = skip_parameter_names;
+    cin_ifstream ifs;
+    vstring_t vec;
 
     /* open file for reading */
-    if (!m_ifs.open(ifile)) {
+    if (!ifs.open(ifile)) {
         std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
         return false;
     }
 
     /* read and tokenize input */
-    vstring_t vec = read_input();
+    if (!read_input(ifs, vec)) {
+        return false;
+    }
+
+    ifs.close();
 
     /* process prototypes */
     for (const auto &s : vec) {
-        if (!tokenize_function(s) && !tokenize_object(s)) {
+        if (!tokenize_function(s, m_prototypes, skip_parameter_names) &&
+            !tokenize_object(s, m_objects))
+        {
             std::cerr << "error: malformed prototype:\n" << s << std::endl;
             return false;
         }

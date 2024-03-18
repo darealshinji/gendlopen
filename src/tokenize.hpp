@@ -39,12 +39,6 @@ class tokenize
 private:
 
     vproto_t m_prototypes, m_objects;
-    cin_ifstream m_ifs;
-    bool m_skip_parameter_names = false;
-
-    vstring_t read_input();
-    bool tokenize_function(const std::string &s);
-    bool tokenize_object(const std::string &s);
 
 public:
 
@@ -59,9 +53,9 @@ public:
     /* tokenize input */
     bool tokenize_file(const std::string &ifile, bool skip_parameter_names);
 
-    /* return prototype vectors */
-    vproto_t &prototypes() { return m_prototypes; };
-    vproto_t &objects() { return m_objects; };
+    /* filter and copy symbols */
+    void copy_symbols(const std::string &prefix, const vstring_t &symbols,
+        vproto_t &prototypes, vproto_t &objects);
 };
 
 #endif //_TOKENIZE_HPP_

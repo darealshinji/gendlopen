@@ -52,6 +52,9 @@
 #define sCFGREEN  sCOL(0;1;32)  /* fat green */
 
 
+namespace /* anonymous */
+{
+
 enum {
     M_NONE,
     M_ALL,
@@ -68,7 +71,7 @@ typedef struct decl {
 
 
 /* get function or variable declaration */
-static decl_t get_declarations(const std::string &line, int mode, const std::string &symbol, vstring_t &list)
+decl_t get_declarations(const std::string &line, int mode, const std::string &symbol, vstring_t &list)
 {
     decl_t decl;
     std::smatch m;
@@ -120,7 +123,7 @@ static decl_t get_declarations(const std::string &line, int mode, const std::str
 }
 
 /* get function parameter declaration */
-static bool get_parameters(const std::string &line, std::string &param, size_t &count)
+bool get_parameters(const std::string &line, std::string &param, size_t &count)
 {
     const std::regex reg("^.*?"
         CFGREEN "ParmVarDecl" C0 ".*?"
@@ -153,8 +156,11 @@ static bool get_parameters(const std::string &line, std::string &param, size_t &
     return true;
 }
 
+} /* end anonymous namespace */
+
+
 /* returns true if a function declaration was found */
-bool gendlopen::parse_line(cin_ifstream &ifs, std::string &line, int mode)
+bool gendlopen::parse_ast_line(cin_ifstream &ifs, std::string &line, int mode)
 {
     auto decl = get_declarations(line, mode, m_prefix, m_symbols);
 
@@ -231,7 +237,7 @@ bool gendlopen::parse_ast(const std::string &ifile)
                 return true;
             }
 
-            loop = parse_line(ifs, line, mode);
+            loop = parse_ast_line(ifs, line, mode);
 
             /* stop if the vector is empty */
             if (mode == M_LIST && m_symbols.empty()) {

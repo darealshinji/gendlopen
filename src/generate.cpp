@@ -39,28 +39,28 @@
 #include <ctime>
 
 #include "template.h"
-#include "cout_ofstream.hpp"
+#include "tokenize.hpp"
 #include "gendlopen.hpp"
 
 using common::range;
 using common::replace_string;
 
 
-namespace
+namespace /* anonymous */
 {
-    inline struct tm *localtime_wrapper(const time_t *timep, struct tm *tm)
-    {
+
+inline struct tm *localtime_wrapper(const time_t *timep, struct tm *tm)
+{
 #ifdef _WIN32
-        return (::localtime_s(tm, timep) == 0) ? tm : nullptr;
+    return (::localtime_s(tm, timep) == 0) ? tm : nullptr;
 #else
-        return ::localtime_r(timep, tm);
+    return ::localtime_r(timep, tm);
 #endif
-    }
 }
 
 /* convert input string to be used as prefixes or header guards */
 
-static std::string convert_to_upper(const std::string &in)
+std::string convert_to_upper(const std::string &in)
 {
     std::string out;
 
@@ -77,7 +77,7 @@ static std::string convert_to_upper(const std::string &in)
     return out;
 }
 
-static std::string convert_to_lower(const std::string &in)
+std::string convert_to_lower(const std::string &in)
 {
     std::string out;
 
@@ -95,7 +95,7 @@ static std::string convert_to_lower(const std::string &in)
 }
 
 /* create a note to put at the beginning of the output */
-static std::string create_note(int &argc, char ** &argv)
+std::string create_note(int &argc, char ** &argv)
 {
     std::string line = "//";
     std::stringstream out;
@@ -139,7 +139,7 @@ static std::string create_note(int &argc, char ** &argv)
 }
 
 /* create "#define" lines */
-static std::string format_definitions(const std::vector<std::string> &list)
+std::string format_definitions(const std::vector<std::string> &list)
 {
     std::stringstream out;
 
@@ -165,10 +165,10 @@ static std::string format_definitions(const std::vector<std::string> &list)
 }
 
 /* open file for writing */
-bool gendlopen::open_fstream(cout_ofstream &ofs, const std::string &ofile)
+bool open_fstream(cout_ofstream &ofs, const std::string &ofile, bool force)
 {
     /* check if file already exists by opening it for reading */
-    if (!m_force && ofile != "-") {
+    if (!force && ofile != "-") {
         ofs.open(ofile, std::ios::in);
 
         if (ofs.is_open()) {
@@ -191,11 +191,16 @@ bool gendlopen::open_fstream(cout_ofstream &ofs, const std::string &ofile)
 }
 
 /* create template data (concatenate) */
-void gendlopen::create_template_data(std::string &header_data, std::string &body_data)
+void create_template_data(
+    std::string &header_data,
+    std::string &body_data,
+    output::format format,
+    bool skip_parameter_names,
+    bool separate)
 {
     const char *macro;
 
-    if (m_skip_parameter_names) {
+    if (skip_parameter_names) {
         macro = "/* wrap code disabled */\n"
                 "//#define GDO_HAS_WRAP_CODE\n\n";
     } else {
@@ -203,7 +208,7 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
                 "#define GDO_HAS_WRAP_CODE\n\n";
     }
 
-    switch (m_out)
+    switch (format)
     {
     case output::cxx:
         {
@@ -219,7 +224,7 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
             header_data += common_header_data;
             header_data += c_header_data;
 
-            if (m_separate) {
+            if (separate) {
                 body_data = c_body_data;
             } else {
                 header_data += c_body_data;
@@ -239,44 +244,28 @@ void gendlopen::create_template_data(std::string &header_data, std::string &body
     common::unreachable();
 }
 
-void gendlopen::copy_symbols(tokenize &tok)
-{
-    if (!m_prefix.empty()) {
-        /* copy only symbols beginning with prefix */
+} /* end anonymous namespace */
 
-        auto pb_prefix = [this] (const vproto_t &from, vproto_t &to) {
-            for (const auto &e : from) {
-                if (e.symbol.starts_with(m_prefix)) {
-                    to.push_back(e);
-                }
-            }
-        };
-
-        pb_prefix(tok.prototypes(), m_prototypes);
-        pb_prefix(tok.objects(), m_objects);
-    } else if (!m_symbols.empty()) {
-        /* copy only symbols whose names are on the m_symbols vector list */
-
-        auto pb_equal = [this] (const vproto_t &from, vproto_t &to) {
-            for (const auto &e : from) {
-                if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                    to.push_back(e);
-                }
-            }
-        };
-
-        pb_equal(tok.prototypes(), m_prototypes);
-        pb_equal(tok.objects(), m_objects);
-    } else {
-        /* copy all symbols */
-        m_prototypes = tok.prototypes();
-        m_objects = tok.objects();
-    }
-}
 
 /* generate output */
-int gendlopen::generate(const std::string &ofile, const std::string &name)
+int gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name)
 {
+    if (m_clang_ast) {
+        /* parse input as Clang AST */
+        if (!parse_ast(ifile)) {
+            return 1;
+        }
+    } else {
+        /* use our regular tokenizer */
+        tokenize tok;
+
+        if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
+            return 1;
+        }
+
+        tok.copy_symbols(m_prefix, m_symbols, m_prototypes, m_objects);
+    }
+
     /* sort and remove duplicates */
     auto sort_vstring = [] (vstring_t &vec) {
         std::sort(vec.begin(), vec.end());
@@ -294,7 +283,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     auto ofbody = ofhdr;
     const bool use_stdout = (ofile == "-");
 
-    if (use_stdout) {
+    if (use_stdout || (m_separate && !separate_is_supported(m_out))) {
         m_separate = false;
     }
 
@@ -303,7 +292,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
         if (is_c) {
             ofhdr.replace_extension(".h");
             ofbody.replace_extension(".c");
-        } else {
+        } else [[unlikely]] {
             ofhdr.replace_extension(".hpp");
             ofbody.replace_extension(".cpp");
         }
@@ -331,7 +320,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     /* open file */
     cout_ofstream out;
 
-    if (!open_fstream(out, ofhdr.string())) {
+    if (!open_fstream(out, ofhdr.string(), m_force)) {
         return 1;
     }
 
@@ -375,7 +364,8 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     /* create template code */
     std::string header_data, body_data;
-    create_template_data(header_data, body_data);
+    create_template_data(header_data, body_data,
+        m_out, m_skip_parameter_names, m_separate);
 
     /* parse header template */
     out << parse(header_data);
@@ -409,7 +399,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     cout_ofstream out_body;
 
-    if (!open_fstream(out_body, ofbody.string())) {
+    if (!open_fstream(out_body, ofbody.string(), m_force)) {
         return 1;
     }
 
