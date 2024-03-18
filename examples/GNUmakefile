@@ -105,8 +105,8 @@ libhelloworld_dl.$(LIBEXT): example_helloworld_static_dl.$(OBJEXT)
 
 example_helloworld_static_dl.c: helloworld.txt
 	$(GENDLOPEN) -i $^ -f -o $@ --separate \
-		-I"<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
-		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
+		--include "<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
+		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 --define='GDO_WRAP_FUNCTIONS=1' \
 		--default-library="LIBNAME(helloworld,0)"
 
 # a static library replacement for libhelloworld.so
