@@ -110,6 +110,9 @@ uuid_win.exe: uuid_win_dl.h
 example_minimal.h: helloworld.txt
 	$(gendlopen) --format=minimal -i $** -f -o $@
 
+example_cxx.hpp: helloworld.txt
+	$(gendlopen) --format=C++ --skip-parameter-names -i $** -f -o $@
+
 example_cxx_minimal.hpp: helloworld.txt
 	$(gendlopen) --format=minimal-cxx -i $** -f -o $@
 

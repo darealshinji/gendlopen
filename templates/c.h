@@ -171,10 +171,26 @@ LIBEXT
 #endif
 
 
-/* enable wrapped functions if auto-loading was enabled */
-#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_WRAP_FUNCTIONS)
-    #define GDO_WRAP_FUNCTIONS 1
+%SKIP_BEGIN%
+/*
+%SKIP_END%
+#if defined(GDO_WRAP_FUNCTIONS)
+#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-parameter-names"
 #endif
+
+#if defined(GDO_ENABLE_AUTOLOAD)
+#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-parameter-names"
+#endif
+%SKIP_BEGIN%
+*/
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
+#error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
+#endif
+
+#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
+#error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
+#endif
+%SKIP_END%
 
 
 /* char / wchar_t */
@@ -225,12 +241,12 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
 
 
-#if !defined(GDO_HAS_WRAP_CODE) || !defined(GDO_WRAP_FUNCTIONS)
+#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo_hndl.GDO_SYMBOL_ptr_
 
-#endif // !GDO_HAS_WRAP_CODE || !GDO_WRAP_FUNCTIONS
+#endif // !GDO_WRAP_FUNCTIONS
 
 
 /* aliases to raw object pointers */

@@ -580,15 +580,10 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-#ifdef GDO_HAS_WRAP_CODE
+%SKIP_BEGIN%
 
 /* autoload functions */
 #ifdef GDO_ENABLE_AUTOLOAD
-
-#if !defined(GDO_DEFAULT_LIB)
-#error "You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD"
-#endif
-
 
 #if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 /* Windows: show message in a MessageBox window */
@@ -659,15 +654,14 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 /* wrapped functions
  * (creating wrapped symbols doesn't work well with pointers to objects) */
 
-#ifdef GDO_WRAP_FUNCTIONS
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 @
 GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     gdo_quick_load("GDO_SYMBOL", _T("GDO_SYMBOL"));@
     GDO_RET gdo_hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
 }
 
-#endif //GDO_WRAP_FUNCTIONS
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
-
-#endif //GDO_HAS_WRAP_CODE
+%SKIP_END%
 /***************************** end of wrap code ******************************/

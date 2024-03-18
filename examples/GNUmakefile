@@ -149,6 +149,9 @@ helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
 example_minimal.h: helloworld.txt
 	$(GENDLOPEN) --format=minimal -i $^ -f -o $@
 
+example_cxx.hpp: helloworld.txt
+	$(GENDLOPEN) --format=C++ --skip-parameter-names -i $^ -f -o $@
+
 example_cxx_minimal.hpp: helloworld.txt
 	$(GENDLOPEN) --format=minimal-cxx -i $^ -f -o $@
 

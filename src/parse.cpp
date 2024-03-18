@@ -57,6 +57,7 @@ std::string gendlopen::parse(const std::string &data)
 {
     std::string buf, line;
     bool custom_prefix = false;
+    bool comment_out = false;
 
     const char* const function_keywords[] = {
         "GDO_RET",
@@ -86,15 +87,24 @@ std::string gendlopen::parse(const std::string &data)
         custom_prefix = true;
     }
 
+    /* read data character by character */
     for (const char *p = data.c_str(); *p != 0; p++)
     {
+        /* will be NUL if EOL was reached */
         const char next = *(p+1);
 
         /* treat lines ending on '@' like single lines */
         if (*p == '@' && next == '\n') {
-            line += '\n';
             p++;
-            continue;
+
+            if (comment_out) {
+                /* keep trailing @ symbol in the comments */
+                line += '@';
+            } else {
+                /* append newline and continue reading */
+                line += '\n';
+                continue;
+            }
         }
 
         /* add character to line */
@@ -102,6 +112,23 @@ std::string gendlopen::parse(const std::string &data)
 
         /* end of line not yet reached */
         if (*p != '\n' && next != 0) {
+            continue;
+        }
+
+        /* whether to comment out parts of code */
+        if (line == "%SKIP_BEGIN%\n") {
+            comment_out = m_skip_parameter_names;
+            line.clear();
+            continue;
+        } else if (line == "%SKIP_END%\n") {
+            comment_out = false;
+            line.clear();
+            continue;
+        }
+
+        if (comment_out) {
+            buf += "//" + line;
+            line.clear();
             continue;
         }
 
@@ -175,10 +202,23 @@ std::string gendlopen::parse(const std::string &data)
         line.clear();
     }
 
+    /* replace keywords back to default (maybe I should use a different
+     * prefix for keywords in the first place?) */
+    auto restore_keywords = [this] (const char* const *list, std::string &buf) {
+        for (auto p = list; *p != NULL; p++) {
+            replace_string(std::string(m_name_upper + (*p+3)), *p, buf);
+        }
+    };
+
     /* replace the rest */
     if (custom_prefix) {
         replace_string("GDO", m_name_upper, buf);
         replace_string("gdo", m_name_lower, buf);
+
+        if (m_skip_parameter_names) {
+            restore_keywords(function_keywords, buf);
+            restore_keywords(object_keywords, buf);
+        }
     }
 
     return buf;

@@ -194,32 +194,17 @@ void create_template_data(
     std::string &header_data,
     std::string &body_data,
     output::format format,
-    bool skip_parameter_names,
     bool separate)
 {
-    const char *macro;
-
-    if (skip_parameter_names) {
-        macro = "/* wrap code disabled */\n"
-                "//#define GDO_HAS_WRAP_CODE\n\n";
-    } else {
-        macro = "/* wrap code enabled */\n"
-                "#define GDO_HAS_WRAP_CODE\n\n";
-    }
-
     switch (format)
     {
     case output::cxx:
-        {
-            header_data = macro;
-            header_data += common_header_data;
-            header_data += cxx_header_data;
-        }
+        header_data += common_header_data;
+        header_data += cxx_header_data;
         return;
 
     case output::c:
         {
-            header_data = macro;
             header_data += common_header_data;
             header_data += c_header_data;
 
@@ -356,8 +341,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
 
     /* create template code */
     std::string header_data, body_data;
-    create_template_data(header_data, body_data,
-        m_out, m_skip_parameter_names, m_separate);
+    create_template_data(header_data, body_data, m_out, m_separate);
 
     /* parse header template */
     out << parse(header_data);

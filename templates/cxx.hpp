@@ -145,14 +145,18 @@ GDO_VISIBILITY
 #include <string.h>
 
 
-#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_HAS_WRAP_CODE)
+%SKIP_BEGIN%
+/*
+%SKIP_END%
+#if defined(GDO_WRAP_FUNCTIONS)
 #error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-parameter-names"
 #endif
 
-#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_HAS_WRAP_CODE)
+#if defined(GDO_ENABLE_AUTOLOAD)
 #error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-parameter-names"
 #endif
-
+%SKIP_BEGIN%
+*/
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
@@ -160,6 +164,7 @@ GDO_VISIBILITY
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
 #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
+%SKIP_END%
 
 
 /*****************************************************************************/
@@ -881,7 +886,7 @@ public:
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-#ifdef GDO_HAS_WRAP_CODE
+%SKIP_BEGIN%
 
     namespace /* anonymous */
     {
@@ -951,15 +956,15 @@ public:
 
 #endif //GDO_ENABLE_AUTOLOAD
 
-#endif //GDO_HAS_WRAP_CODE
+%SKIP_END%
 /***************************** end of wrap code ******************************/
 
 } /* namespace gdo */
 /***************************** end of namespace ******************************/
 
 
-
-#if defined(GDO_HAS_WRAP_CODE) && defined(GDO_WRAP_FUNCTIONS)
+%SKIP_BEGIN%
+#ifdef GDO_WRAP_FUNCTIONS
 
 /* function wrappers */
 @
@@ -967,7 +972,7 @@ GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
     GDO_RET gdo::wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
 }
 
-#elif defined(GDO_HAS_WRAP_CODE) && defined(GDO_ENABLE_AUTOLOAD)
+#elif defined(GDO_ENABLE_AUTOLOAD)
 
 /* autoload function wrappers */
 @
@@ -976,11 +981,14 @@ GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 }
 
 #else
+%SKIP_END%
 
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
 
+%SKIP_BEGIN%
 #endif
+%SKIP_END%
 
 /* aliases to raw object pointers */
 #define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL

@@ -18,10 +18,9 @@ times with code from the input (used to generate typedefs, prototyes, etc.):
 `@`: if a line ends on `@` the newline will be ignored during tokenizing but it
     will not be removed
 
+All lines between a line `%SKIP_BEGIN%\n` and a line `%SKIP_END%\n`
+will be commented out if `--skip-parameter-names` was passed.
+
 
 Any remaining instances of `GDO` and `gdo` will be replaced with a user-defined
 prefix (converted to uppercase and lowercase).
-
-
-The macro `GDO_HAS_WRAP_CODE` will remain undefined unless `--skip-parameter-names`
-was invoked.
