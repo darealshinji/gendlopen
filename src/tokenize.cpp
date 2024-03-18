@@ -38,7 +38,7 @@
 
 #include "cin_ifstream.hpp"
 #include "common.hpp"
-#include "tokenize.hpp"
+#include "gendlopen.hpp"
 
 using common::replace_string;
 using common::same_string_case;
@@ -334,11 +334,7 @@ bool tokenize_object(const std::string &s, vproto_t &objects)
 } /* end anonymous namespace */
 
 
-void tokenize::copy_symbols(
-    const std::string &prefix,
-    const vstring_t &symbols,
-    vproto_t &prototypes,
-    vproto_t &objects)
+void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
 {
     /* add to vector only if the symbol wasn't already saved */
     auto pb_if_unique = [] (vproto_t &vec, const proto_t &proto) {
@@ -368,29 +364,29 @@ void tokenize::copy_symbols(
         }
     };
 
-    /* copy all symbols */
-    if (prefix.empty() && symbols.empty()) {
-        prototypes = m_prototypes;
-        objects = m_objects;
-        return;
-    }
+    if (m_prefix.empty() && m_symbols.empty()) {
+        /* copy all symbols */
+        m_prototypes = tmp_proto;
+        m_objects = tmp_objs;
+    } else {
+        if (!m_prefix.empty()) {
+            copy_if_prefixed(m_prefix, tmp_proto, m_prototypes);
+            copy_if_prefixed(m_prefix, tmp_objs, m_objects);
+        }
 
-    if (!prefix.empty()) {
-        copy_if_prefixed(prefix, m_prototypes, prototypes);
-        copy_if_prefixed(prefix, m_objects, objects);
-    }
-
-    if (!symbols.empty()) {
-        copy_if_whitelisted(symbols, m_prototypes, prototypes);
-        copy_if_whitelisted(symbols, m_objects, objects);
+        if (!m_symbols.empty()) {
+            copy_if_whitelisted(m_symbols, tmp_proto, m_prototypes);
+            copy_if_whitelisted(m_symbols, tmp_objs, m_objects);
+        }
     }
 }
 
 /* read input and tokenize */
-bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names)
+bool gendlopen::tokenize(const std::string &ifile)
 {
     cin_ifstream ifs;
     vstring_t vec;
+    vproto_t tmp_proto, tmp_objs;
 
     /* open file for reading */
     if (!ifs.open(ifile)) {
@@ -407,8 +403,8 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
 
     /* process prototypes */
     for (const auto &s : vec) {
-        if (!tokenize_function(s, m_prototypes, skip_parameter_names) &&
-            !tokenize_object(s, m_objects))
+        if (!tokenize_function(s, tmp_proto, m_skip_parameter_names) &&
+            !tokenize_object(s, tmp_objs))
         {
             std::cerr << "error: malformed prototype:\n" << s << std::endl;
             return false;
@@ -416,7 +412,7 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
     }
 
     /* nothing found? */
-    if (m_prototypes.size() == 0 && m_objects.size() == 0) {
+    if (tmp_proto.size() == 0 && tmp_objs.size() == 0) {
         std::cerr << "error: no function or object prototypes found in file: " << ifile << std::endl;
         return false;
     }
@@ -424,11 +420,11 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
     /* check for duplicates */
     vstring_t list;
 
-    for (const auto &s : m_prototypes) {
+    for (const auto &s : tmp_proto) {
         list.push_back(s.symbol);
     }
 
-    for (const auto &s : m_objects) {
+    for (const auto &s : tmp_objs) {
         list.push_back(s.symbol);
     }
 
@@ -440,6 +436,9 @@ bool tokenize::tokenize_file(const std::string &ifile, bool skip_parameter_names
             << "' found in file: " << ifile << std::endl;
         return false;
     }
+
+    /* copy */
+    filter_and_copy_symbols(tmp_proto, tmp_objs);
 
     /* format args */
     for (auto &s : m_prototypes) {

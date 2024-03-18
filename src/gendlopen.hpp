@@ -58,6 +58,9 @@ private:
     bool parse_ast_line(cin_ifstream &ifs, std::string &line, int mode);
     bool parse_ast(const std::string &ifile);
 
+    bool tokenize(const std::string &ifile);
+    void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
+
     std::string parse(const std::string &data);
 
 public:

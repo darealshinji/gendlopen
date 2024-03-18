@@ -39,7 +39,6 @@
 #include <ctime>
 
 #include "template.h"
-#include "tokenize.hpp"
 #include "gendlopen.hpp"
 
 using common::range;
@@ -255,15 +254,8 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
         if (!parse_ast(ifile)) {
             return 1;
         }
-    } else {
-        /* use our regular tokenizer */
-        tokenize tok;
-
-        if (!tok.tokenize_file(ifile, m_skip_parameter_names)) {
-            return 1;
-        }
-
-        tok.copy_symbols(m_prefix, m_symbols, m_prototypes, m_objects);
+    } else if (!tokenize(ifile)) { /* regular tokenizer */
+        return 1;
     }
 
     /* sort and remove duplicates */
