@@ -331,6 +331,31 @@ bool tokenize_object(const std::string &s, vproto_t &objects)
     return true;
 }
 
+/* check for duplicates */
+bool has_duplicate_symbols(const vproto_t &proto, const vproto_t &objs, const std::string &ifile)
+{
+    vstring_t list;
+
+    for (const auto &s : proto) {
+        list.push_back(s.symbol);
+    }
+
+    for (const auto &s : objs) {
+        list.push_back(s.symbol);
+    }
+
+    std::sort(list.begin(), list.end());
+    auto it = std::ranges::adjacent_find(list);
+
+    if (it != list.end()) {
+        std::cerr << "error: multiple definitions of symbol `" << *it
+            << "' found in file: " << ifile << std::endl;
+        return true;
+    }
+
+    return false;
+}
+
 } /* end anonymous namespace */
 
 
@@ -418,22 +443,7 @@ bool gendlopen::tokenize(const std::string &ifile)
     }
 
     /* check for duplicates */
-    vstring_t list;
-
-    for (const auto &s : tmp_proto) {
-        list.push_back(s.symbol);
-    }
-
-    for (const auto &s : tmp_objs) {
-        list.push_back(s.symbol);
-    }
-
-    std::sort(list.begin(), list.end());
-    auto it = std::ranges::adjacent_find(list);
-
-    if (it != list.end()) {
-        std::cerr << "error: multiple definitions of symbol `" << *it
-            << "' found in file: " << ifile << std::endl;
+    if (has_duplicate_symbols(tmp_proto, tmp_objs, ifile)) {
         return false;
     }
 
