@@ -46,7 +46,7 @@ private:
     vstring_t m_definitions, m_includes, m_symbols;
     vproto_t m_prototypes, m_objects;
     std::string m_name_upper, m_name_lower, m_default_lib, m_prefix;
-    output::format m_out = output::c;
+    output::format m_format = output::c;
 
     bool m_force = false;
     bool m_separate = false;
@@ -74,7 +74,7 @@ public:
     {}
 
     /* set options */
-    void format(output::format val) { m_out = val; }
+    void format(output::format val) { m_format = val; }
     void default_lib(const std::string &s) { m_default_lib = s; }
     void prefix(const std::string &s) { m_prefix = s; }
     void force(bool b) { m_force = b; }

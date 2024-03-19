@@ -198,11 +198,6 @@ void create_template_data(
 {
     switch (format)
     {
-    case output::cxx:
-        header_data += common_header_data;
-        header_data += cxx_header_data;
-        return;
-
     case output::c:
         {
             header_data += common_header_data;
@@ -215,11 +210,13 @@ void create_template_data(
             }
         }
         return;
-
+    case output::cxx:
+        header_data += common_header_data;
+        header_data += cxx_header_data;
+        return;
     case output::minimal:
         header_data = min_c_header_data;
         return;
-
     case output::minimal_cxx:
         header_data = min_cxx_header_data;
         return;
@@ -253,14 +250,14 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     sort_vstring(m_symbols);
 
     /* is output C or C++? */
-    bool is_c = (m_out != output::cxx && m_out != output::minimal_cxx);
+    bool is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
 
     /* output filename */
     std::filesystem::path ofhdr(ofile);
     auto ofbody = ofhdr;
     const bool use_stdout = (ofile == "-");
 
-    if (use_stdout || (m_separate && !separate_is_supported(m_out))) {
+    if (use_stdout || (m_separate && !separate_is_supported(m_format))) {
         m_separate = false;
     }
 
@@ -341,7 +338,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
 
     /* create template code */
     std::string header_data, body_data;
-    create_template_data(header_data, body_data, m_out, m_separate);
+    create_template_data(header_data, body_data, m_format, m_separate);
 
     /* parse header template */
     out << parse(header_data);
