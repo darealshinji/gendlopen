@@ -150,8 +150,12 @@ namespace gdo
 }; /* end namespace */
 
 
+#if !defined(GDO_NOALIAS)
+
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
 
 /* aliases to raw object pointers */
 #define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL
+
+#endif // !GDO_NOALIAS

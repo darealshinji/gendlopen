@@ -69,8 +69,12 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 }
 
 
+#if !defined(GDO_NOALIAS)
+
 /* aliases to raw function pointers */
 #define GDO_SYMBOL gdo_hndl.GDO_SYMBOL
 
 /* aliases to raw object pointers */
 #define GDO_OBJ_SYMBOL *gdo_hndl.GDO_OBJ_SYMBOL
+
+#endif // !GDO_NOALIAS

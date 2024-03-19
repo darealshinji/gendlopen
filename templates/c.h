@@ -143,6 +143,9 @@ GDO_USE_MESSAGE_BOX
     If win32 API is used and GDO_ENABLE_AUTOLOAD was activated this will enable
     error messages from auto-loading to be displayed in MessageBox windows.
 
+GDO_NOALIAS
+    Don't use preprocessor macros to alias symbol names. Use with care.
+
 
 
 *****************
@@ -244,11 +247,15 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 #if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 /* aliases to raw function pointers */
+#if !defined(GDO_NOALIAS)
 #define GDO_SYMBOL gdo_hndl.GDO_SYMBOL_ptr_
+#endif // !GDO_NOALIAS
 
-#endif // !GDO_WRAP_FUNCTIONS
+#endif // !GDO_WRAP_FUNCTIONS && !GDO_ENABLE_AUTOLOAD
 
 
 /* aliases to raw object pointers */
+#if !defined(GDO_NOALIAS)
 #define GDO_OBJ_SYMBOL *gdo_hndl.GDO_OBJ_SYMBOL_ptr_
+#endif // !GDO_NOALIAS
 
