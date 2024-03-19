@@ -181,21 +181,21 @@ namespace gdo
     /* function pointer typedefs */
     namespace type
     {
-        using GDO_SYMBOL = GDO_TYPE (*)(GDO_ARGS);
+        using %%symbol%% = %%type%% (*)(%%args%%);
     }
 
     /* symbol pointers */
     namespace ptr
     {
-        type::GDO_SYMBOL GDO_SYMBOL = nullptr;
-        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL = nullptr;
+        type::%%symbol%% %%symbol%% = nullptr;
+        %%obj_type%% *%%obj_symbol%% = nullptr;
     }
 
     /* whether or not a symbol was loaded */
     namespace loaded
     {
-        bool GDO_SYMBOL = false;
-        bool GDO_OBJ_SYMBOL = false;
+        bool %%symbol%% = false;
+        bool %%obj_symbol%% = false;
     }
 
     /* function pointer to error message callback */
@@ -684,15 +684,15 @@ public:
 
         /* get symbol addresses */
 @
-        ptr::GDO_SYMBOL = reinterpret_cast<type::GDO_SYMBOL>(@
-            sym("GDO_SYMBOL", loaded::GDO_SYMBOL));@
-        if (!loaded::GDO_SYMBOL && !ignore_errors) {@
+        ptr::%%symbol%% = reinterpret_cast<type::%%symbol%%>(@
+            sym("%%symbol%%", loaded::%%symbol%%));@
+        if (!loaded::%%symbol%% && !ignore_errors) {@
             return false;@
         }
 @
-        ptr::GDO_OBJ_SYMBOL = reinterpret_cast<GDO_OBJ_TYPE *>(@
-            sym("GDO_OBJ_SYMBOL", loaded::GDO_OBJ_SYMBOL));@
-        if (!loaded::GDO_OBJ_SYMBOL && !ignore_errors) {@
+        ptr::%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
+            sym("%%obj_symbol%%", loaded::%%obj_symbol%%));@
+        if (!loaded::%%obj_symbol%% && !ignore_errors) {@
             return false;@
         }
 
@@ -722,16 +722,16 @@ public:
 
         /* get symbol address */
 @
-        if (symbol == "GDO_SYMBOL") {@
-            ptr::GDO_SYMBOL = reinterpret_cast<type::GDO_SYMBOL>(@
-                sym("GDO_SYMBOL", loaded::GDO_SYMBOL));@
-            return loaded::GDO_SYMBOL;@
+        if (symbol == "%%symbol%%") {@
+            ptr::%%symbol%% = reinterpret_cast<type::%%symbol%%>(@
+                sym("%%symbol%%", loaded::%%symbol%%));@
+            return loaded::%%symbol%%;@
         }
 @
-        if (symbol == "GDO_OBJ_SYMBOL") {@
-            ptr::GDO_OBJ_SYMBOL = reinterpret_cast<GDO_OBJ_TYPE *>(@
-                sym("GDO_OBJ_SYMBOL", loaded::GDO_OBJ_SYMBOL));@
-            return loaded::GDO_OBJ_SYMBOL;@
+        if (symbol == "%%obj_symbol%%") {@
+            ptr::%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
+                sym("%%obj_symbol%%", loaded::%%obj_symbol%%));@
+            return loaded::%%obj_symbol%%;@
         }
 
         clear_error();
@@ -750,8 +750,8 @@ public:
     bool symbols_loaded() const
     {
         if (true
-            && loaded::GDO_SYMBOL
-            && loaded::GDO_OBJ_SYMBOL
+            && loaded::%%symbol%%
+            && loaded::%%obj_symbol%%
         ) {
             return true;
         }
@@ -778,11 +778,11 @@ public:
 
         m_handle = nullptr;
 
-        ptr::GDO_SYMBOL = nullptr;
-        ptr::GDO_OBJ_SYMBOL = nullptr;
+        ptr::%%symbol%% = nullptr;
+        ptr::%%obj_symbol%% = nullptr;
 
-        loaded::GDO_SYMBOL = false;
-        loaded::GDO_OBJ_SYMBOL = false;
+        loaded::%%symbol%% = false;
+        loaded::%%obj_symbol%% = false;
 
         return true;
     }
@@ -911,11 +911,11 @@ public:
      * (creating wrapped symbols doesn't work well with pointers to objects) */
     namespace wrapped
     {
-        GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-            if (!loaded::GDO_SYMBOL) {@
-                error_exit("error: symbol `GDO_SYMBOL' was not loaded", "", "", "");@
+        %%type%% %%symbol%%(%%args%%) {@
+            if (!loaded::%%symbol%%) {@
+                error_exit("error: symbol `%%symbol%%' was not loaded", "", "", "");@
             }@
-            GDO_RET ptr::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+            %%return%% ptr::%%symbol%%(%%notype_args%%);@
         }@
 
     } /* namespace wrapped */
@@ -950,9 +950,9 @@ public:
         } /* anonymous namespace */
 
 
-        GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-            quick_load("GDO_SYMBOL");@
-            GDO_RET wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+        %%type%% %%symbol%%(%%args%%) {@
+            quick_load("%%symbol%%");@
+            %%return%% wrapped::%%symbol%%(%%notype_args%%);@
         }@
 
     } /* namespace autoload */
@@ -971,16 +971,16 @@ public:
 
 /* function wrappers */
 @
-GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-    GDO_RET gdo::wrapped::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
+    %%return%% gdo::wrapped::%%symbol%%(%%notype_args%%);@
 }
 
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 /* autoload function wrappers */
 @
-GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-    GDO_RET gdo::autoload::GDO_SYMBOL(GDO_NOTYPE_ARGS);@
+GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
+    %%return%% gdo::autoload::%%symbol%%(%%notype_args%%);@
 }
 
 #else
@@ -988,7 +988,7 @@ GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 
 /* aliases to raw function pointers */
 #if !defined(GDO_NOALIAS)
-#define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
+#define %%symbol%% gdo::ptr::%%symbol%%
 #endif // !GDO_NOALIAS
 
 %SKIP_BEGIN%
@@ -997,5 +997,5 @@ GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
 
 /* aliases to raw object pointers */
 #if !defined(GDO_NOALIAS)
-#define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL
+#define %%obj_symbol%% *gdo::ptr::%%obj_symbol%%
 #endif // !GDO_NOALIAS

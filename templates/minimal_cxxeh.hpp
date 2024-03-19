@@ -41,8 +41,8 @@ namespace gdo
     /* symbol pointers */
     namespace ptr
     {
-        GDO_TYPE (*GDO_SYMBOL)(GDO_ARGS) = nullptr;
-        GDO_OBJ_TYPE *GDO_OBJ_SYMBOL = nullptr;
+        %%type%% (*%%symbol%%)(%%args%%) = nullptr;
+        %%obj_type%% *%%obj_symbol%% = nullptr;
     }
 
 #ifdef GDO_WINAPI
@@ -128,22 +128,22 @@ namespace gdo
             throw LibraryError(filename);
         }
     @
-        /* GDO_SYMBOL */@
-        ptr::GDO_SYMBOL =@
-            reinterpret_cast<GDO_TYPE (*)(GDO_ARGS)>(@
-                get_symbol(handle, "GDO_SYMBOL"));@
-        if (!ptr::GDO_SYMBOL) {@
+        /* %%symbol%% */@
+        ptr::%%symbol%% =@
+            reinterpret_cast<%%type%% (*)(%%args%%)>(@
+                get_symbol(handle, "%%symbol%%"));@
+        if (!ptr::%%symbol%%) {@
             free_lib(handle);@
-            throw SymbolError("GDO_SYMBOL");@
+            throw SymbolError("%%symbol%%");@
         }
     @
-        /* GDO_OBJ_SYMBOL */@
-        ptr::GDO_OBJ_SYMBOL =@
-            reinterpret_cast<GDO_OBJ_TYPE *>(@
-                get_symbol(handle, "GDO_OBJ_SYMBOL"));@
-        if (!ptr::GDO_OBJ_SYMBOL) {@
+        /* %%obj_symbol%% */@
+        ptr::%%obj_symbol%% =@
+            reinterpret_cast<%%obj_type%% *>(@
+                get_symbol(handle, "%%obj_symbol%%"));@
+        if (!ptr::%%obj_symbol%%) {@
             free_lib(handle);@
-            throw SymbolError("GDO_OBJ_SYMBOL");@
+            throw SymbolError("%%obj_symbol%%");@
         }
     }
 
@@ -153,9 +153,9 @@ namespace gdo
 #if !defined(GDO_NOALIAS)
 
 /* aliases to raw function pointers */
-#define GDO_SYMBOL gdo::ptr::GDO_SYMBOL
+#define %%symbol%% gdo::ptr::%%symbol%%
 
 /* aliases to raw object pointers */
-#define GDO_OBJ_SYMBOL *gdo::ptr::GDO_OBJ_SYMBOL
+#define %%obj_symbol%% *gdo::ptr::%%obj_symbol%%
 
 #endif // !GDO_NOALIAS

@@ -42,6 +42,10 @@ namespace
     /* check for keyword in list */
     inline bool find_keyword(const std::string &line, const char* const *list)
     {
+        if (line.find("%%") == std::string::npos) {
+            return false;
+        }
+
         for (auto p = list; *p != NULL; p++) {
             if (line.find(*p) != std::string::npos) {
                 return true;
@@ -60,17 +64,17 @@ std::string gendlopen::parse(const std::string &data)
     bool comment_out = false;
 
     const char* const function_keywords[] = {
-        "GDO_RET",
-        "GDO_TYPE",
-        "GDO_SYMBOL",
-        "GDO_ARGS",
-        "GDO_NOTYPE_ARGS",
+        "%%return%%",
+        "%%type%%",
+        "%%symbol%%",
+        "%%args%%",
+        "%%notype_args%%",
         NULL
     };
 
     const char* const object_keywords[] = {
-        "GDO_OBJ_TYPE",
-        "GDO_OBJ_SYMBOL",
+        "%%obj_type%%",
+        "%%obj_symbol%%",
         NULL
     };
 
@@ -132,15 +136,6 @@ std::string gendlopen::parse(const std::string &data)
             continue;
         }
 
-        /* nothing to replace */
-        if (line.find("GDO") == std::string::npos &&
-            (custom_prefix && line.find("gdo") == std::string::npos))
-        {
-            buf += line;
-            line.clear();
-            continue;
-        }
-
         /* check if the line needs to be processed in a loop */
         bool has_func = find_keyword(line, function_keywords);
         bool has_obj = find_keyword(line, object_keywords);
@@ -164,19 +159,20 @@ std::string gendlopen::parse(const std::string &data)
                 /* don't "return" on "void" functions */
                 if (same_string_case(e.type, "void")) {
                     /* keep the indentation pretty */
-                    replace_string("GDO_RET ", "", copy);
-                    replace_string("GDO_RET", "", copy);
+                    replace_string("%%return%% ", "", copy);
+                    replace_string("%%return%%", "", copy);
                 } else {
-                    replace_string("GDO_RET", "return", copy);
+                    replace_string("%%return%%", "return", copy);
                 }
 
                 if (e.type.ends_with("*")) {
-                    replace_string("GDO_TYPE ", e.type, copy);
+                    /* append space */
+                    replace_string("%%type%% ", e.type, copy);
                 }
-                replace_string("GDO_TYPE", e.type, copy);
-                replace_string("GDO_SYMBOL", e.symbol, copy);
-                replace_string("GDO_ARGS", e.args, copy);
-                replace_string("GDO_NOTYPE_ARGS", e.notype_args, copy);
+                replace_string("%%type%%", e.type, copy);
+                replace_string("%%symbol%%", e.symbol, copy);
+                replace_string("%%args%%", e.args, copy);
+                replace_string("%%notype_args%%", e.notype_args, copy);
 
                 buf += copy;
             }
@@ -190,8 +186,8 @@ std::string gendlopen::parse(const std::string &data)
 
             for (const auto &e : m_objects) {
                 auto copy = line;
-                replace_string("GDO_OBJ_TYPE", e.type, copy);
-                replace_string("GDO_OBJ_SYMBOL", e.symbol, copy);
+                replace_string("%%obj_type%%", e.type, copy);
+                replace_string("%%obj_symbol%%", e.symbol, copy);
                 buf += copy;
             }
         } else {
@@ -202,23 +198,10 @@ std::string gendlopen::parse(const std::string &data)
         line.clear();
     }
 
-    /* replace keywords back to default (maybe I should use a different
-     * prefix for keywords in the first place?) */
-    auto restore_keywords = [this] (const char* const *list, std::string &buf) {
-        for (auto p = list; *p != NULL; p++) {
-            replace_string(std::string(m_name_upper + (*p+3)), *p, buf);
-        }
-    };
-
-    /* replace the rest */
+    /* replace the prefixes */
     if (custom_prefix) {
         replace_string("GDO", m_name_upper, buf);
         replace_string("gdo", m_name_lower, buf);
-
-        if (m_skip_parameter_names) {
-            restore_keywords(function_keywords, buf);
-            restore_keywords(object_keywords, buf);
-        }
     }
 
     return buf;

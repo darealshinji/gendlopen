@@ -280,12 +280,12 @@ GDO_LINKAGE bool gdo_free_lib(void)
 
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
-    gdo_hndl.GDO_SYMBOL_ptr_ = NULL;
-    gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = NULL;
+    gdo_hndl.%%symbol%%_ptr_ = NULL;
+    gdo_hndl.%%obj_symbol%%_ptr_ = NULL;
 
     /* set back to false */
-    gdo_hndl.GDO_SYMBOL_loaded_ = false;
-    gdo_hndl.GDO_OBJ_SYMBOL_loaded_ = false;
+    gdo_hndl.%%symbol%%_loaded_ = false;
+    gdo_hndl.%%obj_symbol%%_loaded_ = false;
 
     return true;
 }
@@ -299,8 +299,8 @@ GDO_LINKAGE bool gdo_free_lib(void)
 GDO_LINKAGE bool gdo_symbols_loaded(void)
 {
     if (true
-        && gdo_hndl.GDO_SYMBOL_loaded_
-        && gdo_hndl.GDO_OBJ_SYMBOL_loaded_
+        && gdo_hndl.%%symbol%%_loaded_
+        && gdo_hndl.%%obj_symbol%%_loaded_
     ) {
         return true;
     }
@@ -338,18 +338,18 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 
     /* get symbol addresses */
 @
-    /* GDO_SYMBOL */@
-    gdo_hndl.GDO_SYMBOL_ptr_ = @
-        (GDO_TYPE (*)(GDO_ARGS))@
-            _gdo_sym("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
-    if (!gdo_hndl.GDO_SYMBOL_loaded_ && !ignore_errors) {@
+    /* %%symbol%% */@
+    gdo_hndl.%%symbol%%_ptr_ = @
+        (%%type%% (*)(%%args%%))@
+            _gdo_sym("%%symbol%%", &gdo_hndl.%%symbol%%_loaded_);@
+    if (!gdo_hndl.%%symbol%%_loaded_ && !ignore_errors) {@
         return false;@
     }
 @
-    /* GDO_OBJ_SYMBOL */@
-    gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-            _gdo_sym("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
-    if (!gdo_hndl.GDO_OBJ_SYMBOL_loaded_ && !ignore_errors) {@
+    /* %%obj_symbol%% */@
+    gdo_hndl.%%obj_symbol%%_ptr_ = (%%obj_type%% *)@
+            _gdo_sym("%%obj_symbol%%", &gdo_hndl.%%obj_symbol%%_loaded_);@
+    if (!gdo_hndl.%%obj_symbol%%_loaded_ && !ignore_errors) {@
         return false;@
     }
 
@@ -427,19 +427,19 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
     /* get symbol address */
     if (symbol && *symbol) {
 @
-        /* GDO_SYMBOL */@
-        if (strcmp("GDO_SYMBOL", symbol) == 0) {@
-            gdo_hndl.GDO_SYMBOL_ptr_ =@
-                (GDO_TYPE (*)(GDO_ARGS))@
-                    _gdo_sym("GDO_SYMBOL", &gdo_hndl.GDO_SYMBOL_loaded_);@
-            return gdo_hndl.GDO_SYMBOL_loaded_;@
+        /* %%symbol%% */@
+        if (strcmp("%%symbol%%", symbol) == 0) {@
+            gdo_hndl.%%symbol%%_ptr_ =@
+                (%%type%% (*)(%%args%%))@
+                    _gdo_sym("%%symbol%%", &gdo_hndl.%%symbol%%_loaded_);@
+            return gdo_hndl.%%symbol%%_loaded_;@
         }
 @
-        /* GDO_OBJ_SYMBOL */@
-        if (strcmp("GDO_OBJ_SYMBOL", symbol) == 0) {@
-            gdo_hndl.GDO_OBJ_SYMBOL_ptr_ = (GDO_OBJ_TYPE *)@
-                    _gdo_sym("GDO_OBJ_SYMBOL", &gdo_hndl.GDO_OBJ_SYMBOL_loaded_);@
-            return gdo_hndl.GDO_OBJ_SYMBOL_loaded_;@
+        /* %%obj_symbol%% */@
+        if (strcmp("%%obj_symbol%%", symbol) == 0) {@
+            gdo_hndl.%%obj_symbol%%_ptr_ = (%%obj_type%% *)@
+                    _gdo_sym("%%obj_symbol%%", &gdo_hndl.%%obj_symbol%%_loaded_);@
+            return gdo_hndl.%%obj_symbol%%_loaded_;@
         }
     }
 
@@ -656,9 +656,9 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 @
-GDO_VISIBILITY GDO_TYPE GDO_SYMBOL(GDO_ARGS) {@
-    gdo_quick_load("GDO_SYMBOL", _T("GDO_SYMBOL"));@
-    GDO_RET gdo_hndl.GDO_SYMBOL_ptr_(GDO_NOTYPE_ARGS);@
+GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
+    gdo_quick_load("%%symbol%%", _T("%%symbol%%"));@
+    %%return%% gdo_hndl.%%symbol%%_ptr_(%%notype_args%%);@
 }
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD

@@ -31,8 +31,8 @@ typedef struct gdo_handle
     void *handle;
 #endif
 
-    GDO_TYPE (*GDO_SYMBOL)(GDO_ARGS);
-    GDO_OBJ_TYPE *GDO_OBJ_SYMBOL;
+    %%type%% (*%%symbol%%)(%%args%%);
+    %%obj_type%% *%%obj_symbol%%;
 
 } gdo_handle_t;
 
@@ -48,21 +48,21 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
         return "failed to load library";
     }
 @
-    /* GDO_SYMBOL */@
-    gdo_hndl.GDO_SYMBOL = @
-        (GDO_TYPE (*)(GDO_ARGS))@
-            GDO_GET_SYM(gdo_hndl.handle, "GDO_SYMBOL");@
-    if (!gdo_hndl.GDO_SYMBOL) {@
+    /* %%symbol%% */@
+    gdo_hndl.%%symbol%% = @
+        (%%type%% (*)(%%args%%))@
+            GDO_GET_SYM(gdo_hndl.handle, "%%symbol%%");@
+    if (!gdo_hndl.%%symbol%%) {@
         GDO_FREE_LIB(gdo_hndl.handle);@
-        return "failed to load symbol: GDO_SYMBOL";@
+        return "failed to load symbol: %%symbol%%";@
     }
 @
-    /* GDO_OBJ_SYMBOL */@
-    gdo_hndl.GDO_OBJ_SYMBOL = (GDO_OBJ_TYPE *)@
-        GDO_GET_SYM(gdo_hndl.handle, "GDO_OBJ_SYMBOL");@
-    if (!gdo_hndl.GDO_OBJ_SYMBOL) {@
+    /* %%obj_symbol%% */@
+    gdo_hndl.%%obj_symbol%% = (%%obj_type%% *)@
+        GDO_GET_SYM(gdo_hndl.handle, "%%obj_symbol%%");@
+    if (!gdo_hndl.%%obj_symbol%%) {@
         GDO_FREE_LIB(gdo_hndl.handle);@
-        return "failed to load symbol: GDO_OBJ_SYMBOL";@
+        return "failed to load symbol: %%obj_symbol%%";@
     }
 
     return NULL;
@@ -72,9 +72,9 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 #if !defined(GDO_NOALIAS)
 
 /* aliases to raw function pointers */
-#define GDO_SYMBOL gdo_hndl.GDO_SYMBOL
+#define %%symbol%% gdo_hndl.%%symbol%%
 
 /* aliases to raw object pointers */
-#define GDO_OBJ_SYMBOL *gdo_hndl.GDO_OBJ_SYMBOL
+#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%
 
 #endif // !GDO_NOALIAS
