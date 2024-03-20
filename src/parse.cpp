@@ -27,6 +27,7 @@
  */
 
 #include <iostream>
+#include <list>
 #include <string>
 #include <stdlib.h>
 
@@ -37,17 +38,19 @@ using common::replace_string;
 using common::same_string_case;
 
 
-namespace
+namespace /* anonymous */
 {
+    using list_t = std::list<const char *>;
+
     /* check for keyword in list */
-    inline bool find_keyword(const std::string &line, const char* const *list)
+    bool find_keyword(const std::string &line, const list_t &list)
     {
         if (line.find("%%") == std::string::npos) {
             return false;
         }
 
-        for (auto p = list; *p != NULL; p++) {
-            if (line.find(*p) != std::string::npos) {
+        for (const auto &e : list) {
+            if (line.find(e) != std::string::npos) {
                 return true;
             }
         }
@@ -63,19 +66,17 @@ std::string gendlopen::parse(const std::string &data)
     bool custom_prefix = false;
     bool comment_out = false;
 
-    const char* const function_keywords[] = {
+    const list_t function_keywords = {
         "%%return%%",
         "%%type%%",
         "%%symbol%%",
         "%%args%%",
-        "%%notype_args%%",
-        NULL
+        "%%notype_args%%"
     };
 
-    const char* const object_keywords[] = {
+    const list_t object_keywords = {
         "%%obj_type%%",
-        "%%obj_symbol%%",
-        NULL
+        "%%obj_symbol%%"
     };
 
     if (data.empty()) {
@@ -154,7 +155,7 @@ std::string gendlopen::parse(const std::string &data)
             }
 
             for (const auto &e : m_prototypes) {
-                auto copy = line;
+                std::string copy = line;
 
                 /* don't "return" on "void" functions */
                 if (same_string_case(e.type, "void")) {
@@ -185,7 +186,7 @@ std::string gendlopen::parse(const std::string &data)
             }
 
             for (const auto &e : m_objects) {
-                auto copy = line;
+                std::string copy = line;
                 replace_string("%%obj_type%%", e.type, copy);
                 replace_string("%%obj_symbol%%", e.symbol, copy);
                 buf += copy;
