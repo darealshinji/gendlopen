@@ -1,7 +1,10 @@
 void
-gtk_main_quit (
-  void
-);
+gtk_main_quit
+(
+void
+)
+;
+// ^ test how the tokenizer handles this
 
 void
 gtk_init (

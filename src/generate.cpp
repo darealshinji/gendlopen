@@ -38,7 +38,10 @@
 #include <cstring>
 #include <ctime>
 
+#include "clang-ast.h"
 #include "template.h"
+#include "cin_ifstream.hpp"
+#include "cout_ofstream.hpp"
 #include "gendlopen.hpp"
 
 using common::range;
@@ -228,15 +231,43 @@ void create_template_data(
 } /* end anonymous namespace */
 
 
+/* read input and tokenize */
+bool gendlopen::tokenize_input(const std::string &ifile)
+{
+    std::string line;
+    cin_ifstream ifs;
+
+    /* open file for reading */
+    if (!ifs.open(ifile)) {
+        std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
+        return false;
+    }
+
+    /* check first line */
+    ifs.getline(line);
+
+    /* Clang AST without escape code */
+    if (line.starts_with("TranslationUnitDecl 0x")) {
+        std::cerr << "error: Clang AST: `TranslationUnitDecl' line found but ANSI escape code is missing" << std::endl;
+        std::cerr << "Try adding `-fansi-escape-codes' to clang's flags." << std::endl;
+        return false;
+    }
+
+    /* Clang AST */
+    if (line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
+        return clang_ast(ifs, ifile);
+    }
+
+    ifs.ungetline(line);
+
+    /* regular tokenizer */
+    return tokenize(ifs, ifile);
+}
+
 /* generate output */
 int gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name)
 {
-    if (m_clang_ast) {
-        /* parse input as Clang AST */
-        if (!parse_ast(ifile)) {
-            return 1;
-        }
-    } else if (!tokenize(ifile)) { /* regular tokenizer */
+    if (!tokenize_input(ifile)) {
         return 1;
     }
 
@@ -282,7 +313,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
         header_name = ofhdr.filename().string();
     }
 
-    auto header_guard = convert_to_upper(header_name);
+    std::string header_guard = convert_to_upper(header_name);
 
     /* name used on variables and macros */
     m_name_upper = convert_to_upper(name);
@@ -299,7 +330,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     }
 
     /* notification + license text */
-    const auto note = create_note(*m_argc, *m_argv);
+    std::string note = create_note(*m_argc, *m_argv);
     out << note;
 
     /* header guard begin */
@@ -323,7 +354,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
 
     /* extra includes */
     if (!m_includes.empty()) {
-        for (const auto &e : m_includes) {
+        for (auto &e : m_includes) {
             out << "#include " << e << '\n';
         }
         out << '\n';

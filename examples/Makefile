@@ -101,8 +101,7 @@ example_cxx_wide.exe: example_cxx_wide.hpp
 uuid_win_dl.h:
 	$(clang) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
 	  $(gendlopen) -i- --default-library "QUOTE_STRING(rpcrt4.dll)" \
-	  --clang-ast -SUuidCreate -SUuidToStringA -SRpcStringFreeA \
-	  -f -o $@
+	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA -f -o $@
 
 uuid_win.exe: uuid_win_dl.h
 	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)

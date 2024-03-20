@@ -194,14 +194,14 @@ notify: example_notify.h example_notify_gobject.h
 uuid_nix: uuid_nix.c
 	$(CLANG) -Xclang -ast-dump -I../thirdparty/uuid $@.h | \
 	  $(GENDLOPEN) -i- --default-library "QUOTE_STRING(libuuid.so.1)" \
-	  --clang-ast -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower \
+	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower \
 	  -f -o $@_dl.h
 	$(call compile_cc,$<,-I../thirdparty/uuid)
 
 uuid_win: uuid_win.c
 	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $@.h | \
 	  $(GENDLOPEN) -i- --default-library rpcrt4.dll \
-	  --clang-ast -SUuidCreate -SUuidToStringA -SRpcStringFreeA
+	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 	  -f -o $@_dl.h
 	$(call compile_cc,$<)
 

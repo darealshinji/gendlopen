@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <list>
 #include <ranges>
 #include <regex>
 #include <sstream>
@@ -49,6 +50,31 @@ using common::range;
 namespace /* anonymous */
 {
 
+/* compare s with a list of very basic types and keywords
+ * to guess if it could be a parameter name */
+bool is_keyword(const std::string &s)
+{
+    const std::list<const char *> keywords =
+    {
+        "char",
+        "int", "long", "short",
+        "float", "double",
+        "signed", "unsigned",
+        "const", "volatile",
+        "struct", "union", "enum",
+        "restrict",
+        "void"
+    };
+
+    for (const auto &e : keywords) {
+        if (same_string_case(s, e)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /* extract argument names from args list */
 bool get_parameter_names(proto_t &proto)
 {
@@ -62,30 +88,6 @@ bool get_parameter_names(proto_t &proto)
     int scope = 0;
     std::string out, token;
     vstring_t arg;
-
-    const char * const keywords[] = {
-        "char",
-        "int", "long", "short",
-        "float", "double",
-        "signed", "unsigned",
-        "const", "volatile",
-        "struct", "union", "enum",
-        "restrict",
-        "void",
-        NULL
-    };
-
-    /* compare s with a list of very basic types and keywords
-     * to guess if it could be a parameter name */
-    auto is_keyword = [] (const char* const *list, const std::string &s) -> bool
-    {
-        for (auto p = list; *p != NULL; p++) {
-            if (same_string_case(s, *p)) {
-                return true;
-            }
-        }
-        return false;
-    };
 
     /* void or empty: nothing to do */
     if (proto.args.empty() || same_string_case(proto.args, "void")) {
@@ -121,9 +123,7 @@ bool get_parameter_names(proto_t &proto)
             search = e_fptr_name;
         } else if (token == ",") {
             /* argument list separator */
-            if (arg.size() < 2 || arg.back().back() == '*' ||
-                is_keyword(keywords, arg.back()))
-            {
+            if (arg.size() < 2 || arg.back().back() == '*' || is_keyword(arg.back())) {
                 std::cerr << "error: a parameter name is missing: "
                     << proto.symbol << '(' << proto.args << ");" << std::endl;
                 std::cerr << "maybe try again with `--skip-parameter-names'" << std::endl;
@@ -154,19 +154,19 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
     char c, comment = 0;
     uint8_t nullbytes = 0;
 
-    auto add_space = [] (std::string &line) {
+    auto add_space = [&] () {
         if (!line.empty() && line.back() != ' ') {
             line += ' ';
         }
     };
 
-    auto add_element = [add_space] (std::string &line, char c) {
-        add_space(line);
+    auto add_element = [&] () {
+        add_space();
         line += c;
         line += ' ';
     };
 
-    auto save_line = [] (std::string &line, vstring_t &vec) {
+    auto save_line = [&] () {
         strip_spaces(line);
 
         if (!line.empty()) {
@@ -186,7 +186,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
         {
         /* end of sequence -> save line buffer */
         case ';':
-            save_line(line, vec);
+            save_line();
             break;
 
         case '/':
@@ -199,7 +199,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
                 ifs.ignore();
                 comment = '\n';
             } else {
-                add_element(line, c);
+                add_element();
             }
             break;
 
@@ -209,7 +209,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
                 ifs.ignore();
                 comment = 0;
             } else if (comment == 0) {
-                add_element(line, c);
+                add_element();
             }
             break;
 
@@ -225,7 +225,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
         case '\r':
         case '\v':
         case '\f':
-            add_space(line);
+            add_space();
             break;
 
         /* null byte */
@@ -248,7 +248,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
             {
                 line += c;
             } else {
-                add_element(line, c);
+                add_element();
             }
             break;
         }
@@ -263,7 +263,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
     }
 
     /* in case the last prototype didn't end on semicolon */
-    save_line(line, vec);
+    save_line();
 
     return true;
 }
@@ -356,34 +356,36 @@ bool has_duplicate_symbols(const vproto_t &proto, const vproto_t &objs, const st
     return false;
 }
 
+/* add to vector only if the symbol wasn't already saved */
+void pb_if_unique(vproto_t &vec, const proto_t &proto)
+{
+    for (const auto &e : vec) {
+        if (e.symbol == proto.symbol) {
+            return;
+        }
+    }
+
+    vec.push_back(proto);
+}
+
 } /* end anonymous namespace */
 
 
 void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
 {
-    /* add to vector only if the symbol wasn't already saved */
-    auto pb_if_unique = [] (vproto_t &vec, const proto_t &proto) {
-        for (const auto &e : vec) {
-            if (e.symbol == proto.symbol) {
-                return;
-            }
-        }
-        vec.push_back(proto);
-    };
-
     /* copy symbols beginning with prefix */
-    auto copy_if_prefixed = [pb_if_unique] (const std::string &pfx, const vproto_t &from, vproto_t &to) {
+    auto copy_if_prefixed = [this] (const vproto_t &from, vproto_t &to) {
         for (const auto &e : from) {
-            if (e.symbol.starts_with(pfx)) {
+            if (e.symbol.starts_with(m_prefix)) {
                 pb_if_unique(to, e);
             }
         }
     };
 
     /* copy symbols whose names are on the symbols vector list */
-    auto copy_if_whitelisted = [pb_if_unique] (const vstring_t &list, const vproto_t &from, vproto_t &to) {
+    auto copy_if_whitelisted = [this] (const vproto_t &from, vproto_t &to) {
         for (const auto &e : from) {
-            if (std::find(list.begin(), list.end(), e.symbol) != list.end()) {
+            if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
                 pb_if_unique(to, e);
             }
         }
@@ -395,29 +397,22 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
         m_objects = tmp_objs;
     } else {
         if (!m_prefix.empty()) {
-            copy_if_prefixed(m_prefix, tmp_proto, m_prototypes);
-            copy_if_prefixed(m_prefix, tmp_objs, m_objects);
+            copy_if_prefixed(tmp_proto, m_prototypes);
+            copy_if_prefixed(tmp_objs, m_objects);
         }
 
         if (!m_symbols.empty()) {
-            copy_if_whitelisted(m_symbols, tmp_proto, m_prototypes);
-            copy_if_whitelisted(m_symbols, tmp_objs, m_objects);
+            copy_if_whitelisted(tmp_proto, m_prototypes);
+            copy_if_whitelisted(tmp_objs, m_objects);
         }
     }
 }
 
 /* read input and tokenize */
-bool gendlopen::tokenize(const std::string &ifile)
+bool gendlopen::tokenize(cin_ifstream &ifs, const std::string &ifile)
 {
-    cin_ifstream ifs;
     vstring_t vec;
     vproto_t tmp_proto, tmp_objs;
-
-    /* open file for reading */
-    if (!ifs.open(ifile)) {
-        std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
-        return false;
-    }
 
     /* read and tokenize input */
     if (!read_input(ifs, vec)) {
@@ -427,17 +422,17 @@ bool gendlopen::tokenize(const std::string &ifile)
     ifs.close();
 
     /* process prototypes */
-    for (const auto &s : vec) {
-        if (!tokenize_function(s, tmp_proto, m_skip_parameter_names) &&
-            !tokenize_object(s, tmp_objs))
+    for (const auto &str : vec) {
+        if (!tokenize_function(str, tmp_proto, m_skip_parameter_names) &&
+            !tokenize_object(str, tmp_objs))
         {
-            std::cerr << "error: malformed prototype:\n" << s << std::endl;
+            std::cerr << "error: malformed prototype:\n" << str << std::endl;
             return false;
         }
     }
 
     /* nothing found? */
-    if (tmp_proto.size() == 0 && tmp_objs.size() == 0) {
+    if (tmp_proto.empty() && tmp_objs.empty()) {
         std::cerr << "error: no function or object prototypes found in file: " << ifile << std::endl;
         return false;
     }
@@ -451,18 +446,18 @@ bool gendlopen::tokenize(const std::string &ifile)
     filter_and_copy_symbols(tmp_proto, tmp_objs);
 
     /* format args */
-    for (auto &s : m_prototypes) {
-        replace_string("* ", "*", s.args);
-        replace_string(" ,", ",", s.args);
+    for (auto &p : m_prototypes) {
+        replace_string("* ", "*", p.args);
+        replace_string(" ,", ",", p.args);
 
-        replace_string("( ", "(", s.args);
-        replace_string(" )", ")", s.args);
-        replace_string(") (", ")(", s.args);
+        replace_string("( ", "(", p.args);
+        replace_string(" )", ")", p.args);
+        replace_string(") (", ")(", p.args);
 
-        replace_string("[ ", "[", s.args);
-        replace_string("] ", "]", s.args);
-        replace_string(" [", "[", s.args);
-        replace_string(" ]", "]", s.args);
+        replace_string("[ ", "[", p.args);
+        replace_string("] ", "]", p.args);
+        replace_string(" [", "[", p.args);
+        replace_string(" ]", "]", p.args);
     }
 
     return true;

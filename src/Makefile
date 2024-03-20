@@ -5,7 +5,7 @@ link     = link -nologo
 cflags   = -W3 -O2 -DWIN32_LEAN_AND_MEAN
 cxxflags = $(cflags) -EHsc -std:c++latest
 ldflags  = -subsystem:console -release
-objs     = generate.obj main.obj parse.obj parse-clang-ast.obj tokenize.obj
+objs     = main.obj clang-ast.obj generate.obj parse.obj tokenize.obj
 
 
 all: gendlopen.exe

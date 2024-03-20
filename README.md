@@ -98,7 +98,8 @@ To cross-compile the tool with GNU make you must set `$CC` and `$CXX` or `$CLANG
 to the host compiler and `$CCAUX` to the build C compiler:
 ``` sh
 # MinGW
-make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ CCAUX=gcc
+pfx=x86_64-w64-mingw32
+make CC=$pfx-gcc CXX=$pfx-g++ CCAUX=gcc
 
 # clang-cl
 make CLANG_CL=clang-cl
@@ -107,7 +108,8 @@ make CLANG_CL=clang-cl
 To cross-compile the examples you must compile the native tool first:
 ```sh
 # MinGW
-make && make CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ test
+pfx=x86_64-w64-mingw32
+make && make CC=$pfx-gcc CXX=$pfx-g++ test
 
 # clang-cl
 make && make CLANG_CL=clang-cl test

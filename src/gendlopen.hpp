@@ -31,7 +31,6 @@
 
 #include "common.hpp"
 #include "cin_ifstream.hpp"
-#include "cout_ofstream.hpp"
 
 
 class gendlopen
@@ -51,16 +50,21 @@ private:
     bool m_force = false;
     bool m_separate = false;
     bool m_skip_parameter_names = false;
-    bool m_clang_ast = false;
     int *m_argc = NULL;
     char ***m_argv = NULL;
 
-    bool parse_ast_line(cin_ifstream &ifs, std::string &line, int mode);
-    bool parse_ast(const std::string &ifile);
+    /* clang-ast.cpp */
+    bool clang_ast_line(cin_ifstream &ifs, std::string &line, int mode);
+    bool clang_ast(cin_ifstream &ifs, const std::string &ifile);
 
-    bool tokenize(const std::string &ifile);
+    /* tokenize.cpp */
+    bool tokenize(cin_ifstream &ifs, const std::string &ifile);
     void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
 
+    /* generate.cpp */
+    bool tokenize_input(const std::string &ifile);
+
+    /* parse.cpp */
     std::string parse(const std::string &data);
 
 public:
@@ -80,7 +84,6 @@ public:
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
-    void clang_ast(bool b) { m_clang_ast = b; }
 
     /* add code */
     void add_def(const std::string &s) { m_definitions.push_back(s); }

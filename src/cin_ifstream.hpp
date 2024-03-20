@@ -37,35 +37,37 @@ class cin_ifstream
 private:
 
     bool m_stdin = false;
+    std::string m_buf;
     std::ifstream m_ifs;
 
 public:
 
-    cin_ifstream()
-    {}
+    cin_ifstream() {}
+    ~cin_ifstream() {}
 
-    cin_ifstream(const std::string &file)
-    {
-        open(file);
-    }
-
-    ~cin_ifstream()
-    {
-        close();
-    }
-
-    /* read from std::cin if input is "-" */
     bool open(const std::string &file)
     {
+        close();
+
         if (file == "-") {
+            /* STDIN */
             m_stdin = true;
         } else {
+            /* file */
             m_ifs.open(file.c_str());
         }
+
+        /* clear buffer */
+        m_buf.clear();
+
         return is_open();
     }
 
-    bool is_open() const {
+    bool is_open() const
+    {
+        if (!m_buf.empty()) {
+            return true;
+        }
         return m_stdin ? true : m_ifs.is_open();
     }
 
@@ -73,35 +75,76 @@ public:
         if (m_ifs.is_open()) m_ifs.close();
     }
 
-    std::istream& get(char &c) {
-        return m_stdin ? std::cin.get(c) : m_ifs.get(c);
+    bool get(char &c)
+    {
+        if (!m_buf.empty()) {
+            /* buffer */
+            c = m_buf.front();
+            m_buf.erase(0, 1);
+            return true;
+        } else if (m_stdin) {
+            /* STDIN */
+            return std::cin.get(c) ? true : false;
+        }
+
+        /* file */
+        return m_ifs.get(c) ? true : false;
     }
 
-    int peek() {
+    int peek()
+    {
+        if (!m_buf.empty()) {
+            return m_buf.front();
+        }
         return m_stdin ? std::cin.peek() : m_ifs.peek();
     }
 
-    bool good() const {
+    bool good() const
+    {
+        if (!m_buf.empty()) {
+            return true;
+        }
         return m_stdin ? std::cin.good() : m_ifs.good();
     }
 
     void ignore()
     {
-        if (m_stdin) {
+        if (!m_buf.empty()) {
+            /* buffer */
+            m_buf.erase(0, 1);
+        } else if (m_stdin) {
+            /* STDIN */
             std::cin.ignore();
         } else {
+            /* file */
             m_ifs.ignore();
         }
     }
 
     bool getline(std::string &line)
     {
-        if (m_stdin) {
-            return (std::getline(std::cin, line)) ? true : false;
+        if (!m_buf.empty()) {
+            /* non-empty buffer is always at least 1 line */
+            auto pos = m_buf.find('\n');
+            line = m_buf.substr(0, pos);
+            m_buf.erase(0, pos);
+            return true;
+        } else if (m_stdin) {
+            /* STDIN */
+            return std::getline(std::cin, line) ? true : false;
         }
 
-        return (std::getline(m_ifs, line)) ? true : false;
+        /* file */
+        return std::getline(m_ifs, line) ? true : false;
     };
+
+    void ungetline(const std::string &line)
+    {
+        /* always add a newline so we can extract
+         * it as a whole line again */
+        m_buf.insert(0, 1, '\n');
+        m_buf.insert(0, line);
+    }
 };
 
 #endif //_CIN_IFSTREAM_HPP_

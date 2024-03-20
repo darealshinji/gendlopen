@@ -40,10 +40,7 @@ private:
 public:
 
     cout_ofstream() {}
-
-    ~cout_ofstream() {
-        close();
-    }
+    ~cout_ofstream() {}
 
     bool open(const std::string &file, std::ios::openmode mode = std::ios::out)
     {

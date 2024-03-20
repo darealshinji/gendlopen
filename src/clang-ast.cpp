@@ -32,24 +32,10 @@
 #include <vector>
 #include <stdio.h>
 #include <string.h>
+
+#include "clang-ast.h"
 #include "cin_ifstream.hpp"
 #include "gendlopen.hpp"
-
-
-/* ANSI color codes used in the Clang AST output */
-
-/* escaped variants for regex */
-#define COL(x)    "\x1B\\[" #x "m"
-#define C0        COL(0)        /* default */
-#define CGREEN    COL(0;32)     /* green */
-#define CFGREEN   COL(0;1;32)   /* fat green */
-#define CFBLUE    COL(0;1;36)   /* fat blue */
-
-/* unescaped variants for std::string */
-#define sCOL(x)   "\x1B[" #x "m"
-#define sC0       sCOL(0)       /* default */
-#define sCORANGE  sCOL(0;33)    /* orange */
-#define sCFGREEN  sCOL(0;1;32)  /* fat green */
 
 
 namespace /* anonymous */
@@ -160,9 +146,9 @@ bool get_parameters(const std::string &line, std::string &param, size_t &count)
 
 
 /* returns true if a function declaration was found */
-bool gendlopen::parse_ast_line(cin_ifstream &ifs, std::string &line, int mode)
+bool gendlopen::clang_ast_line(cin_ifstream &ifs, std::string &line, int mode)
 {
-    auto decl = get_declarations(line, mode, m_prefix, m_symbols);
+    decl_t decl = get_declarations(line, mode, m_prefix, m_symbols);
 
     if (decl.is_func) {
         /* function */
@@ -191,18 +177,22 @@ bool gendlopen::parse_ast_line(cin_ifstream &ifs, std::string &line, int mode)
     return false;
 }
 
-/* parse Clang AST */
-bool gendlopen::parse_ast(const std::string &ifile)
+/* read Clang AST */
+bool gendlopen::clang_ast(cin_ifstream &ifs, const std::string &ifile)
 {
-    std::string line;
-    cin_ifstream ifs;
-    int mode = M_ALL;
+    /* nothing found? */
+    auto check_empty = [&, this] () -> bool
+    {
+        if (m_prototypes.empty() && m_objects.empty()) {
+            std::cerr << "error: no function or object prototypes found in file: "
+                << ifile << std::endl;
+            return false;
+        }
+        return true;
+    };
 
-    /* open file for reading */
-    if (!ifs.open(ifile)) {
-        std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
-        return false;
-    }
+    std::string line;
+    int mode = M_ALL;
 
     /* handle mode */
     if (!m_prefix.empty()) {
@@ -211,21 +201,7 @@ bool gendlopen::parse_ast(const std::string &ifile)
         mode = M_LIST;
     }
 
-    /* check first line */
-
-    ifs.getline(line);
-
-    if (line.empty()) {
-        std::cerr << "error: empty line" << std::endl;
-        return false;
-    }
-
-    if (!line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
-        std::cerr << "error: file is missing TranslationUnitDecl line" << std::endl;
-        return false;
-    }
-
-    /* parse lines */
+    /* read lines */
     while (ifs.getline(line))
     {
         bool loop = true;
@@ -234,18 +210,19 @@ bool gendlopen::parse_ast(const std::string &ifile)
         {
             /* assume end of file */
             if (line.empty()) {
-                return true;
+                return check_empty();
             }
 
-            loop = parse_ast_line(ifs, line, mode);
+            loop = clang_ast_line(ifs, line, mode);
 
-            /* stop if the vector is empty */
+            /* get_declarations() deletes found symbols,
+             * so stop if the vector is empty */
             if (mode == M_LIST && m_symbols.empty()) {
-                return true;
+                return check_empty();
             }
         }
     }
 
-    return true;
+    return check_empty();
 }
 

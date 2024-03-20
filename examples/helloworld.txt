@@ -1,5 +1,4 @@
-/* init */
-helloworld *helloworld_init(  );
+helloworld *helloworld_init(  ); /* init */
 
 /* function pointer */
 extern helloworld_cb_t helloworld_callback;

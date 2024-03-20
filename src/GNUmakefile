@@ -11,9 +11,9 @@ BIN    := gendlopen
 AUXBIN := gen_template_h
 
 OBJS   := main.$(OBJEXT) \
+	clang-ast.$(OBJEXT) \
 	generate.$(OBJEXT) \
 	parse.$(OBJEXT) \
-	parse-clang-ast.$(OBJEXT) \
 	tokenize.$(OBJEXT) \
 	$(NULL)
 
