@@ -46,15 +46,15 @@
 
 /* typedefs */
 
-typedef struct proto {
+typedef struct {
     std::string type;
     std::string symbol;
     std::string args;
     std::string notype_args;
 } proto_t;
 
-typedef std::vector<proto_t> vproto_t;
-typedef std::vector<std::string> vstring_t;
+using vproto_t = std::vector<proto_t>;
+using vstring_t = std::vector<std::string>;
 
 
 /* enum for outout format */
