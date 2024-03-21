@@ -279,7 +279,6 @@ int main(int argc, char **argv)
     Flag a_force(args, {},
         "overwrite existing files",
         {'f', "force"});
-        //Opt::Single);
 
     more_help +=                                                                                    "\n";
     more_help += "  -f, --force"                                                                    "\n";
@@ -292,7 +291,6 @@ int main(int argc, char **argv)
     Flag a_skip_parameter_names(args, {},
         "skip parameter name lookup in function prototypes",
         {"skip-parameter-names"});
-        //Opt::Single);
 
     more_help +=                                                                                    "\n";
     more_help += "  --skip-parameter-names"                                                         "\n";
@@ -313,8 +311,8 @@ int main(int argc, char **argv)
     more_help += "  --prefix=[STRING]"                                                              "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Look for symbols that begin with STRING when parsing the input. This is most" "\n";
-    more_help += "    useful in combination with `--clang-ast' to ignore unwanted declarations"     "\n";
-    more_help += "    coming from i.e. standard C headers."                                         "\n";
+    more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
+    more_help += "    from i.e. standard C headers."                                                "\n";
     more_help +=                                                                                    "\n";
     more_help += "    By default all symbols found are used if neither `--prefix' nor `--symbol'"   "\n";
     more_help += "    were passed as flags."                                                        "\n";
@@ -330,7 +328,7 @@ int main(int argc, char **argv)
     more_help += "  -S[STRING...], --symbol=[STRING...]"                                            "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Look for the symbol name STRING when parsing the input. This is most useful"  "\n";
-    more_help += "    in combination with `--clang-ast' to ignore unwanted declarations coming"     "\n";
+    more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
     more_help += "    from i.e. standard C headers. This flag may be passed multiple times."        "\n";
     more_help +=                                                                                    "\n";
     more_help += "    By default all symbols found are used if neither `--prefix' nor `--symbol'"   "\n";
