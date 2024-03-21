@@ -42,7 +42,6 @@ namespace /* anonymous */
 {
 
 enum {
-    M_NONE,
     M_ALL,
     M_PREFIX,
     M_LIST,
@@ -58,7 +57,7 @@ typedef struct decl {
 
 
 /* get function or variable declaration */
-decl_t get_declarations(const std::string &line, int mode, const std::string &symbol, vstring_t &list)
+decl_t get_declarations(const std::string &line, int mode, const std::string &prefix, vstring_t &list)
 {
     decl_t decl;
     std::smatch m;
@@ -76,7 +75,7 @@ decl_t get_declarations(const std::string &line, int mode, const std::string &sy
     switch (mode)
     {
     case M_PREFIX:
-        if (!m[2].str().starts_with(symbol)) {
+        if (!m[2].str().starts_with(prefix)) {
             return {};
         }
         break;
@@ -86,7 +85,7 @@ decl_t get_declarations(const std::string &line, int mode, const std::string &sy
         }
         break;
     case M_PFX_LIST:
-        if (!m[2].str().starts_with(symbol) && std::erase(list, m[2]) == 0) {
+        if (!m[2].str().starts_with(prefix) && std::erase(list, m[2]) == 0) {
             return {};
         }
         break;
@@ -190,21 +189,9 @@ bool gendlopen::clang_ast_line(cin_ifstream &ifs, std::string &line, int mode)
 /* read Clang AST */
 bool gendlopen::clang_ast(cin_ifstream &ifs, const std::string &ifile)
 {
-    /* nothing found? */
-    auto check_empty = [&, this] () -> bool
-    {
-        if (m_prototypes.empty() && m_objects.empty()) {
-            std::cerr << "error: no function or object prototypes found in file: "
-                << ifile << std::endl;
-            return false;
-        }
-        return true;
-    };
-
     std::string line;
     int mode = M_ALL;
 
-    /* handle mode */
     if (!m_prefix.empty() && !m_symbols.empty()) {
         mode = M_PFX_LIST;
     } else if (!m_prefix.empty()) {
@@ -214,26 +201,24 @@ bool gendlopen::clang_ast(cin_ifstream &ifs, const std::string &ifile)
     }
 
     /* read lines */
-    while (ifs.getline(line)) {
-        bool loop = true;
-
+    while (ifs.getline(line) && !line.empty()) {
         /* inner loop to read parameters */
-        while (loop) {
-            /* assume end of file */
-            if (line.empty()) {
-                return check_empty();
-            }
-
-            loop = clang_ast_line(ifs, line, mode);
-        }
+        while (clang_ast_line(ifs, line, mode) && !line.empty())
+        {}
 
         /* get_declarations() deletes found symbols,
-            * so stop if the vector is empty */
+         * so stop if the vector is empty */
         if (mode == M_LIST && m_symbols.empty()) {
-            return check_empty();
+            break;
         }
     }
 
-    return check_empty();
+    if (m_prototypes.empty() && m_objects.empty()) {
+        std::cerr << "error: no function or object prototypes found in file: ";
+        std::cerr << ifile << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
