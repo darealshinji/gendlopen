@@ -45,7 +45,8 @@ enum {
     M_NONE,
     M_ALL,
     M_PREFIX,
-    M_LIST
+    M_LIST,
+    M_PFX_LIST
 };
 
 typedef struct decl {
@@ -72,16 +73,25 @@ decl_t get_declarations(const std::string &line, int mode, const std::string &sy
         return {};
     }
 
-    if (mode == M_PREFIX) {
+    switch (mode)
+    {
+    case M_PREFIX:
         if (!m[2].str().starts_with(symbol)) {
             return {};
         }
-    } else if (mode == M_LIST) {
-        /* returns how many times the element was
-         * found and erased from vector */
+        break;
+    case M_LIST:
         if (std::erase(list, m[2]) == 0) {
             return {};
         }
+        break;
+    case M_PFX_LIST:
+        if (!m[2].str().starts_with(symbol) && std::erase(list, m[2]) == 0) {
+            return {};
+        }
+        break;
+    default:
+        break;
     }
 
     decl.symbol = m[2];
@@ -195,31 +205,32 @@ bool gendlopen::clang_ast(cin_ifstream &ifs, const std::string &ifile)
     int mode = M_ALL;
 
     /* handle mode */
-    if (!m_prefix.empty()) {
+    if (!m_prefix.empty() && !m_symbols.empty()) {
+        mode = M_PFX_LIST;
+    } else if (!m_prefix.empty()) {
         mode = M_PREFIX;
     } else if (!m_symbols.empty()) {
         mode = M_LIST;
     }
 
     /* read lines */
-    while (ifs.getline(line))
-    {
+    while (ifs.getline(line)) {
         bool loop = true;
 
-        while (loop)
-        {
+        /* inner loop to read parameters */
+        while (loop) {
             /* assume end of file */
             if (line.empty()) {
                 return check_empty();
             }
 
             loop = clang_ast_line(ifs, line, mode);
+        }
 
-            /* get_declarations() deletes found symbols,
-             * so stop if the vector is empty */
-            if (mode == M_LIST && m_symbols.empty()) {
-                return check_empty();
-            }
+        /* get_declarations() deletes found symbols,
+            * so stop if the vector is empty */
+        if (mode == M_LIST && m_symbols.empty()) {
+            return check_empty();
         }
     }
 
