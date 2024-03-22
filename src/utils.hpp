@@ -22,8 +22,8 @@
  * THE SOFTWARE
  */
 
-#ifndef _COMMON_HPP_
-#define _COMMON_HPP_
+#ifndef _UTILS_HPP_
+#define _UTILS_HPP_
 
 #include <string>
 #include <utility>
@@ -33,6 +33,25 @@
 #ifndef _MSC_VER
 #include <strings.h>
 #endif
+
+
+/* ANSI color codes used in the Clang AST output */
+#ifndef CLANG_ANSI_COLORS
+#define CLANG_ANSI_COLORS
+    /* escaped variants for regex */
+    #define COL(x)    "\x1B\\[" #x "m"
+    #define C0        COL(0)        /* default */
+    #define CGREEN    COL(0;32)     /* green */
+    #define CFGREEN   COL(0;1;32)   /* fat green */
+    #define CFBLUE    COL(0;1;36)   /* fat blue */
+
+    /* unescaped variants for std::string */
+    #define sCOL(x)   "\x1B[" #x "m"
+    #define sC0       sCOL(0)       /* default */
+    #define sCORANGE  sCOL(0;33)    /* orange */
+    #define sCFGREEN  sCOL(0;1;32)  /* fat green */
+#endif //CLANG_ANSI_COLORS
+
 
 /* not supported by all compilers yet */
 //#define ASSUME(x)  [[assume(x)]]        // generic C++
@@ -72,7 +91,7 @@ namespace output
 
 /* common inline functions */
 
-namespace common
+namespace utils
 {
 
 /* returns true if s begins with a prefix found in list */
@@ -87,7 +106,7 @@ inline bool is_prefixed(const std::string &s, const vstring_t &list)
 }
 
 /* case-insensitive string comparison */
-inline bool same_string_case(const std::string &str1, const char *str2)
+inline bool eq_str_case(const std::string &str1, const char *str2)
 {
 #ifdef _MSC_VER
     return (_stricmp(str1.c_str(), str2) == 0);
@@ -104,7 +123,7 @@ inline void strip_spaces(std::string &in)
 }
 
 /* replace string "from" with string "to" in string "s" */
-inline void replace_string(const std::string &from, const std::string &to, std::string &s)
+inline void replace(const std::string &from, const std::string &to, std::string &s)
 {
     for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
     {
@@ -135,4 +154,4 @@ inline bool range(T c, T beg, T end)
 
 } /* namespace common */
 
-#endif //_COMMON_HPP_
+#endif //_UTILS_HPP_

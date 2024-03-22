@@ -29,8 +29,8 @@
 #include <string>
 #include <vector>
 
-#include "common.hpp"
-#include "cin_ifstream.hpp"
+#include "cio.hpp"
+#include "utils.hpp"
 
 
 class gendlopen
@@ -54,11 +54,11 @@ private:
     char ***m_argv = NULL;
 
     /* clang-ast.cpp */
-    bool clang_ast_line(cin_ifstream &ifs, std::string &line, int mode);
-    bool clang_ast(cin_ifstream &ifs, const std::string &ifile);
+    bool clang_ast_line(cio::ifstream &ifs, std::string &line, int mode);
+    bool clang_ast(cio::ifstream &ifs, const std::string &ifile);
 
     /* tokenize.cpp */
-    bool tokenize(cin_ifstream &ifs, const std::string &ifile);
+    bool tokenize(cio::ifstream &ifs, const std::string &ifile);
     void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
 
     /* generate.cpp */

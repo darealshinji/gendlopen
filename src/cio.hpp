@@ -22,17 +22,27 @@
  * THE SOFTWARE
  */
 
-#ifndef _CIN_IFSTREAM_HPP_
-#define _CIN_IFSTREAM_HPP_
+#ifndef _CIO_HPP_
+#define _CIO_HPP_
 
 #include <iostream>
 #include <fstream>
 #include <string>
 
 
+namespace cio
+{
+
 /* wrapper class to enable reading input from
  * a file or std::cin using the same object */
-class cin_ifstream
+class ifstream;
+
+/* wrapper class to enable writing output to
+ * a file or std::cout using the same object */
+class ofstream;
+
+
+class ifstream
 {
 private:
 
@@ -42,8 +52,8 @@ private:
 
 public:
 
-    cin_ifstream() {}
-    ~cin_ifstream() {}
+    ifstream() {}
+    ~ifstream() {}
 
     bool open(const std::string &file)
     {
@@ -146,5 +156,54 @@ public:
         m_buf.insert(0, line);
     }
 };
+
+
+class ofstream
+{
+private:
+
+    bool m_stdout = false;
+    std::ofstream m_ofs;
+
+public:
+
+    ofstream() {}
+    ~ofstream() {}
+
+    bool open(const std::string &file, std::ios::openmode mode = std::ios::out)
+    {
+        if (file == "-") {
+            m_stdout = true;
+        } else {
+            m_ofs.open(file.c_str(), mode);
+        }
+
+        return is_open();
+    }
+
+    bool is_open() const {
+        return m_stdout ? true : m_ofs.is_open();
+    }
+
+    void close()
+    {
+        if (m_stdout) {
+            std::cout << std::flush;
+        } else if (m_ofs.is_open()) {
+            m_ofs.close();
+        }
+    }
+
+    template<class T>
+    std::ostream& operator<<(const T &obj)
+    {
+        if (m_stdout) {
+            return std::cout << obj;
+        }
+        return m_ofs << obj;
+    }
+};
+
+} /* namespace cio */
 
 #endif //_CIN_IFSTREAM_HPP_

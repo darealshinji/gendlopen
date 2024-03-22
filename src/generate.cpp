@@ -38,14 +38,8 @@
 #include <cstring>
 #include <ctime>
 
-#include "clang-ast.h"
 #include "template.h"
-#include "cin_ifstream.hpp"
-#include "cout_ofstream.hpp"
 #include "gendlopen.hpp"
-
-using common::range;
-using common::replace_string;
 
 
 namespace /* anonymous */
@@ -67,9 +61,9 @@ std::string convert_to_upper(const std::string &in)
     std::string out;
 
     for (const char &c : in) {
-        if (range(c, 'a','z')) {
+        if (utils::range(c, 'a','z')) {
             out += c - ('a'-'A');
-        } else if (range(c, 'A','Z') || range(c, '0','9')) {
+        } else if (utils::range(c, 'A','Z') || utils::range(c, '0','9')) {
             out += c;
         } else {
             out += '_';
@@ -84,9 +78,9 @@ std::string convert_to_lower(const std::string &in)
     std::string out;
 
     for (const char &c : in) {
-        if (range(c, 'A','Z')) {
+        if (utils::range(c, 'A','Z')) {
             out += c + ('a'-'A');
-        } else if (range(c, 'a','z') || range(c, '0','9')) {
+        } else if (utils::range(c, 'a','z') || utils::range(c, '0','9')) {
             out += c;
         } else {
             out += '_';
@@ -167,7 +161,7 @@ std::string format_definitions(const std::vector<std::string> &list)
 }
 
 /* open file for writing */
-bool open_fstream(cout_ofstream &ofs, const std::string &ofile, bool force)
+bool open_fstream(cio::ofstream &ofs, const std::string &ofile, bool force)
 {
     /* check if file already exists by opening it for reading */
     if (!force && ofile != "-") {
@@ -225,7 +219,7 @@ void create_template_data(
         return;
     }
 
-    common::unreachable();
+    utils::unreachable();
 }
 
 } /* end anonymous namespace */
@@ -235,7 +229,7 @@ void create_template_data(
 bool gendlopen::tokenize_input(const std::string &ifile)
 {
     std::string line;
-    cin_ifstream ifs;
+    cio::ifstream ifs;
 
     /* open file for reading */
     if (!ifs.open(ifile)) {
@@ -323,7 +317,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     /************** header begin ***************/
 
     /* open file */
-    cout_ofstream out;
+    cio::ofstream out;
 
     if (!open_fstream(out, ofhdr.string(), m_force)) {
         return 1;
@@ -401,7 +395,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
 
     /* body data */
 
-    cout_ofstream out_body;
+    cio::ofstream out_body;
 
     if (!open_fstream(out_body, ofbody.string(), m_force)) {
         return 1;

@@ -31,11 +31,7 @@
 #include <string>
 #include <stdlib.h>
 
-#include "common.hpp"
 #include "gendlopen.hpp"
-
-using common::replace_string;
-using common::same_string_case;
 
 
 namespace /* anonymous */
@@ -158,22 +154,22 @@ std::string gendlopen::parse(const std::string &data)
                 std::string copy = line;
 
                 /* don't "return" on "void" functions */
-                if (same_string_case(e.type, "void")) {
+                if (utils::eq_str_case(e.type, "void")) {
                     /* keep the indentation pretty */
-                    replace_string("%%return%% ", "", copy);
-                    replace_string("%%return%%", "", copy);
+                    utils::replace("%%return%% ", "", copy);
+                    utils::replace("%%return%%", "", copy);
                 } else {
-                    replace_string("%%return%%", "return", copy);
+                    utils::replace("%%return%%", "return", copy);
                 }
 
                 if (e.type.ends_with("*")) {
                     /* append space */
-                    replace_string("%%type%% ", e.type, copy);
+                    utils::replace("%%type%% ", e.type, copy);
                 }
-                replace_string("%%type%%", e.type, copy);
-                replace_string("%%symbol%%", e.symbol, copy);
-                replace_string("%%args%%", e.args, copy);
-                replace_string("%%notype_args%%", e.notype_args, copy);
+                utils::replace("%%type%%", e.type, copy);
+                utils::replace("%%symbol%%", e.symbol, copy);
+                utils::replace("%%args%%", e.args, copy);
+                utils::replace("%%notype_args%%", e.notype_args, copy);
 
                 buf += copy;
             }
@@ -187,8 +183,8 @@ std::string gendlopen::parse(const std::string &data)
 
             for (const auto &e : m_objects) {
                 std::string copy = line;
-                replace_string("%%obj_type%%", e.type, copy);
-                replace_string("%%obj_symbol%%", e.symbol, copy);
+                utils::replace("%%obj_type%%", e.type, copy);
+                utils::replace("%%obj_symbol%%", e.symbol, copy);
                 buf += copy;
             }
         } else {
@@ -201,8 +197,8 @@ std::string gendlopen::parse(const std::string &data)
 
     /* replace the prefixes */
     if (custom_prefix) {
-        replace_string("GDO", m_name_upper, buf);
-        replace_string("gdo", m_name_lower, buf);
+        utils::replace("GDO", m_name_upper, buf);
+        utils::replace("gdo", m_name_lower, buf);
     }
 
     return buf;

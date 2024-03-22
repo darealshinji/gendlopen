@@ -33,13 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "clang-ast.h"
-#include "cin_ifstream.hpp"
-#include "common.hpp"
 #include "gendlopen.hpp"
-
-using common::is_prefixed;
-using common::strip_spaces;
 
 
 namespace /* anonymous */
@@ -79,7 +73,7 @@ decl_t get_declarations(const std::string &line, int mode, const vstring_t &pref
     switch (mode)
     {
     case M_PREFIX:
-        if (!is_prefixed(m[2].str(), prefix)) {
+        if (!utils::is_prefixed(m[2].str(), prefix)) {
             return {};
         }
         break;
@@ -89,7 +83,7 @@ decl_t get_declarations(const std::string &line, int mode, const vstring_t &pref
         }
         break;
     case M_PFX_LIST:
-        if (!is_prefixed(m[2].str(), prefix) && std::erase(list, m[2]) == 0) {
+        if (!utils::is_prefixed(m[2].str(), prefix) && std::erase(list, m[2]) == 0) {
             return {};
         }
         break;
@@ -116,7 +110,7 @@ decl_t get_declarations(const std::string &line, int mode, const vstring_t &pref
         decl.type = m[3];
     }
 
-    strip_spaces(decl.type);
+    utils::strip_spaces(decl.type);
 
     return decl;
 }
@@ -159,7 +153,7 @@ bool get_parameters(const std::string &line, std::string &param, size_t &count)
 
 
 /* returns true if a function declaration was found */
-bool gendlopen::clang_ast_line(cin_ifstream &ifs, std::string &line, int mode)
+bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
 {
     decl_t decl = get_declarations(line, mode, m_prefix, m_symbols);
 
@@ -191,7 +185,7 @@ bool gendlopen::clang_ast_line(cin_ifstream &ifs, std::string &line, int mode)
 }
 
 /* read Clang AST */
-bool gendlopen::clang_ast(cin_ifstream &ifs, const std::string &ifile)
+bool gendlopen::clang_ast(cio::ifstream &ifs, const std::string &ifile)
 {
     std::string line;
     int mode = M_ALL;

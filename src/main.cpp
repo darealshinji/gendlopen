@@ -23,9 +23,8 @@
  */
 
 #include <iostream>
-#include <sstream>
+#include <cstdlib>
 #include "args.hxx"
-#include "common.hpp"
 #include "gendlopen.hpp"
 
 using StrValue = args::ValueFlag<std::string>;
@@ -34,8 +33,6 @@ using Opt = args::Options;
 using args::ArgumentParser;
 using args::HelpFlag;
 using args::Flag;
-using common::replace_string;
-using common::same_string_case;
 
 
 /* anonymous */
@@ -56,18 +53,18 @@ namespace
         case 'C':
         case 'm':
         case 'M':
-            if (same_string_case(fmt, "C++") ||
-                same_string_case(fmt, "CPP") ||
-                same_string_case(fmt, "CXX"))
+            if (utils::eq_str_case(fmt, "C++") ||
+                utils::eq_str_case(fmt, "CPP") ||
+                utils::eq_str_case(fmt, "CXX"))
             {
                 return output::cxx;
-            } else if (same_string_case(fmt, "C")) {
+            } else if (utils::eq_str_case(fmt, "C")) {
                 return output::c;
-            } else if (same_string_case(fmt, "minimal")) {
+            } else if (utils::eq_str_case(fmt, "minimal")) {
                 return output::minimal;
-            } else if (same_string_case(fmt, "minimal-C++") ||
-                same_string_case(fmt, "minimal-CPP") ||
-                same_string_case(fmt, "minimal-CXX"))
+            } else if (utils::eq_str_case(fmt, "minimal-C++") ||
+                utils::eq_str_case(fmt, "minimal-CPP") ||
+                utils::eq_str_case(fmt, "minimal-CXX"))
             {
                 return output::minimal_cxx;
             }
@@ -79,7 +76,7 @@ namespace
         std::string s = "unknown output format: " + fmt;
         error_exit(prog, s);
 
-        common::unreachable();
+        utils::unreachable();
     }
 
 } /* anonymous namespace */

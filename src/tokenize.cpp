@@ -37,15 +37,7 @@
 #include <string>
 #include <vector>
 
-#include "cin_ifstream.hpp"
-#include "common.hpp"
 #include "gendlopen.hpp"
-
-using common::is_prefixed;
-using common::replace_string;
-using common::same_string_case;
-using common::strip_spaces;
-using common::range;
 
 
 namespace /* anonymous */
@@ -68,7 +60,7 @@ bool is_keyword(const std::string &s)
     };
 
     for (const auto &e : keywords) {
-        if (same_string_case(s, e)) {
+        if (utils::eq_str_case(s, e)) {
             return true;
         }
     }
@@ -91,7 +83,7 @@ bool get_parameter_names(proto_t &proto)
     vstring_t arg;
 
     /* void or empty: nothing to do */
-    if (proto.args.empty() || same_string_case(proto.args, "void")) {
+    if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
         return true;
     }
 
@@ -149,7 +141,7 @@ bool get_parameter_names(proto_t &proto)
 }
 
 /* read input and strip comments */
-bool read_input(cin_ifstream &ifs, vstring_t &vec)
+bool read_input(cio::ifstream &ifs, vstring_t &vec)
 {
     std::string line;
     char c, comment = 0;
@@ -168,7 +160,7 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
     };
 
     auto save_line = [&] () {
-        strip_spaces(line);
+        utils::strip_spaces(line);
 
         if (!line.empty()) {
             vec.push_back(line);
@@ -243,9 +235,9 @@ bool read_input(cin_ifstream &ifs, vstring_t &vec)
         /* add character */
         default:
             /* function name, argument, etc. */
-            if (range(c, 'a','z') ||
-                range(c, 'A','Z') ||
-                range(c, '0','9') || c == '_')
+            if (utils::range(c, 'a','z') ||
+                utils::range(c, 'A','Z') ||
+                utils::range(c, '0','9') || c == '_')
             {
                 line += c;
             } else {
@@ -286,8 +278,8 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
     }
 
     proto_t proto = { m[1], m[2], m[3], "" };
-    strip_spaces(proto.type);
-    strip_spaces(proto.args);
+    utils::strip_spaces(proto.type);
+    utils::strip_spaces(proto.args);
 
     if (skip_parameter_names) {
         /* normally unused, but just in case */
@@ -320,7 +312,7 @@ bool tokenize_object(const std::string &s, vproto_t &objects)
     }
 
     proto_t obj = { m[1], m[2], {}, {} };
-    strip_spaces(obj.type);
+    utils::strip_spaces(obj.type);
 
     /* remove "extern" keyword */
     if (obj.type.starts_with("extern ")) {
@@ -377,7 +369,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
     /* copy symbols beginning with prefix */
     auto copy_if_prefixed = [this] (const vproto_t &from, vproto_t &to) {
         for (const auto &e : from) {
-            if (is_prefixed(e.symbol, m_prefix)) {
+            if (utils::is_prefixed(e.symbol, m_prefix)) {
                 pb_if_unique(to, e);
             }
         }
@@ -410,7 +402,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
 }
 
 /* read input and tokenize */
-bool gendlopen::tokenize(cin_ifstream &ifs, const std::string &ifile)
+bool gendlopen::tokenize(cio::ifstream &ifs, const std::string &ifile)
 {
     vstring_t vec;
     vproto_t tmp_proto, tmp_objs;
@@ -448,17 +440,17 @@ bool gendlopen::tokenize(cin_ifstream &ifs, const std::string &ifile)
 
     /* format args */
     for (auto &p : m_prototypes) {
-        replace_string("* ", "*", p.args);
-        replace_string(" ,", ",", p.args);
+        utils::replace("* ", "*", p.args);
+        utils::replace(" ,", ",", p.args);
 
-        replace_string("( ", "(", p.args);
-        replace_string(" )", ")", p.args);
-        replace_string(") (", ")(", p.args);
+        utils::replace("( ", "(", p.args);
+        utils::replace(" )", ")", p.args);
+        utils::replace(") (", ")(", p.args);
 
-        replace_string("[ ", "[", p.args);
-        replace_string("] ", "]", p.args);
-        replace_string(" [", "[", p.args);
-        replace_string(" ]", "]", p.args);
+        utils::replace("[ ", "[", p.args);
+        utils::replace("] ", "]", p.args);
+        utils::replace(" [", "[", p.args);
+        utils::replace(" ]", "]", p.args);
     }
 
     return true;
