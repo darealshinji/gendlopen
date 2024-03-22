@@ -35,7 +35,11 @@
 
 #include "clang-ast.h"
 #include "cin_ifstream.hpp"
+#include "common.hpp"
 #include "gendlopen.hpp"
+
+using common::is_prefixed;
+using common::strip_spaces;
 
 
 namespace /* anonymous */
@@ -57,7 +61,7 @@ typedef struct decl {
 
 
 /* get function or variable declaration */
-decl_t get_declarations(const std::string &line, int mode, const std::string &prefix, vstring_t &list)
+decl_t get_declarations(const std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
 {
     decl_t decl;
     std::smatch m;
@@ -75,7 +79,7 @@ decl_t get_declarations(const std::string &line, int mode, const std::string &pr
     switch (mode)
     {
     case M_PREFIX:
-        if (!m[2].str().starts_with(prefix)) {
+        if (!is_prefixed(m[2].str(), prefix)) {
             return {};
         }
         break;
@@ -85,7 +89,7 @@ decl_t get_declarations(const std::string &line, int mode, const std::string &pr
         }
         break;
     case M_PFX_LIST:
-        if (!m[2].str().starts_with(prefix) && std::erase(list, m[2]) == 0) {
+        if (!is_prefixed(m[2].str(), prefix) && std::erase(list, m[2]) == 0) {
             return {};
         }
         break;
@@ -112,7 +116,7 @@ decl_t get_declarations(const std::string &line, int mode, const std::string &pr
         decl.type = m[3];
     }
 
-    common::strip_spaces(decl.type);
+    strip_spaces(decl.type);
 
     return decl;
 }

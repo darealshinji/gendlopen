@@ -42,9 +42,9 @@ private:
         return (fmt == output::c);
     }
 
-    vstring_t m_definitions, m_includes, m_symbols;
+    vstring_t m_definitions, m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
-    std::string m_name_upper, m_name_lower, m_default_lib, m_prefix;
+    std::string m_name_upper, m_name_lower, m_default_lib;
     output::format m_format = output::c;
 
     bool m_force = false;
@@ -80,7 +80,6 @@ public:
     /* set options */
     void format(output::format val) { m_format = val; }
     void default_lib(const std::string &s) { m_default_lib = s; }
-    void prefix(const std::string &s) { m_prefix = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
@@ -88,6 +87,7 @@ public:
     /* add code */
     void add_def(const std::string &s) { m_definitions.push_back(s); }
     void add_inc(const std::string &s) { m_includes.push_back(s); }
+    void add_pfx(const std::string &s) { m_prefix.push_back(s); }
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */

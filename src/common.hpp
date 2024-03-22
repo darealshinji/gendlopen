@@ -75,6 +75,17 @@ namespace output
 namespace common
 {
 
+/* returns true if s begins with a prefix found in list */
+inline bool is_prefixed(const std::string &s, const vstring_t &list)
+{
+    for (const auto &e : list) {
+        if (s.starts_with(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* case-insensitive string comparison */
 inline bool same_string_case(const std::string &str1, const char *str2)
 {

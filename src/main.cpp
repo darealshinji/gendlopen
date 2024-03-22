@@ -302,13 +302,12 @@ int main(int argc, char **argv)
 
 
     /* --prefix */
-    StrValue a_prefix(args, "STRING",
+    StrList a_prefix(args, "STRING",
         "look for symbols prefixed with STRING",
-        {"prefix"},
-        Opt::Single);
+        {'P', "prefix"});
 
     more_help +=                                                                                    "\n";
-    more_help += "  --prefix=[STRING]"                                                              "\n";
+    more_help += "  -P[STRING...], --prefix=[STRING]"                                               "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Look for symbols that begin with STRING when parsing the input. This is most" "\n";
     more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
@@ -385,7 +384,9 @@ int main(int argc, char **argv)
 
     /* --prefix */
     if (a_prefix) {
-        gdo.prefix(a_prefix.Get());
+        for (const auto &e : args::get(a_prefix)) {
+            gdo.add_pfx(e);
+        }
     }
 
     /* --symbol */

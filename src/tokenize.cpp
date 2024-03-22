@@ -41,6 +41,7 @@
 #include "common.hpp"
 #include "gendlopen.hpp"
 
+using common::is_prefixed;
 using common::replace_string;
 using common::same_string_case;
 using common::strip_spaces;
@@ -376,7 +377,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
     /* copy symbols beginning with prefix */
     auto copy_if_prefixed = [this] (const vproto_t &from, vproto_t &to) {
         for (const auto &e : from) {
-            if (e.symbol.starts_with(m_prefix)) {
+            if (is_prefixed(e.symbol, m_prefix)) {
                 pb_if_unique(to, e);
             }
         }
