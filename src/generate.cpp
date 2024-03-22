@@ -238,7 +238,10 @@ bool gendlopen::tokenize_input(const std::string &ifile)
     }
 
     /* check first line */
-    ifs.getline(line);
+    if (!ifs.peek_line(line)) {
+        std::cerr << "error: failed to read first line from file: " << ifile << std::endl;
+        return false;
+    }
 
     /* Clang AST without escape code */
     if (line.starts_with("TranslationUnitDecl 0x")) {
@@ -260,8 +263,6 @@ bool gendlopen::tokenize_input(const std::string &ifile)
     if (line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
         return clang_ast(ifs, ifile);
     }
-
-    ifs.ungetline(line);
 
     /* regular tokenizer */
     return tokenize(ifs, ifile);

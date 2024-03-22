@@ -131,29 +131,45 @@ public:
         }
     }
 
-    bool getline(std::string &line)
+    bool getline(std::string &out)
     {
         if (!m_buf.empty()) {
-            /* non-empty buffer is always at least 1 line */
-            auto pos = m_buf.find('\n');
-            line = m_buf.substr(0, pos);
-            m_buf.erase(0, pos);
+            /* buffer */
+            out = m_buf;
+            m_buf.clear();
+
+            if (out.back() == '\n') {
+                out.pop_back();
+            }
             return true;
         } else if (m_stdin) {
             /* STDIN */
-            return std::getline(std::cin, line) ? true : false;
+            return std::getline(std::cin, out) ? true : false;
         }
 
         /* file */
-        return std::getline(m_ifs, line) ? true : false;
-    };
+        return std::getline(m_ifs, out) ? true : false;
+    }
 
-    void ungetline(const std::string &line)
+    /* get a preview of the next line */
+    bool peek_line(std::string &out)
     {
-        /* always add a newline so we can extract
-         * it as a whole line again */
-        m_buf.insert(0, 1, '\n');
-        m_buf.insert(0, line);
+        if (m_buf.empty() && !getline(m_buf)) {
+            return false;
+        }
+
+        /* always add a newline to buffer so we can
+         * extract it as a whole line again */
+        if (m_buf.back() != '\n') {
+            m_buf.push_back('\n');
+        }
+
+        out = m_buf;
+
+        /* remove newline */
+        out.pop_back();
+
+        return true;
     }
 };
 
