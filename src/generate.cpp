@@ -247,6 +247,15 @@ bool gendlopen::tokenize_input(const std::string &ifile)
         return false;
     }
 
+    /* sort and remove duplicates */
+    auto sort_vstring = [] (vstring_t &vec) {
+        std::sort(vec.begin(), vec.end());
+        vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
+    };
+
+    sort_vstring(m_prefix);
+    sort_vstring(m_symbols);
+
     /* Clang AST */
     if (line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
         return clang_ast(ifs, ifile);
@@ -261,18 +270,10 @@ bool gendlopen::tokenize_input(const std::string &ifile)
 /* generate output */
 int gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name)
 {
+    /* tokenize */
     if (!tokenize_input(ifile)) {
         return 1;
     }
-
-    /* sort and remove duplicates */
-    auto sort_vstring = [] (vstring_t &vec) {
-        std::sort(vec.begin(), vec.end());
-        vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
-    };
-
-    sort_vstring(m_definitions);
-    sort_vstring(m_symbols);
 
     /* is output C or C++? */
     bool is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
