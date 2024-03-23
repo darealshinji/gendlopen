@@ -62,7 +62,7 @@ private:
     void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
 
     /* generate.cpp */
-    bool tokenize_input(const std::string &ifile);
+    bool tokenize_input(const std::string &ifile, bool ast_all_symbols);
 
     /* parse.cpp */
     std::string parse(const std::string &data);
@@ -74,7 +74,7 @@ public:
     {}
 
     /* d'tor */
-    virtual ~gendlopen()
+    ~gendlopen()
     {}
 
     /* set options */
@@ -91,7 +91,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    int generate(const std::string &ifile, const std::string &ofile, const std::string &name);
+    int generate(const std::string &ifile, const std::string &ofile, const std::string &name, bool ast_all_symbols);
 
 };
 

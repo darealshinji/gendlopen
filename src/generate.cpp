@@ -226,7 +226,7 @@ void create_template_data(
 
 
 /* read input and tokenize */
-bool gendlopen::tokenize_input(const std::string &ifile)
+bool gendlopen::tokenize_input(const std::string &ifile, bool ast_all_symbols)
 {
     std::string line;
     cio::ifstream ifs;
@@ -261,6 +261,12 @@ bool gendlopen::tokenize_input(const std::string &ifile)
 
     /* Clang AST */
     if (line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
+        if (m_symbols.empty() && m_prefix.empty() && !ast_all_symbols) {
+            std::cerr << "error: Clang AST: no symbols provided to look for; use `--symbol' and/or `--prefix'" << std::endl;
+            std::cerr << "You can also pass `--ast-all-symbols' if you REALLY want to use all symbols." << std::endl;
+            return false;
+        }
+
         return clang_ast(ifs, ifile);
     }
 
@@ -269,10 +275,10 @@ bool gendlopen::tokenize_input(const std::string &ifile)
 }
 
 /* generate output */
-int gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name)
+int gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name, bool ast_all_symbols)
 {
     /* tokenize */
-    if (!tokenize_input(ifile)) {
+    if (!tokenize_input(ifile, ast_all_symbols)) {
         return 1;
     }
 
