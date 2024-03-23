@@ -93,6 +93,8 @@ std::string convert_to_lower(const std::string &in)
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char ** &argv)
 {
+    ASSUME(argc > 0);
+
     std::string line = "//";
     std::stringstream out;
 
@@ -115,8 +117,6 @@ std::string create_note(int &argc, char ** &argv)
     out << "using the following flags:\n\n";
 
     /* print used flags */
-
-    ASSUME(argc > 0);
 
     for (int i=1; i < argc; i++) {
         /* split long lines */

@@ -38,28 +38,32 @@
 /* ANSI color codes used in the Clang AST output */
 #ifndef CLANG_ANSI_COLORS
 #define CLANG_ANSI_COLORS
-    /* escaped variants for regex */
+    /* escaped variants for std::regex */
     #define COL(x)    "\x1B\\[" #x "m"
-    #define C0        COL(0)        /* default */
-    #define CGREEN    COL(0;32)     /* green */
-    #define CFGREEN   COL(0;1;32)   /* fat green */
-    #define CFBLUE    COL(0;1;36)   /* fat blue */
+    #define C0        COL(0)          /* default */
+    #define CGREEN    COL(0;32)       /* green */
+    #define CFGREEN   COL(0;1;32)     /* fat green */
+    #define CFBLUE    COL(0;1;36)     /* fat blue */
 
     /* unescaped variants for std::string */
     #define sCOL(x)   "\x1B[" #x "m"
-    #define sC0       sCOL(0)       /* default */
-    #define sCORANGE  sCOL(0;33)    /* orange */
-    #define sCFGREEN  sCOL(0;1;32)  /* fat green */
+    #define sC0       sCOL(0)         /* default */
+    #define sCORANGE  sCOL(0;33)      /* orange */
+    #define sCFGREEN  sCOL(0;1;32)    /* fat green */
 #endif //CLANG_ANSI_COLORS
 
 
-/* not supported by all compilers yet */
-//#define ASSUME(x)  [[assume(x)]]        // generic C++
-//#define ASSUME(x)  [[gnu::assume(x)]]   // GNU C++
-//#define ASSUME(x)  __assume(x)          // MSVC
-//#define ASSUME(x)  __builtin_assume(x)  // Clang
-#ifndef ASSUME
-#define ASSUME(x)  /**/
+/* assume */
+#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume) >= 202207L
+    #define ASSUME(x)    [[assume(x)]]
+#elif defined(__clang__)
+    #define ASSUME(x)    __builtin_assume(x)
+#elif defined(_MSC_VER)
+    #define ASSUME(x)    __assume(x)
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    #define ASSUME(x)    [[gnu::assume(x)]]
+#else
+    #define ASSUME(x)    /**/
 #endif
 
 
