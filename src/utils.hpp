@@ -112,6 +112,8 @@ inline bool is_prefixed(const std::string &s, const vstring_t &list)
 /* case-insensitive string comparison */
 inline bool eq_str_case(const std::string &str1, const char *str2)
 {
+    ASSUME(str2 != NULL);
+
 #ifdef _MSC_VER
     return (_stricmp(str1.c_str(), str2) == 0);
 #else
@@ -140,7 +142,6 @@ template<typename T=char>
 inline bool range(T c, T beg, T end)
 {
     ASSUME(beg < end);
-
     return (c >= beg && c <= end);
 }
 
@@ -149,10 +150,12 @@ inline bool range(T c, T beg, T end)
 {
 #ifdef __cpp_lib_unreachable
     std::unreachable();
-#elif defined(_MSC_VER) && !defined(__clang__)
-    __assume(false); // MSVC
+#elif defined(__GNUC__) || defined(__clang__)
+    __builtin_unreachable();
+#elif defined(_MSC_VER)
+    __assume(false);
 #else
-    __builtin_unreachable(); // GCC, Clang
+    std::abort();
 #endif
 }
 
