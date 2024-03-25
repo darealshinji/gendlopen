@@ -952,7 +952,7 @@ public:
 
         %%type%% %%symbol%%(%%args%%) {@
             quick_load("%%symbol%%");@
-            %%return%% wrapped::%%symbol%%(%%notype_args%%);@
+            %%return%% ptr::%%symbol%%(%%notype_args%%);@
         }@
 
     } /* namespace autoload */
