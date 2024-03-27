@@ -8,9 +8,11 @@ BINS = \
 	example_autoload \
 	example_auto_free \
 	example_minimal \
+	example_multi \
 	example_cxx \
 	example_cxx_autoload \
 	example_cxx_minimal \
+	example_cxx_multi \
 	helloworld_example_dl \
 	helloworld_example_nodl
 
@@ -75,7 +77,7 @@ test_all: $(BINS) $(BINS2)
 clean:
 	-rm -f $(BINS) notify appindicator uuid_nix
 	-rm -f *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj
-	-rm -f example_*.h example_*.hpp
+	-rm -f example_*.h example_*.hpp example_multi.c
 	-rm -f uuid_*_dl.h example_helloworld_static_dl.*
 
 run_tests: $(BINS)
@@ -140,11 +142,31 @@ example_cxx_wide: example_cxx_wide.hpp
 example_cxx_minimal: example_cxx_minimal.hpp
 	$(call compile_cxx,$@.cpp)
 
+example_multi: example_multi.h
+	$(CC) $(CFLAGS) -c example_part1.c example_part2.c example_multi.c
+	$(CC) -o $@ example_part1.$(OBJEXT) example_part2.$(OBJEXT) example_multi.$(OBJEXT) $(LDFLAGS)
+
+example_cxx_multi: example_cxx_multi.hpp
+	$(CXX) $(CXXFLAGS) -c example_cxx_part1.cpp example_cxx_part2.cpp example_cxx_multi.cpp
+	$(CXX) -o $@ example_cxx_part1.$(OBJEXT) example_cxx_part2.$(OBJEXT) example_cxx_multi.$(OBJEXT) $(LDFLAGS)
+
 helloworld_example_nodl: helloworld_example.c
 	$(call compile_cc,$<,,$(LIBX))
 
 helloworld_example_dl: libhelloworld_dl.$(LIBEXT)
 	$(call compile_cc,helloworld_example.c,-DBUILDING_STATIC,libhelloworld_dl.$(LIBEXT))
+
+example_multi.h: helloworld.txt
+	$(GENDLOPEN) --separate -i $^ -f -o $@ \
+	  --default-library "LIBNAME(helloworld,0)" \
+	  --include "QUOTE_STRING(helloworld.h)" \
+	  -DGDO_ENABLE_AUTOLOAD -DGDO_WRAP_FUNCTIONS
+
+example_cxx_multi.hpp: helloworld.txt
+	$(GENDLOPEN) --format=C++ --separate -i $^ -f -o $@ \
+	  --default-library "LIBNAME(helloworld,0)" \
+	  --include "QUOTE_STRING(helloworld.h)" \
+	  -DGDO_ENABLE_AUTOLOAD -DGDO_WRAP_FUNCTIONS
 
 example_minimal.h: helloworld.txt
 	$(GENDLOPEN) --format=minimal -i $^ -f -o $@

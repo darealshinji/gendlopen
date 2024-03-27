@@ -3,6 +3,7 @@ examples/example_*.h
 examples/example_*.hpp
 examples/example_helloworld_static_dl.c
 examples/uuid_*_dl.h
+examples/example_multi.c
 template.h
 
 # executables
@@ -13,6 +14,7 @@ examples/example_cxx
 examples/example_cxx_autoload
 examples/example_cxx_minimal
 examples/example_minimal
+examples/example_multi
 examples/helloworld_example_dl
 examples/helloworld_example_nodl
 examples/appindicator

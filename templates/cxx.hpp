@@ -1,101 +1,3 @@
-
-#if 0
-
-/**************************************/
-/*           quick overview           */
-/**************************************/
-
-namespace gdo
-{
-    /* API-agnostic default flags */
-    const int default_flags;
-
-    /* Shared library file extension without dot ("dll", "dylib" or "so").
-     * Useful i.e. on plugins. */
-    const char * const libext;
-
-    /* function pointer to error message callback */
-    void (*message_callback)(const char *) = nullptr;
-
-    /* Create versioned library names for DLLs, dylibs and DSOs.
-     * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
-    const char *libname(const char *name, unsigned int api);
-#ifdef GDO_WINAPI
-    const wchar_t *libname(const wchar_t *name, unsigned int api);
-#endif
-
-
-    class dl
-    {
-    /*** constructors ***/
-
-        /* empty c'tor */
-        dl();
-
-        /* set filename, flags and whether to use a new namespace */
-        dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);
-
-
-    /*** member functions ***/
-
-        /* load the library that was set by the c'tor */
-        bool load();
-
-        /* load filename; set flags and whether to use a new namespace */
-        bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
-
-        /* wide character variants for win32 */
-#ifdef GDO_WINAPI
-        bool load(const std::wstring &filename, int flags=default_flags);
-#endif
-
-        /* load library and symbols */
-        bool load_lib_and_symbols();
-
-        /* check if library was successfully loaded */
-        bool lib_loaded() const;
-
-        /* return the flags used to load the library */
-        int flags() const;
-
-        /* load all symbols;
-        * If ignore_errors is set true the function won't stop on the first
-        * symbol that can't be loaded but instead tries to load them all.
-        * If one or more symbols weren't loaded the function returns false. */
-        bool load_symbols(bool ignore_errors=false);
-
-        /* load a specific symbol */
-        bool load_symbol(const std::string &symbol);
-
-        /* check if symbols were successfully loaded */
-        bool symbols_loaded() const;
-
-        /* free library */
-        bool free();
-
-        /* whether to free the library in the class destructor */
-        void free_lib_in_dtor(bool b);
-
-        /* get full path of loaded library */
-        std::string origin();
-#ifdef GDO_WINAPI
-        std::wstring origin_w();
-#endif
-
-        /* retrieve the last error message */
-        std::string error();
-#ifdef GDO_WINAPI
-        std::wstring error_w();
-#endif
-
-    }; /* class dl */
-} /* namespace gdo */
-
-/***************************************/
-
-#endif //0
-
-
 /***
 
 ****************************************************
@@ -178,61 +80,7 @@ namespace gdo
     using UNUSED_REF = void;
     using UNUSED_RESULT = void;
 
-    /* function pointer typedefs */
-    namespace type
-    {
-        using %%symbol%% = %%type%% (*)(%%args%%);
-    }
-
-    /* symbol pointers */
-    namespace ptr
-    {
-        type::%%symbol%% %%symbol%% = nullptr;
-        %%obj_type%% *%%obj_symbol%% = nullptr;
-    }
-
-    /* whether or not a symbol was loaded */
-    namespace loaded
-    {
-        bool %%symbol%% = false;
-        bool %%obj_symbol%% = false;
-    }
-
-    /* function pointer to error message callback */
-    void (*message_callback)(const char *) = nullptr;
-
-    /* default flags */
-    const int default_flags = GDO_DEFAULT_FLAGS;
-
-    /* Shared library file extension without dot ("dll", "dylib" or "so").
-     * Useful i.e. on plugins. */
-    const char * const libext = LIBEXTA;
-
-
-    /* Create versioned library names for DLLs, dylibs and DSOs.
-     * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
-    std::string libname(const std::string &name, unsigned int api)
-    {
-#if defined(GDO_OS_WIN32)
-        std::string s = "lib" + (name + ('-' + (std::to_string(api) + ".dll")));
-#elif defined(__APPLE__)
-        std::string s = "lib" + (name + ('.' + (std::to_string(api) + ".dylib")));
-#elif defined(_AIX)
-        (UNUSED_REF) api;
-        std::string s = "lib" + (name + ".a");
-#else
-        std::string s = "lib" + (name + (".so." + std::to_string(api)));
-#endif
-        return s;
-    }
-
-#ifdef GDO_WINAPI
-    const wchar_t *libname(const std::wstring &name, unsigned int api)
-    {
-        static std::wstring s = L"lib" + (name + (L'-' + (std::to_wstring(api) + L".dll")));
-        return s.c_str();
-    }
-#endif //GDO_WINAPI
+    using message_callback_t = void (*)(const char *);
 
 
 /*****************************************************************************/
@@ -240,7 +88,31 @@ namespace gdo
 /*****************************************************************************/
 class dl
 {
+public:
+
+    /* default flags */
+    static constexpr const int default_flags = GDO_DEFAULT_FLAGS;
+
+    /* Shared library file extension without dot ("dll", "dylib" or "so").
+     * Useful i.e. on plugins. */
+    static constexpr const char * const libext = LIBEXTA;
+
+    /* function pointer typedefs */
+    using fptr_%%symbol%%_t = %%type%% (*)(%%args%%);
+
+    /* symbol pointers */
+    static fptr_%%symbol%%_t m_ptr_%%symbol%%;
+    static %%obj_type%% *m_ptr_%%obj_symbol%%;
+
+    /* whether or not a symbol was loaded */
+    static bool m_loaded_%%symbol%%;
+    static bool m_loaded_%%obj_symbol%%;
+
+
 private:
+
+    /* function pointer to error message callback */
+    static message_callback_t m_message_callback;
 
     std::string m_filename;
     int m_flags = default_flags;
@@ -250,7 +122,8 @@ private:
 #ifdef GDO_WINAPI
 
     /* library handle */
-    HMODULE m_handle = nullptr;
+    using handle_t = HMODULE;
+    static handle_t m_handle;
 
     /* error message */
     DWORD m_last_error = 0;
@@ -470,7 +343,8 @@ private:
 
 
     /* library handle */
-    void *m_handle = nullptr;
+    using handle_t = void*;
+    static handle_t m_handle;
 
     /* error message */
     std::string m_errmsg;
@@ -684,15 +558,15 @@ public:
 
         /* get symbol addresses */
 @
-        ptr::%%symbol%% = reinterpret_cast<type::%%symbol%%>(@
-            sym("%%symbol%%", loaded::%%symbol%%));@
-        if (!loaded::%%symbol%% && !ignore_errors) {@
+        m_ptr_%%symbol%% = reinterpret_cast<fptr_%%symbol%%_t>(@
+            sym("%%symbol%%", m_loaded_%%symbol%%));@
+        if (!m_loaded_%%symbol%% && !ignore_errors) {@
             return false;@
         }
 @
-        ptr::%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
-            sym("%%obj_symbol%%", loaded::%%obj_symbol%%));@
-        if (!loaded::%%obj_symbol%% && !ignore_errors) {@
+        m_ptr_%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
+            sym("%%obj_symbol%%", m_loaded_%%obj_symbol%%));@
+        if (!m_loaded_%%obj_symbol%% && !ignore_errors) {@
             return false;@
         }
 
@@ -723,15 +597,15 @@ public:
         /* get symbol address */
 @
         if (symbol == "%%symbol%%") {@
-            ptr::%%symbol%% = reinterpret_cast<type::%%symbol%%>(@
-                sym("%%symbol%%", loaded::%%symbol%%));@
-            return loaded::%%symbol%%;@
+            m_ptr_%%symbol%% = reinterpret_cast<fptr_%%symbol%%_t>(@
+                sym("%%symbol%%", m_loaded_%%symbol%%));@
+            return m_loaded_%%symbol%%;@
         }
 @
         if (symbol == "%%obj_symbol%%") {@
-            ptr::%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
-                sym("%%obj_symbol%%", loaded::%%obj_symbol%%));@
-            return loaded::%%obj_symbol%%;@
+            m_ptr_%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
+                sym("%%obj_symbol%%", m_loaded_%%obj_symbol%%));@
+            return m_loaded_%%obj_symbol%%;@
         }
 
         clear_error();
@@ -750,8 +624,8 @@ public:
     bool symbols_loaded() const
     {
         if (true
-            && loaded::%%symbol%%
-            && loaded::%%obj_symbol%%
+            && m_loaded_%%symbol%%
+            && m_loaded_%%obj_symbol%%
         ) {
             return true;
         }
@@ -778,11 +652,11 @@ public:
 
         m_handle = nullptr;
 
-        ptr::%%symbol%% = nullptr;
-        ptr::%%obj_symbol%% = nullptr;
+        m_ptr_%%symbol%% = nullptr;
+        m_ptr_%%obj_symbol%% = nullptr;
 
-        loaded::%%symbol%% = false;
-        loaded::%%obj_symbol%% = false;
+        m_loaded_%%symbol%% = false;
+        m_loaded_%%obj_symbol%% = false;
 
         return true;
     }
@@ -793,6 +667,43 @@ public:
     {
         m_free_lib_in_dtor = b;
     }
+
+
+    /* message callback */
+
+    static void message_callback(message_callback_t cb)
+    {
+        m_message_callback = cb;
+    }
+
+    static message_callback_t message_callback()
+    {
+        return m_message_callback;
+    }
+
+
+    /* Create versioned library names for DLLs, dylibs and DSOs.
+     * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+    static std::string libname(const std::string &name, unsigned int api)
+    {
+#if defined(GDO_OS_WIN32)
+        return "lib" + (name + ('-' + (std::to_string(api) + ".dll")));
+#elif defined(__APPLE__)
+        return "lib" + (name + ('.' + (std::to_string(api) + ".dylib")));
+#elif defined(_AIX)
+        (UNUSED_REF) api;
+        return "lib" + (name + ".a");
+#else
+        return "lib" + (name + (".so." + std::to_string(api)));
+#endif
+    }
+
+#ifdef GDO_WINAPI
+    static std::wstring libname(const std::wstring &name, unsigned int api)
+    {
+        return L"lib" + (name + (L'-' + (std::to_wstring(api) + L".dll")));
+    }
+#endif //GDO_WINAPI
 
 
 #ifdef GDO_WINAPI
@@ -885,110 +796,17 @@ public:
 };
 /******************************* end of class ********************************/
 
-
-/*****************************************************************************/
-/*                                wrap code                                  */
-/*****************************************************************************/
-%SKIP_BEGIN%
-
-    namespace /* anonymous */
-    {
-        void error_exit(const char *s1, const char *s2, const char *s3, const std::string &s4)
-        {
-            if (message_callback) {
-                std::string msg = s1 + (s2 + (s3 + s4));
-                message_callback(msg.c_str());
-            } else {
-                std::cerr << s1 << s2 << s3 << s4 << std::endl;
-            }
-
-            std::exit(1);
-        }
-    } /* anonymous namespace */
-
-
-    /* wrapped functions
-     * (creating wrapped symbols doesn't work well with pointers to objects) */
-    namespace wrapped
-    {
-        %%type%% %%symbol%%(%%args%%) {@
-            if (!loaded::%%symbol%%) {@
-                error_exit("error: symbol `%%symbol%%' was not loaded", "", "", "");@
-            }@
-            %%return%% ptr::%%symbol%%(%%notype_args%%);@
-        }@
-
-    } /* namespace wrapped */
-
-
-#ifdef GDO_ENABLE_AUTOLOAD
-
-    namespace autoload
-    {
-        namespace /* anonymous */
-        {
-            auto al = dl(GDO_DEFAULT_LIB);
-
-            /* used internally by wrapper functions, symbol is never NULL */
-            void quick_load(const char *symbol)
-            {
-                if (!al.load()) {
-                    error_exit("error loading library `", GDO_DEFAULT_LIB,
-                        "':\n", al.error());
-                }
-
-            #ifdef GDO_DELAYLOAD
-                if (!al.load_symbol(symbol))
-            #else
-                if (!al.load_symbols())
-            #endif
-                {
-                    error_exit("error in auto-loading wrapper function "
-                        "`gdo::autoload::", symbol, "': ", al.error());
-                }
-            }
-        } /* anonymous namespace */
-
-
-        %%type%% %%symbol%%(%%args%%) {@
-            quick_load("%%symbol%%");@
-            %%return%% ptr::%%symbol%%(%%notype_args%%);@
-        }@
-
-    } /* namespace autoload */
-
-#endif //GDO_ENABLE_AUTOLOAD
-
-%SKIP_END%
-/***************************** end of wrap code ******************************/
-
 } /* namespace gdo */
 /***************************** end of namespace ******************************/
 
 
 %SKIP_BEGIN%
-#ifdef GDO_WRAP_FUNCTIONS
-
-/* function wrappers */
-@
-GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
-    %%return%% gdo::wrapped::%%symbol%%(%%notype_args%%);@
-}
-
-#elif defined(GDO_ENABLE_AUTOLOAD)
-
-/* autoload function wrappers */
-@
-GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
-    %%return%% gdo::autoload::%%symbol%%(%%notype_args%%);@
-}
-
-#else
+#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 %SKIP_END%
 
 /* aliases to raw function pointers */
 #if !defined(GDO_NOALIAS)
-#define %%symbol%% gdo::ptr::%%symbol%%
+#define %%symbol%% gdo::dl::m_ptr_%%symbol%%
 #endif // !GDO_NOALIAS
 
 %SKIP_BEGIN%
@@ -997,5 +815,6 @@ GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
 
 /* aliases to raw object pointers */
 #if !defined(GDO_NOALIAS)
-#define %%obj_symbol%% *gdo::ptr::%%obj_symbol%%
+#define %%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%
 #endif // !GDO_NOALIAS
+

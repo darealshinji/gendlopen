@@ -228,8 +228,6 @@ typedef struct gdo_handle
 } gdo_handle_t;
 
 
-GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
-
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib(void);
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void);

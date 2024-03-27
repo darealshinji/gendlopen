@@ -37,9 +37,8 @@ class gendlopen
 {
 private:
 
-    /* right now only C output supports this */
     inline bool separate_is_supported(const output::format fmt) const {
-        return (fmt == output::c);
+        return (fmt == output::c || fmt == output::cxx);
     }
 
     vstring_t m_definitions, m_includes, m_symbols, m_prefix;

@@ -9,7 +9,7 @@
 int main()
 {
     /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( gdo::libname("helloworld", 0) );
+    gdo::dl loader( gdo::dl::libname("helloworld", 0) );
 
     /* load library and symbols */
     if (!loader.load_lib_and_symbols()) {

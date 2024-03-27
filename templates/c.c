@@ -18,6 +18,10 @@ typedef void GDO_UNUSED_REF;
 typedef void GDO_UNUSED_RESULT;
 
 
+/* library handle */
+GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
+
+
 /* forward declarations */
 GDO_LINKAGE void gdo_register_free_lib(void);
 

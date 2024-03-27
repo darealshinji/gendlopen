@@ -207,13 +207,24 @@ void create_template_data(
             }
         }
         return;
+
     case output::cxx:
-        header_data += common_header_data;
-        header_data += cxx_header_data;
+        {
+            header_data += common_header_data;
+            header_data += cxx_header_data;
+
+            if (separate) {
+                body_data = cxx_body_data;
+            } else {
+                header_data += cxx_body_data;
+            }
+        }
         return;
+
     case output::minimal:
         header_data = min_c_header_data;
         return;
+
     case output::minimal_cxx:
         header_data = min_cxx_header_data;
         return;
@@ -250,7 +261,7 @@ bool gendlopen::tokenize_input(const std::string &ifile, bool ast_all_symbols)
         return false;
     }
 
-    /* sort and remove duplicates */
+    /* sort vectors and remove duplicates */
     auto sort_vstring = [] (vstring_t &vec) {
         std::sort(vec.begin(), vec.end());
         vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
@@ -299,7 +310,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
         if (is_c) {
             ofhdr.replace_extension(".h");
             ofbody.replace_extension(".c");
-        } else [[unlikely]] {
+        } else {
             ofhdr.replace_extension(".hpp");
             ofbody.replace_extension(".cpp");
         }
@@ -388,6 +399,8 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     out << '\n';
     out << "#endif //_" << header_guard << "_\n";
 
+    out.close();
+
     if (!use_stdout) {
         std::cout << "saved to file: " << ofhdr << std::endl;
     }
@@ -395,8 +408,6 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     if (!m_separate) {
         return 0;
     }
-
-    out.close();
 
     /************** header end ***************/
 

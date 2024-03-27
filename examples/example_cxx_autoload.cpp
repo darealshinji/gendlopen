@@ -28,7 +28,7 @@ void print_error(const char *msg)
 
 int main()
 {
-    gdo::message_callback = print_error;
+    gdo::dl::message_callback(print_error);
 
     auto cb = [] (const char *msg) {
         std::cout << "Custom callback >>> " << msg << std::endl;
