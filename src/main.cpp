@@ -42,6 +42,26 @@ namespace
         std::cerr << "Try `" << argv0 << " --help' for more information." << std::endl;
     }
 
+    std::string quote_lib(const std::string &lib)
+    {
+        if (lib.front() == '"' && lib.back() == '"') {
+            return lib;
+        }
+
+        return "\"" + (lib + "\"");
+    }
+
+    std::string quote_inc(const std::string &inc)
+    {
+        if ((inc.front() == '<' && inc.back() == '>') ||
+            (inc.front() == '"' && inc.back() == '"'))
+        {
+            return inc;
+        }
+
+        return "\"" + (inc + "\"");
+    }
+
     output::format str_to_enum(char * const argv0, const std::string &fmt)
     {
         switch (fmt.front())
@@ -204,21 +224,32 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
 
 
-    /* --default-library */
-    StrValue a_default_lib(args, "STRING",
+    /* --library */
+    StrValue a_library(args, "STRING",
         "default library to load",
-        {'l', "default-library"},
+        {'l', "library"},
         Opt::Single);
 
     more_help +=                                                                                    "\n";
-    more_help += "  -l[STRING], --default-library=[STRING]"                                         "\n";
+    more_help += "  -l[STRING], --library=[STRING]"                                                 "\n";
     more_help +=                                                                                    "\n";
-    more_help += "    Set a default library name to load."                                          "\n";
+    more_help += "    Set a default library name to load. Quotation marks are put around the"       "\n";
+    more_help += "    filename if it's not already enclosed in quotation marks. This flag cannot"   "\n";
+    more_help += "    cannot be combined with `--library-nq'."                                      "\n";
     more_help +=                                                                                    "\n";
-    more_help += "    Use macros on the command line to put quotes around the library name to"      "\n";
-    more_help += "    avoid quoting issues on the shell."                                           "\n";
-    more_help += "    To set `libfoo.so.1' you can pass either `--default-library=LIBNAME(foo,1)'"  "\n";
-    more_help += "    or `--default-library=QUOTE_STRING(libfoo.so.1)'."                            "\n";
+
+
+    /* --library-nq */
+    StrValue a_library_nq(args, "STRING",
+        "default library to load (no quotes added)",
+        {"library-nq"},
+        Opt::Single);
+
+    more_help +=                                                                                    "\n";
+    more_help += "  --library-nq=[STRING]"                                                          "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    Set a default library name to load. Quotation marks are never added. This"    "\n";
+    more_help += "    flag cannot cannot be combined with `--library'."                             "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -230,14 +261,22 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
     more_help += "  -I[STRING...], --include=[STRING...]"                                           "\n";
     more_help +=                                                                                    "\n";
-    more_help += "    Set a header file name to be included at the top of the output code. This"    "\n";
-    more_help += "    flag may be passed multiple times."                                           "\n";
+    more_help += "    Set a header file name to be included at the top of the output code."         "\n";
+    more_help += "    Quotation marks are put around the filename if it's not enclosed in brackets" "\n";
+    more_help += "    or quotation marks. This flag may be passed multiple times."                  "\n";
     more_help +=                                                                                    "\n";
-    more_help += "    Quotes or brackets are not automatically put around the header name. Use the" "\n";
-    more_help += "    macro `QUOTE_STRING()' on the command line to put quotes around the header"   "\n";
-    more_help += "    name to avoid quoting issues on the shell."                                   "\n";
-    more_help += "    To include `foo.h' as `\"foo.h\"' pass `--include=QUOTE_STRING(foo.h)'. To"   "\n";
-    more_help += "    include the header as `<foo.h>' pass `--include=\"<foo.h>\"'."                "\n";
+
+
+    /* --include-no-quotes */
+    StrList a_include_nq(args, "STRING",
+        "header to include (no quotes added)",
+        {"include-nq"});
+
+    more_help +=                                                                                    "\n";
+    more_help += "  --include-nq=[STRING...]"                                                       "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    Set a header file name to be included at the top of the output code."         "\n";
+    more_help += "    Quotation marks are never added. This flag may be passed multiple times."     "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -365,6 +404,21 @@ int main(int argc, char **argv)
     }
 
 
+    /* check excluding flags */
+
+    if (a_library && a_library_nq) {
+        std::cerr << "error: cannot combine `--library' and `--library-nq'" << std::endl;
+        print_info(*argv);
+        return 1;
+    }
+
+    if (a_ast_all_symbols && (a_symbol || a_prefix)) {
+        std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
+        print_info(*argv);
+        return 1;
+    }
+
+
     auto gdo = gendlopen(&argc, &argv);
 
     /* --format */
@@ -372,44 +426,36 @@ int main(int argc, char **argv)
         gdo.format(str_to_enum(*argv, a_format.Get()));
     }
 
-    /* --default-library */
-    if (a_default_lib) {
-        gdo.default_lib(a_default_lib.Get());
+    /* --library(-no-quotes) */
+    if (a_library) {
+        gdo.default_lib(quote_lib(a_library.Get()));
+    } else if(a_library_nq) {
+        gdo.default_lib(a_library_nq.Get());
     }
 
     /* --define */
-    if (a_define) {
-        for (const auto &e : args::get(a_define)) {
-            gdo.add_def(e);
-        }
+    for (const auto &e : args::get(a_define)) {
+        gdo.add_def(e);
     }
 
     /* --include */
-    if (a_include) {
-        for (const auto &e : args::get(a_include)) {
-            gdo.add_inc(e);
-        }
+    for (const auto &e : args::get(a_include)) {
+        gdo.add_inc(quote_inc(e));
+    }
+
+    /* --include-no-quotes */
+    for (const auto &e : args::get(a_include_nq)) {
+        gdo.add_inc(e);
     }
 
     /* --prefix */
-    if (a_prefix) {
-        for (const auto &e : args::get(a_prefix)) {
-            gdo.add_pfx(e);
-        }
+    for (const auto &e : args::get(a_prefix)) {
+        gdo.add_pfx(e);
     }
 
     /* --symbol */
-    if (a_symbol) {
-        for (const auto &e : args::get(a_symbol)) {
-            gdo.add_sym(e);
-        }
-    }
-
-    /* --ast-all-symbols */
-    if (a_ast_all_symbols && (a_symbol || a_prefix)) {
-        std::cerr << "error: cannot use `--ast-all-symbols' together with `--symbol' or `--prefix'" << std::endl;
-        print_info(*argv);
-        return 1;
+    for (const auto &e : args::get(a_symbol)) {
+        gdo.add_sym(e);
     }
 
     /* other flags */

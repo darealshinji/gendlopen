@@ -1,9 +1,3 @@
-/* helper macro to quote filenames */
-#ifndef QUOTE_STRING
-    #define QUOTE_STRING(str)  #str
-#endif
-
-
 /* default library filename extension */
 #ifdef LIBEXT
 #undef LIBEXT
