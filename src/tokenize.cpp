@@ -402,7 +402,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
 }
 
 /* read input and tokenize */
-bool gendlopen::tokenize(cio::ifstream &ifs, const std::string &ifile)
+bool gendlopen::tokenize(cio::ifstream &ifs)
 {
     vstring_t vec;
     vproto_t tmp_proto, tmp_objs;
@@ -426,12 +426,12 @@ bool gendlopen::tokenize(cio::ifstream &ifs, const std::string &ifile)
 
     /* nothing found? */
     if (tmp_proto.empty() && tmp_objs.empty()) {
-        std::cerr << "error: no function or object prototypes found in file: " << ifile << std::endl;
+        std::cerr << "error: no function or object prototypes found in file: " << m_ifile << std::endl;
         return false;
     }
 
     /* check for duplicates */
-    if (has_duplicate_symbols(tmp_proto, tmp_objs, ifile)) {
+    if (has_duplicate_symbols(tmp_proto, tmp_objs, m_ifile)) {
         return false;
     }
 

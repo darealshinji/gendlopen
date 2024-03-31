@@ -43,25 +43,30 @@ private:
 
     vstring_t m_definitions, m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
-    std::string m_name_upper, m_name_lower, m_default_lib;
+
+    std::string m_name_upper, m_name_lower;
+    std::string m_default_lib;
+    std::string m_ifile;
+
     output::format m_format = output::c;
 
     bool m_force = false;
     bool m_separate = false;
     bool m_skip_parameter_names = false;
+    bool m_ast_all_symbols = false;
     int *m_argc = NULL;
     char ***m_argv = NULL;
 
     /* clang-ast.cpp */
     bool clang_ast_line(cio::ifstream &ifs, std::string &line, int mode);
-    bool clang_ast(cio::ifstream &ifs, const std::string &ifile);
+    bool clang_ast(cio::ifstream &ifs);
 
     /* tokenize.cpp */
-    bool tokenize(cio::ifstream &ifs, const std::string &ifile);
+    bool tokenize(cio::ifstream &ifs);
     void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
 
     /* generate.cpp */
-    bool tokenize_input(const std::string &ifile, bool ast_all_symbols);
+    bool tokenize_input();
 
     /* parse.cpp */
     std::string parse(const std::string &data);
@@ -77,11 +82,13 @@ public:
     {}
 
     /* set options */
+    void input(const std::string &s) { m_ifile = s; }
     void format(output::format val) { m_format = val; }
     void default_lib(const std::string &s) { m_default_lib = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
+    void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
 
     /* add code */
     void add_def(const std::string &s) { m_definitions.push_back(s); }
@@ -90,7 +97,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    int generate(const std::string &ifile, const std::string &ofile, const std::string &name, bool ast_all_symbols);
+    int generate(const std::string &ofile, const std::string &name);
 
 };
 

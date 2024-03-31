@@ -237,20 +237,20 @@ void create_template_data(
 
 
 /* read input and tokenize */
-bool gendlopen::tokenize_input(const std::string &ifile, bool ast_all_symbols)
+bool gendlopen::tokenize_input()
 {
     std::string line;
     cio::ifstream ifs;
 
     /* open file for reading */
-    if (!ifs.open(ifile)) {
-        std::cerr << "error: failed to open file for reading: " << ifile << std::endl;
+    if (!ifs.open(m_ifile)) {
+        std::cerr << "error: failed to open file for reading: " << m_ifile << std::endl;
         return false;
     }
 
     /* check first line */
     if (!ifs.peek_line(line)) {
-        std::cerr << "error: failed to read first line from file: " << ifile << std::endl;
+        std::cerr << "error: failed to read first line from file: " << m_ifile << std::endl;
         return false;
     }
 
@@ -272,24 +272,24 @@ bool gendlopen::tokenize_input(const std::string &ifile, bool ast_all_symbols)
 
     /* Clang AST */
     if (line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
-        if (m_symbols.empty() && m_prefix.empty() && !ast_all_symbols) {
+        if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
             std::cerr << "error: Clang AST: no symbols provided to look for; use `--symbol' and/or `--prefix'" << std::endl;
             std::cerr << "You can also pass `--ast-all-symbols' if you REALLY want to use all symbols." << std::endl;
             return false;
         }
 
-        return clang_ast(ifs, ifile);
+        return clang_ast(ifs);
     }
 
     /* regular tokenizer */
-    return tokenize(ifs, ifile);
+    return tokenize(ifs);
 }
 
 /* generate output */
-int gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name, bool ast_all_symbols)
+int gendlopen::generate(const std::string &ofile, const std::string &name)
 {
     /* tokenize */
-    if (!tokenize_input(ifile, ast_all_symbols)) {
+    if (!tokenize_input()) {
         return 1;
     }
 
@@ -402,7 +402,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     out.close();
 
     if (!use_stdout) {
-        std::cout << "saved to file: " << ofhdr << std::endl;
+        //std::cout << "saved to file: " << ofhdr << std::endl;
     }
 
     if (!m_separate) {
@@ -424,7 +424,7 @@ int gendlopen::generate(const std::string &ifile, const std::string &ofile, cons
     out_body << "#include \"" << header_name << "\"\n\n";
     out_body << parse(body_data);
 
-    std::cout << "saved to file: " << ofbody << std::endl;
+    //std::cout << "saved to file: " << ofbody << std::endl;
 
     return 0;
 }

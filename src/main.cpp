@@ -421,6 +421,9 @@ int main(int argc, char **argv)
 
     auto gdo = gendlopen(&argc, &argv);
 
+    /* --input (flagged as required) */
+    gdo.input(a_input.Get());
+
     /* --format */
     if (a_format) {
         gdo.format(str_to_enum(*argv, a_format.Get()));
@@ -462,7 +465,8 @@ int main(int argc, char **argv)
     gdo.force(a_force);
     gdo.separate(a_separate);
     gdo.skip_parameter_names(a_skip_parameter_names);
+    gdo.ast_all_symbols(a_ast_all_symbols);
 
     /* generate output */
-    return gdo.generate(a_input.Get(), a_output.Get(), a_name.Get(), a_ast_all_symbols);
+    return gdo.generate(a_output.Get(), a_name.Get());
 }

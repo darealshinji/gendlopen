@@ -185,7 +185,7 @@ bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
 }
 
 /* read Clang AST */
-bool gendlopen::clang_ast(cio::ifstream &ifs, const std::string &ifile)
+bool gendlopen::clang_ast(cio::ifstream &ifs)
 {
     std::string line;
     int mode = M_ALL;
@@ -213,7 +213,7 @@ bool gendlopen::clang_ast(cio::ifstream &ifs, const std::string &ifile)
 
     if (m_prototypes.empty() && m_objects.empty()) {
         std::cerr << "error: no function or object prototypes found in file: ";
-        std::cerr << ifile << std::endl;
+        std::cerr << m_ifile << std::endl;
         return false;
     }
 
