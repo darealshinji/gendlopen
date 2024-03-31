@@ -40,7 +40,6 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv);
 /*****************************************************************************/
 #ifdef GDO_WINAPI
 
-inline
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
@@ -49,7 +48,6 @@ GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 }
 
 /* Clear error buffers. */
-inline
 GDO_LINKAGE void gdo_clear_errbuf(void)
 {
     gdo_hndl.buf[0] = 0;
@@ -59,7 +57,6 @@ GDO_LINKAGE void gdo_clear_errbuf(void)
 
 /* Save the last system error code. A message for additional information
  * can be provided too. */
-inline
 GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
 {
     gdo_clear_errbuf();
@@ -68,7 +65,6 @@ GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
 }
 
 /* Sets the "no library was loaded" error message */
-inline
 GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 {
     gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
@@ -78,7 +74,6 @@ GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 #else
 /*********************************** dlfcn ***********************************/
 
-inline
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
@@ -87,7 +82,6 @@ GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 }
 
 /* Clear error buffers. */
-inline
 GDO_LINKAGE void gdo_clear_errbuf(void)
 {
     gdo_hndl.buf[0] = 0;
@@ -95,7 +89,6 @@ GDO_LINKAGE void gdo_clear_errbuf(void)
 }
 
 /* Save the last message provided by dlerror() */
-inline
 GDO_LINKAGE void gdo_save_dlerror(void)
 {
     gdo_clear_errbuf();
@@ -103,7 +96,6 @@ GDO_LINKAGE void gdo_save_dlerror(void)
 }
 
 /* Sets the "no library was loaded" error message */
-inline
 GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 {
     gdo_save_to_errbuf("no library was loaded");
@@ -234,7 +226,6 @@ GDO_LINKAGE void gdo_call_free_lib(void)
 
 /* register our call to free the library handle with atexit()
  * so that the library will automatically be freed upon exit */
-inline
 GDO_LINKAGE void gdo_register_free_lib(void)
 {
 #ifdef GDO_AUTO_RELEASE
