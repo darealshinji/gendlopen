@@ -3,7 +3,7 @@
 /* disabled [-Wattributes] warnings */
 #define DLL_PUBLIC /**/
 #include "helloworld.h"
-#include "example_cxx_multi.hpp"
+#include "cxx_multi.hpp"
 
 
 extern void cb(const char *msg);

@@ -1,16 +1,16 @@
-#include <iostream>
+#include <stdio.h>
 
 /* disabled [-Wattributes] warnings */
 #define DLL_PUBLIC /**/
 #include "helloworld.h"
-#include "example_cxx_multi.hpp"
-
+#include "c_multi.h"
 
 extern void call2(helloworld *hw);
 
+
 void cb(const char *msg)
 {
-    std::cout << msg << std::endl;
+    puts(msg);
 }
 
 int main()

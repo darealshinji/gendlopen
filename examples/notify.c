@@ -3,12 +3,10 @@
 #include <libnotify/notify.h>
 #include <assert.h>
 
-#ifdef USE_DLOPEN
-#define XNOTIFY_ENABLE_AUTOLOAD 1
-#define XGOBJECT_ENABLE_AUTOLOAD 1
+#define XNOTIFY_ENABLE_AUTOLOAD   1
+#define XGOBJECT_ENABLE_AUTOLOAD  1
 #include "example_notify.h"
 #include "example_notify_gobject.h"
-#endif
 
 
 int send_notification(const char *app_name, const char *summary, const char *body, const char *icon)

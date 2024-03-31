@@ -1,7 +1,7 @@
 #include "helloworld.h"
 
 /* include generated header file */
-#include "example_1.h"
+#include "c_test.h"
 
 
 void cb(const char *msg)

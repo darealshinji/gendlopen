@@ -10,10 +10,10 @@
 #define GDO_DELAYLOAD       1
 
 /* define a default library to load */
-#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
+//#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
 
 /* include generated header file */
-#include "example_cxx_autoload.hpp"
+#include "cxx_autoload.hpp"
 
 
 void print_error(const char *msg)

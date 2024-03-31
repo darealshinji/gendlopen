@@ -3,7 +3,7 @@
 #include "helloworld.h"
 
 /* include generated header file */
-#include "example_cxx_minimal.hpp"
+#include "cxx_minimal.hpp"
 
 
 int main()

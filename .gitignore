@@ -1,27 +1,28 @@
 # generated files
 examples/example_*.h
-examples/example_*.hpp
-examples/example_helloworld_static_dl.c
-examples/uuid_*_dl.h
-examples/example_multi.c
-template.h
+examples/uuid_nix_dl.h
+examples/uuid_win_dl.h
+src/template.h
+test/c_*.h
+test/c_multi.c
+test/cxx_*.hpp
+test/cxx_multi.cpp
 
 # executables
-examples/example_1
-examples/example_autoload
-examples/example_auto_free
-examples/example_cxx
-examples/example_cxx_autoload
-examples/example_cxx_minimal
-examples/example_minimal
-examples/example_multi
-examples/helloworld_example_dl
-examples/helloworld_example_nodl
 examples/appindicator
 examples/notify
 examples/uuid_nix
-gen_template_h
-gendlopen
+src/gen_template_h
+src/gendlopen
+test/c_auto_free
+test/c_autoload
+test/c_minimal
+test/c_multi
+test/c_test
+test/cxx_autoload
+test/cxx_minimal
+test/cxx_multi
+test/cxx_test
 
 # binary files
 *.o

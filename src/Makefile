@@ -1,28 +1,84 @@
-# NMake Makefile
+# This one Makefile works with Microsoft nmake and GNU make.
+# They use different conditional syntax, but each can be
+# nested and inverted within the other.
 
-cl       = cl -nologo
-link     = link -nologo
-cflags   = -W3 -O2 -DWIN32_LEAN_AND_MEAN
-cxxflags = $(cflags) -EHsc -std:c++latest
-ldflags  = -subsystem:console -release
-objs     = main.obj clang-ast.obj generate.obj parse.obj tokenize.obj
+all: default
 
 
-all: gendlopen.exe
+ifdef MAKEDIR: # gmake: false; nmake: unused target
+!ifdef MAKEDIR # gmake: not seen; nmake: true
+
+#
+# Microsoft nmake
+#
+
+!include ..\nmake.mk
+
+
+OBJS = main.obj clang-ast.obj generate.obj parse.obj tokenize.obj
+
+
+default: gendlopen.exe
 
 clean:
 	-del /q *.exe *.obj template.h
 
 template.h: gen_template_h.exe
-	$** ..\templates
+	$** templates
 
 gen_template_h.exe: gen_template_h.c
-	$(cl) $(cflags) $** -link -out:$@ $(ldflags)
+	$(CL) $(CFLAGS) $** -Fe$@ $(LDFLAGS)
 
-gendlopen.exe: $(objs)
-	$(link) -out:$@ $** $(ldflags)
+gendlopen.exe: main.cpp clang-ast.cpp generate.cpp parse.cpp tokenize.cpp
+	$(CL) $(CXXFLAGS) $** -Fe$@ $(LDFLAGS)
 
-$(objs): template.h
+generate.cpp: template.h
 
 .cpp.obj:
-	$(cl) $(cxxflags) -c $*.cpp
+	$(CL) $(CXXFLAGS) -c $*.cpp
+
+
+!else # and now the other
+else
+
+
+#
+# GNU make
+#
+
+STDCXX ?= c++20
+
+include ../gmake.mk
+
+
+CCAUX  ?= $(CC)
+
+BIN     = gendlopen
+AUXBIN  = gen_template_h
+
+OBJS = main.o clang-ast.o generate.o parse.o tokenize.o
+
+
+.PHONY: all default clean
+
+
+default: $(BIN)
+
+clean:
+	$(RM) $(BIN) $(AUXBIN) template.h *.exe *.o *.obj
+
+$(BIN): $(OBJS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+$(AUXBIN): gen_template_h.c
+	$(CCAUX) -Wall -O2 -o $@ $<
+
+generate.cpp: template.h
+
+template.h: $(AUXBIN)
+	./$(AUXBIN) templates
+
+
+endif    # gmake: close condition; nmake: not seen
+!endif : # gmake: unused target; nmake close conditional
+

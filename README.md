@@ -109,10 +109,10 @@ To cross-compile the examples you must compile the native tool first:
 ```sh
 # MinGW
 pfx=x86_64-w64-mingw32
-make && make CC=$pfx-gcc CXX=$pfx-g++ test
+make && make CC=$pfx-gcc CXX=$pfx-g++ check
 
 # clang-cl
-make && make CLANG_CL=clang-cl test
+make && make CLANG_CL=clang-cl check
 ```
 
 

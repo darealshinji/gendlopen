@@ -2,31 +2,28 @@
 #include <string>
 #include "helloworld.h"
 
+/* this is a win32 API example using wide characters;
+ * note: on C++ wide and narrrow characters can be
+ * used simultanously */
+
 /* include generated header file */
-#include "example_cxx.hpp"
+#include "cxx_win32_wide.hpp"
 
 
 int main()
 {
-    /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( gdo::dl::libname("helloworld", 0) );
-
     /* load library and symbols */
-    if (!loader.load_lib_and_symbols()) {
+
+    gdo::dl loader;
+
+    if (!loader.load(L"libhelloworld-0.dll") || !loader.load_symbols()) {
         std::cerr << loader.error() << std::endl;
+        //std::wcerr << L"(wide characters message) " << loader.error_w() << std::endl;
         return 1;
     }
 
-/*
-alternatively the object can be initialized without arguments
-and the filename is then specified during loading:
-
-    gdo::dl loader;
-    if (!loader.load( gdo::libname("helloworld", 0) ) || ...
-*/
-
-    /* get and print the full library path */
-    std::string orig = loader.origin();
+    /* get and print library path */
+    std::wstring orig = loader.origin_w();
 
     if (orig.empty()) {
         /* print error and return */
@@ -34,7 +31,7 @@ and the filename is then specified during loading:
         return 1;
     }
 
-    std::cout << "library loaded at: " << orig << std::endl;
+    std::wcout << L"library loaded at: " << orig << std::endl;
 
 
     /* our code */

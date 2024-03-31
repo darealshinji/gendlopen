@@ -2,7 +2,7 @@
 #include "helloworld.h"
 
 /* include generated header file */
-#include "example_minimal.h"
+#include "c_minimal.h"
 
 
 void cb(const char *msg)

@@ -3,14 +3,9 @@
 #include <gtk/gtk.h>
 #include <libappindicator/app-indicator.h>
 
-#ifdef USE_DLOPEN
-//#define XAPPINDICATOR_ENABLE_AUTOLOAD 1
-//#define XGOBJECT_ENABLE_AUTOLOAD 1
-//#define XGTK_ENABLE_AUTOLOAD 1
 #include "example_appindicator.h"
 #include "example_appindicator_gobject.h"
 #include "example_appindicator_gtk.h"
-#endif
 
 
 int indicator(const char *appID, const char *icon, void (*callback)())
@@ -72,7 +67,6 @@ static void callback() {
 
 int main()
 {
-#ifdef USE_DLOPEN
 
 #define XLOAD(x) \
   if (!x##_load_lib_and_symbols()) { \
@@ -84,7 +78,6 @@ int main()
   XLOAD(xgtk)
   XLOAD(xappindicator)
 
-#endif /* USE_DLOPEN */
 
   return indicator(NULL, NULL, callback);
 }

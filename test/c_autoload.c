@@ -21,7 +21,7 @@
 #define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
 
 /* include generated header file */
-#include "example_autoload.h"
+#include "c_autoload.h"
 
 
 void cb(const char *msg)

@@ -1,7 +1,7 @@
 /* disabled [-Wattributes] warnings */
 #define DLL_PUBLIC /**/
 #include "helloworld.h"
-#include "example_multi.h"
+#include "c_multi.h"
 
 
 extern void cb(const char *msg);

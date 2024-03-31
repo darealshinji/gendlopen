@@ -1,122 +1,117 @@
-bins = \
-	example_1.exe \
-	example_autoload.exe \
-	example_auto_free.exe \
-	example_minimal.exe \
-	example_cxx.exe \
-	example_cxx_autoload.exe \
-	example_cxx_minimal.exe \
-	example_wide.exe \
-	example_cxx_wide.exe \
-	helloworld_example_nodl.exe \
-	helloworld_example_dl.exe
+# This one Makefile works with Microsoft nmake and GNU make.
+# They use different conditional syntax, but each can be
+# nested and inverted within the other.
 
-bins2 = uuid_win.exe
-
-genhdrs_h = \
-	example_1.h \
-	example_autoload.h \
-	example_auto_free.h \
-	example_wide.h \
-	example_helloworld_static_dl.h
-
-genhdrs_hpp = \
-	example_cxx.hpp \
-	example_cxx_autoload.hpp \
-	example_cxx_wide.hpp
-
-dll = libhelloworld-0.dll
-
-cl       = cl -nologo
-clang    = clang
-link     = link -nologo
-lib_exe  = lib -nologo
-cflags   = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN
-cxxflags = -W3 -O2 -I. -DWIN32_LEAN_AND_MEAN -EHsc -std:c++latest
-ldflags  = -subsystem:console -release
-
-gendlopen = ..\src\gendlopen.exe
+all: default
 
 
-all: $(bins) $(bins2)
+ifdef MAKEDIR: # gmake: false; nmake: unused target
+!ifdef MAKEDIR # gmake: not seen; nmake: true
+
+#
+# Microsoft nmake
+#
+
+!include ..\nmake.mk
+
+
+GENDLOPEN = ..\src\gendlopen.exe
+
+
+default: uuid_win.exe
 
 clean:
-	-del /q *.exe *.dll *.dylib *.so *.so.* *.lib *.a *.o *.obj *.exp
-	-del /q $(genhdrs_h) $(genhdrs_hpp) uuid_*_dl.h example_helloworld_static_dl.*
-	-del /q example_minimal.h example_cxx_minimal.hpp
-
-$(bins): $(dll)
-
-libhelloworld.lib: $(dll)
-
-$(dll): helloworld.c
-	$(cl) $(cflags) -DBUILDING_DLL $** -link -dll -out:$(dll) -implib:libhelloworld.lib $(ldflags)
-
-libhelloworld_dl.lib: example_helloworld_static_dl.obj
-	$(lib_exe) -out:$@ $**
-
-# test different ways to add an include header line
-example_helloworld_static_dl.c: helloworld.txt
-	$(gendlopen) -i $** -f -o $@ --separate \
-		-I"<helloworld.h>" -I"QUOTE_STRING(helloworld.h)" \
-		-DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD=1 -DGDO_WRAP_FUNCTIONS=1 \
-		--default-library="LIBNAME(helloworld,0)"
-
-example_helloworld_static_dl.obj: example_helloworld_static_dl.c
-	$(cl) $(cflags) -c $*.c
-
-helloworld_example_dl.exe: libhelloworld_dl.lib
-	$(cl) $(cflags) -DBUILDING_STATIC helloworld_example.c -link -out:$@ libhelloworld_dl.lib $(ldflags)
-
-helloworld_example_nodl.exe: libhelloworld.lib
-	$(cl) $(cflags) helloworld_example.c -link -out:$@ libhelloworld.lib $(ldflags)
-
-example_1.exe: example_1.h
-	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
-
-example_auto_free.exe: example_auto_free.h
-	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
-
-example_autoload.exe: example_autoload.h
-	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
-
-example_minimal.exe: example_minimal.h
-	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
-
-example_cxx.exe: example_cxx.hpp
-	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
-
-example_cxx_autoload.exe: example_cxx_autoload.hpp
-	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
-
-example_cxx_minimal.exe: example_cxx_minimal.hpp
-	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
-
-example_wide.exe: example_wide.h
-	$(cl) $(cflags) -DUNICODE -D_UNICODE $*.c -link -out:$@ $(ldflags)
-
-example_cxx_wide.exe: example_cxx_wide.hpp
-	$(cl) $(cxxflags) $*.cpp -link -out:$@ $(ldflags)
-
-uuid_win_dl.h:
-	$(clang) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
-	  $(gendlopen) -i- --default-library "QUOTE_STRING(rpcrt4.dll)" \
-	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA -f -o $@
+	-del /q uuid_win.exe uuid_win_dl.h *.o *.obj
 
 uuid_win.exe: uuid_win_dl.h
-	$(cl) $(cflags) $*.c -link -out:$@ $(ldflags)
+	$(CL) $(CFLAGS) $*.c -Fe$@ $(LDFLAGS)
 
-example_minimal.h: helloworld.txt
-	$(gendlopen) --format=minimal -i $** -f -o $@
 
-example_cxx.hpp: helloworld.txt
-	$(gendlopen) --format=C++ --skip-parameter-names -i $** -f -o $@
+!else # and now the other
+else
 
-example_cxx_minimal.hpp: helloworld.txt
-	$(gendlopen) --format=minimal-cxx -i $** -f -o $@
+#
+# GNU make
+#
 
-$(genhdrs_h): helloworld.txt
-	$(gendlopen) -i $** -f -o $@
+include ../gmake.mk
 
-$(genhdrs_hpp): helloworld.txt
-	$(gendlopen) --format=C++ -i $** -f -o $@
+
+ifneq ($(CLANG_CL),)
+BINS = uuid_win
+else
+ifneq ($(shell $(CC) -dumpmachine | grep mingw),)
+BINS = uuid_win
+else
+BINS = uuid_nix notify appindicator
+CFLAGS  += -D_GNU_SOURCE -Wno-deprecated-declarations
+LDFLAGS += -ldl -Wl,-rpath,'$$ORIGIN'
+endif
+endif
+
+GENDLOPEN := ../src/gendlopen
+
+
+.PHONY: all default clean
+
+default: $(BINS)
+
+clean:
+	-rm -f $(BINS) notify appindicator uuid_nix
+	-rm -f *.exe *.o *.obj example_*.h uuid_nix_dl.h uuid_win_dl.h
+
+
+# appindicator
+
+example_appindicator.h: appindicator.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xappindicator --library libappindicator.so.1 --skip-parameter-names
+
+example_appindicator_gtk.h: appindicator_gtk.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgtk --library libgtk-x11-2.0.so.0
+
+example_appindicator_gobject.h: appindicator_gobject.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgobject --library libgobject-2.0.so.0
+
+appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h
+	$(CC) $(CFLAGS) -DUSE_DLOPEN=1 -Ithirdparty `pkg-config --cflags gtk+-2.0 gobject-2.0` \
+	  appindicator.c -o $@ $(LDFLAGS)
+
+
+# libnotify
+
+example_notify.h: notify.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xnotify --library-nq "LIBNAME(notify,4)"
+
+example_notify_gobject.h: notify_gobject.txt
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgobject --library-nq "LIBNAME(gobject-2.0,0)"
+
+notify: example_notify.h example_notify_gobject.h
+	$(CC) $(CFLAGS) -DUSE_DLOPEN=1 -Ithirdparty `pkg-config --cflags gobject-2.0` \
+	  notify.c -o $@ $(LDFLAGS)
+
+
+# UUID
+
+uuid_nix_dl.h: uuid_nix.h
+	$(CLANG) -Xclang -ast-dump -Ithirdparty/uuid $< | \
+	  $(GENDLOPEN) -i- --library libuuid.so.1 \
+	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower \
+	  -f -o $@
+
+uuid_nix: uuid_nix_dl.h
+	$(CC) $(CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(LDFLAGS)
+
+uuid_win: uuid_win_dl.h
+	$(CC) $(CFLAGS) -Ithirdparty/uuid uuid_win.c -o $@ $(LDFLAGS)
+
+
+endif    # gmake: close condition; nmake: not seen
+!endif : # gmake: unused target; nmake close conditional
+
+
+# common target
+uuid_win_dl.h: uuid_win.h
+	$(CLANG) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
+	  $(GENDLOPEN) -i- --library rpcrt4.dll \
+	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA -f -o $@
+

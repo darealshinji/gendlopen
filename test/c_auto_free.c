@@ -5,7 +5,7 @@
 #define GDO_AUTO_RELEASE 1
 
 /* include generated header file */
-#include "example_auto_free.h"
+#include "c_auto_free.h"
 
 
 void cb(const char *msg)
