@@ -31,7 +31,7 @@ namespace /* anonymous */
 @
 GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
     if (!gdo::dl::m_loaded_%%symbol%%) {@
-        error_exit( "error: symbol `%%symbol%%' was not loaded");@
+        error_exit("error: symbol `%%symbol%%' was not loaded");@
     }@
     %%return%% gdo::dl::m_ptr_%%symbol%%(%%notype_args%%);@
 }
@@ -42,7 +42,7 @@ namespace /* anonymous */
 {
     auto al = gdo::dl(GDO_DEFAULT_LIB);
 
-    void error_exit(const char *s1, const char *s2, const char *s3, const std::string &s4)
+    void error_exit4(const char *s1, const char *s2, const char *s3, const std::string &s4)
     {
         auto cb = gdo::dl::message_callback();
 
@@ -60,7 +60,7 @@ namespace /* anonymous */
     void quick_load(const char *symbol)
     {
         if (!al.load()) {
-            error_exit("error loading library `", GDO_DEFAULT_LIB, "':\n", al.error());
+            error_exit4("error loading library `", GDO_DEFAULT_LIB, "':\n", al.error());
         }
 
 #ifdef GDO_DELAYLOAD
@@ -69,7 +69,7 @@ namespace /* anonymous */
         if (!al.load_symbols())
 #endif
         {
-            error_exit("error in auto-loading wrapper function "
+            error_exit4("error in auto-loading wrapper function "
                 "`gdo::autoload::", symbol, "': ", al.error());
         }
     }
