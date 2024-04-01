@@ -7,6 +7,7 @@ test/c_*.h
 test/c_multi.c
 test/cxx_*.hpp
 test/cxx_multi.cpp
+test/libhelloworld_dl.[c|h]
 
 # executables
 examples/appindicator
@@ -23,6 +24,7 @@ test/cxx_autoload
 test/cxx_minimal
 test/cxx_multi
 test/cxx_test
+test/helloworld_example_dl
 
 # binary files
 *.o

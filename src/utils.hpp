@@ -109,16 +109,32 @@ inline bool is_prefixed(const std::string &s, const vstring_t &list)
     return false;
 }
 
-/* case-insensitive string comparison */
-inline bool eq_str_case(const std::string &str1, const char *str2)
+inline int xstrcasecmp(const char *str1, const char *str2)
 {
+    ASSUME(str1 != NULL);
     ASSUME(str2 != NULL);
 
 #ifdef _MSC_VER
-    return (_stricmp(str1.c_str(), str2) == 0);
+    return _stricmp(str1, str2);
 #else
-    return (strcasecmp(str1.c_str(), str2) == 0);
+    return strcasecmp(str1, str2);
 #endif
+}
+
+/* case-insensitive string comparison */
+inline bool eq_str_case(const std::string &str1, const char *str2)
+{
+    return (xstrcasecmp(str1.c_str(), str2) == 0);
+}
+
+/* case-insensitive check if str begins with and is longer than pfx */
+inline bool beglt_case(const std::string &str, const std::string &pfx)
+{
+    if (str.size() <= pfx.size()) {
+        return false;
+    }
+
+    return (xstrcasecmp(str.substr(0, pfx.size()).c_str(), pfx.c_str()) == 0);
 }
 
 /* strip white-spaces from front and back of a string */

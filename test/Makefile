@@ -170,7 +170,7 @@ helloworld_example_dl$(EXEEXT): libhelloworld_dl$(LIBEXT)
 
 libhelloworld_dl.c:
 	$(GENHDR) $@ -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD \
-	  --separate --include=helloworld.h --library-nq="LIBNAME(helloworld,0)"
+	  --separate --include=helloworld.h --library=API:0:helloworld
 
 c_test.h:
 	$(GENHDR) $@
@@ -191,7 +191,7 @@ cxx_test.hpp:
 	$(GENHDR) $@ --format=C++ --skip-parameter-names
 
 cxx_autoload.hpp:
-	$(GENHDR) $@ --format=C++ --library-nq="LIBNAME(helloworld,0)"
+	$(GENHDR) $@ --format=C++ --library=API:0:helloworld
 
 cxx_minimal.hpp:
 	$(GENHDR) $@ --format=minimal-C++

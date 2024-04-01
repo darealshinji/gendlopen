@@ -23,6 +23,8 @@
  */
 
 #include <iostream>
+#include <regex>
+#include <sstream>
 #include <cstdlib>
 #include "args.hxx"
 #include "gendlopen.hpp"
@@ -42,6 +44,7 @@ namespace
         std::cerr << "Try `" << argv0 << " --help' for more information." << std::endl;
     }
 
+    /* quote library name */
     std::string quote_lib(const std::string &lib)
     {
         if (lib.front() == '"' && lib.back() == '"') {
@@ -51,6 +54,37 @@ namespace
         return "\"" + (lib + "\"");
     }
 
+    /**
+     * format library name
+     * foo        ==>  "foo"
+     * nq:foo     ==>  foo
+     * ext:foo    ==>  "foo" LIBEXT
+     * api:2:foo  ==>  LIBNAME(foo,2)
+     */
+    std::string format_libname(const std::string &str)
+    {
+        if (utils::beglt_case(str, "nq:")) {
+            return str.substr(3);
+        } else if (utils::beglt_case(str, "ext:")) {
+            return quote_lib(str.substr(4)) + " LIBEXT";
+        } else if (utils::beglt_case(str, "api:")) {
+            const std::regex reg("(.*?):(.*)");
+            std::smatch m;
+            auto sub = str.substr(4);
+
+            if (std::regex_match(sub, m, reg) && m.size() == 3) {
+                std::stringstream out;
+                out << "LIBNAME(" << m[2] << ',' << m[1] << ')';
+                return out.str();
+            }
+        }
+
+        /* quote string */
+        return quote_lib(str);
+    }
+
+
+    /* quote header name if needed */
     std::string quote_inc(const std::string &inc)
     {
         if ((inc.front() == '<' && inc.back() == '>') ||
@@ -62,6 +96,8 @@ namespace
         return "\"" + (inc + "\"");
     }
 
+
+    /* return the correct enum or exit() on error */
     output::format str_to_enum(char * const argv0, const std::string &fmt)
     {
         switch (fmt.front())
@@ -225,41 +261,38 @@ int main(int argc, char **argv)
 
 
     /* --library */
-    StrValue a_library(args, "STRING",
-        "default library to load",
+
+    StrValue a_library(args, "[MODE:]STRING",
+        "default library to load; modes: nq ext api:#",
         {'l', "library"},
         Opt::Single);
 
     more_help +=                                                                                    "\n";
-    more_help += "  -l[STRING], --library=[STRING]"                                                 "\n";
+    more_help += "  -l[[MODE:]STRING], --library=[[MODE:]STRING]"                                   "\n";
     more_help +=                                                                                    "\n";
-    more_help += "    Set a default library name to load. Quotation marks are put around the"       "\n";
-    more_help += "    filename if it's not already enclosed in quotation marks. This flag cannot"   "\n";
-    more_help += "    cannot be combined with `--library-nq'."                                      "\n";
+    more_help += "    Set a default library name to load."                                          "\n";
+    more_help += "    If no mode was set quotation marks are put around the filename as needed."    "\n";
     more_help +=                                                                                    "\n";
-
-
-    /* --library-nq */
-    StrValue a_library_nq(args, "STRING",
-        "default library to load (no quotes added)",
-        {"library-nq"},
-        Opt::Single);
-
+    more_help += "    Available modes:"                                                             "\n";
+    more_help += "    nq     - no quotes are added, the string will be used as is"                  "\n";
+    more_help += "    ext    - filename extension will be added through a macro"                    "\n";
+    more_help += "    api:#  - library filename with API number will be created through a macro"    "\n";
     more_help +=                                                                                    "\n";
-    more_help += "  --library-nq=[STRING]"                                                          "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Set a default library name to load. Quotation marks are never added. This"    "\n";
-    more_help += "    flag cannot cannot be combined with `--library'."                             "\n";
+    more_help += "    --library=foo        ==>  \"foo\""                                            "\n";
+    more_help += "    --library=nq:foo     ==>  foo"                                                "\n";
+    more_help += "    --library=ext:foo    ==>  \"foo\" LIBEXT      ==>    i.e. \"foo.dll\""        "\n";
+    more_help += "    --library=api:2:foo  ==>  LIBNAME(foo,2)    ==>    i.e. \"libfoo.so.2\""      "\n";
     more_help +=                                                                                    "\n";
 
 
     /* --include */
+
     StrList a_include(args, "STRING",
         "header to include",
         {'I', "include"});
 
     more_help +=                                                                                    "\n";
-    more_help += "  -I[STRING...], --include=[STRING...]"                                           "\n";
+    more_help += "  -I[STRING], --include=[STRING]"                                                 "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Set a header file name to be included at the top of the output code."         "\n";
     more_help += "    Quotation marks are put around the filename if it's not enclosed in brackets" "\n";
@@ -267,26 +300,29 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
 
 
-    /* --include-no-quotes */
+    /* --include-nq */
+
     StrList a_include_nq(args, "STRING",
         "header to include (no quotes added)",
         {"include-nq"});
 
     more_help +=                                                                                    "\n";
-    more_help += "  --include-nq=[STRING...]"                                                       "\n";
+    more_help += "  --include-nq=[STRING]"                                                          "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Set a header file name to be included at the top of the output code."         "\n";
-    more_help += "    Quotation marks are never added. This flag may be passed multiple times."     "\n";
+    more_help += "    Quotation marks are never added. This is useful if you want to specify a"     "\n";
+    more_help += "    header through a macro. This flag may be passed multiple times."              "\n";
     more_help +=                                                                                    "\n";
 
 
     /* --define */
+
     StrList a_define(args, "STRING",
         "define preprocessor macro",
         {'D', "define"});
 
     more_help +=                                                                                    "\n";
-    more_help += "  -D[STRING...], --define=[STRING...]"                                            "\n";
+    more_help += "  -D[STRING], --define=[STRING]"                                                  "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Set a preprocessor definition macro to be added at the top of the output"     "\n";
     more_help += "    code. This macro may include a value in the form of `FOO=1'. This flag may"   "\n";
@@ -295,6 +331,7 @@ int main(int argc, char **argv)
 
 
     /* --separate */
+
     Flag a_separate(args, {},
         "save into header and body files",
         {'s', "separate"});
@@ -310,6 +347,7 @@ int main(int argc, char **argv)
 
 
     /* --force */
+
     Flag a_force(args, {},
         "overwrite existing files",
         {'f', "force"});
@@ -322,6 +360,7 @@ int main(int argc, char **argv)
 
 
     /* --skip-parameter-names */
+
     Flag a_skip_parameter_names(args, {},
         "skip parameter name lookup in function prototypes",
         {"skip-parameter-names"});
@@ -336,6 +375,7 @@ int main(int argc, char **argv)
 
 
     /* --prefix */
+
     StrList a_prefix(args, "STRING",
         "look for symbols prefixed with STRING",
         {'P', "prefix"});
@@ -350,12 +390,13 @@ int main(int argc, char **argv)
 
 
     /* --symbol */
+
     StrList a_symbol(args, "STRING",
         "look for symbol STRING",
         {'S', "symbol"});
 
     more_help +=                                                                                    "\n";
-    more_help += "  -S[STRING...], --symbol=[STRING...]"                                            "\n";
+    more_help += "  -S[STRING], --symbol=[STRING]"                                                  "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Look for the symbol name STRING when parsing the input. This is most useful"  "\n";
     more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
@@ -364,6 +405,7 @@ int main(int argc, char **argv)
 
 
     /* --ast-all-symbols */
+
     Flag a_ast_all_symbols(args, {},
         "use all symbols from a Clang AST",
         {"ast-all-symbols"});
@@ -405,13 +447,6 @@ int main(int argc, char **argv)
 
 
     /* check excluding flags */
-
-    if (a_library && a_library_nq) {
-        std::cerr << "error: cannot combine `--library' and `--library-nq'" << std::endl;
-        print_info(*argv);
-        return 1;
-    }
-
     if (a_ast_all_symbols && (a_symbol || a_prefix)) {
         std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
         print_info(*argv);
@@ -429,11 +464,9 @@ int main(int argc, char **argv)
         gdo.format(str_to_enum(*argv, a_format.Get()));
     }
 
-    /* --library(-no-quotes) */
+    /* --library */
     if (a_library) {
-        gdo.default_lib(quote_lib(a_library.Get()));
-    } else if(a_library_nq) {
-        gdo.default_lib(a_library_nq.Get());
+        gdo.default_lib(format_libname(a_library.Get()));
     }
 
     /* --define */
