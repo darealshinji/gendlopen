@@ -9,17 +9,17 @@
 #undef LIBEXTW
 #endif
 #if defined(_WIN32)
-    #define LIBEXTA    "dll"
-    #define LIBEXTW    L"dll"
+    #define LIBEXTA    ".dll"
+    #define LIBEXTW   L".dll"
 #elif defined(__APPLE__)
-    #define LIBEXTA    "dylib"
-    #define LIBEXT     "dylib"
+    #define LIBEXTA    ".dylib"
+    #define LIBEXT     ".dylib"
 #elif defined(_AIX)
-    #define LIBEXTA    "a"
-    #define LIBEXT     "a"
+    #define LIBEXTA    ".a"
+    #define LIBEXT     ".a"
 #else /* ELF */
-    #define LIBEXTA    "so"
-    #define LIBEXT     "so"
+    #define LIBEXTA    ".so"
+    #define LIBEXT     ".so"
 #endif
 
 
@@ -35,7 +35,7 @@
 #endif
 #if defined(_WIN32)
     #define LIBNAMEA(NAME, API)    "lib" #NAME "-" #API ".dll"
-    #define LIBNAMEW(NAME, API)    L"lib" #NAME "-" #API ".dll"
+    #define LIBNAMEW(NAME, API)   L"lib" #NAME "-" #API ".dll"
 #elif defined(__APPLE__)
     #define LIBNAMEA(NAME, API)    "lib" #NAME "." #API ".dylib"
     #define LIBNAME(NAME, API)     "lib" #NAME "." #API ".dylib"
@@ -51,10 +51,10 @@
 /* Windows Unicode/ANSI default macros */
 #ifdef _WIN32
     #ifdef _UNICODE
-        #define LIBEXT                L"dll"
-        #define LIBNAME(NAME, API)    L"lib" #NAME "-" #API ".dll"
+        #define LIBEXT               L".dll"
+        #define LIBNAME(NAME, API)   L"lib" #NAME "-" #API ".dll"
     #else
-        #define LIBEXT                "dll"
+        #define LIBEXT                ".dll"
         #define LIBNAME(NAME, API)    "lib" #NAME "-" #API ".dll"
     #endif
 #endif
