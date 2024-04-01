@@ -154,7 +154,7 @@ std::string format_definitions(const std::vector<std::string> &list)
         }
 
         out << "#define " << e << '\n';
-        out << "#endif\n\n";
+        out << "#endif\n";
     }
 
     return out.str();
@@ -355,11 +355,14 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     /* extra definitions */
     if (!m_definitions.empty()) {
+        out << "/* extra definitions */\n";
         out << format_definitions(m_definitions);
+        out << '\n';
     }
 
     /* default library name */
     if (!m_default_lib.empty()) {
+        out << "/* default library */\n";
         out << "#ifndef " << m_name_upper << "_DEFAULT_LIB\n";
         out << "#define " << m_name_upper << "_DEFAULT_LIB " << m_default_lib << "\n";
         out << "#endif\n\n";
@@ -367,6 +370,8 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     /* extra includes */
     if (!m_includes.empty()) {
+        out << "/* extra headers */\n";
+
         for (auto &e : m_includes) {
             out << "#include " << e << '\n';
         }
