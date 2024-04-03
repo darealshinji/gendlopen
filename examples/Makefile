@@ -38,16 +38,30 @@ include ../gmake.mk
 
 
 ifneq ($(CLANG_CL),)
+# clang-cl
 BINS = uuid_win
 else
+
 ifneq ($(shell $(CC) -dumpmachine | grep mingw),)
+# MinGW
 BINS = uuid_win
+
 else
-BINS = uuid_nix notify appindicator
-CFLAGS  += -D_GNU_SOURCE -Wno-deprecated-declarations
-LDFLAGS += -ldl -Wl,-rpath,'$$ORIGIN'
+
+# other/ELF
+BINS       = uuid_nix notify appindicator
+CFLAGS    += -Wno-deprecated-declarations
+#LIBDL     = -ldl
+LDFLAGS   += $(LIBDL) -Wl,-rpath,'$$ORIGIN'
+
+ifneq ($(shell $(CC) -dumpmachine | grep gnu),)
+CFLAGS    += -D_GNU_SOURCE
+CXXFLAGS  += -D_GNU_SOURCE
 endif
-endif
+
+endif # MINGW
+endif # CLANG_CL
+
 
 GENDLOPEN := ../src/gendlopen
 

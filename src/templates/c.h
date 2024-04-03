@@ -50,8 +50,7 @@ bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespac
 
     If `new_namespace' is true the library will be loaded into a new namespace.
     This is done using dlmopen() with the LM_ID_NEWLM argument.
-    If the win32 API is used or the macro GDO_NO_DLMOPEN is defined this argument
-    is ignored.
+    This argument is ignored if the win32 API is used or _GNU_SOURCE was not defined.
 
 
 bool gdo_load_symbols (bool ignore_errors);
@@ -98,10 +97,6 @@ gdo_char_t *gdo_lib_origin ();
 GDO_USE_DLOPEN
     If defined use `dlopen()' API on win32 targets.
     On other targets `dlopen()' is always used.
-
-GDO_NO_DLMOPEN
-    If defined `dlmopen()` will never be used.
-    See the function `gdo_load_lib_args()` for details.
 
 GDO_STATIC
     If defined static linkage (the `static' keyword) is used for all

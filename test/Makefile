@@ -54,18 +54,24 @@ SOLDFLAGS := -shared -Wl,--out-implib,$(IMPLIB)
 
 else
 
-# *nix/ELF
+# other/ELF
 DLL        = libhelloworld.so.0
 IMPLIB     = libhelloworld.so
 SOLDFLAGS := -shared -Wl,-soname,$(DLL)
-LDFLAGS   += -ldl -Wl,-rpath,'$$ORIGIN'
+#LIBDL     = -ldl
+LDFLAGS   += $(LIBDL) -Wl,-rpath,'$$ORIGIN'
+
+ifneq ($(shell $(CC) -dumpmachine | grep gnu),)
+CFLAGS    += -D_GNU_SOURCE
+CXXFLAGS  += -D_GNU_SOURCE
+endif
 
 endif    # MINGW
 endif    # CLANG_CL
 
 
-#GENDLOPEN = ../src/gendlopen$(EXEEXT)
 GENDLOPEN = ../src/gendlopen
+
 
 .PHONY: all default clean
 

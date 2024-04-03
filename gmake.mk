@@ -32,8 +32,8 @@ SOCFLAGS := -DBUILDING_DLL
 LDFLAGS  := -s -static
 else
 # *nix
-CFLAGS   := -Wall -Wextra -O3 -I. -D_GNU_SOURCE
-CXXFLAGS := -Wall -Wextra -O3 -I. -D_GNU_SOURCE -std=$(STDCXX)
+CFLAGS   := -Wall -Wextra -O3 -I.
+CXXFLAGS := -Wall -Wextra -O3 -I. -std=$(STDCXX)
 SOCFLAGS := -fvisibility=hidden -fPIC
 LDFLAGS  := -s
 endif

@@ -8,9 +8,6 @@ GDO_USE_DLOPEN
     If defined `dlopen()' API is used on win32 targets.
     On other targets `dlopen()' is always used.
 
-GDO_NO_DLMOPEN
-    If defined `dlmopen()` will never be used.
-
 GDO_DEFAULT_FLAGS
     Override the default flags to use when loading a library.
 
@@ -392,18 +389,18 @@ private:
     {
         m_flags = flags;
 
-#ifdef GDO_NO_DLMOPEN
-        /* dlmopen() disabled */
-        (UNUSED_REF) new_namespace;
-        m_handle = ::dlopen(filename, m_flags);
-#else
+#ifdef _GNU_SOURCE
         /* dlmopen() for new namespace or dlopen() */
         if (new_namespace) {
             m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);
         } else {
             m_handle = ::dlopen(filename, m_flags);
         }
-#endif // GDO_NO_DLMOPEN
+#else
+        /* dlmopen() disabled */
+        (UNUSED_REF) new_namespace;
+        m_handle = ::dlopen(filename, m_flags);
+#endif //_GNU_SOURCE
     }
 
 

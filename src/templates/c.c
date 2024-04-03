@@ -185,18 +185,18 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
         return false;
     }
 
-#ifdef GDO_NO_DLMOPEN
-    /* dlmopen() disabled */
-    (GDO_UNUSED_REF) new_namespace;
-    gdo_hndl.handle = dlopen(filename, flags);
-#else
+#ifdef _GNU_SOURCE
     /* call dlmopen() for new namespace, otherwise dlopen() */
     if (new_namespace) {
         gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
     } else {
         gdo_hndl.handle = dlopen(filename, flags);
     }
-#endif //GDO_NO_DLMOPEN
+#else
+    /* dlmopen() disabled */
+    (GDO_UNUSED_REF) new_namespace;
+    gdo_hndl.handle = dlopen(filename, flags);
+#endif //_GNU_SOURCE
 
     /* check if dl(m)open() was successful */
     if (!gdo_lib_is_loaded()) {
