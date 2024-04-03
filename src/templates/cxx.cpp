@@ -1,4 +1,9 @@
+%SKIP_BEGIN%
+#ifdef GDO_HAS_MSG_CB
 gdo::message_callback_t gdo::dl::m_message_callback = nullptr;
+#endif
+%SKIP_END%
+
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 gdo::dl::fptr_%%symbol%%_t gdo::dl::m_ptr_%%symbol%% = nullptr;
@@ -8,8 +13,10 @@ bool gdo::dl::m_loaded_%%symbol%% = false;
 bool gdo::dl::m_loaded_%%obj_symbol%% = false;
 
 
+
 %SKIP_BEGIN%
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
+
 
 namespace /* anonymous */
 {
@@ -27,6 +34,7 @@ namespace /* anonymous */
     }
 } /* anonymous namespace */
 
+
 /* function wrappers */
 @
 GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
@@ -36,7 +44,9 @@ GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
     %%return%% gdo::dl::m_ptr_%%symbol%%(%%notype_args%%);@
 }
 
+
 #elif defined(GDO_ENABLE_AUTOLOAD)
+
 
 namespace /* anonymous */
 {
@@ -74,6 +84,7 @@ namespace /* anonymous */
         }
     }
 } /* anonymous namespace */
+
 
 /* autoload function wrappers */
 @

@@ -1,3 +1,127 @@
+#if 0
+
+namespace gdo
+{
+    using message_callback_t = void (*)(const char *);
+
+
+class dl
+{
+public:
+
+    /* default flags */
+    static constexpr const int default_flags;
+
+
+    /* Shared library file extension without dot ("dll", "dylib" or "so").
+     * Useful i.e. on plugins. */
+    static constexpr const char * const libext;
+
+
+    /* c'tor */
+    dl();
+    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);
+
+
+    /* d'tor */
+    ~dl();
+
+
+    /* Load the library; `filename' and `flags' are passed to the underlying library
+     * loading functions.
+     *
+     * If `new_namespace' is true the library will be loaded into a new namespace.
+     * This is done using dlmopen() with the LM_ID_NEWLM argument.
+     * This argument is ignored if the win32 API is used or _GNU_SOURCE was not defined. */
+    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
+#ifdef GDO_WINAPI
+    bool load(const std::wstring &filename, int flags=default_flags);
+#endif
+
+
+    /* Load the library.
+     * Filename and flags must have been set with the the constructor. */
+    bool load();
+
+
+    /* Load library and symbols.
+     * Filename and flags must have been set with the the constructor. */
+    bool load_lib_and_symbols();
+
+
+    /* check if the library is loaded */
+    bool lib_loaded();
+
+
+    /* return the flags used to load the library */
+    int flags();
+
+
+    /* Load the symbols. This function can safely be called multiple times.
+     * If ignore_errors is set true the function won't stop on the first
+     * symbol that can't be loaded but instead tries to load them all.
+     * If one or more symbols weren't loaded the function returns false. */
+    bool load_symbols(bool ignore_errors=false);
+
+
+    /* load a specific symbol */
+    bool load_symbol(const std::string &symbol);
+
+
+    /* check if all symbols are loaded */
+    bool symbols_loaded();
+
+
+    /* free library */
+    bool free();
+
+
+    /* whether to free the library in the class destructor */
+    void free_lib_in_dtor(bool b);
+
+
+
+    /* Create versioned library names for DLLs, dylibs and DSOs.
+     * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+    static std::string libname(const std::string &name, unsigned int api);
+#ifdef GDO_WINAPI
+    static std::wstring libname(const std::wstring &name, unsigned int api);
+#endif
+
+
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+
+    /* Set a message callback function to be used if an error occurred
+     * in a wrapped function. */
+    static void message_callback(message_callback_t cb);
+
+
+    /* Get a pointer to the message callback function. */
+    static message_callback_t message_callback();
+
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
+
+
+    /* get path of loaded library */
+    std::string origin();
+#ifdef GDO_WINAPI
+    std::wstring origin_w();
+#endif
+
+
+    /* retrieve the last error */
+    std::string error();
+#ifdef GDO_WINAPI
+    std::wstring error_w();
+#endif
+
+}; /* class */
+
+} /* namespace */
+
+#endif // 0
+
+
 /***
 
 ****************************************************
@@ -59,6 +183,7 @@ GDO_NOALIAS
 #endif
 %SKIP_BEGIN%
 */
+
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
@@ -66,7 +191,12 @@ GDO_NOALIAS
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
 #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
+
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+#define GDO_HAS_MSG_CB
+#endif
 %SKIP_END%
+
 
 
 /*****************************************************************************/
@@ -108,8 +238,12 @@ public:
 
 private:
 
+%SKIP_BEGIN%
+#ifdef GDO_HAS_MSG_CB
     /* function pointer to error message callback */
     static message_callback_t m_message_callback;
+#endif
+%SKIP_END%
 
     std::string m_filename;
     int m_flags = default_flags;
@@ -666,19 +800,6 @@ public:
     }
 
 
-    /* message callback */
-
-    static void message_callback(message_callback_t cb)
-    {
-        m_message_callback = cb;
-    }
-
-    static message_callback_t message_callback()
-    {
-        return m_message_callback;
-    }
-
-
     /* Create versioned library names for DLLs, dylibs and DSOs.
      * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
     static std::string libname(const std::string &name, unsigned int api)
@@ -701,6 +822,26 @@ public:
         return L"lib" + (name + (L'-' + (std::to_wstring(api) + L".dll")));
     }
 #endif //GDO_WINAPI
+
+
+%SKIP_BEGIN%
+#ifdef GDO_HAS_MSG_CB
+
+    /* Set a message callback function. */
+    static void message_callback(message_callback_t cb)
+    {
+        m_message_callback = cb;
+    }
+
+
+    /* Get a pointer to the message callback function. */
+    static message_callback_t message_callback()
+    {
+        return m_message_callback;
+    }
+
+#endif //GDO_HAS_MSG_CB
+%SKIP_END%
 
 
 #ifdef GDO_WINAPI

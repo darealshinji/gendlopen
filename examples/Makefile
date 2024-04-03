@@ -94,10 +94,10 @@ appindicator: example_appindicator.h example_appindicator_gobject.h example_appi
 # libnotify
 
 example_notify.h: notify.txt
-	$(GENDLOPEN) -i $^ -f -o $@ -n xnotify --library-nq "LIBNAME(notify,4)"
+	$(GENDLOPEN) -i $^ -f -o $@ -n xnotify --library="api:4:notify"
 
 example_notify_gobject.h: notify_gobject.txt
-	$(GENDLOPEN) -i $^ -f -o $@ -n xgobject --library-nq "LIBNAME(gobject-2.0,0)"
+	$(GENDLOPEN) -i $^ -f -o $@ -n xgobject --library="api:0:gobject-2.0"
 
 notify: example_notify.h example_notify_gobject.h
 	$(CC) $(CFLAGS) -DUSE_DLOPEN=1 -Ithirdparty `pkg-config --cflags gobject-2.0` \
