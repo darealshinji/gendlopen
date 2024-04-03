@@ -15,9 +15,6 @@ ifdef MAKEDIR: # gmake: false; nmake: unused target
 !include ..\nmake.mk
 
 
-OBJS = main.obj clang-ast.obj generate.obj parse.obj tokenize.obj
-
-
 default: gendlopen.exe
 
 clean:
@@ -29,7 +26,7 @@ template.h: gen_template_h.exe
 gen_template_h.exe: gen_template_h.c
 	$(CL) $(CFLAGS) $** -Fe$@ $(LDFLAGS)
 
-gendlopen.exe: main.cpp clang-ast.cpp generate.cpp parse.cpp tokenize.cpp
+gendlopen.exe: main.cpp clang-ast.cpp generate.cpp parse.cpp tokenize.cpp utils.cpp
 	$(CL) $(CXXFLAGS) $** -Fe$@ $(LDFLAGS)
 
 generate.cpp: template.h
@@ -56,7 +53,7 @@ CCAUX  ?= $(CC)
 BIN     = gendlopen
 AUXBIN  = gen_template_h
 
-OBJS = main.o clang-ast.o generate.o parse.o tokenize.o
+OBJS = main.o clang-ast.o generate.o parse.o tokenize.o utils.o
 
 
 .PHONY: all default clean
@@ -65,7 +62,7 @@ OBJS = main.o clang-ast.o generate.o parse.o tokenize.o
 default: $(BIN)
 
 clean:
-	$(RM) $(BIN) $(AUXBIN) template.h *.exe *.o *.obj
+	-rm -f $(BIN) $(AUXBIN) template.h *.exe *.o *.obj
 
 $(BIN): $(OBJS)
 	$(CXX) -o $@ $^ $(LDFLAGS)

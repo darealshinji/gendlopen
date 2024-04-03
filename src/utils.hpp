@@ -29,74 +29,16 @@
 #include <utility>
 #include <vector>
 #include <ctype.h>
-#include <string.h>
-#ifndef _MSC_VER
-#include <strings.h>
-#endif
+#include "misc.hpp"
 
 
-/* ANSI color codes used in the Clang AST output */
-#ifndef CLANG_ANSI_COLORS
-#define CLANG_ANSI_COLORS
-    /* escaped variants for std::regex */
-    #define COL(x)    "\x1B\\[" #x "m"
-    #define C0        COL(0)          /* default */
-    #define CGREEN    COL(0;32)       /* green */
-    #define CFGREEN   COL(0;1;32)     /* fat green */
-    #define CFBLUE    COL(0;1;36)     /* fat blue */
-
-    /* unescaped variants for std::string */
-    #define sCOL(x)   "\x1B[" #x "m"
-    #define sC0       sCOL(0)         /* default */
-    #define sCORANGE  sCOL(0;33)      /* orange */
-    #define sCFGREEN  sCOL(0;1;32)    /* fat green */
-#endif //CLANG_ANSI_COLORS
-
-
-/* assume */
-#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume) >= 202207L
-    #define ASSUME(x)    [[assume(x)]]
-#elif defined(__clang__)
-    #define ASSUME(x)    __builtin_assume(x)
-#elif defined(_MSC_VER)
-    #define ASSUME(x)    __assume(x)
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    #define ASSUME(x)    [[gnu::assume(x)]]
-#else
-    #define ASSUME(x)    /**/
-#endif
-
-
-/* typedefs */
-
-typedef struct {
-    std::string type;
-    std::string symbol;
-    std::string args;
-    std::string notype_args;
-} proto_t;
-
-using vproto_t = std::vector<proto_t>;
-using vstring_t = std::vector<std::string>;
-
-
-/* enum for outout format */
-
-namespace output
-{
-    typedef enum {
-        c,
-        cxx,
-        minimal,
-        minimal_cxx
-    } format;
-}
-
-
-/* common inline functions */
+/* common functions */
 
 namespace utils
 {
+
+/* case-insensitive string comparison */
+bool eq_str_case(const std::string &str1, const std::string &str2);
 
 /* returns true if s begins with a prefix found in list */
 inline bool is_prefixed(const std::string &s, const vstring_t &list)
@@ -107,34 +49,6 @@ inline bool is_prefixed(const std::string &s, const vstring_t &list)
         }
     }
     return false;
-}
-
-inline int xstrcasecmp(const char *str1, const char *str2)
-{
-    ASSUME(str1 != NULL);
-    ASSUME(str2 != NULL);
-
-#ifdef _MSC_VER
-    return _stricmp(str1, str2);
-#else
-    return strcasecmp(str1, str2);
-#endif
-}
-
-/* case-insensitive string comparison */
-inline bool eq_str_case(const std::string &str1, const char *str2)
-{
-    return (xstrcasecmp(str1.c_str(), str2) == 0);
-}
-
-/* case-insensitive check if str begins with and is longer than pfx */
-inline bool beglt_case(const std::string &str, const std::string &pfx)
-{
-    if (str.size() <= pfx.size()) {
-        return false;
-    }
-
-    return (xstrcasecmp(str.substr(0, pfx.size()).c_str(), pfx.c_str()) == 0);
 }
 
 /* strip white-spaces from front and back of a string */

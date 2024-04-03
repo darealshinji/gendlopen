@@ -63,11 +63,16 @@ namespace
      */
     std::string format_libname(const std::string &str)
     {
-        if (utils::beglt_case(str, "nq:")) {
+        auto pfx_case = [] (const std::string &str, const std::string &pfx) -> bool {
+            return (str.size() > pfx.size() &&
+                utils::eq_str_case(str.substr(0, pfx.size()), pfx));
+        };
+
+        if (pfx_case(str, "nq:")) {
             return str.substr(3);
-        } else if (utils::beglt_case(str, "ext:")) {
+        } else if (pfx_case(str, "ext:")) {
             return quote_lib(str.substr(4)) + " LIBEXT";
-        } else if (utils::beglt_case(str, "api:")) {
+        } else if (pfx_case(str, "api:")) {
             const std::regex reg("(.*?):(.*)");
             std::smatch m;
             auto sub = str.substr(4);
