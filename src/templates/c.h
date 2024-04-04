@@ -98,6 +98,10 @@ GDO_USE_DLOPEN
     If defined use `dlopen()' API on win32 targets.
     On other targets `dlopen()' is always used.
 
+GDO_NO_DLMOPEN
+    If defined `dlmopen()` will never be used.
+    See the function `gdo_load_lib_args()` for details.
+
 GDO_STATIC
     If defined static linkage (the `static' keyword) is used for all
     functions.
