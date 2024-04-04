@@ -80,7 +80,7 @@ inline bool range(T c, T beg, T end)
 {
 #ifdef __cpp_lib_unreachable
     std::unreachable();
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__has_builtin) && __has_builtin(__builtin_unreachable)
     __builtin_unreachable();
 #elif defined(_MSC_VER)
     __assume(false);

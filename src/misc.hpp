@@ -48,12 +48,12 @@
 /* assume */
 #if defined(__has_cpp_attribute) && __has_cpp_attribute(assume) >= 202207L
     #define ASSUME(x)    [[assume(x)]]
-#elif defined(__clang__)
+#elif defined(__GNUC__) && __GNUC__ >= 13
+    #define ASSUME(x)    [[gnu::assume(x)]]
+#elif defined(__has_builtin) && __has_builtin(__builtin_assume)
     #define ASSUME(x)    __builtin_assume(x)
 #elif defined(_MSC_VER)
     #define ASSUME(x)    __assume(x)
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    #define ASSUME(x)    [[gnu::assume(x)]]
 #else
     #define ASSUME(x)    /**/
 #endif
