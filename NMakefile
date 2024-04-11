@@ -1,10 +1,25 @@
+cl       = cl -nologo
+cppflags = -DWIN32_LEAN_AND_MEAN
+cflags   = -W3 -O2
+cxxflags = -W3 -O2 -std:c++latest -EHsc
+lflags   = -subsystem:console -release
 
 
-all: gendlopen
+all: gendlopen.exe
 
 clean:
-	cd src && $(MAKE) clean
+	-del /q *.exe *.obj template.h
 
-gendlopen:
-	cd src && $(MAKE)
+template.h: gen_template_h.exe
+	$** src\templates
 
+gen_template_h.exe: src\gen_template_h.c
+	$(cl) $(cflags) $(cppflags) $** -Fe$@ -link $(lflags)
+
+gendlopen.exe: src\main.cpp src\clang-ast.cpp src\generate.cpp src\parse.cpp src\tokenize.cpp src\utils.cpp
+	$(cl) $(cxxflags) $(cppflags) $** -Fe$@ -link $(lflags)
+
+src\generate.cpp: template.h
+
+.cpp.obj:
+	$(cl) $(cxxflags) $(cppflags) -c $*.cpp

@@ -94,7 +94,7 @@ Compiling
 
 `./configure && make && make test`
 
-On Windows you can simply run `nmake`
+On Windows you can run `nmake -f NMakefile`
 
 To cross-compiling with MinGW and clang-cl:
 ``` sh

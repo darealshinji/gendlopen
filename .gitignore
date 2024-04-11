@@ -12,6 +12,7 @@ examples/uuid_nix
 src/gendlopen
 src/template.h
 src/Makefile
+template.h
 
 test/Makefile
 test/c_auto_free

@@ -15,7 +15,7 @@ ifdef MAKEDIR: # gmake: false; nmake: unused target
 !include nmake.mk
 
 
-GENDLOPEN = ..\src\gendlopen.exe
+GENDLOPEN = ..\gendlopen.exe
 
 
 default: uuid_win.exe
