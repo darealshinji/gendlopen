@@ -102,7 +102,7 @@ libhelloworld_dl.c:
 	  --include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
 
 c_test.h:
-	$(GENHDR) $@
+	$(GENHDR) $@ -DGDO_WRAP_FUNCTIONS
 
 c_auto_free.h:
 	$(GENHDR) $@ --skip-parameter-names

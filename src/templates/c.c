@@ -185,20 +185,18 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
         return false;
     }
 
-#if defined(GDO_NO_DLMOPEN) || !defined(_GNU_SOURCE)
-    /* dlmopen() disabled */
-    (GDO_UNUSED_REF) new_namespace;
-    gdo_hndl.handle = dlopen(filename, flags);
-#else
+#ifdef GDO_HAVE_DLMOPEN
     /* call dlmopen() for new namespace, otherwise dlopen() */
     if (new_namespace) {
         gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
     } else {
         gdo_hndl.handle = dlopen(filename, flags);
     }
+#else
+    /* no dlmopen() */
+    (GDO_UNUSED_REF) new_namespace;
+    gdo_hndl.handle = dlopen(filename, flags);
 #endif
-
-
 
     /* check if dl(m)open() was successful */
     if (!gdo_lib_is_loaded()) {
@@ -638,6 +636,14 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
     /* free library handle and exit */
     gdo_free_lib();
     exit(1);
+}
+
+#elif defined(GDO_WRAP_FUNCTIONS)
+
+GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
+{
+    (GDO_UNUSED_REF) function;
+    (GDO_UNUSED_REF) symbol;
 }
 
 #endif //GDO_ENABLE_AUTOLOAD

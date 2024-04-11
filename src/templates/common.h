@@ -10,14 +10,19 @@
 #ifdef GDO_WINAPI
     #include <windows.h>
 #else
-    #if defined(__GLIBC__) && !defined(_GNU_SOURCE)
-        #define _GNU_SOURCE 1
-    #endif
     #include <link.h>
     #include <dlfcn.h>
 #endif
 #ifndef __cplusplus
     #include <stdbool.h>
+#endif
+
+/* whether to use dlmopen(3) GNU extension */
+#if defined(HAVE_DLMOPEN) || (defined(_GNU_SOURCE) && defined(__GLIBC__))
+    #define GDO_HAVE_DLMOPEN
+#endif
+#if defined(GDO_HAVE_DLMOPEN) && defined(GDO_NO_DLMOPEN)
+    #undef GDO_HAVE_DLMOPEN
 #endif
 
 /* dlopen(3) flags for compatibility with LoadLibrary() */

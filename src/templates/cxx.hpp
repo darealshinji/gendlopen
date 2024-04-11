@@ -526,17 +526,17 @@ private:
     {
         m_flags = flags;
 
-#if defined(GDO_NO_DLMOPEN) || !defined(_GNU_SOURCE)
-        /* dlmopen() disabled */
-        (UNUSED_REF) new_namespace;
-        m_handle = ::dlopen(filename, m_flags);
-#else
+#ifdef GDO_HAVE_DLMOPEN
         /* dlmopen() for new namespace or dlopen() */
         if (new_namespace) {
             m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);
         } else {
             m_handle = ::dlopen(filename, m_flags);
         }
+#else
+        /* no dlmopen() */
+        (UNUSED_REF) new_namespace;
+        m_handle = ::dlopen(filename, m_flags);
 #endif
     }
 
