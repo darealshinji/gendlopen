@@ -184,7 +184,7 @@ else
         DLL_LDFLAGS="-shared -Wl,-soname,$HW_DLL"
     fi
 
-    DLL_CFLAGS="-fPIC"
+    DLL_CFLAGS="-fPIC -fvisibility=hidden"
     TEST_LDFLAGS="-Wl,-rpath,'\$\$ORIGIN'"
     TEST_CXX11="-std=c++11"
 fi
@@ -225,27 +225,26 @@ fi
 # output
 
 cat <<EOF > settings.mk
-CC        = $CC
-CXX       = $CXX
-CCBUILD   = $CCBUILD
-AR        = $AR
-
-GENDLOPEN = $GENDLOPEN
-GEN_TEMPL = $GEN_TEMPL
-
-CFLAGS    = $CFLAGS
-CXXFLAGS  = $CXXFLAGS
-CPPFLAGS  = $CPPFLAGS
-LDFLAGS   = $LDFLAGS
-
-HW_DLL    = $HW_DLL
-
+CC            = $CC
+CXX           = $CXX
+CCBUILD       = $CCBUILD
+AR            = $AR
+GENDLOPEN     = $GENDLOPEN
+GEN_TEMPL     = $GEN_TEMPL
+CFLAGS        = $CFLAGS
+CXXFLAGS      = $CXXFLAGS
+CPPFLAGS      = $CPPFLAGS
+LDFLAGS       = $LDFLAGS
+HW_DLL        = $HW_DLL
 UNICODE_FLAGS = $UNICODE_FLAGS
 DLL_CFLAGS    = $DLL_CFLAGS
 DLL_LDFLAGS   = $DLL_LDFLAGS
 TEST_LDFLAGS  = $TEST_LDFLAGS
 TEST_CXX11    = $TEST_CXX11
+
 EOF
+
+cat settings.mk
 
 echo "create Makefile"
 cp -f Makefile.in Makefile
