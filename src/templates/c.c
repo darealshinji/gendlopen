@@ -640,21 +640,35 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
     exit(1);
 }
 
-#else //!GDO_ENABLE_AUTOLOAD
-
-#define gdo_quick_load(a,b)  /**/
-
-#endif //!GDO_ENABLE_AUTOLOAD
+#endif //GDO_ENABLE_AUTOLOAD
 /*****************************************************************************/
+
+
+
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+
+GDO_LINKAGE void gdo_abort(const gdo_char_t *symbol)
+{
+#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+    gdo_char_t buf[128];
+    _sntprintf_s(buf, 128, _TRUNCATE, L"symbol `%Ts' not loaded", symbol);
+    MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
+#elif defined(GDO_OS_WIN32) && defined(_UNICODE)
+    fwprintf(stderr, L"error: symbol `%Ts' not loaded\n", symbol);
+#else
+    fprintf(stderr, "error: symbol `%s' not loaded\n", symbol);
+#endif
+
+    abort();
+}
 
 
 /* wrapped functions
  * (creating wrapped symbols doesn't work well with pointers to objects) */
-
-#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 @
 GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
     gdo_quick_load("%%symbol%%", _T("%%symbol%%"));@
+    if (!gdo_hndl.%%symbol%%_loaded_) gdo_abort(_T("%%symbol%%"));@
     %%return%% gdo_hndl.%%symbol%%_ptr_(%%notype_args%%);@
 }
 
