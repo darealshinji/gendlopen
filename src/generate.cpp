@@ -105,7 +105,7 @@ std::string create_note(int &argc, char ** &argv)
     struct tm tm = {};
     time_t t = std::time(nullptr);
 
-    if (localtime_wrapper(&t, &tm)) [[likely]]
+    if (localtime_wrapper(&t, &tm))
     {
 #if !defined(_WIN32)
         out.imbue(std::locale("C"));

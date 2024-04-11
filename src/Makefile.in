@@ -1,0 +1,23 @@
+
+OBJS = main.o clang-ast.o generate.o parse.o tokenize.o utils.o
+
+
+all: gendlopen
+
+clean:
+	rm -f gendlopen gen_template_h template.h *.exe *.o
+
+distclean: clean
+	rm -f Makefile
+
+gendlopen: $(OBJS)
+	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+
+gen_template_h: gen_template_h.c
+	$(CCBUILD) -o $@ gen_template_h.c
+
+generate.cpp: template.h
+
+template.h: $(GEN_TEMPL)
+	./$(GEN_TEMPL) templates
+

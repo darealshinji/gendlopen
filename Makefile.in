@@ -1,0 +1,26 @@
+
+
+all: gendlopen
+
+clean-test:
+	cd test && $(MAKE) clean
+
+clean:
+	cd src && $(MAKE) clean
+	cd test && $(MAKE) clean
+	rm -f settings.mk
+
+distclean: clean
+	cd src && $(MAKE) distclean
+	cd test && $(MAKE) distclean
+	rm -f Makefile
+
+gendlopen:
+	cd src && $(MAKE)
+
+test: gendlopen
+	cd test && $(MAKE)
+
+run_tests: test
+	cd test && $(MAKE) run_tests
+

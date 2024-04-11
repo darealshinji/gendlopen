@@ -1,0 +1,138 @@
+
+CXXFLAGS += $(TEST_CXX11)
+LDFLAGS  += $(TEST_LDFLAGS)
+
+BINS = \
+	c_test \
+	c_auto_free \
+	c_autoload \
+	c_minimal \
+	c_win32_wide \
+	c_multi \
+	cxx_test \
+	cxx_autoload \
+	cxx_minimal \
+	cxx_win32_wide \
+	cxx_multi \
+	helloworld_example_dl \
+	$(NULL)
+
+GENHDR = $(GENDLOPEN) -i helloworld.txt -f -o
+
+
+
+all: $(BINS)
+
+$(BINS): $(HW_DLL)
+
+clean:
+	rm -f $(HW_DLL) $(BINS) *.exe *.o *.obj *.a *.lib *.dll *.so *.exp
+	rm -f c_*.h cxx_*.hpp c_multi.c cxx_multi.cpp libhelloworld_dl.c libhelloworld_dl.h
+
+distclean: clean
+	rm -f Makefile
+
+run_tests: $(BINS)
+	for x in $(BINS) ; do \
+	  echo $$x ; ./$$x ; echo ; \
+	done
+
+
+# DLL
+
+$(HW_DLL):
+	$(CC) $(DLL_CFLAGS) $(CFLAGS) $(CPPFLAGS) helloworld.c -o $@ $(LDFLAGS) $(DLL_LDFLAGS)
+
+
+# C test files
+
+c_test: c_test.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) c_test.c -o $@ $(LDFLAGS)
+
+c_auto_free: c_auto_free.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) c_auto_free.c -o $@ $(LDFLAGS)
+
+c_autoload: c_autoload.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) c_autoload.c -o $@ $(LDFLAGS)
+
+c_minimal: c_minimal.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) c_minimal.c -o $@ $(LDFLAGS)
+
+c_win32_wide: c_win32_wide.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(UNICODE_FLAGS) c_win32_wide.c -o $@ $(LDFLAGS)
+
+c_multi: c_multi.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) c_multi_part1.c c_multi_part2.c c_multi.c -o $@ $(LDFLAGS)
+
+
+
+# C++ test files
+
+cxx_test: cxx_test.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_test.cpp -o $@ $(LDFLAGS)
+
+cxx_autoload: cxx_autoload.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_autoload.cpp -o $@ $(LDFLAGS)
+
+cxx_minimal: cxx_minimal.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_minimal.cpp -o $@ $(LDFLAGS)
+
+cxx_win32_wide: cxx_win32_wide.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_win32_wide.cpp -o $@ $(LDFLAGS)
+
+cxx_multi: cxx_multi.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_multi_part1.cpp cxx_multi_part2.cpp cxx_multi.cpp -o $@ $(LDFLAGS)
+
+
+# static fake library test
+
+libhelloworld_dl.o: libhelloworld_dl.c
+
+libhelloworld_dl.a: libhelloworld_dl.o
+	$(AR) cr $@ libhelloworld_dl.o
+
+helloworld_example_dl: libhelloworld_dl.a
+	$(CC) $(CFLAGS) $(CPPFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(LDFLAGS)
+
+
+# generate headers
+
+libhelloworld_dl.c:
+	$(GENHDR) $@ --separate --library=API:0:helloworld \
+	  --include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
+
+c_test.h:
+	$(GENHDR) $@
+
+c_auto_free.h:
+	$(GENHDR) $@ --skip-parameter-names
+
+c_autoload.h:
+	$(GENHDR) $@
+
+c_minimal.h:
+	$(GENHDR) $@ --format=minimal
+
+c_win32_wide.h:
+	$(GENHDR) $@
+
+c_multi.h:
+	$(GENHDR) $@ --separate --library=API:0:helloworld \
+	  --include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD
+
+cxx_test.hpp:
+	$(GENHDR) $@ --format=C++ --skip-parameter-names
+
+cxx_autoload.hpp:
+	$(GENHDR) $@ --format=C++ --library=API:0:helloworld
+
+cxx_minimal.hpp:
+	$(GENHDR) $@ --format=minimal-C++
+
+cxx_win32_wide.hpp:
+	$(GENHDR) $@ --format=C++
+
+cxx_multi.hpp:
+	$(GENHDR) $@ --format=C++ --separate --library=API:0:helloworld \
+	  --include=helloworld.h -DGDO_ENABLE_AUTOLOAD
+

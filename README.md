@@ -7,7 +7,7 @@ This is still experimental and the main goal is to simply try out how much can
 be automized and find out how useful it is.
 
 Features:
- * no build dependencies other than a C and C++ compiler
+ * no build dependencies other than a C/C++ compiler and make
  * can generate code for C and C++
  * win32 API `LoadLibraryEx()` and POSIX `dlopen()`
  * wide and narrow characters on win32 API
@@ -92,27 +92,29 @@ in the template files in `src/templates` as well as in the generated output file
 Compiling
 ---------
 
-You can use GNU make or on Windows you can use Microsoft nmake.
+`./configure && make && make test`
 
-To cross-compile the tool with GNU make you must set `$CC` and `$CXX` or `$CLANG_CL`
-to the host compiler and `$CCAUX` to the build C compiler:
+On Windows you can simply run `nmake`
+
+To cross-compiling with MinGW and clang-cl:
 ``` sh
-# MinGW
-pfx=x86_64-w64-mingw32
-make CC=$pfx-gcc CXX=$pfx-g++ CCAUX=gcc
-
-# clang-cl
-make CLANG_CL=clang-cl
+./configure host=x86_64-w64-mingw32 && make
+./configure cl=clang-cl && make
 ```
 
-To cross-compile the examples you must compile the native tool first:
+Cross-compiling tests:
 ```sh
+# compile the native tool first
+./configure && make
+cp src/gendlopen xgendlopen
+
 # MinGW
-pfx=x86_64-w64-mingw32
-make && make CC=$pfx-gcc CXX=$pfx-g++ check
+./configure gdo=xgendlopen host=x86_64-w64-mingw32
+make clean && make && make test
 
 # clang-cl
-make && make CLANG_CL=clang-cl check
+./configure gdo=xgendlopen cl=clang-cl
+make clean && make && make test
 ```
 
 

@@ -1,0 +1,10 @@
+
+
+all: gendlopen
+
+clean:
+	cd src && $(MAKE) clean
+
+gendlopen:
+	cd src && $(MAKE)
+

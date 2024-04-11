@@ -12,7 +12,7 @@ ifdef MAKEDIR: # gmake: false; nmake: unused target
 # Microsoft nmake
 #
 
-!include ..\nmake.mk
+!include nmake.mk
 
 
 GENDLOPEN = ..\src\gendlopen.exe
@@ -34,7 +34,7 @@ else
 # GNU make
 #
 
-include ../gmake.mk
+include gmake.mk
 
 
 ifneq ($(CLANG_CL),)

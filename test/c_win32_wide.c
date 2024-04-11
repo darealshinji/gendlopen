@@ -1,3 +1,15 @@
+#ifndef _WIN32
+
+#include <stdio.h>
+
+int main()
+{
+    puts("not win32");
+    return 0;
+}
+
+#else
+
 #include "helloworld.h"
 
 /* this is a win32 API example using wide characters */
@@ -6,7 +18,7 @@
 #define GDO_DEFAULT_LIB  L"libhelloworld-0.dll"
 
 /* include generated header file */
-#include "example_wide.h"
+#include "c_win32_wide.h"
 
 
 void cb(const char *msg)
@@ -46,3 +58,5 @@ int wmain()
 
     return 0;
 }
+
+#endif

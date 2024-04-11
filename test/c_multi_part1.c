@@ -5,8 +5,8 @@
 #include "helloworld.h"
 #include "c_multi.h"
 
-extern void call2(helloworld *hw);
 
+extern void call2(helloworld *hw);
 
 void cb(const char *msg)
 {
