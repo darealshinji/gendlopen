@@ -5,8 +5,8 @@ set -e
 # it just sets the right flags for the Makefiles
 
 GENDLOPEN="../src/gendlopen"
-GEN_TEMPL="gen_template_h.sh"
 def_flags="yes"
+check_xxd="yes"
 
 # parse arguments
 for i in "$@"
@@ -52,7 +52,7 @@ EOL
     std=*) cxxstd="${i#*=}" ;;
 
     --no-xxd)
-        GEN_TEMPL="gen_template_h"
+        check_xxd="no"
         ;;
 
     --no-default-flags)
@@ -65,6 +65,17 @@ EOL
     ;;
 esac
 done
+
+# xxd
+if [ "x$check_xxd" = "xyes" ]; then
+    if which xxd 2>/dev/null >/dev/null ; then
+        GEN_TEMPL="gen_template_h.sh"
+    else
+        GEN_TEMPL="gen_template_h"
+    fi
+else
+    GEN_TEMPL="gen_template_h.sh"
+fi
 
 # clang-cl / MSVC
 if [ "x$CL" != "x" ]; then
