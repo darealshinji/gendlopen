@@ -118,7 +118,7 @@ c_win32_wide.h:
 
 c_multi.h:
 	$(GENHDR) $@ --separate --library=API:0:helloworld \
-	  --include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD
+	  --include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 
 cxx_test.hpp:
 	$(GENHDR) $@ --format=C++ --skip-parameter-names
@@ -134,5 +134,5 @@ cxx_win32_wide.hpp:
 
 cxx_multi.hpp:
 	$(GENHDR) $@ --format=C++ --separate --library=API:0:helloworld \
-	  --include=helloworld.h -DGDO_ENABLE_AUTOLOAD
+	  --include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 

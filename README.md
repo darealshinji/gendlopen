@@ -109,11 +109,11 @@ Cross-compiling tests:
 cp src/gendlopen xgendlopen
 
 # MinGW
-./configure gdo=xgendlopen host=x86_64-w64-mingw32
+./configure gdo="$PWD/xgendlopen" host=x86_64-w64-mingw32
 make clean && make && make test
 
 # clang-cl
-./configure gdo=xgendlopen cl=clang-cl
+./configure gdo="$PWD/xgendlopen" cl=clang-cl
 make clean && make && make test
 ```
 
