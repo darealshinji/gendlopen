@@ -1,7 +1,7 @@
 cl       = cl -nologo
 cppflags = -DWIN32_LEAN_AND_MEAN
 cflags   = -W3 -O2
-cxxflags = -W3 -O2 -std:c++latest -EHsc
+cxxflags = -W3 -O2 -std:c++latest -EHsc -I.
 lflags   = -subsystem:console -release
 
 
