@@ -42,6 +42,21 @@ test/cxx_win32_wide.hpp
 test/helloworld_example_dl
 test/libhelloworld_dl.c
 test/libhelloworld_dl.h
+/c_auto_free.h
+/c_autoload.h
+/c_minimal.h
+/c_multi.c
+/c_multi.h
+/c_test.h
+/c_win32_wide.h
+/cxx_autoload.hpp
+/cxx_minimal.hpp
+/cxx_multi.cpp
+/cxx_multi.hpp
+/cxx_test.hpp
+/cxx_win32_wide.hpp
+/libhelloworld_dl.c
+/libhelloworld_dl.h
 
 # binary files
 *.o
