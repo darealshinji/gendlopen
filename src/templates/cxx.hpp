@@ -414,7 +414,7 @@ private:
         }
 
         DWORD len = 260; /* MAX_PATH */
-        T *origin = new T(len * sizeof(T));
+        T *origin = new T[len * sizeof(T)]();
         ::memset(origin, 0, len * sizeof(T));
 
         if (get_module_filename(m_handle, origin, len-1) == 0) {
@@ -430,7 +430,7 @@ private:
             delete origin;
 
             len = 32*1024;
-            origin = new T(len * sizeof(T));
+            origin = new T[len * sizeof(T)]();
             ::memset(origin, 0, len * sizeof(T));
 
             if (get_module_filename(m_handle, origin, len-1) == 0) {
