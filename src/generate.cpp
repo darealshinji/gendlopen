@@ -165,7 +165,7 @@ bool open_fstream(cio::ofstream &ofs, const std::string &ofile, bool force)
 {
     /* check if file already exists by opening it for reading */
     if (!force && ofile != "-") {
-        ofs.open(ofile, std::ios::in);
+        ofs.open(ofile);
 
         if (ofs.is_open()) {
             std::cerr << "error: file already exists: " << ofile << std::endl;
@@ -176,7 +176,7 @@ bool open_fstream(cio::ofstream &ofs, const std::string &ofile, bool force)
     }
 
     /* open file for writing and truncate it */
-    ofs.open(ofile, std::ios::out | std::ios::trunc);
+    ofs.open(ofile, std::ios::out | std::ios::binary | std::ios::trunc);
 
     if (!ofs.is_open()) {
         std::cerr << "error: failed to open file for writing: " << ofile << std::endl;

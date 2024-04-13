@@ -55,7 +55,7 @@ public:
     ifstream() {}
     ~ifstream() {}
 
-    bool open(const std::string &file)
+    bool open(const std::string &file, std::ios::openmode mode = std::ios::in | std::ios::binary)
     {
         close();
 
@@ -64,7 +64,7 @@ public:
             m_stdin = true;
         } else {
             /* file */
-            m_ifs.open(file.c_str());
+            m_ifs.open(file.c_str(), mode);
         }
 
         /* clear buffer */
@@ -186,7 +186,7 @@ public:
     ofstream() {}
     ~ofstream() {}
 
-    bool open(const std::string &file, std::ios::openmode mode = std::ios::out)
+    bool open(const std::string &file, std::ios::openmode mode = std::ios::out | std::ios::binary)
     {
         if (file == "-") {
             m_stdout = true;
