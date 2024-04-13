@@ -56,7 +56,7 @@ namespace /* anonymous */
 }
 
 /* parse the template data */
-std::string gendlopen::parse(const std::string &data)
+std::string gendlopen::parse(std::string &data)
 {
     std::string buf, line;
     bool custom_prefix = false;
@@ -87,6 +87,9 @@ std::string gendlopen::parse(const std::string &data)
     if (m_name_upper != "GDO") {
         custom_prefix = true;
     }
+
+    /* change line endings from \r\n to \n */
+    utils::replace("\r\n", "\n", data);
 
     /* read data character by character */
     for (const char *p = data.c_str(); *p != 0; p++)

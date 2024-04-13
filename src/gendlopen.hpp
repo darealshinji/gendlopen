@@ -70,7 +70,7 @@ private:
     bool tokenize_input();
 
     /* parse.cpp */
-    std::string parse(const std::string &data);
+    std::string parse(std::string &data);
 
 public:
 
