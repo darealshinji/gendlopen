@@ -1,101 +1,145 @@
 
-CXXFLAGS += $(TEST_CXX11)
-LDFLAGS  += $(TEST_LDFLAGS)
-
 BINS = \
-	c_test \
-	c_auto_free \
-	c_autoload \
-	c_minimal \
-	c_win32_wide \
-	c_multi \
-	cxx_test \
-	cxx_autoload \
-	cxx_minimal \
-	cxx_win32_wide \
-	cxx_multi \
-	helloworld_example_dl \
-	$(NULL)
+	c_test$(EXEEXT) \
+	c_auto_free$(EXEEXT) \
+	c_autoload$(EXEEXT) \
+	c_minimal$(EXEEXT) \
+	c_win32_wide$(EXEEXT) \
+	c_multi$(EXEEXT) \
+	cxx_test$(EXEEXT) \
+	cxx_autoload$(EXEEXT) \
+	cxx_minimal$(EXEEXT) \
+	cxx_win32_wide$(EXEEXT) \
+	cxx_multi$(EXEEXT) \
+	helloworld_example_dl$(EXEEXT)
+
+GEN_SOURCES = \
+	libhelloworld_dl.c \
+	libhelloworld_dl.h \
+	c_test.h \
+	c_auto_free.h \
+	c_autoload.h \
+	c_minimal.h \
+	c_win32_wide.h \
+	c_multi.h \
+	cxx_test.hpp \
+	cxx_autoload.hpp \
+	cxx_minimal.hpp \
+	cxx_win32_wide.hpp \
+	cxx_multi.hpp
 
 GENHDR = $(GENDLOPEN) -i helloworld.txt -f -o
+WINE = WINEDEBUG=-all wine
 
 
 
 all: $(BINS)
 
-$(BINS): $(HW_DLL)
+$(BINS): $(DLL) $(GEN_SOURCES)
 
 clean:
-	rm -f $(HW_DLL) $(BINS) *.exe *.o *.obj *.a *.lib *.dll *.so *.exp
-	rm -f c_*.h cxx_*.hpp c_multi.c cxx_multi.cpp libhelloworld_dl.c libhelloworld_dl.h
-
-distclean: clean
-	rm -f Makefile
+	rm -f $(DLL) $(BINS) *.exe *.o *.obj *.a *.lib *.dll *.so *.exp
+	rm -f $(GEN_SOURCES)
 
 run_tests: $(BINS)
 	for x in $(BINS) ; do \
 	  echo $$x ; ./$$x ; echo ; \
 	done
 
+run_tests_wine: $(BINS)
+	for x in $(BINS) ; do \
+	  echo $$x ; $(WINE) $$x ; echo ; \
+	done
+
 
 # DLL
 
-$(HW_DLL):
-	$(CC) $(DLL_CFLAGS) $(CFLAGS) $(CPPFLAGS) helloworld.c -o $@ $(LDFLAGS) $(DLL_LDFLAGS)
+$(DLL):
+	$(CC) $(DLL_CFLAGS) helloworld.c -o $@ $(TEST_LDFLAGS) $(DLL_LDFLAGS)
 
 
 # C test files
 
-c_test: c_test.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) c_test.c -o $@ $(LDFLAGS)
+c_test$(EXEEXT): c_test.h
+	$(CC) $(TEST_CFLAGS) c_test.c -o $@ $(TEST_LDFLAGS)
 
-c_auto_free: c_auto_free.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) c_auto_free.c -o $@ $(LDFLAGS)
+c_auto_free$(EXEEXT): c_auto_free.h
+	$(CC) $(TEST_CFLAGS) c_auto_free.c -o $@ $(TEST_LDFLAGS)
 
-c_autoload: c_autoload.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) c_autoload.c -o $@ $(LDFLAGS)
+c_autoload$(EXEEXT): c_autoload.h
+	$(CC) $(TEST_CFLAGS) c_autoload.c -o $@ $(TEST_LDFLAGS)
 
-c_minimal: c_minimal.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) c_minimal.c -o $@ $(LDFLAGS)
+c_minimal$(EXEEXT): c_minimal.h
+	$(CC) $(TEST_CFLAGS) c_minimal.c -o $@ $(TEST_LDFLAGS)
 
-c_win32_wide: c_win32_wide.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(UNICODE_FLAGS) c_win32_wide.c -o $@ $(LDFLAGS)
+c_win32_wide$(EXEEXT): c_win32_wide.h
+	$(CC) $(TEST_CFLAGS) $(UNICODE_FLAGS) c_win32_wide.c -o $@ $(TEST_LDFLAGS)
 
-c_multi: c_multi.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) c_multi_part1.c c_multi_part2.c c_multi.c -o $@ $(LDFLAGS)
 
+# C multiple parts test
+
+c_multi_part1.c c_multi_part2.c c_multi.c: c_multi.h
+
+c_multi.o: c_multi.c
+	$(CC) $(TEST_CFLAGS) -c c_multi.c -o $@
+
+c_multi_part1.o: c_multi_part1.c
+	$(CC) $(TEST_CFLAGS) -c c_multi_part1.c -o $@
+
+c_multi_part2.o: c_multi_part2.c
+	$(CC) $(TEST_CFLAGS) -c c_multi_part2.c -o $@
+
+c_multi$(EXEEXT): c_multi_part1.o c_multi_part2.o c_multi.o
+	$(CC) c_multi_part1.o c_multi_part2.o c_multi.o -o $@ $(TEST_LDFLAGS)
 
 
 # C++ test files
 
-cxx_test: cxx_test.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_test.cpp -o $@ $(LDFLAGS)
+cxx_test$(EXEEXT): cxx_test.hpp
+	$(CXX) $(TEST_CXXFLAGS) cxx_test.cpp -o $@ $(TEST_LDFLAGS)
 
-cxx_autoload: cxx_autoload.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_autoload.cpp -o $@ $(LDFLAGS)
+cxx_autoload$(EXEEXT): cxx_autoload.hpp
+	$(CXX) $(TEST_CXXFLAGS) cxx_autoload.cpp -o $@ $(TEST_LDFLAGS)
 
-cxx_minimal: cxx_minimal.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_minimal.cpp -o $@ $(LDFLAGS)
+cxx_minimal$(EXEEXT): cxx_minimal.hpp
+	$(CXX) $(TEST_CXXFLAGS) cxx_minimal.cpp -o $@ $(TEST_LDFLAGS)
 
-cxx_win32_wide: cxx_win32_wide.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_win32_wide.cpp -o $@ $(LDFLAGS)
+cxx_win32_wide$(EXEEXT): cxx_win32_wide.hpp
+	$(CXX) $(TEST_CXXFLAGS) cxx_win32_wide.cpp -o $@ $(TEST_LDFLAGS)
 
-cxx_multi: cxx_multi.hpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) cxx_multi_part1.cpp cxx_multi_part2.cpp cxx_multi.cpp -o $@ $(LDFLAGS)
+
+# C++ multiple parts test
+
+cxx_multi_part1.cpp cxx_multi_part2.cpp cxx_multi.cpp: cxx_multi.hpp
+
+cxx_multi.o: cxx_multi.cpp
+	$(CXX) $(TEST_CXXFLAGS) -c cxx_multi.cpp -o $@
+
+cxx_multi_part1.o: cxx_multi_part1.cpp
+	$(CXX) $(TEST_CXXFLAGS) -c cxx_multi_part1.cpp -o $@
+
+cxx_multi_part2.o: cxx_multi_part2.cpp
+	$(CXX) $(TEST_CXXFLAGS) -c cxx_multi_part2.cpp -o $@
+
+cxx_multi$(EXEEXT): cxx_multi_part1.o cxx_multi_part2.o cxx_multi.o
+	$(CXX) cxx_multi_part1.o cxx_multi_part2.o cxx_multi.o -o $@ $(TEST_LDFLAGS)
 
 
 # static fake library test
 
 libhelloworld_dl.o: libhelloworld_dl.c
+	$(CC) $(TEST_CFLAGS) -c libhelloworld_dl.c -o $@
 
 libhelloworld_dl.a: libhelloworld_dl.o
 	$(AR) cr $@ libhelloworld_dl.o
 
-helloworld_example_dl: libhelloworld_dl.a
-	$(CC) $(CFLAGS) $(CPPFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(LDFLAGS)
+helloworld_example_dl$(EXEEXT): libhelloworld_dl.a
+	$(CC) $(TEST_CFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(TEST_LDFLAGS)
 
 
 # generate headers
+
+libhelloworld_dl.h: libhelloworld_dl.c
 
 libhelloworld_dl.c:
 	$(GENHDR) $@ --separate --library=API:0:helloworld \

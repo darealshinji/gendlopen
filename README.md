@@ -110,11 +110,11 @@ cp src/gendlopen xgendlopen
 
 # MinGW
 ./configure gdo="$PWD/xgendlopen" host=x86_64-w64-mingw32
-make clean && make && make test
+make clean && make check
 
 # clang-cl
-./configure gdo="$PWD/xgendlopen" cl=clang-cl
-make clean && make && make test
+./configure gdo="$PWD/xgendlopen" cl="clang-cl -fuse-ld=lld"
+make clean && make check
 ```
 
 

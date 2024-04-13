@@ -1,14 +1,53 @@
 cl       = cl -nologo
+lib_exe  = lib -nologo
 cppflags = -DWIN32_LEAN_AND_MEAN
 cflags   = -W3 -O2
-cxxflags = -W3 -O2 -std:c++latest -EHsc -I.
+cxxflags = -W3 -O2 -std:c++latest -EHsc
 lflags   = -subsystem:console -release
+
+test_bins = \
+	c_test.exe \
+	c_auto_free.exe \
+	c_autoload.exe \
+	c_minimal.exe \
+	c_win32_wide.exe \
+	c_multi.exe \
+	cxx_test.exe \
+	cxx_autoload.exe \
+	cxx_minimal.exe \
+	cxx_win32_wide.exe \
+	cxx_multi.exe \
+	helloworld_example_dl.exe
+
+cleanfiles_check = \
+	$(test_bins) \
+	c_*.obj \
+	cxx_*.obj \
+	c_*.h \
+	cxx_*.hpp \
+	c_multi.c \
+	cxx_multi.cpp \
+	libhelloworld-0.* \
+	libhelloworld_dl.*
+
+gen_hdr     = gendlopen.exe -i test/helloworld.txt -f -o
+cl_test_c   = $(cl) $(cflags) $(cppflags) -I. -Itest test/$*.c -Fe$@ -link $(lflags)
+cl_test_cxx = $(cl) $(cxxflags) $(cppflags) -I. -Itest test/$*.cpp -Fe$@ -link $(lflags)
+
 
 
 all: gendlopen.exe
 
-clean:
+clean-check:
+	-del /q $(cleanfiles_check)
+
+clean: clean-check
 	-del /q *.exe *.obj template.h
+
+check: $(test_bins)
+
+
+## main program ##
 
 template.h: gen_template_h.exe
 	$** src\templates
@@ -17,9 +56,82 @@ gen_template_h.exe: src\gen_template_h.c
 	$(cl) $(cflags) $(cppflags) $** -Fe$@ -link $(lflags)
 
 gendlopen.exe: src\main.cpp src\clang-ast.cpp src\generate.cpp src\parse.cpp src\tokenize.cpp src\utils.cpp
-	$(cl) $(cxxflags) $(cppflags) $** -Fe$@ -link $(lflags)
+	$(cl) $(cxxflags) $(cppflags) -I. $** -Fe$@ -link $(lflags)
 
 src\generate.cpp: template.h
 
-.cpp.obj:
-	$(cl) $(cxxflags) $(cppflags) -c $*.cpp
+
+## tests ##
+
+$(test_bins): gendlopen.exe libhelloworld-0.dll
+
+run_tests: $(test_bins)
+	for %%x in ( $** ) do %%x
+
+
+## dll ##
+
+libhelloworld-0.dll:
+	$(cl) $(cflags) $(cppflags) -Itest -DBUILDING_DLL -LD test/helloworld.c -Fe$@
+
+
+## C tests ##
+
+c_test.exe:
+	$(gen_hdr) $*.h -DGDO_WRAP_FUNCTIONS && $(cl_test_c)
+
+c_auto_free.exe:
+	$(gen_hdr) $*.h --skip-parameter-names && $(cl_test_c)
+
+c_autoload.exe:
+	$(gen_hdr) $*.h && $(cl_test_c)
+
+c_minimal.exe:
+	$(gen_hdr) $*.h --format=minimal && $(cl_test_c)
+
+c_win32_wide.exe:
+	$(gen_hdr) $*.h && $(cl) $(cflags) $(cppflags) -D_UNICODE -DUNICODE -I. -Itest test/$*.c -Fe$@ -link $(lflags)
+
+c_multi.exe:
+	$(gen_hdr) $*.h --separate --library=API:0:helloworld --include=helloworld.h \
+	  -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC && \
+	$(cl) $(cflags) $(cppflags) -D_UNICODE -DUNICODE -I. -Itest \
+	  c_multi.c test/c_multi_part1.c test/c_multi_part2.c -Fe$@ -link $(lflags)
+
+
+## C++ tests ##
+
+cxx_test.exe:
+	$(gen_hdr) $*.hpp --format=C++ --skip-parameter-names && $(cl_test_cxx)
+
+cxx_autoload.exe:
+	$(gen_hdr) $*.hpp --format=C++ --library=API:0:helloworld && $(cl_test_cxx)
+
+cxx_minimal.exe:
+	$(gen_hdr) $*.hpp --format=minimal-C++ && $(cl_test_cxx)
+
+cxx_win32_wide.exe:
+	$(gen_hdr) $*.hpp --format=C++ && \
+	$(cl) $(cxxflags) $(cppflags) -D_UNICODE -DUNICODE -I. -Itest test/$*.cpp -Fe$@ -link $(lflags)
+
+cxx_multi.exe:
+	$(gen_hdr) $*.hpp --format=C++ --separate --library=API:0:helloworld --include=helloworld.h \
+	  -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC && \
+	$(cl) $(cxxflags) $(cppflags) -D_UNICODE -DUNICODE -I. -Itest \
+	  cxx_multi.cpp test/cxx_multi_part1.cpp test/cxx_multi_part2.cpp -Fe$@ -link $(lflags)
+
+
+# static fake library test
+
+libhelloworld_dl.obj:
+	$(gen_hdr) $*.h --separate --library=API:0:helloworld --include=helloworld.h \
+	  -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD && \
+	$(cl) $(cflags) $(cppflags) -I. -Itest -c libhelloworld_dl.c -Fe$@
+
+libhelloworld_dl.lib: libhelloworld_dl.obj
+	$(lib_exe) -out:$@ libhelloworld_dl.obj
+
+helloworld_example_dl.exe: libhelloworld_dl.lib
+	$(cl) $(cflags) $(cppflags) -I. -Itest -DBUILDING_STATIC test/helloworld_example.c \
+	  -Fe$@ libhelloworld_dl.lib -link $(lflags)
+

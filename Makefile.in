@@ -5,22 +5,24 @@ all: gendlopen
 clean-test:
 	cd test && $(MAKE) clean
 
-clean:
+clean-src:
 	cd src && $(MAKE) clean
-	cd test && $(MAKE) clean
+
+clean: clean-test clean-src
 	rm -f settings.mk
 
 distclean: clean
-	cd src && $(MAKE) distclean
-	cd test && $(MAKE) distclean
-	rm -f Makefile
+	rm -f src/Makefile test/Makefile Makefile
 
 gendlopen:
 	cd src && $(MAKE)
 
-test: gendlopen
+check: $(GENDLOPEN)
 	cd test && $(MAKE)
 
 run_tests: test
 	cd test && $(MAKE) run_tests
+
+run_tests_wine: test
+	cd test && $(MAKE) run_tests_wine
 

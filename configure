@@ -1,11 +1,9 @@
 #!/bin/sh
-set -e
 
-# this script doesn't do any thorough checks,
-# it just sets the right flags for the Makefiles
-
-GENDLOPEN="../src/gendlopen"
-def_flags="yes"
+use_def_cflags="yes"
+use_def_cxxflags="yes"
+use_def_cppflags="yes"
+use_def_ldflags="yes"
 check_xxd="yes"
 
 # parse arguments
@@ -13,68 +11,108 @@ for i in "$@"
 do
 case $i in
     --help|-h)
-    cat <<EOL
+        cat <<EOL
 usage: $0 OPTIONS
 
-compilers:     cc=..  cxx=..  ccbuild=..
-host triplet:  host=..
-clang-cl:      cl=..
-flags:         cflags=..  cxxflags=..  cppflags=..  ldlfags=..
-C++ version:   std=..
-ar:            ar=..
+set compilers:
+    cc=..  cxx=..  ccbuild=..
 
-gendlopen tool used for cross-compiling
-test files:    gdo=..
+host triplet:
+    host=..
 
-other options:
-  --no-xxd
-  --no-default-flags
-  --help
+set clang-cl:
+    cl=..
+
+override flags:
+    cflags=..  cxxflags=..  cppflags=..  ldlfags=..
+
+append extra flags:
+    xcflags=..  xcxxflags=..  xcppflags=..  xldlfags=..
+
+set ar tool:
+    ar=..
+
+set gendlopen tool used for cross-compiling tests:
+    gdo=..
+
+don't search for xxd tool:
+    --no-xxd
+
+print this help:
+    -h, --help
 
 EOL
-    exit 0
-    ;;
+        exit 0
+        ;;
 
-    cc=*) CC="${i#*=}" ;;
-    cxx=*) CXX="${i#*=}" ;;
-    ccbuild=*) CCBUILD="${i#*=}" ;;
-    host=*) HOST="${i#*=}" ;;
-    cl=*) CL="${i#*=}" ;;
-
-    ar=*) AR="${i#*=}" ;;
-    gdo=*) GENDLOPEN="${i#*=}" ;;
-
-    cflags=*) CFLAGS="${i#*=}" ;;
-    cxxflags=*) CXXFLAGS="${i#*=}" ;;
-    cppflags=*) CPPFLAGS="${i#*=}" ;;
-    ldlfags=*) LDFLAGS="${i#*=}" ;;
-
-    std=*) cxxstd="${i#*=}" ;;
-
+    cc=*)
+        CC="${i#*=}"
+        ;;
+    cxx=*)
+        CXX="${i#*=}"
+        ;;
+    ccbuild=*)
+        CCBUILD="${i#*=}"
+        ;;
+    host=*)
+        HOST="${i#*=}"
+        ;;
+    cl=*)
+        CL="${i#*=}"
+        ;;
+    ar=*)
+        AR="${i#*=}"
+        ;;
+    gdo=*)
+        GENDLOPEN="${i#*=}"
+        ;;
+    cflags=*)
+        CFLAGS="${i#*=}"
+        use_def_cflags="no"
+        ;;
+    cxxflags=*)
+        CXXFLAGS="${i#*=}"
+        use_def_cxxflags="no"
+        ;;
+    cppflags=*)
+        CPPFLAGS="${i#*=}"
+        use_def_cppflags="no"
+        ;;
+    ldlfags=*)
+        LDFLAGS="${i#*=}"
+        use_def_ldflags="no"
+        ;;
+    xcflags=*)
+        XCFLAGS="${i#*=}"
+        ;;
+    xcxxflags=*)
+        XCXXFLAGS="${i#*=}"
+        ;;
+    xcppflags=*)
+        XCPPFLAGS="${i#*=}"
+        ;;
+    xldlfags=*)
+        XLDFLAGS="${i#*=}"
+        ;;
     --no-xxd)
         check_xxd="no"
         ;;
 
-    --no-default-flags)
-        def_flags="no"
-        ;;
-
     *)
-    echo "error: unknown option: $i"
-    exit 1
-    ;;
+        echo "error: unknown option: $i"
+        exit 1
+        ;;
 esac
 done
 
 # xxd
+GEN_TEMPL="gen_template_h"
 if [ "x$check_xxd" = "xyes" ]; then
-    if which xxd 2>/dev/null >/dev/null ; then
+    xxd -v 2>/dev/null >/dev/null
+
+    if [ $? -eq 0 ]; then
         GEN_TEMPL="gen_template_h.sh"
-    else
-        GEN_TEMPL="gen_template_h"
     fi
-else
-    GEN_TEMPL="gen_template_h.sh"
 fi
 
 # clang-cl / MSVC
@@ -104,7 +142,9 @@ fi
 
 # host C
 if [ "x$CC" = "x" ]; then
-    if gcc --version 2>/dev/null >/dev/null ; then
+    gcc --version 2>/dev/null >/dev/null
+
+    if [ $? -eq 0 ]; then
         CC="${HOST}gcc"
     else
         CC="${HOST}cc"
@@ -113,7 +153,9 @@ fi
 
 # host C++
 if [ "x$CXX" = "x" ]; then
-    if g++ --version 2>/dev/null >/dev/null ; then
+    g++ --version 2>/dev/null >/dev/null
+
+    if [ $? -eq 0 ]; then
         CXX="${HOST}g++"
     else
         CXX="${HOST}c++"
@@ -122,7 +164,9 @@ fi
 
 # build C
 if [ "x$CCBUILD" = "x" ]; then
-    if gcc --version 2>/dev/null >/dev/null ; then
+    gcc --version 2>/dev/null >/dev/null
+
+    if [ $? -eq 0 ]; then
         CCBUILD="gcc"
     else
         CCBUILD="cc"
@@ -132,95 +176,95 @@ fi
 # check target platform
 if [ "x$CL" != "x" ]; then
     # MSVC
-    x_cppflags="-DWIN32_LEAN_AND_MEAN"
-    x_cflags="-nologo -W3 -O2"
-    x_cxxflags="-nologo -W3 -O2 -EHsc"
-    x_cxxstd="c++latest"
-    x_ldflags="-nologo -fuse-ld=lld -link -subsystem:console"
+    def_cppflags="-DWIN32_LEAN_AND_MEAN"
+    def_cflags="-W3 -O2"
+    def_cxxflags="-W3 -O2 -EHsc -std:c++latest"
+    def_ldflags="-link -subsystem:console -release"
 
-    HW_DLL="libhelloworld-0.dll"
-    DLL_CFLAGS="-DBUILDING_DLL"
-    DLL_LDFLAGS="-dll"  # -implib:libhelloworld.lib
+    EXEEXT=".exe"
+    DLL="libhelloworld-0.dll"
+    DLL_CFLAGS="-DBUILDING_DLL -LD"
     UNICODE_FLAGS="-DUNICODE -D_UNICODE"
-
-    #if [ "x$LIB" != "x" ]; then
-    #    LIBPATH="LIB=\"$LIB\" "  # needs trailing space!
-    #fi
 elif $CC -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
     # MinGW
-    x_cppflags="-DWIN32_LEAN_AND_MEAN"
-    x_cflags="-Wall -Wextra -O3"
-    x_cxxflags="-Wall -Wextra -O3"
-    x_cxxstd="gnu++20"
-    x_ldflags="-s -static"
+    if $CXX -v --help 2>/dev/null | grep -- '-std=gnu++23' >/dev/null ; then
+        std="gnu++23"
+    else
+        std="gnu++20"
+    fi
 
-    HW_DLL="libhelloworld-0.dll"
+    def_cppflags="-DWIN32_LEAN_AND_MEAN"
+    def_cflags="-Wall -Wextra -O3"
+    def_cxxflags="-Wall -Wextra -O3 -std=$std"
+
+    EXEEXT=".exe"
+    DLL="libhelloworld-0.dll"
     DLL_CFLAGS="-DBUILDING_DLL"
-    DLL_LDFLAGS="-mdll"  # -Wl,--out-implib,libhelloworld.dll.a
+    DLL_LDFLAGS="-shared"
     UNICODE_FLAGS="-DUNICODE -D_UNICODE -municode"
     TEST_CXX11="-std=c++11"
 else
-    # default
-    x_cflags="-Wall -Wextra -O3"
-    x_cxxflags="-Wall -Wextra -O3"
-    x_ldflags="-s"
-
     if $CXX -dumpmachine 2>/dev/null | grep gnu >/dev/null ; then
-        x_cxxstd="gnu++20"
-        x_cppflags="-D_GNU_SOURCE"
+        if $CXX -v --help 2>/dev/null | grep -- '-std=gnu++23' >/dev/null ; then
+            std="gnu++23"
+        else
+            std="gnu++20"
+        fi
+        def_cppflags="-D_GNU_SOURCE"
     else
-        x_cxxstd="c++20"
+        std="c++20"
     fi
+
+    def_cflags="-Wall -Wextra -O3"
+    def_cxxflags="-Wall -Wextra -O3 -std=$std"
 
     # library name
     if $CC -dumpmachine 2>/dev/null | grep darwin >/dev/null ; then
-        HW_DLL="libhelloworld.0.dylib"
-        DLL_LDFLAGS="-shared -Wl,-soname,$HW_DLL"
+        DLL="libhelloworld.0.dylib"
     elif $CC -dumpmachine 2>/dev/null | grep aix >/dev/null ; then
-        HW_DLL="libhelloworld.a"
-        DLL_LDFLAGS="-shared"  # ???
+        DLL="libhelloworld.a"
     else
-        HW_DLL="libhelloworld.so.0"
-        DLL_LDFLAGS="-shared -Wl,-soname,$HW_DLL"
+        DLL="libhelloworld.so.0"
     fi
 
-    DLL_CFLAGS="-fPIC -fvisibility=hidden"
+    DLL_CFLAGS="-fPIC"
+    DLL_LDFLAGS="-shared"
     TEST_LDFLAGS="-Wl,-rpath,'\$\$ORIGIN'"
     TEST_CXX11="-std=c++11"
 fi
 
 # set default flags
-if [ "x$def_flags" = "xyes" ]; then
-    if [ "x$CFLAGS" = "x" ]; then
-        CFLAGS="$x_cflags"
-    fi
-    if [ "x$CXXFLAGS" = "x" ]; then
-        CXXFLAGS="$x_cxxflags"
-    fi
-    if [ "x$CPPFLAGS" = "x" ]; then
-        CPPFLAGS="$x_cppflags"
-    fi
-    if [ "x$LDFLAGS" = "x" ]; then
-        LDFLAGS="$x_ldflags"
-    fi
-
-    if [ "x$cxxstd" = "x" ]; then
-        cxxstd="$x_cxxstd"
-    fi
-
-    CFLAGS="$CFLAGS -I."
-    CXXFLAGS="$CXXFLAGS -I."
+if [ $use_def_cppflags = "yes" ]; then
+    CPPFLAGS="$def_cppflags"
+fi
+if [ $use_def_cflags = "yes" ]; then
+    CFLAGS="$def_cflags"
+fi
+if [ $use_def_cxxflags = "yes" ]; then
+    CXXFLAGS="$def_cxxflags"
+fi
+if [ $use_def_ldflags = "yes" ]; then
+    LDFLAGS="$def_ldflags"
 fi
 
-# set -std version
-if [ "x$cxxstd" != "x" ]; then
-    if [ "x$CL" = "x" ]; then
-        CXXFLAGS="-std=${cxxstd} $CXXFLAGS"
-    else
-        CXXFLAGS="-std:${cxxstd} $CXXFLAGS"
-    fi
+# set extra flags
+if [ "x$XCPPFLAGS" != "x" ]; then
+    CPPFLAGS="$CPPFLAGS $XCPPFLAGS"
+fi
+if [ "x$XCFLAGS" != "x" ]; then
+    CFLAGS="$CFLAGS $XCFLAGS"
+fi
+if [ "x$XCXXFLAGS" != "x" ]; then
+    CXXFLAGS="$CXXFLAGS $XCXXFLAGS"
+fi
+if [ "x$XLDFLAGS" != "x" ]; then
+    LDFLAGS="$LDFLAGS $XLDFLAGS"
 fi
 
+# gendlopen tool
+if [ "x$GENDLOPEN" = "x" ]; then
+    GENDLOPEN="$PWD/src/gendlopen$EXEEXT"
+fi
 
 # output
 
@@ -229,25 +273,30 @@ CC            = $CC
 CXX           = $CXX
 CCBUILD       = $CCBUILD
 AR            = $AR
+
+EXEEXT        = $EXEEXT
 GENDLOPEN     = $GENDLOPEN
 GEN_TEMPL     = $GEN_TEMPL
-CFLAGS        = $CFLAGS
-CXXFLAGS      = $CXXFLAGS
-CPPFLAGS      = $CPPFLAGS
+
+CFLAGS        = $CFLAGS $CPPFLAGS
+CXXFLAGS      = $CXXFLAGS $CPPFLAGS
 LDFLAGS       = $LDFLAGS
-HW_DLL        = $HW_DLL
+
+DLL           = $DLL
 UNICODE_FLAGS = $UNICODE_FLAGS
 DLL_CFLAGS    = $DLL_CFLAGS
 DLL_LDFLAGS   = $DLL_LDFLAGS
-TEST_LDFLAGS  = $TEST_LDFLAGS
-TEST_CXX11    = $TEST_CXX11
+
+TEST_CFLAGS   = $CFLAGS $CPPFLAGS
+TEST_CXXFLAGS = $CXXFLAGS $CPPFLAGS $TEST_CXX11
+TEST_LDFLAGS  = $LDFLAGS $TEST_LDFLAGS
 
 EOF
 
 cat settings.mk
 
 echo "create Makefile"
-cp -f Makefile.in Makefile
+cat settings.mk Makefile.in > Makefile
 
 echo "create src/Makefile"
 cat settings.mk src/Makefile.in > src/Makefile
