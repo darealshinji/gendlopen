@@ -36,6 +36,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "gendlopen.hpp"
 

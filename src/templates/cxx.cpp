@@ -50,7 +50,7 @@ GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
 
 namespace /* anonymous */
 {
-    auto al = gdo::dl(GDO_DEFAULT_LIB);
+    auto al = gdo::dl(GDO_DEFAULT_LIBA);
 
     void error_exit4(const char *s1, const char *s2, const char *s3, const std::string &s4)
     {
@@ -70,7 +70,7 @@ namespace /* anonymous */
     void quick_load(const char *symbol)
     {
         if (!al.load()) {
-            error_exit4("error loading library `", GDO_DEFAULT_LIB, "':\n", al.error());
+            error_exit4("error loading library `", GDO_DEFAULT_LIBA, "':\n", al.error());
         }
 
 #ifdef GDO_DELAYLOAD

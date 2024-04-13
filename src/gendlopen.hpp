@@ -46,7 +46,7 @@ private:
     vproto_t m_prototypes, m_objects;
 
     std::string m_name_upper, m_name_lower;
-    std::string m_default_lib;
+    std::string m_default_liba, m_default_libw;
     std::string m_ifile;
 
     output::format m_format = output::c;
@@ -85,7 +85,8 @@ public:
     /* set options */
     void input(const std::string &s) { m_ifile = s; }
     void format(output::format val) { m_format = val; }
-    void default_lib(const std::string &s) { m_default_lib = s; }
+    void default_liba(const std::string &s) { m_default_liba = s; }
+    void default_libw(const std::string &s) { m_default_libw = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }

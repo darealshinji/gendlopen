@@ -288,6 +288,9 @@ bool gendlopen::tokenize_input()
 /* generate output */
 int gendlopen::generate(const std::string &ofile, const std::string &name)
 {
+    assert((m_default_liba.empty() && m_default_libw.empty()) ||
+            (!m_default_liba.empty() && !m_default_libw.empty()));
+
     /* tokenize */
     if (!tokenize_input()) {
         return 1;
@@ -361,11 +364,14 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     }
 
     /* default library name */
-    if (!m_default_lib.empty()) {
+    if (!m_default_liba.empty() && !m_default_libw.empty()) {
         out << "/* default library */\n";
-        out << "#ifndef " << m_name_upper << "_DEFAULT_LIB\n";
-        out << "#define " << m_name_upper << "_DEFAULT_LIB " << m_default_lib << "\n";
-        out << "#endif\n\n";
+        out << "#ifndef " << m_name_upper << "_DEFAULT_LIBA\n";
+        out << "#define " << m_name_upper << "_DEFAULT_LIBA " << m_default_liba << "\n";
+        out << "#endif\n";
+        out << "#ifndef " << m_name_upper << "_DEFAULT_LIBW\n";
+        out << "#define " << m_name_upper << "_DEFAULT_LIBW " << m_default_libw << "\n";
+		out << "#endif\n";
     }
 
     /* extra includes */

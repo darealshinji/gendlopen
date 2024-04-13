@@ -6,6 +6,21 @@
     #define GDO_WINAPI
 #endif
 
+/* default lib */
+#if defined(GDO_DEFAULT_LIB) && !defined(GDO_DEFAULT_LIBA) && !defined(GDO_DEFAULT_LIBW)
+	#if defined(GDO_WINAPI) && defined(_UNICODE)
+		#define GDO_DEFAULT_LIBW GDO_DEFAULT_LIB
+	#else
+		#define GDO_DEFAULT_LIBA GDO_DEFAULT_LIB
+	#endif
+#elif !defined(GDO_DEFAULT_LIB) && defined(GDO_DEFAULT_LIBA) && defined(GDO_DEFAULT_LIBW)
+	#if defined(GDO_WINAPI) && defined(_UNICODE)
+		#define GDO_DEFAULT_LIB GDO_DEFAULT_LIBW
+	#else
+		#define GDO_DEFAULT_LIB GDO_DEFAULT_LIBA
+	#endif
+#endif
+
 /* default headers to include */
 #ifdef GDO_WINAPI
     #include <windows.h>

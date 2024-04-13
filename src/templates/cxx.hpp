@@ -414,10 +414,12 @@ private:
         }
 
         DWORD len = 260; /* MAX_PATH */
-        std::basic_string<T> buf(len, 0);
+        T *origin = new T(len * sizeof(T));
+        ::memset(origin, 0, len * sizeof(T));
 
-        if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
+        if (get_module_filename(m_handle, origin, len-1) == 0) {
             save_error();
+            delete origin;
             return {};
         }
 
@@ -425,19 +427,23 @@ private:
          * technically the path could exceed 260 characters, but in reality
          * it's practically still stuck at the old MAX_PATH value */
         if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            len = 32*1024;
-            buf.clear();
-            buf.resize(len);
+            delete origin;
 
-            if (get_module_filename(m_handle, &buf[0], len-1) == 0) {
+            len = 32*1024;
+            origin = new T(len * sizeof(T));
+            ::memset(origin, 0, len * sizeof(T));
+
+            if (get_module_filename(m_handle, origin, len-1) == 0) {
                 save_error();
+                delete origin;
                 return {};
             }
-
-            buf.shrink_to_fit();
         }
 
-        return buf;
+        std::basic_string<T> str = origin;
+        delete origin;
+
+        return str;
     }
 
 

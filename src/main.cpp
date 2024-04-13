@@ -45,8 +45,16 @@ namespace
     }
 
     /* quote library name */
-    std::string quote_lib(const std::string &lib)
+    std::string quote_lib(const std::string &lib, bool wide)
     {
+		if (wide) {
+			if (lib.starts_with("L\"") && lib.back() == '"') {
+				return lib;
+			}
+
+			return "L\"" + (lib + "\"");
+		}
+
         if (lib.front() == '"' && lib.back() == '"') {
             return lib;
         }
@@ -58,20 +66,23 @@ namespace
      * format library name
      * foo        ==>  "foo"
      * nq:foo     ==>  foo
-     * ext:foo    ==>  "foo" LIBEXT
-     * api:2:foo  ==>  LIBNAME(foo,2)
+     * ext:foo    ==>  "foo" LIBEXTA
+     * api:2:foo  ==>  LIBNAMEA(foo,2)
      */
-    std::string format_libname(const std::string &str)
+    std::string format_libname(const std::string &str, bool iswide)
     {
         auto pfx_case = [] (const std::string &str, const std::string &pfx) -> bool {
             return (str.size() > pfx.size() &&
                 utils::eq_str_case(str.substr(0, pfx.size()), pfx));
         };
 
+		const char *libext = iswide ? " LIBEXTW" : " LIBEXTA";
+		const char *libname = iswide ? "LIBNAMEW(" : "LIBNAMEA(";
+
         if (pfx_case(str, "nq:")) {
             return str.substr(3);
         } else if (pfx_case(str, "ext:")) {
-            return quote_lib(str.substr(4)) + " LIBEXT";
+            return quote_lib(str.substr(4), iswide) + libext;
         } else if (pfx_case(str, "api:")) {
             const std::regex reg("(.*?):(.*)");
             std::smatch m;
@@ -79,13 +90,13 @@ namespace
 
             if (std::regex_match(sub, m, reg) && m.size() == 3) {
                 std::stringstream out;
-                out << "LIBNAME(" << m[2] << ',' << m[1] << ')';
+                out << libname << m[2] << ',' << m[1] << ')';
                 return out.str();
             }
         }
 
         /* quote string */
-        return quote_lib(str);
+        return quote_lib(str, iswide);
     }
 
 
@@ -285,8 +296,8 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
     more_help += "    --library=foo        ==>  \"foo\""                                            "\n";
     more_help += "    --library=nq:foo     ==>  foo"                                                "\n";
-    more_help += "    --library=ext:foo    ==>  \"foo\" LIBEXT      ==>    i.e. \"foo.dll\""        "\n";
-    more_help += "    --library=api:2:foo  ==>  LIBNAME(foo,2)    ==>    i.e. \"libfoo.so.2\""      "\n";
+    more_help += "    --library=ext:foo    ==>  \"foo\" LIBEXTA    ==>    i.e. \"foo.dll\""         "\n";
+    more_help += "    --library=api:2:foo  ==>  LIBNAMEA(foo,2)    ==>    i.e. \"libfoo.so.2\""     "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -471,7 +482,8 @@ int main(int argc, char **argv)
 
     /* --library */
     if (a_library) {
-        gdo.default_lib(format_libname(a_library.Get()));
+        gdo.default_liba(format_libname(a_library.Get(), false));
+		gdo.default_libw(format_libname(a_library.Get(), true));
     }
 
     /* --define */
