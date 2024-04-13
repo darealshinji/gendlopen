@@ -45,17 +45,39 @@
 #define sCFGREEN  sCOL(0;1;32)    /* fat green */
 
 
+/* builtin checks */
+#ifdef __has_builtin
+    #if __has_builtin(__builtin_assume)
+        #define HAS_BUILTIN_ASSUME
+    #endif
+    #if __has_builtin(__builtin_unreachable)
+        #define HAS_BUILTIN_UNREACHABLE
+    #endif
+#endif
+
+/* attribute checks */
+#ifdef __has_cpp_attribute
+    #if __has_cpp_attribute(assume) >= 202207L
+        #define HAS_ATTRIBUTE_ASSUME
+    #endif
+#endif
+#ifdef __GNUC__
+    #if __GNUC__ >= 13
+        #define HAS_ATTRIBUTE_GNU_ASSUME
+    #endif
+#endif
+
 /* assume */
-#if defined(__has_cpp_attribute) && __has_cpp_attribute(assume) >= 202207L
-    #define ASSUME(x)    [[assume(x)]]
-#elif defined(__GNUC__) && __GNUC__ >= 13
-    #define ASSUME(x)    [[gnu::assume(x)]]
-#elif defined(_MSC_VER) && !defined(__clang__)
-    #define ASSUME(x)    __assume(x)
-#elif defined(__has_builtin) && __has_builtin(__builtin_assume)
-    #define ASSUME(x)    __builtin_assume(x)
+#if defined(HAS_ATTRIBUTE_GNU_ASSUME)
+    #define ASSUME(x)  [[gnu::assume(x)]]
+#elif defined(HAS_ATTRIBUTE_ASSUME)
+    #define ASSUME(x)  [[assume(x)]]
+#elif defined(HAS_BUILTIN_ASSUME)
+    #define ASSUME(x)  __builtin_assume(x)
+#elif defined(_MSC_VER)
+    #define ASSUME(x)  __assume(x)
 #else
-    #define ASSUME(x)    /**/
+    #define ASSUME(x)  /**/
 #endif
 
 
