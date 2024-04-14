@@ -9,10 +9,10 @@ clean-src:
 	cd src && $(MAKE) clean
 
 clean: clean-test clean-src
-	rm -f settings.mk
+	rm -f settings.mk test.cpp test.o test.obj
 
 distclean: clean
-	rm -f src/Makefile test/Makefile Makefile
+	rm -f src/Makefile test/Makefile Makefile test.log
 
 gendlopen:
 	cd src && $(MAKE)

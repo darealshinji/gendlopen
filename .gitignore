@@ -76,4 +76,7 @@ a.out
 *.bak
 
 # other build artifacts
+/settings.mk
+/test.cpp
 *.exp
+*.log
