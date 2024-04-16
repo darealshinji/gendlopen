@@ -1,15 +1,3 @@
-#ifndef _WIN32
-
-#include <stdio.h>
-
-int main()
-{
-    puts("not win32");
-    return 0;
-}
-
-#else
-
 #include <iostream>
 #include <string>
 #include "helloworld.h"
@@ -62,4 +50,3 @@ int main()
 
     return 0;
 }
-#endif

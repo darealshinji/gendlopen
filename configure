@@ -1,5 +1,201 @@
 #!/bin/sh
 
+testfiles="test.c test.cpp test.h test.hpp test.o test.obj test.exe a.out a.exe"
+
+use_def_cflags="yes"
+use_def_cxxflags="yes"
+use_def_cppflags="yes"
+use_def_ldflags="yes"
+
+use_pkgconfig_glib="yes"
+use_pkgconfig_gtk="yes"
+
+libdl=""
+have_dlmopen="no"
+
+check_xxd="yes"
+win32="no"
+nix="yes"
+notify="no"
+appind="no"
+
+
+create_makefile()
+{
+    if [ "x$appind" != "xyes" ]; then xappind="#"; fi
+    if [ "x$notify" != "xyes" ]; then xnotify="#"; fi
+    if [ "x$win32"  != "xyes" ]; then xwin32="#"; fi
+    if [ "x$nix"    != "xyes" ]; then xnix="#"; fi
+
+    echo "create ${1}Makefile"
+
+    cat settings.mk rules.mk "${1}Makefile.in" | \
+    sed -e "s,@APPIND@,$xappind,g" \
+        -e "s,@NOTIFY@,$xnotify,g" \
+        -e "s,@W32@,$xwin32,g" \
+        -e "s,@NIX@,$xnix,g" \
+        > "${1}Makefile"
+}
+
+run_cmd()
+{
+    echo "$1" >> test.log
+    $1 >/dev/null 2>>test.log
+    ret=$?
+    echo '' >> test.log
+}
+
+_check_tool()
+{
+    printf "check for $1 ... "
+    tool="$(which $1)"
+
+    if [ "x$tool" = "x" ]; then
+        echo "not found"
+    else
+        echo "OK"
+        tool="$1"
+    fi
+}
+
+check_tool()
+{
+    tool=""
+
+    if [ "x$tool" = "x" ]; then
+        _check_tool "$1"
+    fi
+
+    if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
+        exit 1
+    fi
+}
+
+check_host_tool()
+{
+    tool=""
+
+    if [ "x$HOST" != "x" ]; then
+        _check_tool "${HOST}$1"
+    fi
+
+    if [ "x$tool" = "x" ]; then
+        _check_tool "$1"
+    fi
+
+    if [ "x$2" != "xexit" ] && [ "x$tool" = "x" ]; then
+        exit 1
+    fi
+}
+
+check_clang_triple()
+{
+    printf "check target triple of $1 ... "
+
+    cmd="$1 -print-target-triple"
+    echo "$cmd" >> test.log
+    triple="$($cmd 2>>test.log)"
+
+    if [ "x$triple" = "x" ]; then
+        echo "nothing found"
+    else
+        echo "$triple"
+    fi
+}
+
+check_clang_ast()
+{
+    CLANG=""
+    printf "check if $1 can create an AST dump ... "
+
+    echo '' > test.h
+    run_cmd "$1 -Xclang -ast-dump -fansi-escape-codes test.h"
+
+    if [ $ret -eq 0 ]; then
+        CLANG="$1"
+        echo "yes"
+    else
+        echo "no"
+    fi
+
+    rm -f $testfiles
+}
+
+check_header()
+{
+    header=""
+    printf "check for header $1 ... "
+
+    echo "#include <$1>" > test.c
+    run_cmd "$CC $CFLAGS -E test.c"
+
+    if [ $ret -eq 0 ]; then
+        header="$1"
+        echo "OK"
+    else
+        echo "not found"
+    fi
+
+    rm -f $testfiles
+}
+
+check_libdl()
+{
+    printf "check if -ldl is needed ... "
+
+    cat <<EOF > test.c
+#include <stddef.h>
+#include <dlfcn.h>
+int main() {
+void *handle = dlopen("foo.so", RTLD_LAZY);
+return (handle == NULL);
+}
+EOF
+
+    run_cmd "$CC -Werror test.c -o a.out"
+
+    if [ $ret -eq 0 ]; then
+        echo "no"
+    else
+        run_cmd "$CC -Werror test.c -o a.out -ldl"
+
+        if [ $ret -eq 0 ]; then
+            echo "yes"
+            libdl="-ldl"
+        else
+            echo "error"
+            exit 1
+        fi
+    fi
+
+    rm -f $testfiles
+}
+
+check_dlmopen()
+{
+    printf "check for dlmopen() ... "
+
+    cat <<EOF > test.c
+#include <stddef.h>
+#include <dlfcn.h>
+int main() {
+void *handle = dlmopen(LM_ID_NEWLM, "foo.so", RTLD_LAZY);
+return (handle == NULL);
+}
+EOF
+
+    run_cmd "$CC -Werror -D_GNU_SOURCE test.c -o a.out $libdl"
+
+    if [ $ret -eq 0 ]; then
+        echo "OK"
+        have_dlmopen="yes"
+    else
+        echo "not found"
+    fi
+
+    rm -f $testfiles
+}
+
 check_cxx_flag()
 {
     if [ "x$1" = "x1" ]; then
@@ -10,12 +206,7 @@ check_cxx_flag()
         printf "check if $CXX accepts $2 ... "
 
         echo '' > test.cpp
-        echo "$CXX -Werror $2 -c test.cpp" >> test.log
-        $CXX -Werror $2 -c test.cpp >/dev/null 2>>test.log
-        ret=$?
-        echo '' >> test.log
-
-        rm -f test.cpp test.o test.obj
+        run_cmd "$CXX -Werror $2 -c test.cpp"
 
         if [ $ret -eq 0 ]; then
             flag="$2"
@@ -24,6 +215,8 @@ check_cxx_flag()
             echo "no"
         fi
     fi
+
+    rm -f $testfiles
 }
 
 check_std_version()
@@ -46,11 +239,6 @@ check_std_version()
     std="$flag"
 }
 
-use_def_cflags="yes"
-use_def_cxxflags="yes"
-use_def_cppflags="yes"
-use_def_ldflags="yes"
-check_xxd="yes"
 
 rm -f test.log
 
@@ -71,14 +259,23 @@ host triplet:
 set clang-cl:
     cl=..
 
+set clang:
+    clang=..
+
 override flags:
     cflags=..  cxxflags=..  cppflags=..  ldlfags=..
 
 append extra flags:
     xcflags=..  xcxxflags=..  xcppflags=..  xldlfags=..
 
+set flags for GTK2 and GLib headers (ignored for win32):
+    gtk-cflags=..  glib-cflags=..
+
 set ar tool:
     ar=..
+
+set pkg-config too:
+    pkgconfig=..
 
 set gendlopen tool used for cross-compiling tests:
     gdo=..
@@ -108,8 +305,14 @@ EOL
     cl=*)
         CL="${i#*=}"
         ;;
+    clang=*)
+        CLANG="${i#*=}"
+        ;;
     ar=*)
         AR="${i#*=}"
+        ;;
+    pkgconfig=*)
+        PKG_CONFIG="${i#*=}"
         ;;
     gdo=*)
         GENDLOPEN="${i#*=}"
@@ -142,6 +345,14 @@ EOL
     xldflags=*)
         XLDFLAGS="${i#*=}"
         ;;
+    gtk-cflags=*)
+        GTK_CFLAGS="${i#*=}"
+        use_pkgconfig_gtk="no"
+        ;;
+    glib-cflags=*)
+        GLIB_CFLAGS="${i#*=}"
+        use_pkgconfig_glib="no"
+        ;;
     --no-xxd)
         check_xxd="no"
         ;;
@@ -156,9 +367,9 @@ done
 # xxd
 GEN_TEMPL="gen_template_h"
 if [ "x$check_xxd" = "xyes" ]; then
-    xxd -v 2>/dev/null >/dev/null
+    check_tool xxd
 
-    if [ $? -eq 0 ]; then
+    if [ "x$tool" != "x" ]; then
         GEN_TEMPL="gen_template_h.sh"
     fi
 fi
@@ -176,50 +387,95 @@ fi
 
 # host ar
 if [ "x$AR" = "x" ]; then
-    AR="${HOST}ar"
+    check_host_tool ar exit
+    AR="$tool"
 fi
 
 # host C
 if [ "x$CC" = "x" ]; then
-    gcc --version 2>/dev/null >/dev/null
+    check_host_tool gcc
 
-    if [ $? -eq 0 ]; then
-        CC="${HOST}gcc"
-    else
-        CC="${HOST}cc"
+    if [ "x$tool" = "x" ]; then
+        check_host_tool cc exit
     fi
+
+    CC="$tool"
+else
+    check_host_tool "$CC" exit
 fi
 
 # host C++
 if [ "x$CXX" = "x" ]; then
-    g++ --version 2>/dev/null >/dev/null
+    check_host_tool g++
 
-    if [ $? -eq 0 ]; then
-        CXX="${HOST}g++"
-    else
-        CXX="${HOST}c++"
+    if [ "x$tool" = "x" ]; then
+        check_host_tool c++ exit
     fi
+
+    CXX="$tool"
+elif [ "x$CXX" != "x$CC" ]; then
+    check_host_tool "$CXX" exit
 fi
 
 # build C
 if [ "x$CCBUILD" = "x" ]; then
-    gcc --version 2>/dev/null >/dev/null
-
-    if [ $? -eq 0 ]; then
-        CCBUILD="gcc"
+    if [ "$CC" = "gcc" ] || [ "$CC" = "cc" ]; then
+        CCBUILD="$CC"
     else
-        CCBUILD="cc"
+        check_tool gcc
+
+        if [ "x$tool" = "x" ]; then
+            check_tool cc exit
+        fi
+
+        CCBUILD="$tool"
+    fi
+fi
+
+# host clang
+if [ "x$CLANG" = "x" ]; then
+    # check_clang_ast will set or empty the variable $CLANG
+    if [ "x$CL" != "x" ]; then
+        check_clang_ast "$CL"
+    fi
+
+    if [ "x$CLANG" = "x" ]; then
+        check_host_tool clang
+        CLANG="$tool"
+    fi
+
+    if [ "x$CLANG" != "x" ] && [ "x$CL" != "x$CLANG" ]; then
+        check_clang_ast "$CLANG"
+    fi
+fi
+
+# clang target triple
+if [ "x$CL" != "x" ] && [ "x$CLANG" != "x" ]; then
+    check_clang_triple "$CL"
+
+    if [ "x$CL" != "x$CLANG" ] && [ "x$triple" != "x" ]; then
+        save_triple="$triple"
+        check_clang_triple "$CLANG"
+
+        if [ "x$triple" != "x" ] && [ "x$save_triple" != "x$triple" ]; then
+            echo ""
+            echo "warning: target triples of $CL and $CLANG differ:"
+            echo "$save_triple != $triple"
+            echo ""
+        fi
     fi
 fi
 
 # check target platform
 if [ "x$CL" != "x" ]; then
     # MSVC
+    check_std_version msvc
+
+    win32="yes"
     def_cppflags="-DWIN32_LEAN_AND_MEAN"
     def_cflags="-W3 -O2"
     def_cxxflags="-W3 -O2 -EHsc" #-std:c++latest
     def_ldflags="-link -subsystem:console -release"
-    check_std_version msvc
 
     EXEEXT=".exe"
     DLL="libhelloworld-0.dll"
@@ -227,27 +483,36 @@ if [ "x$CL" != "x" ]; then
     UNICODE_FLAGS="-DUNICODE -D_UNICODE"
 elif $CC -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
     # MinGW
+    check_std_version
+    check_cxx_flag 1 -std=c++11
+    test_cxx11="$flag"
+
+    win32="yes"
     def_cppflags="-DWIN32_LEAN_AND_MEAN"
     def_cflags="-Wall -Wextra -O3"
     def_cxxflags="-Wall -Wextra -O3"
-    check_std_version
 
     EXEEXT=".exe"
     DLL="libhelloworld-0.dll"
     DLL_CFLAGS="-DBUILDING_DLL"
     DLL_LDFLAGS="-shared"
     UNICODE_FLAGS="-DUNICODE -D_UNICODE -municode"
-
-    check_cxx_flag 1 -std=c++11
-    test_cxx11="$flag"
 else
     # *nix
-    if $CXX -dumpmachine 2>/dev/null | grep gnu >/dev/null ; then
-        def_cppflags="-D_GNU_SOURCE"
+    check_std_version
+    check_cxx_flag 1 -std=c++11
+    test_cxx11="$flag"
+
+    check_libdl
+    check_dlmopen
+
+    #if $CXX -dumpmachine 2>/dev/null | grep gnu >/dev/null ; then
+    if [ "x$have_dlmopen" = "xyes" ]; then
+        def_cppflags="-D_GNU_SOURCE -DHAVE_DLMOPEN"
     fi
+
     def_cflags="-Wall -Wextra -O3"
     def_cxxflags="-Wall -Wextra -O3"
-    check_std_version
 
     # library name
     if $CC -dumpmachine 2>/dev/null | grep darwin >/dev/null ; then
@@ -261,48 +526,106 @@ else
     DLL_CFLAGS="-fPIC"
     DLL_LDFLAGS="-shared"
     TEST_LDFLAGS="-Wl,-rpath,'\$\$ORIGIN'"
+    LIBDL="$libdl"
+fi
 
-    check_cxx_flag 1 -std=c++11
-    test_cxx11="$flag"
+if [ "x$win32" = "xyes" ]; then
+    nix="no"
+fi
+
+# host pkg-config
+if [ "x$win32" != "xyes" ] && [ "x$PKG_CONFIG" = "x" ]; then
+    check_host_tool pkg-config
+    PKG_CONFIG="$tool"
+fi
+
+# no pkg-config?
+if [ "x$PKG_CONFIG" = "x" ]; then
+    use_pkgconfig_glib="no"
+    use_pkgconfig_gtk="no"
 fi
 
 # set default flags
-if [ $use_def_cppflags = "yes" ]; then
-    CPPFLAGS="$def_cppflags"
-fi
-if [ $use_def_cflags = "yes" ]; then
-    CFLAGS="$def_cflags"
-fi
+if [ $use_def_cppflags = "yes" ]; then CPPFLAGS="$def_cppflags"; fi
+if [ $use_def_cflags   = "yes" ]; then   CFLAGS="$def_cflags"; fi
+if [ $use_def_ldflags  = "yes" ]; then  LDFLAGS="$def_ldflags"; fi
+
 if [ $use_def_cxxflags = "yes" ]; then
     CXXFLAGS="$def_cxxflags $std"
     TEST_CXXFLAGS="$def_cxxflags $test_cxx11"
 fi
-if [ $use_def_ldflags = "yes" ]; then
-    LDFLAGS="$def_ldflags"
-fi
 
 # set extra flags
-if [ "x$XCPPFLAGS" != "x" ]; then
-    CPPFLAGS="$CPPFLAGS $XCPPFLAGS"
-fi
-if [ "x$XCFLAGS" != "x" ]; then
-    CFLAGS="$CFLAGS $XCFLAGS"
-fi
-if [ "x$XCXXFLAGS" != "x" ]; then
-    CXXFLAGS="$CXXFLAGS $XCXXFLAGS"
-fi
-if [ "x$XLDFLAGS" != "x" ]; then
-    LDFLAGS="$LDFLAGS $XLDFLAGS"
-fi
+if [ "x$XCPPFLAGS" != "x" ]; then CPPFLAGS="$CPPFLAGS $XCPPFLAGS"; fi
+if [ "x$XCFLAGS"   != "x" ]; then   CFLAGS="$CFLAGS $XCFLAGS"; fi
+if [ "x$XCXXFLAGS" != "x" ]; then CXXFLAGS="$CXXFLAGS $XCXXFLAGS"; fi
+if [ "x$XLDFLAGS"  != "x" ]; then  LDFLAGS="$LDFLAGS $XLDFLAGS"; fi
 
 # test CXXFLAGS
-if [ $use_def_cxxflags != "yes" ]; then
-    TEST_CXXFLAGS="$CXXFLAGS"
-fi
+if [ $use_def_cxxflags != "yes" ]; then TEST_CXXFLAGS="$CXXFLAGS"; fi
 
 # gendlopen tool
 if [ "x$GENDLOPEN" = "x" ]; then
     GENDLOPEN="$PWD/src/gendlopen$EXEEXT"
+fi
+
+# check GTK2 and GLib headers
+if [ "x$win32" != "xyes" ]; then
+    have_glib_headers="no"
+    have_gtk_headers="no"
+
+    save_CFLAGS="$CFLAGS"
+
+    # GLib
+    if [ "x$use_pkgconfig_glib" = "xyes" ]; then
+        GLIB_CFLAGS="$("$PKG_CONFIG" --cflags glib-2.0 2>/dev/null)"
+    fi
+    CFLAGS="$GLIB_CFLAGS"
+    check_header "glib.h"
+
+    if [ "x$header" != "x" ]; then
+        check_header "glib-object.h"
+
+        if [ "x$header" != "x" ]; then
+            have_glib_headers="yes"
+        fi
+    fi
+
+    # GTK
+    if [ "x$use_pkgconfig_gtk" = "xyes" ]; then
+        GTK_CFLAGS="$("$PKG_CONFIG" --cflags gtk+-2.0 2>/dev/null)"
+        GTK_CFLAGS="$GTK_CFLAGS -Wno-deprecated-declarations"
+    fi
+    CFLAGS="$GTK_CFLAGS"
+    check_header "gtk/gtk.h"
+
+    if [ "x$header" != "x" ]; then
+        have_gtk_headers="yes"
+    fi
+
+    CFLAGS="$save_CFLAGS"
+
+    if [ "x$have_glib_headers" = "xyes" ]; then
+        notify="yes"
+    fi
+    if [ "x$have_gtk_headers" = "xyes" ]; then
+        appind="yes"
+    fi
+
+    echo ""
+    echo "build appindicator example: $appind"
+    echo "build notify example: $notify"
+fi
+
+# uuid examples
+printf "build UUID example: "
+
+if [ "x$CLANG" = "x" ]; then
+    echo "none"
+elif [ "x$win32" = "xyes" ]; then
+    echo "win32"
+else
+    echo "libuuid"
 fi
 
 # output
@@ -313,6 +636,7 @@ CC            = $CC
 CXX           = $CXX
 CCBUILD       = $CCBUILD
 AR            = $AR
+CLANG         = $CLANG
 
 EXEEXT        = $EXEEXT
 GENDLOPEN     = $GENDLOPEN
@@ -330,18 +654,17 @@ DLL_LDFLAGS   = $DLL_LDFLAGS
 TEST_CFLAGS   = $CFLAGS $CPPFLAGS
 TEST_CXXFLAGS = $TEST_CXXFLAGS $CPPFLAGS
 TEST_LDFLAGS  = $LDFLAGS $TEST_LDFLAGS
+LIBDL         = $LIBDL
+
+GLIB_CFLAGS   = $GLIB_CFLAGS
+
+GTK_CFLAGS    = $GTK_CFLAGS
 
 EOF
 
 echo ""
-echo "create Makefile"
-cat settings.mk Makefile.in > Makefile
-
-echo "create src/Makefile"
-cat settings.mk src/Makefile.in > src/Makefile
-
-echo "create test/Makefile"
-cat settings.mk test/Makefile.in > test/Makefile
-
-cat settings.mk
+create_makefile
+create_makefile "src/"
+create_makefile "test/"
+create_makefile "examples/"
 rm settings.mk

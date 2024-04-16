@@ -1,15 +1,3 @@
-#ifndef _WIN32
-
-#include <stdio.h>
-
-int main()
-{
-    puts("not win32");
-    return 0;
-}
-
-#else
-
 #include "helloworld.h"
 
 /* this is a win32 API example using wide characters */
@@ -58,5 +46,3 @@ int wmain()
 
     return 0;
 }
-
-#endif

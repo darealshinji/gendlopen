@@ -1,18 +1,45 @@
-# generated files
+*.o
+*.obj
+*.a
+*.lib
+*.exp
+*.[gp]ch
 
-Makefile
+*.exe
+*.[A]pp
+*.[Aa]pp[Ii]mage
+a.out
 
-examples/example_*.h
-examples/uuid_nix_dl.h
-examples/uuid_win_dl.h
+*.dll
+*.dylib
+*.so
+lib*.so.*
+
+*.log
+*.old
+*.bak
+*~
+
+/Makefile
+
+examples/Makefile
 examples/appindicator
+examples/example_appindicator.h
+examples/example_appindicator_gobject.h
+examples/example_appindicator_gtk.h
+examples/example_notify.h
+examples/example_notify_gobject.h
 examples/notify
 examples/uuid_nix
+examples/uuid_nix_dl.h
+examples/uuid_win_dl.h
 
+nmake/*.[ch]
+nmake/*.[ch]pp
+
+src/Makefile
 src/gendlopen
 src/template.h
-src/Makefile
-template.h
 
 test/Makefile
 test/c_auto_free
@@ -22,8 +49,7 @@ test/c_autoload.h
 test/c_minimal
 test/c_minimal.h
 test/c_multi
-test/c_multi.c
-test/c_multi.h
+test/c_multi.[ch]
 test/c_test
 test/c_test.h
 test/c_win32_wide
@@ -40,43 +66,4 @@ test/cxx_test.hpp
 test/cxx_win32_wide
 test/cxx_win32_wide.hpp
 test/helloworld_example_dl
-test/libhelloworld_dl.c
-test/libhelloworld_dl.h
-/c_auto_free.h
-/c_autoload.h
-/c_minimal.h
-/c_multi.c
-/c_multi.h
-/c_test.h
-/c_win32_wide.h
-/cxx_autoload.hpp
-/cxx_minimal.hpp
-/cxx_multi.cpp
-/cxx_multi.hpp
-/cxx_test.hpp
-/cxx_win32_wide.hpp
-/libhelloworld_dl.c
-/libhelloworld_dl.h
-
-# binary files
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.so.*
-*.dylib
-*.lib
-*.a
-a.out
-
-# backups
-*~
-*.old
-*.bak
-
-# other build artifacts
-/settings.mk
-/test.cpp
-*.exp
-*.log
+test/libhelloworld_dl.[ch]

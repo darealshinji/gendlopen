@@ -1,38 +1,39 @@
-
 OBJS = main.o clang-ast.o generate.o parse.o tokenize.o utils.o
 
 
 all: gendlopen$(EXEEXT)
 
 clean:
-	rm -f gendlopen gen_template_h template.h *.exe *.o
+	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o
 
-gendlopen$(EXEEXT): $(OBJS)
-	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 gen_template_h: gen_template_h.c
-	$(CCBUILD) gen_template_h.c -o $@
+	$(cc_v)$(CCBUILD) gen_template_h.c -o $@
 
 template.h: $(GEN_TEMPL)
-	./$(GEN_TEMPL) templates
+	$(gen_v)./$(GEN_TEMPL) templates
 
 generate.cpp: template.h
 
+
+gendlopen$(EXEEXT): $(OBJS)
+	$(cxx_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+
 main.o: main.cpp
-	$(CXX) $(CXXFLAGS) -c main.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
 
 clang-ast.o: clang-ast.cpp
-	$(CXX) $(CXXFLAGS) -c clang-ast.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c clang-ast.cpp -o $@
 
 generate.o: generate.cpp
-	$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
 
 parse.o: parse.cpp
-	$(CXX) $(CXXFLAGS) -c parse.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse.cpp -o $@
 
 tokenize.o: tokenize.cpp
-	$(CXX) $(CXXFLAGS) -c tokenize.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c tokenize.cpp -o $@
 
 utils.o: utils.cpp
-	$(CXX) $(CXXFLAGS) -c utils.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c utils.cpp -o $@
 

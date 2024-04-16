@@ -1,1 +1,2 @@
-These headers are only used for testing on Linux.
+These headers are only used for testing on *nix and contain only the needed prototypes.
+Headers for GTK+ and GLib must be installed as they're too complex/many to bundle them.

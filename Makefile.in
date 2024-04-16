@@ -2,23 +2,33 @@
 
 all: gendlopen
 
+clean-examples:
+	cd examples && $(MAKE) clean
+
 clean-test:
 	cd test && $(MAKE) clean
 
 clean-src:
 	cd src && $(MAKE) clean
 
-clean: clean-test clean-src
-	rm -f settings.mk test.cpp test.o test.obj
+clean: clean-examples clean-test clean-src
+	$(_v)-rm -f settings.mk test.c test.h test.cpp test.o test.obj
 
 distclean: clean
-	rm -f src/Makefile test/Makefile Makefile test.log
+	$(_v)-rm -f src/Makefile examples/Makefile test/Makefile Makefile test.log
 
 gendlopen:
 	cd src && $(MAKE)
 
 check: $(GENDLOPEN)
 	cd test && $(MAKE)
+	cd examples && $(MAKE)
+
+run_examples: examples
+	cd examples && $(MAKE) run_examples
+
+run_examples_wine: examples
+	cd examples && $(MAKE) run_examples_wine
 
 run_tests: test
 	cd test && $(MAKE) run_tests
