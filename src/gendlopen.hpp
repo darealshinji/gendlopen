@@ -27,11 +27,128 @@
 
 #include <fstream>
 #include <string>
+#include <utility>
 #include <vector>
-
+#include <cassert>
+#include <cstring>
 #include "cio.hpp"
-#include "misc.hpp"
-#include "utils.hpp"
+
+/* check for __builtin_unreachable() */
+#if defined(__has_builtin) && !defined(HAS_BUILTIN_UNREACHABLE)
+    #if __has_builtin(__builtin_unreachable)
+        #define HAS_BUILTIN_UNREACHABLE
+    #endif
+#endif
+
+/* ANSI color codes used in the Clang AST output */
+
+/* escaped variants for std::regex */
+#define COL(x)    "\x1B\\[" #x "m"
+#define C0        COL(0)          /* default */
+#define CGREEN    COL(0;32)       /* green */
+#define CFGREEN   COL(0;1;32)     /* fat green */
+#define CFBLUE    COL(0;1;36)     /* fat blue */
+
+/* unescaped variants for std::string */
+#define sCOL(x)   "\x1B[" #x "m"
+#define sC0       sCOL(0)         /* default */
+#define sCORANGE  sCOL(0;33)      /* orange */
+#define sCFGREEN  sCOL(0;1;32)    /* fat green */
+
+
+/* typedefs */
+
+typedef struct {
+    std::string type;
+    std::string symbol;
+    std::string args;
+    std::string notype_args;
+} proto_t;
+
+using vproto_t = std::vector<proto_t>;
+using vstring_t = std::vector<std::string>;
+
+
+/* enum for outout format */
+
+namespace output
+{
+    typedef enum {
+        c,
+        cxx,
+        minimal,
+        minimal_cxx
+    } format;
+}
+
+
+/* common functions */
+
+namespace utils
+{
+
+/* case-insensitive string comparison */
+bool eq_str_case(const std::string &str1, const std::string &str2);
+
+/* returns true if s begins with a prefix found in list */
+inline bool is_prefixed(const std::string &s, const vstring_t &list)
+{
+    for (const auto &e : list) {
+        if (s.starts_with(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* strip ANSI white-space characters from front and back */
+inline void strip_spaces(std::string &s)
+{
+    const char *list = " \t\n\r\v\f";
+
+    /* remove from back */
+    while (!s.empty() && std::strchr(list, s.back())) {
+        s.pop_back();
+    }
+
+    /* remove from front */
+    while (!s.empty() && std::strchr(list, s.front())) {
+        s.erase(0, 1);
+    }
+}
+
+/* replace string "from" with string "to" in string "s" */
+inline void replace(const std::string &from, const std::string &to, std::string &s)
+{
+    for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
+    {
+        s.replace(pos, from.size(), to);
+    }
+}
+
+/* whether "c" is within the range of "beg" and "end" */
+template<typename T=char>
+inline bool range(T c, T beg, T end)
+{
+    assert(beg < end);
+    return (c >= beg && c <= end);
+}
+
+/* in case std::unreachable is not implemented */
+[[noreturn]] inline void unreachable()
+{
+#ifdef __cpp_lib_unreachable
+    std::unreachable();
+#elif defined(HAS_BUILTIN_UNREACHABLE)
+    /* GCC, Clang */
+    __builtin_unreachable();
+#elif defined(_MSC_VER)
+    /* MSVC */
+    __assume(false);
+#endif
+}
+
+} /* namespace utils end */
 
 
 class gendlopen
