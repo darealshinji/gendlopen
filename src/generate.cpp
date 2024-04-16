@@ -62,7 +62,7 @@ std::string convert_to_upper(const std::string &in)
 
     for (const char &c : in) {
         if (utils::range(c, 'a','z')) {
-            out += c - ('a'-'A');
+            out += c - 32;
         } else if (utils::range(c, 'A','Z') || utils::range(c, '0','9')) {
             out += c;
         } else {
@@ -79,7 +79,7 @@ std::string convert_to_lower(const std::string &in)
 
     for (const char &c : in) {
         if (utils::range(c, 'A','Z')) {
-            out += c + ('a'-'A');
+            out += c + 32;
         } else if (utils::range(c, 'a','z') || utils::range(c, '0','9')) {
             out += c;
         } else {
@@ -93,8 +93,6 @@ std::string convert_to_lower(const std::string &in)
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char ** &argv)
 {
-    ASSUME(argc > 0);
-
     std::string line = "//";
     std::stringstream out;
 
@@ -288,6 +286,7 @@ bool gendlopen::tokenize_input()
 /* generate output */
 int gendlopen::generate(const std::string &ofile, const std::string &name)
 {
+    /* assert if only one of them was set */
     assert((m_default_liba.empty() && m_default_libw.empty()) ||
             (!m_default_liba.empty() && !m_default_libw.empty()));
 
@@ -297,7 +296,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     }
 
     /* is output C or C++? */
-    bool is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
+    const bool is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
 
     /* output filename */
     std::filesystem::path ofhdr(ofile);
