@@ -37,7 +37,6 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-
 #include "gendlopen.hpp"
 
 
@@ -117,7 +116,10 @@ bool get_parameter_names(proto_t &proto)
             search = e_fptr_name;
         } else if (token == ",") {
             /* argument list separator */
-            if (arg.size() < 2 || arg.back().back() == '*' || is_keyword(arg.back())) {
+            if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
+                arg.back().back() == '*' ||  /* pointer type without parameter name */
+                is_keyword(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
+            {
                 std::cerr << "error: a parameter name is missing: "
                     << proto.symbol << '(' << proto.args << ");" << std::endl;
                 std::cerr << "maybe try again with `--skip-parameter-names'" << std::endl;
@@ -172,6 +174,7 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
     /* read input into vector */
     while (ifs.get(c) && ifs.good())
     {
+        /* we're skipping through a comment section */
         if (comment != 0 && comment != c) {
             continue;
         }
@@ -185,11 +188,11 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
 
         case '/':
             if (ifs.peek() == '*') {
-                /* commentary begin */
+                /* asterisk commentary begin */
                 ifs.ignore();
                 comment = '*';
             } else if (ifs.peek() == '/') {
-                /* commentary begin */
+                /* double forward slash commentary begin */
                 ifs.ignore();
                 comment = '\n';
             } else {
@@ -199,7 +202,7 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
 
         case '*':
             if (comment == '*' && ifs.peek() == '/') {
-                /* commentary end */
+                /* asterisk commentary end */
                 ifs.ignore();
                 comment = 0;
             } else if (comment == 0) {
@@ -209,7 +212,8 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
 
         case '\n':
             if (comment == '\n') {
-                comment = 0; /* commentary end */
+                /* double forward slash commentary end */
+                comment = 0;
             }
             [[fallthrough]];
 
@@ -283,7 +287,7 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
     utils::strip_spaces(proto.args);
 
     if (skip_parameter_names) {
-        /* normally unused, but just in case */
+        /* just in case */
         proto.notype_args = "/* disabled !! */";
     } else if (!get_parameter_names(proto)) {
         return false;
@@ -351,7 +355,7 @@ bool has_duplicate_symbols(const vproto_t &proto, const vproto_t &objs, const st
 }
 
 /* add to vector only if the symbol wasn't already saved */
-void pb_if_unique(vproto_t &vec, const proto_t &proto)
+void push_back_if_unique(vproto_t &vec, const proto_t &proto)
 {
     for (const auto &e : vec) {
         if (e.symbol == proto.symbol) {
@@ -371,7 +375,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
     auto copy_if_prefixed = [this] (const vproto_t &from, vproto_t &to) {
         for (const auto &e : from) {
             if (utils::is_prefixed(e.symbol, m_prefix)) {
-                pb_if_unique(to, e);
+                push_back_if_unique(to, e);
             }
         }
     };
@@ -380,7 +384,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
     auto copy_if_whitelisted = [this] (const vproto_t &from, vproto_t &to) {
         for (const auto &e : from) {
             if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                pb_if_unique(to, e);
+                push_back_if_unique(to, e);
             }
         }
     };

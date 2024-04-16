@@ -53,8 +53,9 @@ private:
 public:
 
     ifstream() {}
-    ~ifstream() {}
+    virtual ~ifstream() {}
 
+    /* enable binary mode by default because of Windows */
     bool open(const std::string &file, std::ios::openmode mode = std::ios::in | std::ios::binary)
     {
         close();
@@ -184,13 +185,16 @@ private:
 public:
 
     ofstream() {}
-    ~ofstream() {}
+    virtual ~ofstream() {}
 
+    /* enable binary mode by default because of Windows */
     bool open(const std::string &file, std::ios::openmode mode = std::ios::out | std::ios::binary)
     {
         if (file == "-") {
+            /* STDOUT */
             m_stdout = true;
         } else {
+            /* file */
             m_ofs.open(file.c_str(), mode);
         }
 
@@ -204,12 +208,14 @@ public:
     void close()
     {
         if (m_stdout) {
+            /* flush content */
             std::cout << std::flush;
         } else if (m_ofs.is_open()) {
             m_ofs.close();
         }
     }
 
+    /* overloading "<<" operator */
     template<class T>
     std::ostream& operator<<(const T &obj)
     {

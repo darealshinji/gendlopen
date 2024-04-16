@@ -29,6 +29,10 @@
 #include "args.hxx"
 #include "gendlopen.hpp"
 
+/* ./src/gendlopen --more-help | wc -c  (minus a few characters from the first line) */
+#define HELP_TEXT_RESERVE_LENGTH 4850
+
+
 using StrValue = args::ValueFlag<std::string>;
 using StrList = args::ValueFlagList<std::string>;
 using Opt = args::Options;
@@ -80,10 +84,13 @@ namespace
 		const char *libname = iswide ? "LIBNAMEW(" : "LIBNAMEA(";
 
         if (pfx_case(str, "nq:")) {
+            /* no quotes */
             return str.substr(3);
         } else if (pfx_case(str, "ext:")) {
+            /* quotes + extension macro */
             return quote_lib(str.substr(4), iswide) + libext;
         } else if (pfx_case(str, "api:")) {
+            /* no quotes, API libname macro */
             const std::regex reg("(.*?):(.*)");
             std::smatch m;
             auto sub = str.substr(4);
@@ -156,8 +163,7 @@ int main(int argc, char **argv)
 {
     std::string more_help;
 
-    /* gendlopen --more-help | wc -c */
-    more_help.reserve(4500);
+    more_help.reserve(HELP_TEXT_RESERVE_LENGTH);
 
     ArgumentParser args("Tool to generate library loading code");
 

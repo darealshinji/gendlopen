@@ -23,20 +23,20 @@
  */
 
 #include <string>
-#include "utils.hpp"
+#include "gendlopen.hpp"
 
 
-/* case-insensitive string comparison */
+/* case-insensitive string comparison (ignoring current locale) */
 bool utils::eq_str_case(const std::string &str1, const std::string &str2)
 {
     auto to_C_lower = [] (char c) -> char {
         if (range(c, 'A', 'Z')) {
-            c += 32;
+            c += 32;  /* A-Z -> a-z */
         }
         return c;
     };
 
-    /* different size -> false */
+    /* different size means not equal */
     if (str1.size() != str2.size()) {
         return false;
     }
