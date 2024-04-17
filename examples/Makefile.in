@@ -1,13 +1,12 @@
 
-@APPIND@BIN_APPIND = appindicator
-@NOTIFY@BIN_NOTIFY = notify
+@APPIND@BIN_APPIND = appindicator$(EXEEXT)
+@NOTIFY@BIN_NOTIFY = notify$(EXEEXT)
 
-@CLANG@@NIX@BIN_UUIDNIX = uuid_nix
+@CLANG@@NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
 @CLANG@@W32@BIN_UUIDWIN = uuid_win$(EXEEXT)
 
 BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
-@W32@WINE = WINEDEBUG=-all wine
 
 
 all: $(BINS)
@@ -17,18 +16,10 @@ clean:
 	$(_v)-rm -f *.exe *.o *.obj example_*.h uuid_nix_dl.h uuid_win_dl.h
 
 run_examples: $(BINS)
-	$(_v)(set +e ; \
-	for x in $(BINS) ; do \
-	  echo $$x ; ./$$x ; \
-	  echo "return value: $$?" ; echo ; \
-	done)
+	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests))
 
 @W32@run_examples_wine: $(BINS)
-@W32@	$(_v)(set +e ; \
-@W32@	for x in $(BINS) ; do \
-@W32@	  echo $$x ; $(WINE) $$x ; \
-@W32@	  echo "return value: $$?" ; echo ; \
-@W32@	done)
+@W32@	$(_v)(set +e ; bins="$(BINS)" ; wine="$(WINE)" ; $(run_tests))
 
 
 # appindicator
@@ -43,7 +34,7 @@ run_examples: $(BINS)
 @APPIND@	$(gen_v)$(GENDLOPEN) -i appindicator_gobject.txt -f -o $@ -n xgobject -l libgobject-2.0.so.0
 
 @APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h
-@APPIND@	$(cc_v)$(CC) $(CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(LDFLAGS) $(LIBDL)
+@APPIND@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
 # libnotify
@@ -55,7 +46,7 @@ run_examples: $(BINS)
 @NOTIFY@	$(gen_v)$(GENDLOPEN) -i notify_gobject.txt -f -o $@ -n xgobject -lapi:0:gobject-2.0
 
 @NOTIFY@notify: example_notify.h example_notify_gobject.h
-@NOTIFY@	$(cc_v)$(CC) $(CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(LDFLAGS) $(LIBDL)
+@NOTIFY@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
 # UUID
@@ -66,7 +57,7 @@ run_examples: $(BINS)
 @CLANG@@NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 
 @CLANG@@NIX@uuid_nix: uuid_nix_dl.h
-@CLANG@@NIX@	$(cc_v)$(CC) $(CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(LDFLAGS) $(LIBDL)
+@CLANG@@NIX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 @CLANG@@W32@uuid_win_dl.h: uuid_win.h
 @CLANG@@W32@	$(gen_v)$(CLANG) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
@@ -74,5 +65,5 @@ run_examples: $(BINS)
 @CLANG@@W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 
 @CLANG@@W32@uuid_win$(EXEEXT): uuid_win_dl.h
-@CLANG@@W32@	$(cc_v)$(CC) $(CFLAGS) uuid_win.c -o $@ $(LDFLAGS) $(LIBDL)
+@CLANG@@W32@	$(cc_v)$(CC) $(TEST_CFLAGS) uuid_win.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 

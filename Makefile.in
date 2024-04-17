@@ -34,12 +34,12 @@ check: $(GENDLOPEN)
 run_examples: examples
 	cd examples && $(MAKE) run_examples
 
-run_examples_wine: examples
-	cd examples && $(MAKE) run_examples_wine
+@W32@run_examples_wine: examples
+@W32@	cd examples && $(MAKE) run_examples_wine
 
 run_tests: test
 	cd test && $(MAKE) run_tests
 
-run_tests_wine: test
-	cd test && $(MAKE) run_tests_wine
+@W32@run_tests_wine: test
+@W32@	cd test && $(MAKE) run_tests_wine
 

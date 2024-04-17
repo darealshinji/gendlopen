@@ -37,7 +37,6 @@ _GEN_SOURCES_WIN32 = c_win32_wide.h cxx_win32_wide.hpp
 GEN_SOURCES = $(GEN_SOURCES_ANY) $(GEN_SOURCES_WIN32)
 
 GENHDR = $(GENDLOPEN) -i helloworld.txt -f -o
-@NIX@WINE = WINEDEBUG=-all wine
 
 
 
@@ -50,18 +49,10 @@ clean:
 	$(_v)-rm -f $(GEN_SOURCES) $(_GEN_SOURCES_WIN32)
 
 run_tests: $(BINS)
-	$(_v)(set +e ; \
-	for x in $(BINS) ; do \
-	  echo $$x ; ./$$x ; \
-	  echo "return value: $$?" ; echo ; \
-	done)
+	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests))
 
 @W32@run_tests_wine: $(BINS)
-@W32@	$(_v)(set +e ; \
-@W32@	for x in $(BINS) ; do \
-@W32@	  echo $$x ; $(WINE) $$x ; \
-@W32@	  echo "return value: $$?" ; echo ; \
-@W32@	done)
+@W32@	$(_v)(set +e ; bins="$(BINS)" ; wine="$(WINE)" ; $(run_tests))
 
 
 # DLL

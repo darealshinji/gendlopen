@@ -21,6 +21,7 @@ lib*.so.*
 *~
 
 /Makefile
+/settings.mk
 
 examples/Makefile
 examples/appindicator
