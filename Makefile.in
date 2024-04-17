@@ -1,5 +1,5 @@
 
-MAKEFILES = \
+clean_makefiles = \
 	src/Makefile \
 	examples/Makefile \
 	test/Makefile \
@@ -21,7 +21,7 @@ clean: clean-examples clean-test clean-src
 	$(_v)-rm -f settings.mk test.c test.h test.cpp test.o test.obj
 
 distclean: clean
-	$(_v)-rm -f $(MAKEFILES) test.log
+	$(_v)-rm -f $(clean_makefiles) test.log
 	$(_v)-cd nmake && rm -f *.exe *.obj *.lib *.dll *.exp *.c *.h *.cpp *.hpp
 
 gendlopen:

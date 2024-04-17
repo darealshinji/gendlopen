@@ -58,7 +58,7 @@ run_examples: $(BINS)
 # UUID
 
 @NIX@uuid_nix_dl.h: uuid_nix.h
-@NIX@	$(gen_v)$(CLANG) -Xclang -ast-dump -fansi-escape-codes -Ithirdparty/uuid $< | \
+@NIX@	$(gen_v)$(CLANG) -Xclang -ast-dump -fansi-escape-codes -Ithirdparty/uuid uuid_nix.h | \
 @NIX@	  $(GENDLOPEN) -i- -f -o $@ --library libuuid.so.1 \
 @NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 

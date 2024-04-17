@@ -75,15 +75,15 @@ check_host_tool()
 {
     tool=""
 
-    if [ "x$HOST" != "x" ]; then
-        _check_tool "${HOST}$1"
+    if [ "x$host" != "x" ]; then
+        _check_tool "${host}$1"
     fi
 
     if [ "x$tool" = "x" ]; then
         _check_tool "$1"
     fi
 
-    if [ "x$2" != "xexit" ] && [ "x$tool" = "x" ]; then
+    if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
         exit 1
     fi
 }
@@ -105,14 +105,14 @@ check_clang_triple()
 
 check_clang_ast()
 {
-    CLANG=""
+    clang=""
     printf "check if $1 can create an AST dump ... "
 
     echo '' > test.h
     run_cmd "$1 -Xclang -ast-dump -fansi-escape-codes test.h"
 
     if [ $ret -eq 0 ]; then
-        CLANG="$1"
+        clang="$1"
         echo "yes"
     else
         echo "no"
@@ -297,16 +297,16 @@ EOL
         CXX="${i#*=}"
         ;;
     ccbuild=*)
-        CCBUILD="${i#*=}"
+        cc_build="${i#*=}"
         ;;
     host=*)
-        HOST="${i#*=}"
+        host="${i#*=}"
         ;;
     cl=*)
         CL="${i#*=}"
         ;;
     clang=*)
-        CLANG="${i#*=}"
+        clang="${i#*=}"
         ;;
     ar=*)
         AR="${i#*=}"
@@ -365,12 +365,12 @@ esac
 done
 
 # xxd
-GEN_TEMPL="gen_template_h"
+gen_template="gen_template_h"
 if [ "x$check_xxd" = "xyes" ]; then
     check_tool xxd
 
     if [ "x$tool" != "x" ]; then
-        GEN_TEMPL="gen_template_h.sh"
+        gen_template="gen_template_h.sh"
     fi
 fi
 
@@ -381,8 +381,8 @@ if [ "x$CL" != "x" ]; then
 fi
 
 # host triplet
-if [ "x$HOST" != "x" ]; then
-    HOST="${HOST}-"
+if [ "x$host" != "x" ]; then
+    host="${host}-"
 fi
 
 # host ar
@@ -418,9 +418,9 @@ elif [ "x$CXX" != "x$CC" ]; then
 fi
 
 # build C
-if [ "x$CCBUILD" = "x" ]; then
+if [ "x$cc_build" = "x" ]; then
     if [ "$CC" = "gcc" ] || [ "$CC" = "cc" ]; then
-        CCBUILD="$CC"
+        cc_build="$CC"
     else
         check_tool gcc
 
@@ -428,38 +428,38 @@ if [ "x$CCBUILD" = "x" ]; then
             check_tool cc exit
         fi
 
-        CCBUILD="$tool"
+        cc_build="$tool"
     fi
 fi
 
 # host clang
-if [ "x$CLANG" = "x" ]; then
-    # check_clang_ast will set or empty the variable $CLANG
+if [ "x$clang" = "x" ]; then
+    # check_clang_ast will set or empty the variable $clang
     if [ "x$CL" != "x" ]; then
         check_clang_ast "$CL"
     fi
 
-    if [ "x$CLANG" = "x" ]; then
+    if [ "x$clang" = "x" ]; then
         check_host_tool clang
-        CLANG="$tool"
+        clang="$tool"
     fi
 
-    if [ "x$CLANG" != "x" ] && [ "x$CL" != "x$CLANG" ]; then
-        check_clang_ast "$CLANG"
+    if [ "x$clang" != "x" ] && [ "x$CL" != "x$clang" ]; then
+        check_clang_ast "$clang"
     fi
 fi
 
 # clang target triple
-if [ "x$CL" != "x" ] && [ "x$CLANG" != "x" ]; then
+if [ "x$CL" != "x" ] && [ "x$clang" != "x" ]; then
     check_clang_triple "$CL"
 
-    if [ "x$CL" != "x$CLANG" ] && [ "x$triple" != "x" ]; then
+    if [ "x$CL" != "x$clang" ] && [ "x$triple" != "x" ]; then
         save_triple="$triple"
-        check_clang_triple "$CLANG"
+        check_clang_triple "$clang"
 
         if [ "x$triple" != "x" ] && [ "x$save_triple" != "x$triple" ]; then
             echo ""
-            echo "warning: target triples of $CL and $CLANG differ:"
+            echo "warning: target triples of $CL and $clang differ:"
             echo "$save_triple != $triple"
             echo ""
         fi
@@ -620,7 +620,7 @@ fi
 # uuid examples
 printf "build UUID example: "
 
-if [ "x$CLANG" = "x" ]; then
+if [ "x$clang" = "x" ]; then
     echo "none"
 elif [ "x$win32" = "xyes" ]; then
     echo "win32"
@@ -634,13 +634,13 @@ cat <<EOF > settings.mk
 
 CC            = $CC
 CXX           = $CXX
-CCBUILD       = $CCBUILD
+CCBUILD       = $cc_build
 AR            = $AR
-CLANG         = $CLANG
+CLANG         = $clang
 
 EXEEXT        = $EXEEXT
 GENDLOPEN     = $GENDLOPEN
-GEN_TEMPL     = $GEN_TEMPL
+GEN_TEMPL     = $gen_template
 
 CFLAGS        = $CFLAGS $CPPFLAGS
 CXXFLAGS      = $CXXFLAGS $CPPFLAGS

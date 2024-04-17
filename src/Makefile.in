@@ -17,7 +17,7 @@ generate.cpp: template.h
 
 
 gendlopen$(EXEEXT): $(OBJS)
-	$(cxx_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 main.o: main.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
@@ -36,4 +36,3 @@ tokenize.o: tokenize.cpp
 
 utils.o: utils.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c utils.cpp -o $@
-

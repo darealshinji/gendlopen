@@ -31,8 +31,9 @@ int send_notification(const char *app_name, const char *summary, const char *bod
   return rv;
 }
 
-int main(int, char **argv)
+int main(int argc, char **argv)
 {
+  (void)argc;
   return send_notification(argv[0], "Hello", "Hi there!", NULL);
 }
 
