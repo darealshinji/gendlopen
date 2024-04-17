@@ -317,7 +317,7 @@ EOL
         PKG_CONFIG="${i#*=}"
         ;;
     gdo=*)
-        GENDLOPEN="${i#*=}"
+        gendlopen="${i#*=}"
         ;;
     cflags=*)
         CFLAGS="${i#*=}"
@@ -567,8 +567,10 @@ if [ "x$XLDFLAGS"  != "x" ]; then  LDFLAGS="$LDFLAGS $XLDFLAGS"; fi
 if [ $use_def_cxxflags != "yes" ]; then TEST_CXXFLAGS="$CXXFLAGS"; fi
 
 # gendlopen tool
-if [ "x$GENDLOPEN" = "x" ]; then
-    GENDLOPEN="$PWD/src/gendlopen$EXEEXT"
+def_gendlopen="$PWD/src/gendlopen$EXEEXT"
+
+if [ "x$gendlopen" = "x" ]; then
+    gendlopen="$PWD/src/gendlopen$EXEEXT"
 fi
 
 # check GTK2 and GLib headers
@@ -641,7 +643,8 @@ AR            = $AR
 CLANG         = $clang
 
 EXEEXT        = $EXEEXT
-GENDLOPEN     = $GENDLOPEN
+GENDLOPEN     = $gendlopen
+DEF_GENDLOPEN = $def_gendlopen
 GEN_TEMPL     = $gen_template
 
 CFLAGS        = $CFLAGS $CPPFLAGS

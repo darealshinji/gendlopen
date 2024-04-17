@@ -6,7 +6,7 @@ clean_makefiles = \
 	Makefile
 
 
-all: gendlopen
+all: $(DEF_GENDLOPEN)
 
 clean-examples:
 	cd examples && $(MAKE) clean
@@ -24,7 +24,7 @@ distclean: clean
 	$(_v)-rm -f $(clean_makefiles) test.log
 	$(_v)-cd nmake && rm -f *.exe *.obj *.lib *.dll *.exp *.c *.h *.cpp *.hpp
 
-gendlopen:
+$(DEF_GENDLOPEN):
 	cd src && $(MAKE)
 
 check: $(GENDLOPEN)
