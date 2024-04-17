@@ -39,6 +39,7 @@ nmake/*.[ch]pp
 
 src/Makefile
 src/gendlopen
+src/gen_template_h
 src/template.h
 
 test/Makefile
