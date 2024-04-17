@@ -26,12 +26,14 @@ create_makefile()
     if [ "x$notify" != "xyes" ]; then xnotify="#"; fi
     if [ "x$win32"  != "xyes" ]; then xwin32="#"; fi
     if [ "x$nix"    != "xyes" ]; then xnix="#"; fi
+    if [ "x$clang"   = "x" ];    then xclang="#"; fi
 
     echo "create ${1}Makefile"
 
     cat settings.mk rules.mk "${1}Makefile.in" | \
     sed -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
+        -e "s,@CLANG@,$xclang,g" \
         -e "s,@W32@,$xwin32,g" \
         -e "s,@NIX@,$xnix,g" \
         > "${1}Makefile"
@@ -472,6 +474,8 @@ if [ "x$CL" != "x" ]; then
     check_std_version msvc
 
     win32="yes"
+    nix="no"
+
     def_cppflags="-DWIN32_LEAN_AND_MEAN"
     def_cflags="-W3 -O2"
     def_cxxflags="-W3 -O2 -EHsc" #-std:c++latest
@@ -488,6 +492,8 @@ elif $CC -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
     test_cxx11="$flag"
 
     win32="yes"
+    nix="no"
+
     def_cppflags="-DWIN32_LEAN_AND_MEAN"
     def_cflags="-Wall -Wextra -O3"
     def_cxxflags="-Wall -Wextra -O3"
@@ -527,10 +533,6 @@ else
     DLL_LDFLAGS="-shared"
     TEST_LDFLAGS="-Wl,-rpath,'\$\$ORIGIN'"
     LIBDL="$libdl"
-fi
-
-if [ "x$win32" = "xyes" ]; then
-    nix="no"
 fi
 
 # host pkg-config
@@ -621,7 +623,7 @@ fi
 printf "build UUID example: "
 
 if [ "x$clang" = "x" ]; then
-    echo "none"
+    echo "no (clang missing)"
 elif [ "x$win32" = "xyes" ]; then
     echo "win32"
 else
