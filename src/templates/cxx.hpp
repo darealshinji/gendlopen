@@ -750,6 +750,7 @@ public:
 
         clear_error();
 
+        /* save error */
 #ifdef GDO_WINAPI
         m_last_error = ERROR_NOT_FOUND;
 #endif

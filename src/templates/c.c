@@ -67,6 +67,7 @@ GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
 /* Sets the "no library was loaded" error message */
 GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 {
+    gdo_clear_errbuf();
     gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
     gdo_save_to_errbuf(_T("no library was loaded"));
 }
@@ -85,7 +86,6 @@ GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 GDO_LINKAGE void gdo_clear_errbuf(void)
 {
     gdo_hndl.buf[0] = 0;
-    (GDO_UNUSED_RESULT) dlerror();
 }
 
 /* Save the last message provided by dlerror() */
@@ -98,6 +98,7 @@ GDO_LINKAGE void gdo_save_dlerror(void)
 /* Sets the "no library was loaded" error message */
 GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 {
+    gdo_clear_errbuf();
     gdo_save_to_errbuf("no library was loaded");
 }
 
@@ -387,7 +388,6 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv)
         if (err) {
             /* must save our error message manually instead of
              * invoking gdo_save_dlerror() */
-            gdo_clear_errbuf();
             gdo_save_to_errbuf(err);
             *rv = false;
             return NULL;

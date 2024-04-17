@@ -17,12 +17,14 @@ clean:
 
 run_examples: $(BINS)
 	$(_v)for x in $(BINS) ; do \
-	  echo $$x ; ./$$x ; echo "return value: $$?" ; echo ; \
+	  echo $$x ; ./$$x ; \
+	  echo "return value: $$?" ; echo ; \
 	done
 
 @W32@run_examples_wine: $(BINS)
 @W32@	$(_v)for x in $(BINS) ; do \
-@W32@	  echo $$x ; $(WINE) $$x ; echo "return value: $$?" ; echo ; \
+@W32@	  echo $$x ; $(WINE) $$x ; \
+@W32@	  echo "return value: $$?" ; echo ; \
 @W32@	done
 
 
