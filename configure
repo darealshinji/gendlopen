@@ -30,10 +30,10 @@ create_makefile()
 {
     if [ "x$with_appind" != "xyes" ]; then xappind="#"; fi
     if [ "x$with_notify" != "xyes" ]; then xnotify="#"; fi
-
-    if [ "x$win32" != "xyes" ]; then xwin32="#"; fi
-    if [ "x$nix"   != "xyes" ]; then xnix="#"; fi
-    if [ "x$clang"  = "x" ];    then xclang="#"; fi
+    if [ "x$win32"       != "xyes" ]; then xwin32="#"; fi
+    if [ "x$nix"         != "xyes" ]; then xnix="#"; fi
+    if [ "x$clang"        = "x"    ]; then xclang="#"; fi
+    if [ "x$ar"           = "x"    ]; then xar="#"; fi
 
     echo "create ${1}Makefile"
 
@@ -41,6 +41,7 @@ create_makefile()
     sed -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
         -e "s,@CLANG@,$xclang,g" \
+        -e "s,@AR@,$xar,g" \
         -e "s,@W32@,$xwin32,g" \
         -e "s,@NIX@,$xnix,g" \
         > "${1}Makefile"
@@ -97,17 +98,24 @@ check_host_tool()
     fi
 }
 
-check_clang_triple()
+check_cc_triple()
 {
     printf "check target triple of $1 ... "
 
-    cmd="$1 -print-target-triple"
+    cmd="$1 -dumpmachine"
     echo "$cmd" >> test.log
     triple="$($cmd 2>>test.log)"
 
     if [ "x$triple" = "x" ]; then
+        cmd="$1 -print-target-triple"
+        echo "$cmd" >> test.log
+        triple="$($cmd 2>>test.log)"
+    fi
+
+    if [ "x$triple" = "x" ]; then
         echo "nothing found"
     else
+        triple=$(echo "$triple" | sed 's|-pc-|-|; s|-unknown-|-|')
         echo "$triple"
     fi
 }
@@ -118,7 +126,7 @@ check_clang_ast()
     printf "check if $1 can create an AST dump ... "
 
     echo '' > test.h
-    run_cmd "$1 -Xclang -ast-dump -fansi-escape-codes test.h"
+    run_cmd "$1 -Xclang -ast-dump -fansi-escape-codes $2 test.h"
 
     if [ $ret -eq 0 ]; then
         clang="$1"
@@ -349,16 +357,6 @@ done
 ## tests
 ###############################################################################
 
-# xxd
-gen_template="gen_template_h"
-if [ "x$check_xxd" = "xyes" ]; then
-    check_tool xxd
-
-    if [ "x$tool" != "x" ]; then
-        gen_template="gen_template_h.sh"
-    fi
-fi
-
 # clang-cl / MSVC
 if [ "x$cl" != "x" ]; then
     cc="$cl"
@@ -368,12 +366,6 @@ fi
 # host triplet
 if [ "x$host" != "x" ]; then
     host="${host}-"
-fi
-
-# host ar
-if [ "x$ar" = "x" ]; then
-    check_host_tool ar exit
-    ar="$tool"
 fi
 
 # host C
@@ -388,6 +380,9 @@ if [ "x$cc" = "x" ]; then
 else
     check_host_tool "$cc" exit
 fi
+
+check_cc_triple "$cc"
+cc_triple="$triple"
 
 # host C++
 if [ "x$cxx" = "x" ]; then
@@ -425,29 +420,37 @@ if [ "x$clang" = "x" ]; then
     fi
 
     if [ "x$clang" = "x" ]; then
-        check_host_tool clang
+        check_tool clang
         clang="$tool"
-    fi
-
-    if [ "x$clang" != "x" ] && [ "x$cl" != "x$clang" ]; then
-        check_clang_ast "$clang"
     fi
 fi
 
-# clang target triple
-if [ "x$cl" != "x" ] && [ "x$clang" != "x" ]; then
-    check_clang_triple "$cl"
+# clang AST
+if [ "x$clang" != "x" ] && [ "x$cl" != "x$clang" ]; then
+    if [ "x$cc_triple" != "x" ]; then
+        clang_ast_target="--target=$cc_triple"
+    fi
 
-    if [ "x$cl" != "x$clang" ] && [ "x$triple" != "x" ]; then
-        save_triple="$triple"
-        check_clang_triple "$clang"
+    check_clang_ast "$clang" "$clang_ast_target"
 
-        if [ "x$triple" != "x" ] && [ "x$save_triple" != "x$triple" ]; then
-            echo ""
-            echo "warning: target triples of $cl and $clang differ:"
-            echo "$save_triple != $triple"
-            echo ""
-        fi
+    if [ "x$clang" = "x" ]; then
+        clang_ast_target=""
+    fi
+fi
+
+# host ar
+if [ "x$ar" = "x" ]; then
+    check_host_tool ar
+    ar="$tool"
+fi
+
+# xxd
+gen_template="gen_template_h"
+if [ "x$check_xxd" = "xyes" ]; then
+    check_tool xxd
+
+    if [ "x$tool" != "x" ]; then
+        gen_template="gen_template_h.sh"
     fi
 fi
 
@@ -644,6 +647,7 @@ CXX           = $cxx
 CCBUILD       = $cc_build
 AR            = $ar
 CLANG         = $clang
+CLANG_TARGET  = $clang_ast_target
 
 EXEEXT        = $exeext
 DEF_GENDLOPEN = $PWD/src/gendlopen\$(EXEEXT)

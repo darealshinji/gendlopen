@@ -52,8 +52,10 @@ run_examples: $(BINS)
 
 # UUID
 
+@CLANG@DUMP_AST = $(CLANG) -Xclang -ast-dump -fansi-escape-codes $(CLANG_TARGET)
+
 @CLANG@@NIX@uuid_nix_dl.h: uuid_nix.h
-@CLANG@@NIX@	$(gen_v)$(CLANG) -Xclang -ast-dump -fansi-escape-codes -Ithirdparty/uuid uuid_nix.h | \
+@CLANG@@NIX@	$(gen_v)$(DUMP_AST) -Ithirdparty/uuid uuid_nix.h | \
 @CLANG@@NIX@	  $(GENDLOPEN) -i- -f -o $@ --library libuuid.so.1 \
 @CLANG@@NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 
@@ -61,7 +63,7 @@ run_examples: $(BINS)
 @CLANG@@NIX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 @CLANG@@W32@uuid_win_dl.h: uuid_win.h
-@CLANG@@W32@	$(gen_v)$(CLANG) -Xclang -ast-dump -fansi-escape-codes uuid_win.h | \
+@CLANG@@W32@	$(gen_v)$(DUMP_AST) uuid_win.h | \
 @CLANG@@W32@	  $(GENDLOPEN) -i- -f -o $@ --library rpcrt4.dll \
 @CLANG@@W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 

@@ -8,13 +8,12 @@ BINS_ANY = \
 	cxx_test$(EXEEXT) \
 	cxx_autoload$(EXEEXT) \
 	cxx_minimal$(EXEEXT) \
-	cxx_multi$(EXEEXT) \
-	helloworld_example_dl$(EXEEXT)
+	cxx_multi$(EXEEXT)
 
-
+@AR@BINS_AR = helloworld_example_dl$(EXEEXT)
 @W32@BINS_WIN32 = c_win32_wide$(EXEEXT) cxx_win32_wide$(EXEEXT)
 
-BINS = $(BINS_ANY) $(BINS_WIN32)
+BINS = $(BINS_ANY) $(BINS_WIN32) $(BINS_AR)
 
 GEN_SOURCES_ANY = \
 	libhelloworld_dl.c \
@@ -130,14 +129,14 @@ cxx_multi$(EXEEXT): cxx_multi_part1.o cxx_multi_part2.o cxx_multi.o
 
 # static fake library test
 
-libhelloworld_dl.o: libhelloworld_dl.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) -c libhelloworld_dl.c -o $@
+@AR@libhelloworld_dl.o: libhelloworld_dl.c
+@AR@	$(cc_v)$(CC) $(TEST_CFLAGS) -c libhelloworld_dl.c -o $@
 
-libhelloworld_dl.a: libhelloworld_dl.o
-	$(ar_v)$(AR) cr $@ libhelloworld_dl.o
+@AR@libhelloworld_dl.a: libhelloworld_dl.o
+@AR@	$(ar_v)$(AR) cr $@ libhelloworld_dl.o
 
-helloworld_example_dl$(EXEEXT): libhelloworld_dl.a helloworld_example.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(TEST_LDFLAGS) $(LIBDL)
+@AR@helloworld_example_dl$(EXEEXT): libhelloworld_dl.a helloworld_example.c
+@AR@	$(cc_v)$(CC) $(TEST_CFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(TEST_LDFLAGS) $(LIBDL)
 
 
 # generate headers
