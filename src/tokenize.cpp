@@ -45,7 +45,7 @@ namespace /* anonymous */
 
 /* compare s with a list of very basic types and keywords
  * to guess if it could be a parameter name */
-bool is_keyword(const std::string &s)
+bool keyword_or_type(const std::string &s)
 {
     const std::list<const char *> keywords =
     {
@@ -72,17 +72,17 @@ bool is_keyword(const std::string &s)
 bool get_parameter_names(proto_t &proto)
 {
     typedef enum {
-        e_normal = 0,
-        e_fptr_name = 1,
-        e_fptr_args = 2
+        E_DEFAULT,
+        E_FUNC_PTR_NAME,
+        E_FUNC_PTR_PARAM_LIST
     } e_type_t;
 
-    e_type_t search = e_normal;
+    e_type_t search = E_DEFAULT;
     int scope = 0;
     std::string out, token;
     vstring_t arg;
 
-    /* void or empty: nothing to do */
+    /* nothing to do if "void" or empty*/
     if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
         return true;
     }
@@ -92,8 +92,21 @@ bool get_parameter_names(proto_t &proto)
 
     /* tokenize argument list */
     while (iss >> token) {
-        if (search == e_fptr_args) {
-            /* skip through function pointer arguments list */
+        switch (search)
+        {
+        /* function pointer name */
+        case E_FUNC_PTR_NAME:
+            if (token == ")") {
+                /* end of name sequence */
+                search = E_FUNC_PTR_PARAM_LIST;
+            } else {
+                /* add name */
+                arg.push_back(token);
+            }
+            break;
+
+        /* parameter list */
+        case E_FUNC_PTR_PARAM_LIST:
             if (token == "(") {
                 scope++;
             } else if (token == ")") {
@@ -102,45 +115,125 @@ bool get_parameter_names(proto_t &proto)
 
             if (scope < 1) {
                 scope = 0;
-                search = e_normal;
+                search = E_DEFAULT;
             }
-        } else if (search == e_fptr_name) {
-            /* function pointer name */
-            if (token == ")") {
-                search = e_fptr_args;
+            break;
+
+        case E_DEFAULT:
+            if (token == "(") {
+                /* begin of a function pointer name */
+                search = E_FUNC_PTR_NAME;
+            } else if (token == ",") {
+                /* argument list separator */
+                if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
+                    arg.back().back() == '*' ||  /* pointer type without parameter name */
+                    keyword_or_type(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
+                {
+                    std::cerr << "error: a parameter name is missing: "
+                        << proto.symbol << '(' << proto.args << ");" << std::endl;
+                    std::cerr << "hint: try again with `--skip-parameter-names'" << std::endl;
+                    return false;
+                }
+
+                out += ", ";
+                out += arg.back();
+                arg.clear();
             } else {
                 arg.push_back(token);
             }
-        } else if (token == "(") {
-            /* begin of a function pointer name */
-            search = e_fptr_name;
-        } else if (token == ",") {
-            /* argument list separator */
-            if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
-                arg.back().back() == '*' ||  /* pointer type without parameter name */
-                is_keyword(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
-            {
-                std::cerr << "error: a parameter name is missing: "
-                    << proto.symbol << '(' << proto.args << ");" << std::endl;
-                std::cerr << "maybe try again with `--skip-parameter-names'" << std::endl;
-                return false;
-            }
-
-            out += ", ";
-            out += arg.back();
-            arg.clear();
-        } else {
-            arg.push_back(token);
+            break;
         }
     }
 
-    if (out.starts_with(", ")) {
-        out.erase(0, 2);
+    if (out.starts_with(',')) {
+        out.erase(0, 1);
     }
 
+    utils::strip_spaces(out);
     proto.notype_args = out;
 
     return true;
+}
+
+/* decide what to do with the current character */
+bool handle_character(cio::ifstream &ifs, std::string &line, char &c, char &comment)
+{
+    auto add_element = [] (std::string &line, char &c) {
+        if (!line.empty() && line.back() != ' ') {
+            line += ' ';
+        }
+        line += c;
+        line += ' ';
+    };
+
+    switch (c)
+    {
+    /* end of sequence -> save line buffer */
+    case ';':
+        return true;
+
+    case '/':
+        if (ifs.peek() == '*') {
+            /* asterisk commentary begin */
+            ifs.ignore();
+            comment = '*';
+        } else if (ifs.peek() == '/') {
+            /* double forward slash commentary begin */
+            ifs.ignore();
+            comment = '\n';
+        } else {
+            add_element(line, c);
+        }
+        break;
+
+    case '*':
+        if (comment == '*' && ifs.peek() == '/') {
+            /* asterisk commentary end */
+            ifs.ignore();
+            comment = 0;
+        } else if (comment == 0) {
+            add_element(line, c);
+        }
+        break;
+
+    case '\n':
+        if (comment == '\n') {
+            /* double forward slash commentary end */
+            comment = 0;
+        }
+        /* treat newline as space */
+        [[fallthrough]];
+
+    /* space */
+    case ' ':
+    case '\t':
+    case '\r':
+    case '\v':
+    case '\f':
+        if (!line.empty() && line.back() != ' ') {
+            line += ' ';
+        }
+        break;
+
+    case '_':
+        line += c;
+        break;
+
+    /* add character */
+    default:
+        /* function name, argument, etc. */
+        if (utils::range(c, 'a','z') ||
+            utils::range(c, 'A','Z') ||
+            utils::range(c, '0','9'))
+        {
+            line += c;
+        } else {
+            add_element(line, c);
+        }
+        break;
+    }
+
+    return false;
 }
 
 /* read input and strip comments */
@@ -148,28 +241,6 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
 {
     std::string line;
     char c, comment = 0;
-    uint8_t nullbytes = 0;
-
-    auto add_space = [&] () {
-        if (!line.empty() && line.back() != ' ') {
-            line += ' ';
-        }
-    };
-
-    auto add_element = [&] () {
-        add_space();
-        line += c;
-        line += ' ';
-    };
-
-    auto save_line = [&] () {
-        utils::strip_spaces(line);
-
-        if (!line.empty()) {
-            vec.push_back(line);
-            line.clear();
-        }
-    };
 
     /* read input into vector */
     while (ifs.get(c) && ifs.good())
@@ -179,89 +250,25 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
             continue;
         }
 
-        switch (c)
-        {
-        /* end of sequence -> save line buffer */
-        case ';':
-            save_line();
-            break;
+        if (handle_character(ifs, line, c, comment)) {
+            /* the end of a sequence was reached */
+            utils::strip_spaces(line);
 
-        case '/':
-            if (ifs.peek() == '*') {
-                /* asterisk commentary begin */
-                ifs.ignore();
-                comment = '*';
-            } else if (ifs.peek() == '/') {
-                /* double forward slash commentary begin */
-                ifs.ignore();
-                comment = '\n';
-            } else {
-                add_element();
+            if (!line.empty()) {
+                vec.push_back(line);
+                line.clear();
             }
-            break;
-
-        case '*':
-            if (comment == '*' && ifs.peek() == '/') {
-                /* asterisk commentary end */
-                ifs.ignore();
-                comment = 0;
-            } else if (comment == 0) {
-                add_element();
-            }
-            break;
-
-        case '\n':
-            if (comment == '\n') {
-                /* double forward slash commentary end */
-                comment = 0;
-            }
-            [[fallthrough]];
-
-        /* space */
-        case ' ':
-        case '\t':
-        case '\r':
-        case '\v':
-        case '\f':
-            add_space();
-            break;
-
-        /* null byte */
-        case 0x00:
-            /* ignore a couple of them, otherwise we should assume it's
-             * something like UTF-16 or a binary file */
-            if (++nullbytes > 8) {
-                std::cerr << "error: too many null bytes (\\0) found in input!" << std::endl;
-                std::cerr << "input text must be ASCII or UTF-8 formatted" << std::endl;
-                return false;
-            }
-            break;
-
-        /* add character */
-        default:
-            /* function name, argument, etc. */
-            if (utils::range(c, 'a','z') ||
-                utils::range(c, 'A','Z') ||
-                utils::range(c, '0','9') || c == '_')
-            {
-                line += c;
-            } else {
-                add_element();
-            }
-            break;
-        }
-
-        /* stop if the sequence gets unrealistically long */
-        if (line.size() > 1000) {
-            line.erase(80, std::string::npos);
-            std::cerr << "error: the following sequence is exceeding 1000 bytes:" << std::endl;
-            std::cerr << line << " <...>" << std::endl;
-            return false;
         }
     }
 
-    /* in case the last prototype didn't end on semicolon */
-    save_line();
+    /* append line in case the last prototype
+     * didn't end on semicolon */
+
+    utils::strip_spaces(line);
+
+    if (!line.empty()) {
+        vec.push_back(line);
+    }
 
     return true;
 }

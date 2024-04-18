@@ -411,9 +411,9 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     out.close();
 
-    if (!use_stdout) {
-        //std::cout << "saved to file: " << ofhdr << std::endl;
-    }
+    //if (!use_stdout) {
+    //    std::cout << "saved to file: " << ofhdr << std::endl;
+    //}
 
     if (!m_separate) {
         return 0;
