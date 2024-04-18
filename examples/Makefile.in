@@ -8,6 +8,7 @@
 BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
 
+.PHONY: all clean
 
 all: $(BINS)
 
@@ -33,7 +34,7 @@ run_examples: $(BINS)
 @APPIND@example_appindicator_gobject.h: appindicator_gobject.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) -i appindicator_gobject.txt -f -o $@ -n xgobject -l libgobject-2.0.so.0
 
-@APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h
+@APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h appindicator.c
 @APPIND@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
@@ -45,7 +46,7 @@ run_examples: $(BINS)
 @NOTIFY@example_notify_gobject.h: notify_gobject.txt
 @NOTIFY@	$(gen_v)$(GENDLOPEN) -i notify_gobject.txt -f -o $@ -n xgobject -lapi:0:gobject-2.0
 
-@NOTIFY@notify: example_notify.h example_notify_gobject.h
+@NOTIFY@notify: example_notify.h example_notify_gobject.h notify.c
 @NOTIFY@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
@@ -56,7 +57,7 @@ run_examples: $(BINS)
 @CLANG@@NIX@	  $(GENDLOPEN) -i- -f -o $@ --library libuuid.so.1 \
 @CLANG@@NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 
-@CLANG@@NIX@uuid_nix: uuid_nix_dl.h
+@CLANG@@NIX@uuid_nix: uuid_nix_dl.h uuid_nix.c
 @CLANG@@NIX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 @CLANG@@W32@uuid_win_dl.h: uuid_win.h
@@ -64,6 +65,6 @@ run_examples: $(BINS)
 @CLANG@@W32@	  $(GENDLOPEN) -i- -f -o $@ --library rpcrt4.dll \
 @CLANG@@W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 
-@CLANG@@W32@uuid_win$(EXEEXT): uuid_win_dl.h
+@CLANG@@W32@uuid_win$(EXEEXT): uuid_win_dl.h uuid_win.c
 @CLANG@@W32@	$(cc_v)$(CC) $(TEST_CFLAGS) uuid_win.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 

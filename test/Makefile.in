@@ -57,7 +57,7 @@ run_tests: $(BINS)
 
 # DLL
 
-$(DLL):
+$(DLL): helloworld.c
 	$(ccld_v)$(CC) $(DLL_CFLAGS) helloworld.c -o $@ $(TEST_LDFLAGS) $(DLL_LDFLAGS)
 
 
@@ -66,16 +66,16 @@ $(DLL):
 c_test$(EXEEXT): c_test.h
 	$(cc_v)$(CC) $(TEST_CFLAGS) c_test.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-c_auto_free$(EXEEXT): c_auto_free.h
+c_auto_free$(EXEEXT): c_auto_free.h c_auto_free.c
 	$(cc_v)$(CC) $(TEST_CFLAGS) c_auto_free.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-c_autoload$(EXEEXT): c_autoload.h
+c_autoload$(EXEEXT): c_autoload.h c_autoload.c
 	$(cc_v)$(CC) $(TEST_CFLAGS) c_autoload.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-c_minimal$(EXEEXT): c_minimal.h
+c_minimal$(EXEEXT): c_minimal.h c_minimal.c
 	$(cc_v)$(CC) $(TEST_CFLAGS) c_minimal.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-@W32@c_win32_wide$(EXEEXT): c_win32_wide.h
+@W32@c_win32_wide$(EXEEXT): c_win32_wide.h c_win32_wide.c
 @W32@	$(cc_v)$(CC) $(TEST_CFLAGS) $(UNICODE_FLAGS) c_win32_wide.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
@@ -98,16 +98,16 @@ c_multi$(EXEEXT): c_multi_part1.o c_multi_part2.o c_multi.o
 
 # C++ test files
 
-cxx_test$(EXEEXT): cxx_test.hpp
+cxx_test$(EXEEXT): cxx_test.hpp cxx_test.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_test.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-cxx_autoload$(EXEEXT): cxx_autoload.hpp
+cxx_autoload$(EXEEXT): cxx_autoload.hpp cxx_autoload.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_autoload.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-cxx_minimal$(EXEEXT): cxx_minimal.hpp
+cxx_minimal$(EXEEXT): cxx_minimal.hpp cxx_minimal.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_minimal.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-cxx_win32_wide$(EXEEXT): cxx_win32_wide.hpp
+cxx_win32_wide$(EXEEXT): cxx_win32_wide.hpp cxx_win32_wide.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_win32_wide.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
@@ -136,11 +136,13 @@ libhelloworld_dl.o: libhelloworld_dl.c
 libhelloworld_dl.a: libhelloworld_dl.o
 	$(ar_v)$(AR) cr $@ libhelloworld_dl.o
 
-helloworld_example_dl$(EXEEXT): libhelloworld_dl.a
+helloworld_example_dl$(EXEEXT): libhelloworld_dl.a helloworld_example.c
 	$(cc_v)$(CC) $(TEST_CFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(TEST_LDFLAGS) $(LIBDL)
 
 
 # generate headers
+
+$(GEN_SOURCES): helloworld.txt
 
 libhelloworld_dl.h: libhelloworld_dl.c
 

@@ -1,6 +1,8 @@
 OBJS = main.o clang-ast.o generate.o parse.o tokenize.o utils.o
 
 
+.PHONY: all clean
+
 all: gendlopen$(EXEEXT)
 
 clean:
@@ -12,8 +14,6 @@ gen_template_h: gen_template_h.c
 
 template.h: $(GEN_TEMPL)
 	$(gen_v)./$(GEN_TEMPL) templates
-
-generate.cpp: template.h
 
 
 gendlopen$(EXEEXT): $(OBJS)
@@ -36,3 +36,9 @@ tokenize.o: tokenize.cpp
 
 utils.o: utils.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c utils.cpp -o $@
+
+
+gendlopen.hpp: cio.hpp
+main.cpp: gendlopen.hpp args.hxx
+generate.cpp: gendlopen.hpp template.h
+clang-ast.cpp parse.cpp tokenize.cpp utils.cpp: gendlopen.hpp

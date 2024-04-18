@@ -6,6 +6,8 @@ clean_makefiles = \
 	Makefile
 
 
+.PHONY: $(DEF_GENDLOPEN) all clean distclean check
+
 all: $(DEF_GENDLOPEN)
 
 clean-examples:
@@ -31,15 +33,19 @@ check: $(GENDLOPEN)
 	cd test && $(MAKE)
 	cd examples && $(MAKE)
 
-run_examples: examples
-	cd examples && $(MAKE) run_examples
-
-@W32@run_examples_wine: examples
-@W32@	cd examples && $(MAKE) run_examples_wine
+run_check: run_tests run_examples
 
 run_tests: test
 	cd test && $(MAKE) run_tests
 
+run_examples: examples
+	cd examples && $(MAKE) run_examples
+
+@W32@run_check_wine: run_tests_wine run_examples_wine
+
 @W32@run_tests_wine: test
 @W32@	cd test && $(MAKE) run_tests_wine
+
+@W32@run_examples_wine: examples
+@W32@	cd examples && $(MAKE) run_examples_wine
 
