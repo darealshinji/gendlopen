@@ -1,4 +1,5 @@
 OBJS = main.o clang-ast.o generate.o parse.o tokenize.o utils.o
+HDRS = gendlopen.hpp cio.hpp
 
 
 .PHONY: all clean
@@ -19,26 +20,21 @@ template.h: $(GEN_TEMPL)
 gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
-main.o: main.cpp
+main.o: main.cpp $(HDRS) args.hxx
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
 
-clang-ast.o: clang-ast.cpp
+clang-ast.o: clang-ast.cpp $(HDRS)
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c clang-ast.cpp -o $@
 
-generate.o: generate.cpp
+generate.o: generate.cpp $(HDRS) template.h
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
 
-parse.o: parse.cpp
+parse.o: parse.cpp $(HDRS)
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse.cpp -o $@
 
-tokenize.o: tokenize.cpp
+tokenize.o: tokenize.cpp $(HDRS)
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c tokenize.cpp -o $@
 
-utils.o: utils.cpp
+utils.o: utils.cpp $(HDRS)
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c utils.cpp -o $@
 
-
-gendlopen.hpp: cio.hpp
-main.cpp: gendlopen.hpp args.hxx
-generate.cpp: gendlopen.hpp template.h
-clang-ast.cpp parse.cpp tokenize.cpp utils.cpp: gendlopen.hpp
