@@ -27,18 +27,11 @@
 
 #include <fstream>
 #include <string>
-#include <utility>
 #include <vector>
 #include <cassert>
 #include <cstring>
 #include "cio.hpp"
 
-/* check for __builtin_unreachable() */
-#if defined(__has_builtin) && !defined(HAS_BUILTIN_UNREACHABLE)
-    #if __has_builtin(__builtin_unreachable)
-        #define HAS_BUILTIN_UNREACHABLE
-    #endif
-#endif
 
 /* ANSI color codes used in the Clang AST output */
 
@@ -77,7 +70,8 @@ namespace output
         c,
         cxx,
         minimal,
-        minimal_cxx
+        minimal_cxx,
+        error
     } format;
 }
 
@@ -89,6 +83,13 @@ namespace utils
 
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);
+
+/* convert a string to uppercase or lowercase
+ *
+ * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
+ * underscores=false will preserve any character not matching [A-Za-z0-9] */
+std::string convert_to_upper(const std::string &s, bool underscores=true);
+std::string convert_to_lower(const std::string &s, bool underscores=true);
 
 /* returns true if s begins with a prefix found in list */
 inline bool is_prefixed(const std::string &s, const vstring_t &list)
@@ -134,20 +135,6 @@ inline bool range(T c, T beg, T end)
     return (c >= beg && c <= end);
 }
 
-/* in case std::unreachable is not implemented */
-[[noreturn]] inline void unreachable()
-{
-#ifdef __cpp_lib_unreachable
-    std::unreachable();
-#elif defined(HAS_BUILTIN_UNREACHABLE)
-    /* GCC, Clang */
-    __builtin_unreachable();
-#elif defined(_MSC_VER)
-    /* MSVC */
-    __assume(false);
-#endif
-}
-
 } /* namespace utils end */
 
 
@@ -159,11 +146,10 @@ private:
         return (fmt == output::c || fmt == output::cxx);
     }
 
-    vstring_t m_definitions, m_includes, m_symbols, m_prefix;
+    vstring_t m_defines, m_deflib, m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
 
     std::string m_name_upper, m_name_lower;
-    std::string m_default_liba, m_default_libw;
     std::string m_ifile;
 
     output::format m_format = output::c;
@@ -202,15 +188,20 @@ public:
     /* set options */
     void input(const std::string &s) { m_ifile = s; }
     void format(output::format val) { m_format = val; }
-    void default_liba(const std::string &s) { m_default_liba = s; }
-    void default_libw(const std::string &s) { m_default_libw = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
     void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
 
+    void default_lib(const std::string &lib_a, const std::string &lib_w) {
+        assert(!lib_a.empty() && !lib_w.empty());
+        m_deflib.clear();
+        m_deflib.push_back(lib_a);
+        m_deflib.push_back(lib_w);
+    }
+
     /* add code */
-    void add_def(const std::string &s) { m_definitions.push_back(s); }
+    void add_def(const std::string &s) { m_defines.push_back(s); }
     void add_inc(const std::string &s) { m_includes.push_back(s); }
     void add_pfx(const std::string &s) { m_prefix.push_back(s); }
     void add_sym(const std::string &s) { m_symbols.push_back(s); }

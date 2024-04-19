@@ -52,3 +52,39 @@ bool utils::eq_str_case(const std::string &str1, const std::string &str2)
 
     return true;
 }
+
+/* convert string to uppercase */
+std::string utils::convert_to_upper(const std::string &str, bool underscores)
+{
+    std::string out;
+
+    for (const char &c : str) {
+        if (range(c, 'a','z')) {
+            out += c - 32;
+        } else if (!underscores || range(c, 'A','Z') || range(c, '0','9')) {
+            out += c;
+        } else {
+            out += '_';
+        }
+    }
+
+    return out;
+}
+
+/* convert string to lowercase */
+std::string utils::convert_to_lower(const std::string &str, bool underscores)
+{
+    std::string out;
+
+    for (const char &c : str) {
+        if (range(c, 'A','Z')) {
+            out += c + 32;
+        } else if (!underscores || range(c, 'a','z') || range(c, '0','9')) {
+            out += c;
+        } else {
+            out += '_';
+        }
+    }
+
+    return out;
+}

@@ -54,42 +54,6 @@ inline struct tm *localtime_wrapper(const time_t *timep, struct tm *tm)
 #endif
 }
 
-/* convert input string to be used as prefixes or header guards */
-
-std::string convert_to_upper(const std::string &in)
-{
-    std::string out;
-
-    for (const char &c : in) {
-        if (utils::range(c, 'a','z')) {
-            out += c - 32;
-        } else if (utils::range(c, 'A','Z') || utils::range(c, '0','9')) {
-            out += c;
-        } else {
-            out += '_';
-        }
-    }
-
-    return out;
-}
-
-std::string convert_to_lower(const std::string &in)
-{
-    std::string out;
-
-    for (const char &c : in) {
-        if (utils::range(c, 'A','Z')) {
-            out += c + 32;
-        } else if (utils::range(c, 'a','z') || utils::range(c, '0','9')) {
-            out += c;
-        } else {
-            out += '_';
-        }
-    }
-
-    return out;
-}
-
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char ** &argv)
 {
@@ -133,10 +97,8 @@ std::string create_note(int &argc, char ** &argv)
 }
 
 /* create "#define" lines */
-std::string format_definitions(const std::vector<std::string> &list)
+void print_defines(cio::ofstream &out, const std::vector<std::string> &list)
 {
-    std::stringstream out;
-
     for (auto e : list) {
         size_t pos = e.find('=');
 
@@ -154,8 +116,17 @@ std::string format_definitions(const std::vector<std::string> &list)
         out << "#define " << e << '\n';
         out << "#endif\n";
     }
+}
 
-    return out.str();
+/* define default library name */
+void print_deflib_defines(cio::ofstream &out, const std::string &pfx, const vstring_t &lib)
+{
+    out << "#ifndef " << pfx << "_DEFAULT_LIBA\n";
+    out << "#define " << pfx << "_DEFAULT_LIBA " << lib.at(0) << "\n";
+    out << "#endif\n";
+    out << "#ifndef " << pfx << "_DEFAULT_LIBW\n";
+    out << "#define " << pfx << "_DEFAULT_LIBW " << lib.at(1) << "\n";
+    out << "#endif\n";
 }
 
 /* open file for writing */
@@ -193,19 +164,6 @@ void create_template_data(
 {
     switch (format)
     {
-    case output::c:
-        {
-            header_data += common_header_data;
-            header_data += c_header_data;
-
-            if (separate) {
-                body_data = c_body_data;
-            } else {
-                header_data += c_body_data;
-            }
-        }
-        return;
-
     case output::cxx:
         {
             header_data += common_header_data;
@@ -226,9 +184,20 @@ void create_template_data(
     case output::minimal_cxx:
         header_data = min_cxx_header_data;
         return;
+
+    default:
+        break;
     }
 
-    utils::unreachable();
+    /* output::c */
+    header_data += common_header_data;
+    header_data += c_header_data;
+
+    if (separate) {
+        body_data = c_body_data;
+    } else {
+        header_data += c_body_data;
+    }
 }
 
 } /* end anonymous namespace */
@@ -286,10 +255,6 @@ bool gendlopen::tokenize_input()
 /* generate output */
 int gendlopen::generate(const std::string &ofile, const std::string &name)
 {
-    /* assert if only one of them was set */
-    assert((m_default_liba.empty() && m_default_libw.empty()) ||
-            (!m_default_liba.empty() && !m_default_libw.empty()));
-
     /* tokenize */
     if (!tokenize_input()) {
         return 1;
@@ -328,11 +293,11 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
         header_name = ofhdr.filename().string();
     }
 
-    std::string header_guard = convert_to_upper(header_name);
+    std::string header_guard = utils::convert_to_upper(header_name);
 
     /* name used on variables and macros */
-    m_name_upper = convert_to_upper(name);
-    m_name_lower = convert_to_lower(name);
+    m_name_upper = utils::convert_to_upper(name);
+    m_name_lower = utils::convert_to_lower(name);
 
 
     /************** header begin ***************/
@@ -352,25 +317,20 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     out << "#ifndef _" << header_guard << "_\n";
     out << "#define _" << header_guard << "_\n\n";
 
-    /* insert filename macros before definitions and headers */
+    /* insert filename macros before defines and headers */
     out << filename_macros_data << '\n';
 
-    /* extra definitions */
-    if (!m_definitions.empty()) {
-        out << "/* extra definitions */\n";
-        out << format_definitions(m_definitions);
+    /* extra defines */
+    if (!m_defines.empty()) {
+        out << "/* extra defines */\n";
+        print_defines(out, m_defines);
         out << '\n';
     }
 
     /* default library name */
-    if (!m_default_liba.empty() && !m_default_libw.empty()) {
+    if (m_deflib.size() == 2) {
         out << "/* default library */\n";
-        out << "#ifndef " << m_name_upper << "_DEFAULT_LIBA\n";
-        out << "#define " << m_name_upper << "_DEFAULT_LIBA " << m_default_liba << "\n";
-        out << "#endif\n";
-        out << "#ifndef " << m_name_upper << "_DEFAULT_LIBW\n";
-        out << "#define " << m_name_upper << "_DEFAULT_LIBW " << m_default_libw << "\n";
-		out << "#endif\n";
+        print_deflib_defines(out, m_name_upper, m_deflib);
     }
 
     /* extra includes */

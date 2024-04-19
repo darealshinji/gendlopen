@@ -44,8 +44,21 @@ using args::Flag;
 /* anonymous */
 namespace
 {
-    inline void print_info(char * const argv0) {
-        std::cerr << "Try `" << argv0 << " --help' for more information." << std::endl;
+    template<class T=StrList>
+    void check_empty(const std::string &val, T &flag)
+    {
+        if (val.empty()) {
+            auto arg = flag.GetMatcher().GetLongOrAny().str("-", "--");
+            std::cerr << "error: Flag '" << arg << "' requires a non-empty argument" << std::endl;
+            std::exit(1);
+        }
+    }
+
+    std::string getstr(StrValue &flag)
+    {
+        std::string val = flag.Get();
+        check_empty<StrValue>(val, flag);
+        return val;
     }
 
     /* quote library name */
@@ -65,6 +78,7 @@ namespace
 
         return "\"" + (lib + "\"");
     }
+
 
     /**
      * format library name
@@ -120,40 +134,36 @@ namespace
     }
 
 
-    /* return the correct enum or exit() on error */
-    output::format str_to_enum(char * const argv0, const std::string &fmt)
+    /* return the correct enum or error */
+    output::format str_to_enum(const std::string &in)
     {
+        std::string fmt = utils::convert_to_lower(in, false);
+
         switch (fmt.front())
         {
         case 'c':
-        case 'C':
-        case 'm':
-        case 'M':
-            if (utils::eq_str_case(fmt, "C++") ||
-                utils::eq_str_case(fmt, "CPP") ||
-                utils::eq_str_case(fmt, "CXX"))
-            {
-                return output::cxx;
-            } else if (utils::eq_str_case(fmt, "C")) {
+            if (fmt == "c") {
                 return output::c;
-            } else if (utils::eq_str_case(fmt, "minimal")) {
-                return output::minimal;
-            } else if (utils::eq_str_case(fmt, "minimal-C++") ||
-                utils::eq_str_case(fmt, "minimal-CPP") ||
-                utils::eq_str_case(fmt, "minimal-CXX"))
-            {
-                return output::minimal_cxx;
+            } else if (fmt == "cxx" || fmt == "c++" || fmt == "cpp") {
+                return output::cxx;
+            }
+            break;
+        case 'm':
+            if (fmt.starts_with("minimal")) {
+                if (fmt == "minimal" || fmt == "minimal-c") {
+                    return output::minimal;
+                } else if (fmt == "minimal-cxx" || fmt == "minimal-c++" ||
+                    fmt == "minimal-cpp")
+                {
+                    return output::minimal_cxx;
+                }
             }
             break;
         default:
             break;
         }
 
-        std::cerr << "error: unknown output format given: " << fmt << std::endl;
-        print_info(argv0);
-        std::exit(1);
-
-        utils::unreachable();
+        return output::error;
     }
 
 } /* anonymous namespace */
@@ -161,6 +171,10 @@ namespace
 
 int main(int argc, char **argv)
 {
+    auto print_info = [&] () {
+        std::cerr << "Try `" << argv[0] << " --help' for more information." << std::endl;
+    };
+
     std::string more_help;
 
     more_help.reserve(HELP_TEXT_RESERVE_LENGTH);
@@ -459,7 +473,7 @@ int main(int argc, char **argv)
     }
     catch (const args::Error &e) {
         std::cerr << "error: " << e.what() << std::endl;
-        print_info(*argv);
+        print_info();
         return 1;
     }
     catch (...) {
@@ -471,7 +485,7 @@ int main(int argc, char **argv)
     /* check excluding flags */
     if (a_ast_all_symbols && (a_symbol || a_prefix)) {
         std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
-        print_info(*argv);
+        print_info();
         return 1;
     }
 
@@ -479,41 +493,56 @@ int main(int argc, char **argv)
     auto gdo = gendlopen(&argc, &argv);
 
     /* --input (flagged as required) */
-    gdo.input(a_input.Get());
+    gdo.input(getstr(a_input));
 
     /* --format */
     if (a_format) {
-        gdo.format(str_to_enum(*argv, a_format.Get()));
+        auto fmt = str_to_enum(getstr(a_format));
+
+        if (fmt == output::error) {
+            std::cerr << "error: unknown output format given: " << a_format.Get() << std::endl;
+            print_info();
+            return 1;
+        }
+
+        gdo.format(fmt);
     }
 
     /* --library */
     if (a_library) {
-        gdo.default_liba(format_libname(a_library.Get(), false));
-		gdo.default_libw(format_libname(a_library.Get(), true));
+        auto s = getstr(a_library);
+        auto lib_a = format_libname(s, false);
+        auto lib_w = format_libname(s, true);
+        gdo.default_lib(lib_a, lib_w);
     }
 
     /* --define */
     for (const auto &e : args::get(a_define)) {
+        check_empty(e, a_define);
         gdo.add_def(e);
     }
 
     /* --include */
     for (const auto &e : args::get(a_include)) {
+        check_empty(e, a_include);
         gdo.add_inc(quote_inc(e));
     }
 
     /* --include-no-quotes */
     for (const auto &e : args::get(a_include_nq)) {
+        check_empty(e, a_include_nq);
         gdo.add_inc(e);
     }
 
     /* --prefix */
     for (const auto &e : args::get(a_prefix)) {
+        check_empty(e, a_prefix);
         gdo.add_pfx(e);
     }
 
     /* --symbol */
     for (const auto &e : args::get(a_symbol)) {
+        check_empty(e, a_symbol);
         gdo.add_sym(e);
     }
 
@@ -524,5 +553,5 @@ int main(int argc, char **argv)
     gdo.ast_all_symbols(a_ast_all_symbols);
 
     /* generate output */
-    return gdo.generate(a_output.Get(), a_name.Get());
+    return gdo.generate(getstr(a_output), getstr(a_name));
 }
