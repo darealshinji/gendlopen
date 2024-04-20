@@ -221,13 +221,6 @@ bool gendlopen::tokenize_input()
         return false;
     }
 
-    /* Clang AST without escape code */
-    if (line.starts_with("TranslationUnitDecl 0x")) {
-        std::cerr << "error: Clang AST: `TranslationUnitDecl' line found but ANSI escape code is missing" << std::endl;
-        std::cerr << "Try adding `-fansi-escape-codes' to clang's flags." << std::endl;
-        return false;
-    }
-
     /* sort vectors and remove duplicates */
     auto sort_vstring = [] (vstring_t &vec) {
         std::sort(vec.begin(), vec.end());
@@ -237,8 +230,10 @@ bool gendlopen::tokenize_input()
     sort_vstring(m_prefix);
     sort_vstring(m_symbols);
 
+    utils::strip_ansi_colors(line);
+
     /* Clang AST */
-    if (line.starts_with(sCFGREEN "TranslationUnitDecl" sC0 sCORANGE " 0x")) {
+    if (line.starts_with("TranslationUnitDecl 0x")) {
         if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
             std::cerr << "error: Clang AST: no symbols provided to look for; use `--symbol' and/or `--prefix'" << std::endl;
             std::cerr << "You can also pass `--ast-all-symbols' if you REALLY want to use all symbols." << std::endl;

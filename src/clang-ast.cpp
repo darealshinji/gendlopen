@@ -24,6 +24,28 @@
 
 /* read prototypes from a Clang AST file */
 
+/***
+For reference the AST from helloworld.h:
+
+TranslationUnitDecl 0x5f2a1096a4b8 <<invalid sloc>> <invalid sloc>
+<...>
+|-VarDecl 0x5f2a109cb050 <line:35:1, col:35> col:35 helloworld_callback 'helloworld_cb_t':'void (*)(const char *)' extern
+| `-VisibilityAttr 0x5f2a109cb0b8 <line:25:44, col:65> Default
+|-FunctionDecl 0x5f2a109cb2c8 <col:28, line:38:40> line:11:29 helloworld_init 'helloworld *()'
+| `-VisibilityAttr 0x5f2a109cb370 <line:25:44, col:65> Default
+|-FunctionDecl 0x5f2a109cb510 <col:28, line:41:48> col:17 helloworld_hello 'void (helloworld *)'
+| |-ParmVarDecl 0x5f2a109cb400 <col:34, col:46> col:46 hw 'helloworld *'
+| `-VisibilityAttr 0x5f2a109cb5c0 <line:25:44, col:65> Default
+|-FunctionDecl 0x5f2a109cb890 <col:28, line:42:86> col:17 helloworld_hello2 'void (helloworld *, void (*)(const char *))'
+| |-ParmVarDecl 0x5f2a109cb650 <col:35, col:47> col:47 hw 'helloworld *'
+| |-ParmVarDecl 0x5f2a109cb770 <col:51, col:85> col:58 helloworld_cb 'void (*)(const char *)'
+| `-VisibilityAttr 0x5f2a109cb948 <line:25:44, col:65> Default
+`-FunctionDecl 0x5f2a109cba68 <col:28, line:45:50> col:17 helloworld_release 'void (helloworld *)'
+  |-ParmVarDecl 0x5f2a109cb9d8 <col:36, col:48> col:48 hw 'helloworld *'
+  `-VisibilityAttr 0x5f2a109cbb18 <line:25:44, col:65> Default
+
+***/
+
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -50,48 +72,50 @@ typedef struct decl {
     bool is_func;
     std::string symbol;
     std::string type;
-    std::string param_novars;
+    //std::string notype_args;
 } decl_t;
 
 
 /* get function or variable declaration */
-decl_t get_declarations(const std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
+decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
 {
     decl_t decl;
     std::smatch m;
 
-    const std::regex reg("^.*?"
-        CFGREEN "(Function|Var)Decl" C0 ".*?"
-        CFBLUE  " (.*?)" C0 " "  /* symbol */
-        CGREEN  "'(.*?)'.*"      /* type */
+    const std::regex reg("^[|`]"
+        "-(Function|Var)Decl 0x.*?"
+        " ([A-Za-z0-9_]*?) "  /* symbol */
+        "'(.*?)'.*"           /* type */
     );
+
+    utils::strip_ansi_colors(line);
 
     if (!std::regex_match(line, m, reg) || m.size() != 4) {
         return {};
     }
 
+    decl.symbol = m[2];
+
     switch (mode)
     {
     case M_PREFIX:
-        if (!utils::is_prefixed(m[2].str(), prefix)) {
+        if (!utils::is_prefixed(decl.symbol, prefix)) {
             return {};
         }
         break;
     case M_LIST:
-        if (std::erase(list, m[2]) == 0) {
+        if (std::erase(list, decl.symbol) == 0) {
             return {};
         }
         break;
     case M_PFX_LIST:
-        if (!utils::is_prefixed(m[2].str(), prefix) && std::erase(list, m[2]) == 0) {
+        if (!utils::is_prefixed(decl.symbol, prefix) && std::erase(list, decl.symbol) == 0) {
             return {};
         }
         break;
     default:
         break;
     }
-
-    decl.symbol = m[2];
 
     if (m[1].str().front() == 'F') {
         /* function declaration */
@@ -102,8 +126,8 @@ decl_t get_declarations(const std::string &line, int mode, const vstring_t &pref
         }
         decl.is_func = true;
         decl.type = m[3].str().substr(0, pos);
-        decl.param_novars = m[3].str().substr(pos + 1);
-        decl.param_novars.pop_back();
+        //decl.notype_args = m[3].str().substr(pos + 1);
+        //decl.notype_args.pop_back();
     } else {
         /* variable declaration */
         decl.is_func = false;
@@ -116,34 +140,36 @@ decl_t get_declarations(const std::string &line, int mode, const vstring_t &pref
 }
 
 /* get function parameter declaration */
-bool get_parameters(const std::string &line, std::string &param, size_t &count)
+bool get_parameters(std::string &line, std::string &args, std::string &notype_args, size_t &count)
 {
-    const std::regex reg("^.*?"
-        CFGREEN "ParmVarDecl" C0 ".*?"
-        CGREEN  "'(.*?)'.*"  /* type */
+    const std::regex reg("^.*?-ParmVarDecl 0x.*?"
+        "'(.*?)'.*"  /* type */
     );
 
     std::smatch m;
     std::string buf;
+
+    utils::strip_ansi_colors(line);
 
     if (!std::regex_match(line, m, reg) || m.size() != 2) {
         return false;
     }
 
     std::string var = "arg" + std::to_string(++count);
+    notype_args += var + ", ";
 
     /* search for function pointer */
     auto pos = m[1].str().find("(*)");
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        param += m[1].str() + ' ';
-        param += var + ", ";
+        args += m[1].str() + ' ';
+        args += var + ", ";
     } else {
         /* function pointer */
         buf = m[1].str();
         buf.insert(pos + 2, var);
-        param += buf + ", ";
+        args += buf + ", ";
     }
 
     return true;
@@ -159,18 +185,17 @@ bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
 
     if (decl.is_func) {
         /* function */
-        std::string param;
+        std::string args, notype_args;
         size_t count = 0;
 
         /* read next lines for parameters */
-        while (ifs.getline(line) && get_parameters(line, param, count))
+        while (ifs.getline(line) && get_parameters(line, args, notype_args, count))
         {}
 
-        if (param.ends_with(", ")) {
-            param.erase(param.size()-2);
-        }
+        utils::delete_suffix(args, ", ");
+        utils::delete_suffix(notype_args, ", ");
 
-        proto_t proto = { decl.type, decl.symbol, param, decl.param_novars };
+        proto_t proto = { decl.type, decl.symbol, args, notype_args };
         m_prototypes.push_back(proto);
 
         /* continue to analyze the current line stored in buffer */

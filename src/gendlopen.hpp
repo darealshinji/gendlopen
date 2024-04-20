@@ -26,27 +26,12 @@
 #define _GENDLOPEN_HPP_
 
 #include <fstream>
+#include <regex>
 #include <string>
 #include <vector>
 #include <cassert>
 #include <cstring>
 #include "cio.hpp"
-
-
-/* ANSI color codes used in the Clang AST output */
-
-/* escaped variants for std::regex */
-#define COL(x)    "\x1B\\[" #x "m"
-#define C0        COL(0)          /* default */
-#define CGREEN    COL(0;32)       /* green */
-#define CFGREEN   COL(0;1;32)     /* fat green */
-#define CFBLUE    COL(0;1;36)     /* fat blue */
-
-/* unescaped variants for std::string */
-#define sCOL(x)   "\x1B[" #x "m"
-#define sC0       sCOL(0)         /* default */
-#define sCORANGE  sCOL(0;33)      /* orange */
-#define sCFGREEN  sCOL(0;1;32)    /* fat green */
 
 
 /* typedefs */
@@ -102,6 +87,14 @@ inline bool is_prefixed(const std::string &s, const vstring_t &list)
     return false;
 }
 
+/* delete suffix from string */
+inline void delete_suffix(std::string &str, const std::string &suffix)
+{
+    if (str.ends_with(suffix)) {
+        str.erase(str.size() - suffix.size());
+    }
+}
+
 /* strip ANSI white-space characters from front and back */
 inline void strip_spaces(std::string &s)
 {
@@ -125,6 +118,14 @@ inline void replace(const std::string &from, const std::string &to, std::string 
     {
         s.replace(pos, from.size(), to);
     }
+}
+
+/* strip ANSI colors from line */
+inline void strip_ansi_colors(std::string &line)
+{
+    const std::regex reg(R"(\x1B\[[0-9;]*m)");
+    std::string out = std::regex_replace(line, reg, "");
+    line = out;
 }
 
 /* whether "c" is within the range of "beg" and "end" */

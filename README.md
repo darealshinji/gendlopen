@@ -31,9 +31,9 @@ Here's how the input text format must be:
  * line-breaks are treated as spaces
  * any other code will throw an error
 
-Alternatively the input text can be a Clang AST file with ANSI escape codes.
+Alternatively the input text can be a Clang AST file.
 You can create one with a command like this:<br>
-`clang -Xclang -ast-dump -fansi-escape-codes foobar.h > foo.txt`
+`clang -Xclang -ast-dump foobar.h > foo.txt`
 
 It's recommended to use the options `--symbol` or `--prefix` if you want to parse a Clang AST file.
 
