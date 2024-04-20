@@ -277,10 +277,10 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
 bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_parameter_names)
 {
     const std::regex reg(
-        "(.*?[\\*|\\s])"  /* type */
-        "([A-Za-z0-9_]*)" /* symbol */
-        "[?|\\s]*\\("
-        "(.*?)\\)"        /* args */
+        R"((.*?[\*|\s]))"  /* type */
+         "([A-Za-z0-9_]*)" /* symbol */
+        R"([?|\s]*\()"
+        R"((.*?)\))"       /* args */
     );
 
     std::smatch m;
@@ -313,8 +313,8 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
 bool tokenize_object(const std::string &s, vproto_t &objects)
 {
     const std::regex reg(
-        "(.*?[\\*|\\s])"  /* type */
-        "([A-Za-z0-9_]*)" /* symbol */
+        R"((.*?[\*|\s]))"  /* type */
+         "([A-Za-z0-9_]*)" /* symbol */
     );
 
     std::smatch m;

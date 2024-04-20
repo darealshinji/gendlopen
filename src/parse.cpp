@@ -60,7 +60,7 @@ namespace /* anonymous */
      * return either SKIP_BEGIN, SKIP_END or -1 if nothing was found */
     int check_skip_keyword(const std::string &line)
     {
-        const std::regex reg("^\\s*?%SKIP_(BEGIN|END)%\\s*?$");
+        const std::regex reg(R"(^\s*?%SKIP_(BEGIN|END)%\s*?$)");
         std::smatch m;
 
         if (!std::regex_match(line, m, reg) || m.size() != 2) {
