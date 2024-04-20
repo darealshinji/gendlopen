@@ -58,7 +58,7 @@ run_cmd()
 _check_tool()
 {
     printf "check for $1 ... "
-    tool="$(which $1)"
+    tool="$(which $1 2>/dev/null)"
 
     if [ "x$tool" = "x" ]; then
         echo "not found"
