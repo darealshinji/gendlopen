@@ -40,6 +40,11 @@
     #undef GDO_HAVE_DLMOPEN
 #endif
 
+/* whether to use dlinfo(3) */
+#if defined(HAVE_DLINFO) || (defined(_GNU_SOURCE) && defined(__GLIBC__)) || defined(__FreeBSD__) || defined(__NetBSD__)
+    #define GDO_HAVE_DLINFO
+#endif
+
 /* dlopen(3) flags for compatibility with LoadLibrary() */
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 0

@@ -920,6 +920,7 @@ public:
             return {};
         }
 
+#ifdef GDO_HAVE_DLINFO
         struct link_map *lm = nullptr;
 
         int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
@@ -928,6 +929,10 @@ public:
         if (ret != -1 && lm->l_name) {
             return lm->l_name;
         }
+#else
+        clear_error();
+        m_errmsg = "dlinfo() is not implemented";
+#endif //GDO_HAVE_DLINFO
 
         return {};
     }

@@ -510,15 +510,15 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 {
     gdo_clear_errbuf();
 
-#ifdef GDO_WINAPI
-    gdo_char_t *origin;
-    DWORD len = 260; /* MAX_PATH */
-
     /* check if library was loaded */
     if (!gdo_lib_is_loaded()) {
         gdo_set_error_no_library_loaded();
         return NULL;
     }
+
+#ifdef GDO_WINAPI
+    gdo_char_t *origin;
+    DWORD len = 260; /* MAX_PATH */
 
     /* allocate enough space */
     origin = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
@@ -547,14 +547,11 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     }
 
     return origin;
-#else
+#elif defined(GDO_HAVE_DLINFO)
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
 
-    if (!gdo_lib_is_loaded()) {
-        gdo_set_error_no_library_loaded();
-        return NULL;
-    } else if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
+    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         /* dlinfo() failed */
         gdo_save_dlerror();
         return NULL;
@@ -564,6 +561,9 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         /* copy string */
         return strdup(lm->l_name);
     }
+#else
+    /* no dlinfo() available */
+    gdo_save_to_errbuf("dlinfo() is not implemented");
 #endif //GDO_WINAPI
 
     return NULL;

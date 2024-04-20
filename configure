@@ -18,6 +18,10 @@ nix="yes"
 with_notify="no"
 with_appind="no"
 
+have_dlmopen="no"
+have_dlinfo="no"
+with_gnu_source="no"
+
 
 
 ###############################################################################
@@ -161,11 +165,12 @@ check_libdl()
     printf "check if -ldl is needed ... "
 
     cat <<EOF > test.c
-#include <stddef.h>
 #include <dlfcn.h>
 int main() {
-void *handle = dlopen("foo.so", RTLD_LAZY);
-return (handle == NULL);
+void *handle;
+handle = dlopen("foo.so", RTLD_LAZY);
+(void)handle;
+return 0;
 }
 EOF
 
@@ -193,22 +198,72 @@ check_dlmopen()
     printf "check for dlmopen() ... "
 
     cat <<EOF > test.c
-#include <stddef.h>
 #include <dlfcn.h>
 int main() {
-void *handle = dlmopen(LM_ID_NEWLM, "foo.so", RTLD_LAZY);
-return (handle == NULL);
+void *handle;
+handle = dlmopen(LM_ID_NEWLM, "foo.so", RTLD_LAZY);
+(void)handle;
+return 0;
 }
 EOF
 
-    gnu_src="-D_GNU_SOURCE"
-
-    run_cmd "$cc -Werror $gnu_src test.c -o a.out $libdl"
+    # dlmopen() is a GNU extension
+    run_cmd "$cc -Werror -D_GNU_SOURCE test.c -o a.out $libdl"
 
     if [ $ret -eq 0 ]; then
         echo "OK"
-        dlmopen_cppflags="$gnu_src -DHAVE_DLMOPEN=1"
+        have_dlmopen="yes"
+        with_gnu_source="yes"
     else
+        echo "not found"
+    fi
+
+    rm -f $testfiles
+}
+
+check_dlinfo()
+{
+    printf "check for dlinfo() ... "
+
+    cat <<EOF > test.c
+#include <stddef.h>
+#include <link.h>
+#include <dlfcn.h>
+int main() {
+int ret;
+struct link_map *lm;
+void *handle;
+handle = dlopen("foo.so", RTLD_LAZY);
+if (handle) {
+    lm = NULL;
+    ret = dlinfo(handle, RTLD_DI_LINKMAP, &lm);
+    (void)ret;
+}
+return 0;
+}
+EOF
+
+    if [ "x$with_gnu_source" != "xyes" ]; then
+        run_cmd "$cc -Werror test.c -o a.out $libdl"
+
+        if [ $ret -eq 0 ]; then
+            echo "OK"
+            have_dlinfo="yes"
+        fi
+    fi
+
+    # test again with -D_GNU_SOURCE
+    if [ "x$have_dlinfo" != "xyes" ]; then
+        run_cmd "$cc -Werror -D_GNU_SOURCE test.c -o a.out $libdl"
+
+        if [ $ret -eq 0 ]; then
+            echo "OK"
+            have_dlinfo="yes"
+            with_gnu_source="yes"
+        fi
+    fi
+
+    if [ "x$have_dlinfo" != "xyes" ]; then
         echo "not found"
     fi
 
@@ -465,12 +520,6 @@ if [ "x$cl" != "x" ]; then
     win32="yes"
     nix="no"
 
-    if [ "x$check_std" = "xyes" ]; then
-        check_std_version msvc
-        check_cxx_flag 1 "-std:c++11"
-        test_cxx11="$flag"
-    fi
-
     if [ "x$cppflags" = "x:" ]; then
         cppflags="-DWIN32_LEAN_AND_MEAN"
     fi
@@ -484,6 +533,12 @@ if [ "x$cl" != "x" ]; then
         ldflags="-subsystem:console -release"
     fi
 
+    if [ "x$check_std" = "xyes" ]; then
+        check_std_version msvc
+        check_cxx_flag 1 "-std:c++11"
+        test_cxx11="$flag"
+    fi
+
     link_flag="-link"
     exeext=".exe"
     dll="libhelloworld-0.dll"
@@ -493,12 +548,6 @@ elif $cc -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
     # MinGW
     win32="yes"
     nix="no"
-
-    if [ "x$check_std" = "xyes" ]; then
-        check_std_version
-        check_cxx_flag 1 "-std=c++11"
-        test_cxx11="$flag"
-    fi
 
     if [ "x$cppflags" = "x:" ]; then
         cppflags="-DWIN32_LEAN_AND_MEAN"
@@ -513,6 +562,12 @@ elif $cc -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
         ldflags=""
     fi
 
+    if [ "x$check_std" = "xyes" ]; then
+        check_std_version
+        check_cxx_flag 1 "-std=c++11"
+        test_cxx11="$flag"
+    fi
+
     exeext=".exe"
     dll="libhelloworld-0.dll"
     dll_cflags="-DBUILDING_dll"
@@ -520,15 +575,6 @@ elif $cc -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
     unicode_flags="-DUNICODE -D_UNICODE -municode"
 else
     # *nix
-    if [ "x$check_std" = "xyes" ]; then
-        check_std_version
-        check_cxx_flag 1 "-std=c++11"
-        test_cxx11="$flag"
-    fi
-
-    check_libdl
-    check_dlmopen
-
     if [ "x$cppflags" = "x:" ]; then
         cppflags=""
     fi
@@ -540,6 +586,26 @@ else
     fi
     if [ "x$ldflags" = "x:" ]; then
         ldflags=""
+    fi
+
+    if [ "x$check_std" = "xyes" ]; then
+        check_std_version
+        check_cxx_flag 1 "-std=c++11"
+        test_cxx11="$flag"
+    fi
+
+    check_libdl
+    check_dlmopen
+    check_dlinfo
+
+    if [ "x$with_gnu_source" = "xyes" ]; then
+        cppflags="$cppflags -D_GNU_SOURCE"
+    fi
+    if [ "x$have_dlmopen" = "xyes" ]; then
+        cppflags="$cppflags -DHAVE_DLMOPEN"
+    fi
+    if [ "x$have_dlinfo" = "xyes" ]; then
+        cppflags="$cppflags -DHAVE_DLINFO"
     fi
 
     # library name
