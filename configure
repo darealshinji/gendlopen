@@ -664,8 +664,8 @@ else
     if [ "x$gtk_cflags" = "x:" ]; then
         gtk_cflags="-Wno-deprecated-declarations"
 
-        if [ "x$pkgconfig" = "x" ]; then
-            gtk_cflags="$gtk_cflags $("$pkgconfig" --cflags glib-2.0 2>/dev/null)"
+        if [ "x$pkgconfig" != "x" ]; then
+            gtk_cflags="$gtk_cflags $("$pkgconfig" --cflags gtk+-2.0 2>/dev/null)"
         fi
     fi
 
