@@ -147,11 +147,11 @@ private:
         return (fmt == output::c || fmt == output::cxx);
     }
 
-    vstring_t m_defines, m_deflib, m_includes, m_symbols, m_prefix;
+    vstring_t m_deflib, m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
 
     std::string m_name_upper, m_name_lower;
-    std::string m_ifile;
+    std::string m_ifile, m_defines;
 
     output::format m_format = output::c;
 
@@ -202,7 +202,7 @@ public:
     }
 
     /* add code */
-    void add_def(const std::string &s) { m_defines.push_back(s); }
+    void add_def(const std::string &s) { m_defines += s; }
     void add_inc(const std::string &s) { m_includes.push_back(s); }
     void add_pfx(const std::string &s) { m_prefix.push_back(s); }
     void add_sym(const std::string &s) { m_symbols.push_back(s); }

@@ -96,28 +96,6 @@ std::string create_note(int &argc, char ** &argv)
     return out.str();
 }
 
-/* create "#define" lines */
-void print_defines(cio::ofstream &out, const std::vector<std::string> &list)
-{
-    for (auto e : list) {
-        size_t pos = e.find('=');
-
-        if (pos == std::string::npos) {
-            /* no value given */
-            out << "#ifndef " << e << '\n';
-        } else {
-            /* remove value from "#ifndef" */
-            out << "#ifndef " << e.substr(0, pos) << '\n';
-
-            /* replace '=' with space */
-            e.replace(pos, 1, 1, ' ');
-        }
-
-        out << "#define " << e << '\n';
-        out << "#endif\n";
-    }
-}
-
 /* define default library name */
 void print_deflib_defines(cio::ofstream &out, const std::string &pfx, const vstring_t &lib)
 {
@@ -318,7 +296,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     /* extra defines */
     if (!m_defines.empty()) {
         out << "/* extra defines */\n";
-        print_defines(out, m_defines);
+        out << m_defines;
         out << '\n';
     }
 

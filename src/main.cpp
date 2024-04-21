@@ -48,7 +48,7 @@ namespace
     void check_empty(const std::string &val, T &flag)
     {
         if (val.empty()) {
-            auto arg = flag.GetMatcher().GetLongOrAny().str("-", "--");
+            std::string arg = flag.GetMatcher().GetLongOrAny().str(/* "-", "--" */);
             std::cerr << "error: Flag '" << arg << "' requires a non-empty argument" << std::endl;
             std::exit(1);
         }
@@ -61,6 +61,35 @@ namespace
         return val;
     }
 
+    /* create "#define" lines */
+    std::string format_def(std::string def)
+    {
+        std::string name, value;
+        std::stringstream out;
+
+        size_t pos = def.find('=');
+
+        if (pos == std::string::npos) {
+            name = def;
+        } else {
+            name = def.substr(0, pos);
+            value = " " + def.substr(pos + 1);
+        }
+
+        utils::strip_spaces(name);
+
+        if (name.empty()) {
+            std::cerr << "error: Flag 'define' requires a non-empty value" << std::endl;
+            std::exit(1);
+        }
+
+        out << "#ifndef " << name << '\n';
+        out << "#define " << name << value << '\n';
+        out << "#endif\n";
+
+        return out.str();
+    }
+
     /* quote library name */
     std::string quote_lib(const std::string &lib, bool wide)
     {
@@ -68,14 +97,12 @@ namespace
 			if (lib.starts_with("L\"") && lib.back() == '"') {
 				return lib;
 			}
-
 			return "L\"" + (lib + "\"");
 		}
 
         if (lib.front() == '"' && lib.back() == '"') {
             return lib;
         }
-
         return "\"" + (lib + "\"");
     }
 
@@ -518,7 +545,7 @@ int main(int argc, char **argv)
     /* --define */
     for (const auto &e : args::get(a_define)) {
         check_empty(e, a_define);
-        gdo.add_def(e);
+        gdo.add_def(format_def(e));
     }
 
     /* --include */
