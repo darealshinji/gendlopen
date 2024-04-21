@@ -32,7 +32,7 @@ public:
      *
      * If `new_namespace' is true the library will be loaded into a new namespace.
      * This is done using dlmopen() with the LM_ID_NEWLM argument.
-     * This argument is ignored if the win32 API is used or _GNU_SOURCE was not defined. */
+     * This argument is only used on Glibc and if _GNU_SOURCE was defined. */
     bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 #ifdef GDO_WINAPI
     bool load(const std::wstring &filename, int flags=default_flags);
@@ -131,9 +131,6 @@ public:
 GDO_USE_DLOPEN
     If defined `dlopen()' API is used on win32 targets.
     On other targets `dlopen()' is always used.
-
-GDO_NO_DLMOPEN
-    If defined `dlmopen()` will never be used.
 
 GDO_DEFAULT_FLAGS
     Override the default flags to use when loading a library.

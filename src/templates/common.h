@@ -36,9 +36,6 @@
 #if defined(HAVE_DLMOPEN) || (defined(_GNU_SOURCE) && defined(__GLIBC__))
     #define GDO_HAVE_DLMOPEN
 #endif
-#if defined(GDO_HAVE_DLMOPEN) && defined(GDO_NO_DLMOPEN)
-    #undef GDO_HAVE_DLMOPEN
-#endif
 
 /* whether to use dlinfo(3) */
 #if defined(HAVE_DLINFO) || (defined(_GNU_SOURCE) && defined(__GLIBC__)) || defined(__FreeBSD__) || defined(__NetBSD__)
