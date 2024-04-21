@@ -26,6 +26,7 @@ int print_uuid()
 int main()
 {
     if (!gdo_load_lib_and_symbols()) {
+        fprintf(stderr, "an error has occurred trying to dynamically load `%s':\n", GDO_DEFAULT_LIBA);
         fprintf(stderr, "%s\n", gdo_last_error());
         return 1;
     }

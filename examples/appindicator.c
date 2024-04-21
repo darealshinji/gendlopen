@@ -67,15 +67,20 @@ static void callback() {
 
 int main()
 {
-
 #define XLOAD(x) \
   if (!x##_load_lib_and_symbols()) { \
+    fprintf(stderr, "an error has occurred trying to dynamically load `%s':\n", default_lib); \
     fprintf(stderr, "%s\n", x##_last_error()); \
     return 1; \
   }
 
+  const char *default_lib = XGOBJECT_DEFAULT_LIBA;
   XLOAD(xgobject)
+
+  default_lib = XGTK_DEFAULT_LIBA;
   XLOAD(xgtk)
+
+  default_lib = XAPPINDICATOR_DEFAULT_LIBA;
   XLOAD(xappindicator)
 
 
