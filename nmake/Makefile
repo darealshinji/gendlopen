@@ -175,7 +175,7 @@ helloworld_example_dl.exe: libhelloworld_dl.lib
 !IFDEF CLANG
 
 uuid_win.exe:
-	$(CLANG) -Xclang -ast-dump -fansi-escape-codes $(s)\examples\uuid_win.h | \
+	$(CLANG) -Xclang -ast-dump $(s)\examples\uuid_win.h | \
 	  gendlopen.exe -i- -f -o uuid_win_dl.h --library rpcrt4.dll \
 	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA && \
 	$(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\examples $(s)\examples\$*.c -Fe$@ -link $(LFLAGS)

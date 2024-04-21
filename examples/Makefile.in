@@ -52,7 +52,7 @@ run_examples: $(BINS)
 
 # UUID
 
-@CLANG@DUMP_AST = $(CLANG) -Xclang -ast-dump -fansi-escape-codes $(CLANG_TARGET)
+@CLANG@DUMP_AST = $(CLANG) -Xclang -ast-dump $(CLANG_TARGET)
 
 @CLANG@@NIX@uuid_nix_dl.h: uuid_nix.h
 @CLANG@@NIX@	$(gen_v)$(DUMP_AST) -Ithirdparty/uuid uuid_nix.h | \
