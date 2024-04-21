@@ -416,7 +416,7 @@ private:
 
         if (get_module_filename(m_handle, origin, len-1) == 0) {
             save_error();
-            delete origin;
+            delete[] origin;
             return {};
         }
 
@@ -424,7 +424,7 @@ private:
          * technically the path could exceed 260 characters, but in reality
          * it's practically still stuck at the old MAX_PATH value */
         if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            delete origin;
+            delete[] origin;
 
             len = 32*1024;
             origin = new T[len * sizeof(T)]();
@@ -432,13 +432,13 @@ private:
 
             if (get_module_filename(m_handle, origin, len-1) == 0) {
                 save_error();
-                delete origin;
+                delete[] origin;
                 return {};
             }
         }
 
         std::basic_string<T> str = origin;
-        delete origin;
+        delete[] origin;
 
         return str;
     }

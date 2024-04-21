@@ -542,7 +542,7 @@ if [ "x$cl" != "x" ]; then
     link_flag="-link"
     exeext=".exe"
     dll="libhelloworld-0.dll"
-    dll_cflags="-DBUILDING_dll -LD"
+    dll_cflags="-DBUILDING_DLL -LD"
     unicode_flags="-DUNICODE -D_UNICODE"
 elif $cc -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
     # MinGW
@@ -570,7 +570,7 @@ elif $cc -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
 
     exeext=".exe"
     dll="libhelloworld-0.dll"
-    dll_cflags="-DBUILDING_dll"
+    dll_cflags="-DBUILDING_DLL"
     dll_ldflags="-shared"
     unicode_flags="-DUNICODE -D_UNICODE -municode"
 else
