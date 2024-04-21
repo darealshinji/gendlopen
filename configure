@@ -130,7 +130,7 @@ check_clang_ast()
     printf "check if $1 can create an AST dump ... "
 
     echo '' > test.h
-    run_cmd "$1 -Xclang -ast-dump -fansi-escape-codes $2 test.h"
+    run_cmd "$1 -Xclang -ast-dump $2 test.h"
 
     if [ $ret -eq 0 ]; then
         clang="$1"
