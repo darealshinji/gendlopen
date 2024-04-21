@@ -231,6 +231,7 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
     more_help += "    Print a summary of all avaiable options with a brief description."            "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --more-help */
@@ -243,6 +244,7 @@ int main(int argc, char **argv)
     more_help += "  --more-help"                                                                    "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Show this more detailed information."                                         "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -269,6 +271,7 @@ int main(int argc, char **argv)
     more_help += "    To dump the AST created from `foo.h' you can run the following command:"      "\n";
     more_help += "    clang -Xclang -ast-dump foo.h > ast.txt"                                      "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --output */
@@ -283,6 +286,7 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
     more_help += "    Specify an output file. If this flag isn't set or if FILE is `-' output will" "\n";
     more_help += "    be printed to STDOUT."                                                        "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -299,6 +303,7 @@ int main(int argc, char **argv)
     more_help += "    Use STRING as a prefix in names of functions and macros or as C++ namespace"  "\n";
     more_help += "    when generating output to avoid symbol clashes. The default string is `gdo'." "\n";
     more_help += "    Upper/lower case and underscores will be set accordingly."                    "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -319,6 +324,49 @@ int main(int argc, char **argv)
     more_help += "    minimal-C++  -  small C++ header with exception handling"                     "\n";
     more_help +=                                                                                    "\n";
     more_help += "    More information can be found in the comments of the header files."           "\n";
+    more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
+
+
+    /* --custom-template */
+
+    StrValue a_custom_template(args, "FILE",
+        "use a custom template (`--format' will be ignored)",
+        {"custom-template"},
+        Opt::Single);
+
+    more_help +=                                                                                    "\n";
+    more_help += "  --custom-template=[FILE]"                                                       "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    Use a custom template file to generate output from. The flag `--format' will" "\n";
+    more_help += "    be ignored in this case."                                                     "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    Text substitution in the template file is done as following:"                 "\n";
+    more_help +=                                                                                    "\n";
+    // maybe only replace if not encapsulated by [A-Za-z] characters?
+    // what if a symbol has a name like "sendingdoitalready"?
+    more_help += "    If a prefix was set with `--name' then any instances of `GDO' and `gdo' will" "\n";
+    more_help += "    be substituted with it, converted to uppercase and lowercase."                "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    Any lines containing one or more of the following will be replaced multiple"  "\n";
+    more_help += "    times with code from the input (used to generate typedefs, prototyes, etc.):" "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    %%return%%: empty if function doesn't return anything (void), else `return'"  "\n";
+    more_help += "    %%type%%: function return type"                                               "\n";
+    more_help += "    %%symbol%%: function symbol name"                                             "\n";
+    more_help += "    %%args%%: function arguments"                                                 "\n";
+    more_help += "    %%notype_args%%: function argument names without type"                        "\n";
+    more_help += "    %%obj_type%%: object type"                                                    "\n";
+    more_help += "    %%obj_symbol%%: object symbol name"                                           "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    If a line ends on `@' it will be processed together with the next line as if" "\n";
+    more_help += "    there was no line break, but the line break will still appear in the output." "\n";
+//  more_help += "    This is similar to a preprocessor line that ends on a backslash."             "\n";
+    more_help +=                                                                                    "\n";
+    more_help += "    All lines between a line `%%SKIP_BEGIN%%' and a line `%%SKIP_END%%' will be"  "\n";
+    more_help += "    commented out if `--skip-parameter-names' was passed. This is used to skip"   "\n";
+    more_help += "    code that would otherwise require parameter names. "                          "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -345,6 +393,7 @@ int main(int argc, char **argv)
     more_help += "    --library=ext:foo    ==>  \"foo\" LIBEXTA    ==>    i.e. \"foo.dll\""         "\n";
     more_help += "    --library=api:2:foo  ==>  LIBNAMEA(foo,2)    ==>    i.e. \"libfoo.so.2\""     "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --include */
@@ -359,6 +408,7 @@ int main(int argc, char **argv)
     more_help += "    Set a header file name to be included at the top of the output code."         "\n";
     more_help += "    Quotation marks are put around the filename if it's not enclosed in brackets" "\n";
     more_help += "    or quotation marks. This flag may be passed multiple times."                  "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -375,6 +425,7 @@ int main(int argc, char **argv)
     more_help += "    Quotation marks are never added. This is useful if you want to specify a"     "\n";
     more_help += "    header through a macro. This flag may be passed multiple times."              "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --define */
@@ -389,6 +440,7 @@ int main(int argc, char **argv)
     more_help += "    Set a preprocessor definition macro to be added at the top of the output"     "\n";
     more_help += "    code. This macro may include a value in the form of `FOO=1'. This flag may"   "\n";
     more_help += "    be passed multiple times."                                                    "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -406,6 +458,7 @@ int main(int argc, char **argv)
     more_help += "    output is printed to STDOUT. Currently this is only supported if the output"  "\n";
     more_help += "    format is `C'. On other formats this flag is ignored."                        "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --force */
@@ -418,6 +471,7 @@ int main(int argc, char **argv)
     more_help += "  -f, --force"                                                                    "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Always overwrite existing output files. Use with care."                       "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -434,6 +488,7 @@ int main(int argc, char **argv)
     more_help += "    is being processed. This will disable any kind of wrapped functions in the"   "\n";
     more_help += "    output (if the selected output format makes use of them)."                    "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --prefix */
@@ -449,6 +504,7 @@ int main(int argc, char **argv)
     more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
     more_help += "    from i.e. standard C headers."                                                "\n";
     more_help +=                                                                                    "\n";
+    more_help +=                                                                                    "\n";
 
 
     /* --symbol */
@@ -463,6 +519,7 @@ int main(int argc, char **argv)
     more_help += "    Look for the symbol name STRING when parsing the input. This is most useful"  "\n";
     more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
     more_help += "    from i.e. standard C headers. This flag may be passed multiple times."        "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -481,6 +538,7 @@ int main(int argc, char **argv)
     more_help += "    cannot be combined with `--prefix' or `--symbol'."                            "\n";
     more_help +=                                                                                    "\n";
     more_help += "    This flag has no effect if the input isn't a Clang AST."                      "\n";
+    more_help +=                                                                                    "\n";
     more_help +=                                                                                    "\n";
 
 
@@ -522,7 +580,7 @@ int main(int argc, char **argv)
     gdo.input(getstr(a_input));
 
     /* --format */
-    if (a_format) {
+    if (a_format && !a_custom_template) {
         auto fmt = str_to_enum(getstr(a_format));
 
         if (fmt == output::error) {
@@ -532,6 +590,11 @@ int main(int argc, char **argv)
         }
 
         gdo.format(fmt);
+    }
+
+    /* --custom-template */
+    if (a_custom_template) {
+        gdo.custom_template(getstr(a_custom_template));
     }
 
     /* --library */

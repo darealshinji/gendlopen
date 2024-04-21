@@ -108,7 +108,7 @@ void print_deflib_defines(cio::ofstream &out, const std::string &pfx, const vstr
 }
 
 /* open file for writing */
-bool open_fstream(cio::ofstream &ofs, const std::string &ofile, bool force)
+bool open_ofstream(cio::ofstream &ofs, const std::string &ofile, bool force)
 {
     /* check if file already exists by opening it for reading */
     if (!force && ofile != "-") {
@@ -225,12 +225,54 @@ bool gendlopen::tokenize_input()
     return tokenize(ifs);
 }
 
+/* read and parse custom template */
+int gendlopen::parse_custom_template(const std::string &ofile)
+{
+    cio::ofstream out;
+    std::string data;
+    char c;
+
+    /* input file */
+    std::ifstream ifs(m_custom_template, std::ios::in | std::ios::binary);
+
+    if (!ifs.is_open()) {
+        std::cerr << "error: failed to open file for reading: " << m_custom_template << std::endl;
+        return 1;
+    }
+
+    /* read data */
+    while (ifs.get(c) && ifs.good()) {
+        data.push_back(c);
+    }
+
+    ifs.close();
+
+    /* output file */
+
+    if (!open_ofstream(out, ofile, m_force)) {
+        return 1;
+    }
+
+    out << parse(data);
+
+    return 0;
+}
+
 /* generate output */
 int gendlopen::generate(const std::string &ofile, const std::string &name)
 {
     /* tokenize */
     if (!tokenize_input()) {
         return 1;
+    }
+
+    /* name used on variables and macros */
+    m_name_upper = utils::convert_to_upper(name);
+    m_name_lower = utils::convert_to_lower(name);
+
+    /* read and parse custom template */
+    if (!m_custom_template.empty()) {
+        return parse_custom_template(ofile);
     }
 
     /* is output C or C++? */
@@ -268,17 +310,13 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     std::string header_guard = utils::convert_to_upper(header_name);
 
-    /* name used on variables and macros */
-    m_name_upper = utils::convert_to_upper(name);
-    m_name_lower = utils::convert_to_lower(name);
-
 
     /************** header begin ***************/
 
     /* open file */
     cio::ofstream out;
 
-    if (!open_fstream(out, ofhdr.string(), m_force)) {
+    if (!open_ofstream(out, ofhdr.string(), m_force)) {
         return 1;
     }
 
@@ -344,10 +382,6 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     out.close();
 
-    //if (!use_stdout) {
-    //    std::cout << "saved to file: " << ofhdr << std::endl;
-    //}
-
     if (!m_separate) {
         return 0;
     }
@@ -359,15 +393,13 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
 
     cio::ofstream out_body;
 
-    if (!open_fstream(out_body, ofbody.string(), m_force)) {
+    if (!open_ofstream(out_body, ofbody.string(), m_force)) {
         return 1;
     }
 
     out_body << note;
     out_body << "#include \"" << header_name << "\"\n\n";
     out_body << parse(body_data);
-
-    //std::cout << "saved to file: " << ofbody << std::endl;
 
     return 0;
 }

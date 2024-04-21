@@ -151,7 +151,7 @@ private:
     vproto_t m_prototypes, m_objects;
 
     std::string m_name_upper, m_name_lower;
-    std::string m_ifile, m_defines;
+    std::string m_ifile, m_defines, m_custom_template;
 
     output::format m_format = output::c;
 
@@ -172,6 +172,7 @@ private:
 
     /* generate.cpp */
     bool tokenize_input();
+    int parse_custom_template(const std::string &ofile);
 
     /* parse.cpp */
     std::string parse(std::string &data);
@@ -189,6 +190,7 @@ public:
     /* set options */
     void input(const std::string &s) { m_ifile = s; }
     void format(output::format val) { m_format = val; }
+    void custom_template(const std::string &s) { m_custom_template = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
