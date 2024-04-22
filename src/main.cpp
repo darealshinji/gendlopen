@@ -29,9 +29,8 @@
 #include "args.hxx"
 #include "gendlopen.hpp"
 
-/* ./src/gendlopen --more-help | wc -c  (minus a few characters from the first line) */
-#define HELP_TEXT_RESERVE_LENGTH 4850
-
+/* ./src/gendlopen --more-help | wc -c */
+#define MORE_HELP_RESERVE_LENGTH 5900
 
 using StrValue = args::ValueFlag<std::string>;
 using StrList = args::ValueFlagList<std::string>;
@@ -202,23 +201,23 @@ int main(int argc, char **argv)
         std::cerr << "Try `" << argv[0] << " --help' for more information." << std::endl;
     };
 
-    std::string more_help;
-
-    more_help.reserve(HELP_TEXT_RESERVE_LENGTH);
-
     ArgumentParser args("Tool to generate library loading code");
 
-//  more_help += "<<--------------------------------- 80 chars --------------------------------->>" "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "  Gendlopen is a small tool intended to help with the creation of code that"      "\n";
-    more_help += "  dynamically loads shared libraries. It takes text files with C prototype"       "\n";
-    more_help += "  declarations as input and creates C or C++ header files as output."             "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "  The output is compatible with POSIX dlopen() and win32 LoadLibrary() API."      "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "OPTIONS:"                                                                         "\n";
-    more_help +=                                                                                    "\n";
+    std::string more_help;
+    more_help.reserve(MORE_HELP_RESERVE_LENGTH);
+
+    more_help =
+R"(
+  Gendlopen is a small tool intended to help with the creation of code that
+  dynamically loads shared libraries. It takes text files with C prototype
+  declarations as input and creates C or C++ header files as output.
+
+  The output is compatible with POSIX dlopen() and win32 LoadLibrary() API.
+
+
+OPTIONS:
+
+)";
 
 
     /* --help */
@@ -226,12 +225,13 @@ int main(int argc, char **argv)
     HelpFlag a_help(args, {}, "show this help", {'h', "help"});
     HelpFlag a_help2(args, {}, {}, {'?'}, Opt::Hidden);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -h, --help"                                                                     "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Print a summary of all avaiable options with a brief description."            "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -h, --help
+
+    Print a summary of all avaiable options with a brief description.
+
+)";
 
 
     /* --more-help */
@@ -240,12 +240,13 @@ int main(int argc, char **argv)
         "show full help with additional info",
         {"more-help"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  --more-help"                                                                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Show this more detailed information."                                         "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  --more-help
+
+    Show this more detailed information.
+
+)";
 
 
     /* --input */
@@ -255,23 +256,23 @@ int main(int argc, char **argv)
         {'i', "input"},
         Opt::Single | Opt::Required);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -i[FILE], --input=[FILE]"                                                       "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Specify an input file. Use `-' to read data from STDIN."                      "\n";
-    more_help += "    This flag is required unless `--help' or `--more-help' was passed."           "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    The input text must contain all symbols that should be loaded. They must be"  "\n";
-    more_help += "    listed as modern C-style prototypes, ending on semi-colon (;). Comments are"  "\n";
-    more_help += "    ignored, line-breaks are treated as spaces. Any other code will throw an"     "\n";
-    more_help += "    error."                                                                       "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Alternatively the input may be an Abstract Syntax Tree (AST) generated by"    "\n";
-    more_help += "    Clang."                                                                       "\n";
-    more_help += "    To dump the AST created from `foo.h' you can run the following command:"      "\n";
-    more_help += "    clang -Xclang -ast-dump foo.h > ast.txt"                                      "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -i[FILE], --input=[FILE]
+
+    Specify an input file. Use `-' to read data from STDIN.
+    This flag is required unless `--help' or `--more-help' was passed.
+
+    The input text must contain all symbols that should be loaded. They must be
+    listed as modern C-style prototypes, ending on semi-colon (;). Comments are
+    ignored, line-breaks are treated as spaces. Any other code will throw an
+    error.
+
+    Alternatively the input may be an Abstract Syntax Tree (AST) generated by
+    Clang. To dump the AST created from `foo.h' you can run the following
+    command: clang -Xclang -ast-dump foo.h > ast.txt
+
+)";
 
 
     /* --output */
@@ -281,13 +282,14 @@ int main(int argc, char **argv)
         {'o', "output"},
         "-", Opt::Single);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -o[FILE], --output=[FILE]"                                                      "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Specify an output file. If this flag isn't set or if FILE is `-' output will" "\n";
-    more_help += "    be printed to STDOUT."                                                        "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -o[FILE], --output=[FILE]
+
+    Specify an output file. If this flag isn't set or if FILE is `-' output will
+    be printed to STDOUT.
+
+)";
 
 
     /* --name */
@@ -297,14 +299,15 @@ int main(int argc, char **argv)
         {'n', "name"},
         "gdo", Opt::Single);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -n[STRING], --name=[STRING]"                                                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Use STRING as a prefix in names of functions and macros or as C++ namespace"  "\n";
-    more_help += "    when generating output to avoid symbol clashes. The default string is `gdo'." "\n";
-    more_help += "    Upper/lower case and underscores will be set accordingly."                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -n[STRING], --name=[STRING]
+
+    Use STRING as a prefix in names of functions and macros or as C++ namespace
+    when generating output to avoid symbol clashes. The default string is `gdo'.
+    Upper/lower case and underscores will be set accordingly.
+
+)";
 
 
     /* --format */
@@ -314,18 +317,19 @@ int main(int argc, char **argv)
         {'F', "format"},
         Opt::Single);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -F[STRING], --format=[STRING]"                                                  "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Use one of the following output formats:"                                     "\n";
-    more_help += "    C            -  many features, this is the default"                           "\n";
-    more_help += "    C++          -  many features but no exception handling (due to the design)"  "\n";
-    more_help += "    minimal      -  small C header"                                               "\n";
-    more_help += "    minimal-C++  -  small C++ header with exception handling"                     "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    More information can be found in the comments of the header files."           "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -F[STRING], --format=[STRING]
+
+    Use one of the following output formats:
+    C            -  many features, this is the default
+    C++          -  many features but no exception handling (due to the design)
+    minimal      -  small C header
+    minimal-C++  -  small C++ header with exception handling
+
+    More information can be found in the comments of the header files.
+
+)";
 
 
     /* --custom-template */
@@ -335,37 +339,37 @@ int main(int argc, char **argv)
         {"custom-template"},
         Opt::Single);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  --custom-template=[FILE]"                                                       "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Use a custom template file to generate output from. The flag `--format' will" "\n";
-    more_help += "    be ignored in this case."                                                     "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Text substitution in the template file is done as following:"                 "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    If a prefix was set with `--name' then any instances of `GDO_' and `gdo_'"    "\n";
-    more_help += "    will be substituted with it, converted to uppercase and lowercase."           "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Any lines containing one or more of the following will be replaced multiple"  "\n";
-    more_help += "    times with code from the input (used to generate typedefs, prototyes, etc.):" "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    %%return%%: empty if function doesn't return anything (void), else `return'"  "\n";
-    more_help += "    %%type%%: function return type"                                               "\n";
-    more_help += "    %%symbol%%: function symbol name"                                             "\n";
-    more_help += "    %%args%%: function arguments"                                                 "\n";
-    more_help += "    %%notype_args%%: function argument names without type"                        "\n";
-    more_help += "    %%obj_type%%: object type"                                                    "\n";
-    more_help += "    %%obj_symbol%%: object symbol name"                                           "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    If a line ends on `@' it will be processed together with the next line as if" "\n";
-    more_help += "    there was no line break, but the line break will still appear in the output." "\n";
-//  more_help += "    This is similar to a preprocessor line that ends on a backslash."             "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    All lines between a line `%%SKIP_BEGIN%%' and a line `%%SKIP_END%%' will be"  "\n";
-    more_help += "    commented out if `--skip-parameter-names' was passed. This is used to skip"   "\n";
-    more_help += "    code that would otherwise require parameter names. "                          "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  --custom-template=[FILE]
+
+    Use a custom template file to generate output from. The flag `--format' will
+    be ignored in this case.
+
+    Text substitution in the template file is done as following:
+
+    If a prefix was set with `--name' then any instances of `GDO_' and `gdo_'
+    will be substituted with it, converted to uppercase and lowercase.
+
+    Any lines containing one or more of the following will be replaced multiple
+    times with code from the input (used to generate typedefs, prototyes, etc.):
+
+    %%return%%: empty if function doesn't return anything (void), else `return'
+    %%type%%: function return type
+    %%symbol%%: function symbol name
+    %%args%%: function arguments
+    %%notype_args%%: function argument names without type
+    %%obj_type%%: object type
+    %%obj_symbol%%: object symbol name
+
+    If a line ends on `@' it will be processed together with the next line as if
+    there was no line break, but the line break will still appear in the output.
+
+    All lines between a line `%%SKIP_BEGIN%%' and a line `%%SKIP_END%%' will be
+    commented out if `--skip-parameter-names' was passed. This is used to skip
+    code that would otherwise require parameter names.
+
+)";
 
 
     /* --library */
@@ -375,23 +379,24 @@ int main(int argc, char **argv)
         {'l', "library"},
         Opt::Single);
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -l[[MODE:]STRING], --library=[[MODE:]STRING]"                                   "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Set a default library name to load."                                          "\n";
-    more_help += "    If no mode was set quotation marks are put around the filename as needed."    "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Available modes:"                                                             "\n";
-    more_help += "    nq     - no quotes are added, the string will be used as is"                  "\n";
-    more_help += "    ext    - filename extension will be added through a macro"                    "\n";
-    more_help += "    api:#  - library filename with API number will be created through a macro"    "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    --library=foo        ==>  \"foo\""                                            "\n";
-    more_help += "    --library=nq:foo     ==>  foo"                                                "\n";
-    more_help += "    --library=ext:foo    ==>  \"foo\" LIBEXTA    ==>    i.e. \"foo.dll\""         "\n";
-    more_help += "    --library=api:2:foo  ==>  LIBNAMEA(foo,2)    ==>    i.e. \"libfoo.so.2\""     "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -l[[MODE:]STRING], --library=[[MODE:]STRING]
+
+    Set a default library name to load.
+    If no mode was set quotation marks are put around the filename as needed.
+
+    Available modes:
+    nq     - no quotes are added, the string will be used as is
+    ext    - filename extension will be added through a macro
+    api:#  - library filename with API number will be created through a macro
+
+    --library=foo        ==>  "foo"
+    --library=nq:foo     ==>  foo
+    --library=ext:foo    ==>  "foo" LIBEXTA      ==>    i.e. "foo.dll"
+    --library=api:2:foo  ==>  LIBNAMEA(foo,2)    ==>    i.e. "libfoo.so.2"
+
+)";
 
 
     /* --include */
@@ -400,14 +405,15 @@ int main(int argc, char **argv)
         "header to include",
         {'I', "include"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -I[STRING], --include=[STRING]"                                                 "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Set a header file name to be included at the top of the output code."         "\n";
-    more_help += "    Quotation marks are put around the filename if it's not enclosed in brackets" "\n";
-    more_help += "    or quotation marks. This flag may be passed multiple times."                  "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -I[STRING], --include=[STRING]
+
+    Set a header file name to be included at the top of the output code.
+    Quotation marks are put around the filename if it's not enclosed in brackets
+    or quotation marks. This flag may be passed multiple times.
+
+)";
 
 
     /* --include-nq */
@@ -416,14 +422,15 @@ int main(int argc, char **argv)
         "header to include (no quotes added)",
         {"include-nq"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  --include-nq=[STRING]"                                                          "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Set a header file name to be included at the top of the output code."         "\n";
-    more_help += "    Quotation marks are never added. This is useful if you want to specify a"     "\n";
-    more_help += "    header through a macro. This flag may be passed multiple times."              "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  --include-nq=[STRING]
+
+    Set a header file name to be included at the top of the output code.
+    Quotation marks are never added. This is useful if you want to specify a
+    header through a macro. This flag may be passed multiple times.
+
+)";
 
 
     /* --define */
@@ -432,14 +439,15 @@ int main(int argc, char **argv)
         "define preprocessor macro",
         {'D', "define"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -D[STRING], --define=[STRING]"                                                  "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Set a preprocessor definition macro to be added at the top of the output"     "\n";
-    more_help += "    code. This macro may include a value in the form of `FOO=1'. This flag may"   "\n";
-    more_help += "    be passed multiple times."                                                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -D[STRING], --define=[STRING]
+
+    Set a preprocessor definition macro to be added at the top of the output
+    code. This macro may include a value in the form of `FOO=1'. This flag may
+    be passed multiple times.
+
+)";
 
 
     /* --separate */
@@ -448,15 +456,16 @@ int main(int argc, char **argv)
         "save into header and body files",
         {'s', "separate"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -s, --separate"                                                                 "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Save output into separate body and header files. The filename extensions"     "\n";
-    more_help += "    will be set to .c/.h or .cpp/.hpp accordingly. This flag is ignored if the"   "\n";
-    more_help += "    output is printed to STDOUT. Currently this is only supported if the output"  "\n";
-    more_help += "    format is `C'. On other formats this flag is ignored."                        "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -s, --separate
+
+    Save output into separate body and header files. The filename extensions
+    will be set to .c/.h or .cpp/.hpp accordingly. This flag is ignored if the
+    output is printed to STDOUT. Currently this is only supported if the output
+    format is `C'. On other formats this flag is ignored.
+
+)";
 
 
     /* --force */
@@ -465,12 +474,13 @@ int main(int argc, char **argv)
         "overwrite existing files",
         {'f', "force"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -f, --force"                                                                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Always overwrite existing output files. Use with care."                       "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -f, --force
+
+    Always overwrite existing output files. Use with care.
+
+)";
 
 
     /* --skip-parameter-names */
@@ -479,14 +489,15 @@ int main(int argc, char **argv)
         "skip parameter name lookup in function prototypes",
         {"skip-parameter-names"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  --skip-parameter-names"                                                         "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Don't try to look for parameter names in function prototypes when the input"  "\n";
-    more_help += "    is being processed. This will disable any kind of wrapped functions in the"   "\n";
-    more_help += "    output (if the selected output format makes use of them)."                    "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  --skip-parameter-names
+
+    Don't try to look for parameter names in function prototypes when the input
+    is being processed. This will disable any kind of wrapped functions in the
+    output (if the selected output format makes use of them).
+
+)";
 
 
     /* --prefix */
@@ -495,14 +506,15 @@ int main(int argc, char **argv)
         "look for symbols prefixed with STRING",
         {'P', "prefix"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -P[STRING...], --prefix=[STRING]"                                               "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Look for symbols that begin with STRING when parsing the input. This is most" "\n";
-    more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
-    more_help += "    from i.e. standard C headers."                                                "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -P[STRING...], --prefix=[STRING]
+
+    Look for symbols that begin with STRING when parsing the input. This is most
+    useful if the input is a Clang AST to ignore unwanted declarations coming
+    from i.e. standard C headers.
+
+)";
 
 
     /* --symbol */
@@ -511,14 +523,15 @@ int main(int argc, char **argv)
         "look for symbol STRING",
         {'S', "symbol"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  -S[STRING], --symbol=[STRING]"                                                  "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Look for the symbol name STRING when parsing the input. This is most useful"  "\n";
-    more_help += "    useful if the input is a Clang AST to ignore unwanted declarations coming"    "\n";
-    more_help += "    from i.e. standard C headers. This flag may be passed multiple times."        "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  -S[STRING], --symbol=[STRING]
+
+    Look for the symbol name STRING when parsing the input. This is most useful
+    useful if the input is a Clang AST to ignore unwanted declarations coming
+    from i.e. standard C headers. This flag may be passed multiple times.
+
+)";
 
 
     /* --ast-all-symbols */
@@ -527,17 +540,19 @@ int main(int argc, char **argv)
         "use all symbols from a Clang AST",
         {"ast-all-symbols"});
 
-    more_help +=                                                                                    "\n";
-    more_help += "  --ast-all-symbols"                                                              "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    Pass this flag if you really want to use all symbols found in a Clang AST."   "\n";
-    more_help += "    Be careful, as this might include unwanted prototypes from other headers."    "\n";
-    more_help += "    It's recommended to use `--prefix' and/or `--symbol' instead. This flag "     "\n";
-    more_help += "    cannot be combined with `--prefix' or `--symbol'."                            "\n";
-    more_help +=                                                                                    "\n";
-    more_help += "    This flag has no effect if the input isn't a Clang AST."                      "\n";
-    more_help +=                                                                                    "\n";
-    more_help +=                                                                                    "\n";
+    more_help +=
+R"(
+  --ast-all-symbols
+
+    Pass this flag if you really want to use all symbols found in a Clang AST.
+    Be careful, as this might include unwanted prototypes from other headers.
+    It's recommended to use `--prefix' and/or `--symbol' instead. This flag
+    cannot be combined with `--prefix' or `--symbol'.
+
+    This flag is ignored if the input isn't a Clang AST.
+
+)";
+
 
 
     /* parse arguments */
@@ -547,7 +562,7 @@ int main(int argc, char **argv)
     catch (const args::Help&) {
         if (a_more_help) {
             std::cout << "  " << *argv << " {OPTIONS}\n\n";
-            std::cout << more_help << std::flush;
+            std::cout << more_help << std::endl;
         } else {
             std::cout << args << std::flush;
         }
