@@ -110,6 +110,7 @@ namespace /* anonymous */
 std::string gendlopen::parse(std::string &data)
 {
     std::string buf, line;
+    std::string fmt_upper, fmt_lower, fmt_namespace;
     bool comment_out = false;
 
     const list_t function_keywords = {
@@ -141,9 +142,12 @@ std::string gendlopen::parse(std::string &data)
 
     /* lambda function to replace prefixes in lines */
     const bool custom_prefix = (m_name_upper != "GDO");
-    const std::string fmt_upper = "$1" + (m_name_upper + "_$3");
-    const std::string fmt_lower = "$1" + (m_name_lower + "_$3");
-    const std::string fmt_nmspc = "$1" + (m_name_lower + "::");
+
+    if (custom_prefix) {
+        fmt_upper = "$1" + (m_name_upper + "_$3");
+        fmt_lower = "$1" + (m_name_lower + "_$3");
+        fmt_namespace = "$1" + (m_name_lower + "::");
+    }
 
     auto replace_prefixes = [&] (const std::string &in) -> std::string
     {
@@ -151,7 +155,7 @@ std::string gendlopen::parse(std::string &data)
             std::string s;
             s = std::regex_replace(in, reg_upper, fmt_upper);
             s = std::regex_replace(s, reg_lower, fmt_lower);
-            s = std::regex_replace(s, reg_nmspc, fmt_nmspc);
+            s = std::regex_replace(s, reg_nmspc, fmt_namespace);
             return s;
         }
         return in;
