@@ -343,10 +343,8 @@ int main(int argc, char **argv)
     more_help +=                                                                                    "\n";
     more_help += "    Text substitution in the template file is done as following:"                 "\n";
     more_help +=                                                                                    "\n";
-    // maybe only replace if not encapsulated by [A-Za-z] characters?
-    // what if a symbol has a name like "sendingdoitalready"?
-    more_help += "    If a prefix was set with `--name' then any instances of `GDO' and `gdo' will" "\n";
-    more_help += "    be substituted with it, converted to uppercase and lowercase."                "\n";
+    more_help += "    If a prefix was set with `--name' then any instances of `GDO_' and `gdo_'"    "\n";
+    more_help += "    will be substituted with it, converted to uppercase and lowercase."           "\n";
     more_help +=                                                                                    "\n";
     more_help += "    Any lines containing one or more of the following will be replaced multiple"  "\n";
     more_help += "    times with code from the input (used to generate typedefs, prototyes, etc.):" "\n";

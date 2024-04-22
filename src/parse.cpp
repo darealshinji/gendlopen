@@ -110,7 +110,6 @@ namespace /* anonymous */
 std::string gendlopen::parse(std::string &data)
 {
     std::string buf, line;
-    bool custom_prefix = false;
     bool comment_out = false;
 
     const list_t function_keywords = {
@@ -135,12 +134,31 @@ std::string gendlopen::parse(std::string &data)
         std::exit(1);
     }
 
-    if (m_name_upper != "GDO") {
-        custom_prefix = true;
-    }
+    /* regex for prefixes: [_]GDO_* / [_]gdo_* / gdo:: */
+    const std::regex reg_upper("([^A-Za-z0-9_]?[_]?)(GDO_)([A-Za-z0-9_])");
+    const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)([A-Za-z0-9_])");
+    const std::regex reg_nmspc("([^A-Za-z0-9_]?)(gdo::)");
+
+    /* lambda function to replace prefixes in lines */
+    const bool custom_prefix = (m_name_upper != "GDO");
+    const std::string fmt_upper = "$1" + (m_name_upper + "_$3");
+    const std::string fmt_lower = "$1" + (m_name_lower + "_$3");
+    const std::string fmt_nmspc = "$1" + (m_name_lower + "::");
+
+    auto replace_prefixes = [&] (const std::string &in) -> std::string
+    {
+        if (custom_prefix) {
+            std::string s;
+            s = std::regex_replace(in, reg_upper, fmt_upper);
+            s = std::regex_replace(s, reg_lower, fmt_lower);
+            s = std::regex_replace(s, reg_nmspc, fmt_nmspc);
+            return s;
+        }
+        return in;
+    };
 
     /* Change all line endings from \r\n to \n.
-     * This is a radical solution but it makes parsing the code
+     * This is a "radical" solution but it makes parsing the code
      * a lot easier. */
     utils::replace("\r\n", "\n", data);
 
@@ -189,7 +207,7 @@ std::string gendlopen::parse(std::string &data)
         }
 
         if (comment_out) {
-            buf += "//" + line;
+            buf += "//" + replace_prefixes(line);
             line.clear();
             continue;
         }
@@ -211,6 +229,7 @@ std::string gendlopen::parse(std::string &data)
                 continue;
             }
 
+            line = replace_prefixes(line);
             replace_function_prototypes(m_prototypes, line, buf);
         } else if (has_obj) {
             /* object prototypes */
@@ -220,6 +239,8 @@ std::string gendlopen::parse(std::string &data)
                 continue;
             }
 
+            line = replace_prefixes(line);
+
             for (const auto &e : m_objects) {
                 std::string copy = line;
                 utils::replace("%%obj_type%%", e.type, copy);
@@ -228,16 +249,10 @@ std::string gendlopen::parse(std::string &data)
             }
         } else {
             /* nothing to loop, just append */
-            buf += line;
+            buf += replace_prefixes(line);
         }
 
         line.clear();
-    }
-
-    /* replace prefixes */
-    if (custom_prefix) {
-        utils::replace("GDO", m_name_upper, buf);
-        utils::replace("gdo", m_name_lower, buf);
     }
 
     return buf;
