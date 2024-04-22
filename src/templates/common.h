@@ -1,53 +1,84 @@
 /* whether to use WinAPI */
 #ifdef _WIN32
-    #define GDO_OS_WIN32
+# define GDO_OS_WIN32
 #endif
 #if defined(GDO_OS_WIN32) && !defined(GDO_USE_DLOPEN)
-    #define GDO_WINAPI
-#endif
-
-/* default lib */
-#if defined(GDO_DEFAULT_LIB) && !defined(GDO_DEFAULT_LIBA) && !defined(GDO_DEFAULT_LIBW)
-	#if defined(GDO_WINAPI) && defined(_UNICODE)
-		#define GDO_DEFAULT_LIBW GDO_DEFAULT_LIB
-	#else
-		#define GDO_DEFAULT_LIBA GDO_DEFAULT_LIB
-	#endif
-#elif !defined(GDO_DEFAULT_LIB) && defined(GDO_DEFAULT_LIBA) && defined(GDO_DEFAULT_LIBW)
-	#if defined(GDO_WINAPI) && defined(_UNICODE)
-		#define GDO_DEFAULT_LIB GDO_DEFAULT_LIBW
-	#else
-		#define GDO_DEFAULT_LIB GDO_DEFAULT_LIBA
-	#endif
+# define GDO_WINAPI
 #endif
 
 /* default headers to include */
 #ifdef GDO_WINAPI
-    #include <windows.h>
+# include <windows.h>
 #else
-    #include <link.h>
-    #include <dlfcn.h>
+# include <link.h>
+# include <dlfcn.h>
 #endif
 #ifndef __cplusplus
-    #include <stdbool.h>
+# include <stdbool.h>
+#endif
+
+/* glibc + _GNU_SOURCE detection */
+#if defined(_GNU_SOURCE) && defined(__GLIBC__)
+# define GDO_GNU_SOURCE
+#endif
+
+/* Solaris detection */
+#if (defined(sun) || defined(__sun)) && (defined(__SVR4) || defined(__svr4__))
+# define GDO_OS_SOLARIS
+#endif
+
+/* default lib */
+#if defined(GDO_DEFAULT_LIB) && !defined(GDO_DEFAULT_LIBA) && !defined(GDO_DEFAULT_LIBW)
+# if defined(GDO_WINAPI) && defined(_UNICODE)
+#  define GDO_DEFAULT_LIBW  GDO_DEFAULT_LIB
+# else
+#  define GDO_DEFAULT_LIBA  GDO_DEFAULT_LIB
+# endif
+#elif !defined(GDO_DEFAULT_LIB) && defined(GDO_DEFAULT_LIBA) && defined(GDO_DEFAULT_LIBW)
+# if defined(GDO_WINAPI) && defined(_UNICODE)
+#  define GDO_DEFAULT_LIB   GDO_DEFAULT_LIBW
+# else
+#  define GDO_DEFAULT_LIB   GDO_DEFAULT_LIBA
+# endif
 #endif
 
 /* whether to use dlmopen(3) GNU extension */
-#if defined(HAVE_DLMOPEN) || (defined(_GNU_SOURCE) && defined(__GLIBC__))
-    #define GDO_HAVE_DLMOPEN
+#if defined(HAVE_DLMOPEN) || defined(GDO_GNU_SOURCE) || defined(GDO_OS_SOLARIS)
+# define GDO_HAVE_DLMOPEN
 #endif
 
-/* whether to use dlinfo(3) */
-#if defined(HAVE_DLINFO) || (defined(_GNU_SOURCE) && defined(__GLIBC__)) || defined(__FreeBSD__) || defined(__NetBSD__)
-    #define GDO_HAVE_DLINFO
+/**
+* whether to use dlinfo(3)
+*
+* available: Glibc + _GNU_SOURCE, FreeBSD, NetBSD, DragonFlyBSD, Solaris
+* missing: OpenBSD, macOS
+*
+* We could try to dynamically load dlinfo() but the used flag RTLD_DI_LINKMAP
+* is not guaranteed to be (or stay) the same, i.e. on NetBSD it's defined as 3
+* but on most other systems it's 2.
+*/
+#if defined(GDO_GNU_SOURCE) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(GDO_OS_SOLARIS)
+# ifdef RTLD_DI_LINKMAP
+#  define GDO_HAVE_DLINFO
+# endif
+#endif
+#if defined(HAVE_DLINFO) && !defined(GDO_HAVE_DLINFO)
+# define GDO_HAVE_DLINFO
 #endif
 
 /* dlopen(3) flags for compatibility with LoadLibrary() */
+/* taken from different implementations of dlfcn.h */
 #ifndef RTLD_LAZY
 #define RTLD_LAZY 0
 #endif
 #ifndef RTLD_NOW
 #define RTLD_NOW 0
+#endif
+#ifndef RTLD_MODEMASK
+#define RTLD_MODEMASK 0  /* FreeBSD, DragonFlyBSD */
+#endif
+#ifndef RTLD_BINDING_MASK
+#define RTLD_BINDING_MASK 0  /* glibc */
 #endif
 #ifndef RTLD_GLOBAL
 #define RTLD_GLOBAL 0
@@ -62,7 +93,25 @@
 #define RTLD_NOLOAD 0
 #endif
 #ifndef RTLD_DEEPBIND
-#define RTLD_DEEPBIND 0
+#define RTLD_DEEPBIND 0  /* glibc, FreeBSD */
+#endif
+#ifndef RTLD_TRACE
+#define RTLD_TRACE 0  /* FreeBSD, OpenBSD, DragonFlyBSD */
+#endif
+#ifndef RTLD_GROUP
+#define RTLD_GROUP 0  /* Solaris */
+#endif
+#ifndef RTLD_PARENT
+#define RTLD_PARENT 0  /* Solaris */
+#endif
+#ifndef RTLD_WORLD
+#define RTLD_WORLD 0  /* Solaris */
+#endif
+#ifndef RTLD_FIRST
+#define RTLD_FIRST 0  /* macOS, Solaris */
+#endif
+#ifndef DL_LAZY
+#define DL_LAZY RTLD_LAZY  /* NetBSD, OpenBSD */
 #endif
 
 /* LoadLibrary() flags for compatibility with dlopen() */
@@ -109,14 +158,14 @@
 
 /* symbol visibility */
 #ifndef GDO_VISIBILITY
-    #define GDO_VISIBILITY  /**/
+# define GDO_VISIBILITY
 #endif
 
 /* default flags */
 #ifndef GDO_DEFAULT_FLAGS
-    #ifdef GDO_WINAPI
-        #define GDO_DEFAULT_FLAGS  0
-    #else
-        #define GDO_DEFAULT_FLAGS  RTLD_LAZY
-    #endif
+# ifdef GDO_WINAPI
+#  define GDO_DEFAULT_FLAGS 0
+# else
+#  define GDO_DEFAULT_FLAGS RTLD_LAZY
+# endif
 #endif
