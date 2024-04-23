@@ -27,21 +27,6 @@
 # define GDO_OS_SOLARIS
 #endif
 
-/* default lib */
-#if defined(GDO_DEFAULT_LIB) && !defined(GDO_DEFAULT_LIBA) && !defined(GDO_DEFAULT_LIBW)
-# if defined(GDO_WINAPI) && defined(_UNICODE)
-#  define GDO_DEFAULT_LIBW  GDO_DEFAULT_LIB
-# else
-#  define GDO_DEFAULT_LIBA  GDO_DEFAULT_LIB
-# endif
-#elif !defined(GDO_DEFAULT_LIB) && defined(GDO_DEFAULT_LIBA) && defined(GDO_DEFAULT_LIBW)
-# if defined(GDO_WINAPI) && defined(_UNICODE)
-#  define GDO_DEFAULT_LIB   GDO_DEFAULT_LIBW
-# else
-#  define GDO_DEFAULT_LIB   GDO_DEFAULT_LIBA
-# endif
-#endif
-
 /* whether to use dlmopen(3) GNU extension */
 #if defined(HAVE_DLMOPEN) || defined(GDO_GNU_SOURCE) || defined(GDO_OS_SOLARIS)
 # define GDO_HAVE_DLMOPEN
