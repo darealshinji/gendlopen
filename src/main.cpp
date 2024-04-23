@@ -43,23 +43,6 @@ using args::Flag;
 /* anonymous */
 namespace
 {
-    template<class T=StrList>
-    void check_empty(const std::string &val, T &flag)
-    {
-        if (val.empty()) {
-            std::string arg = flag.GetMatcher().GetLongOrAny().str(/* "-", "--" */);
-            std::cerr << "error: Flag '" << arg << "' requires a non-empty argument" << std::endl;
-            std::exit(1);
-        }
-    }
-
-    std::string getstr(StrValue &flag)
-    {
-        std::string val = flag.Get();
-        check_empty<StrValue>(val, flag);
-        return val;
-    }
-
     /* create "#define" lines */
     std::string format_def(std::string def)
     {
@@ -78,7 +61,7 @@ namespace
         utils::strip_spaces(name);
 
         if (name.empty()) {
-            std::cerr << "error: Flag 'define' requires a non-empty value" << std::endl;
+            std::cerr << "error: Flag 'define' cannot be just white-spaces" << std::endl;
             std::exit(1);
         }
 
@@ -590,11 +573,11 @@ R"(
     auto gdo = gendlopen(&argc, &argv);
 
     /* --input (flagged as required) */
-    gdo.input(getstr(a_input));
+    gdo.input(a_input.Get());
 
     /* --format */
     if (a_format && !a_custom_template) {
-        auto fmt = str_to_enum(getstr(a_format));
+        auto fmt = str_to_enum(a_format.Get());
 
         if (fmt == output::error) {
             std::cerr << "error: unknown output format given: " << a_format.Get() << std::endl;
@@ -607,12 +590,12 @@ R"(
 
     /* --custom-template */
     if (a_custom_template) {
-        gdo.custom_template(getstr(a_custom_template));
+        gdo.custom_template(a_custom_template.Get());
     }
 
     /* --library */
     if (a_library) {
-        auto s = getstr(a_library);
+        auto s = a_library.Get();
         auto lib_a = format_libname(s, false);
         auto lib_w = format_libname(s, true);
         gdo.default_lib(lib_a, lib_w);
@@ -620,31 +603,26 @@ R"(
 
     /* --define */
     for (const auto &e : args::get(a_define)) {
-        check_empty(e, a_define);
         gdo.add_def(format_def(e));
     }
 
     /* --include */
     for (const auto &e : args::get(a_include)) {
-        check_empty(e, a_include);
         gdo.add_inc(quote_inc(e));
     }
 
     /* --include-no-quotes */
     for (const auto &e : args::get(a_include_nq)) {
-        check_empty(e, a_include_nq);
         gdo.add_inc(e);
     }
 
     /* --prefix */
     for (const auto &e : args::get(a_prefix)) {
-        check_empty(e, a_prefix);
         gdo.add_pfx(e);
     }
 
     /* --symbol */
     for (const auto &e : args::get(a_symbol)) {
-        check_empty(e, a_symbol);
         gdo.add_sym(e);
     }
 
@@ -655,5 +633,5 @@ R"(
     gdo.ast_all_symbols(a_ast_all_symbols);
 
     /* generate output */
-    return gdo.generate(getstr(a_output), getstr(a_name));
+    return gdo.generate(a_output.Get(), a_name.Get());
 }

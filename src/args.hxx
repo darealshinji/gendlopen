@@ -2360,6 +2360,10 @@ namespace args
                 {
                     if (!canDiscardJoined || nargs.max != 0)
                     {
+                        if (joinedArg.empty()) {
+                            return "Flag '" + arg + "' received an empty argument";
+                        }
+
                         values.push_back(joinedArg);
                     }
                 } else if (!allowSeparate)
@@ -2381,6 +2385,10 @@ namespace args
                         {
                             it = end;
                             return "";
+                        }
+
+                        if ((*valueIt).empty()) {
+                            return "Flag '" + arg + "' received an empty argument";
                         }
 
                         values.push_back(*valueIt);

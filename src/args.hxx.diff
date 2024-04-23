@@ -1,0 +1,26 @@
+ArgumentParser::ParseArgsValues()
+
+--- a/src/args.hxx
++++ b/src/args.hxx
+@@ -2360,6 +2360,10 @@
+                 {
+                     if (!canDiscardJoined || nargs.max != 0)
+                     {
++                        if (joinedArg.empty()) {
++                            return "Flag '" + arg + "' received an empty argument";
++                        }
++
+                         values.push_back(joinedArg);
+                     }
+                 } else if (!allowSeparate)
+@@ -2383,6 +2387,10 @@
+                             return "";
+                         }
+ 
++                        if ((*valueIt).empty()) {
++                            return "Flag '" + arg + "' received an empty argument";
++                        }
++
+                         values.push_back(*valueIt);
+                         ++it;
+                         ++valueIt;
