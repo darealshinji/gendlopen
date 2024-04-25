@@ -97,14 +97,18 @@ std::string create_note(int &argc, char ** &argv)
 }
 
 /* define default library name */
-void print_deflib_defines(cio::ofstream &out, const std::string &pfx, const vstring_t &lib)
+void print_deflib_defines(
+    cio::ofstream &out,
+    const std::string &pfx,
+    const std::string &lib_a,
+    const std::string &lib_w)
 {
     out << "#ifndef " << pfx << "_DEFAULT_LIBA\n";
-    out << "#define " << pfx << "_DEFAULT_LIBA " << lib.at(0) << "\n";
+    out << "#define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n";
     out << "#endif\n";
     out << "#ifndef " << pfx << "_DEFAULT_LIBW\n";
-    out << "#define " << pfx << "_DEFAULT_LIBW " << lib.at(1) << "\n";
-    out << "#endif\n";
+    out << "#define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n";
+    out << "#endif\n\n";
 }
 
 /* open file for writing */
@@ -339,9 +343,9 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     }
 
     /* default library name */
-    if (m_deflib.size() == 2) {
+    if (!m_deflib_a.empty() && !m_deflib_w.empty()) {
         out << "/* default library */\n";
-        print_deflib_defines(out, m_name_upper, m_deflib);
+        print_deflib_defines(out, m_name_upper, m_deflib_a, m_deflib_w);
     }
 
     /* extra includes */

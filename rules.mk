@@ -31,11 +31,12 @@ gen_v     = $(gen_v_$(V))
 #################################
 
 
-#@W32@WINE = WINEDEBUG=-all wine
-@W32@WINE = wine
-
 run_tests = for x in $$bins ; do \
-	  echo $$x ; $$wine ./$$x ; \
+	  echo $$x ; ./$$x ; \
 	  echo "return value: $$?" ; echo ; \
 	done
 
+run_tests_wine = for x in $$bins ; do \
+	  echo $$x ; WINEDEBUG="-all" wine ./$$x ; \
+	  echo "return value: $$?" ; echo ; \
+	done

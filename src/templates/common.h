@@ -17,6 +17,15 @@
 # include <stdbool.h>
 #endif
 
+/* default library name */
+#ifndef GDO_DEFAULT_LIB
+# if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)
+#  define GDO_DEFAULT_LIB GDO_DEFAULT_LIBW
+# elif defined(GDO_DEFAULT_LIBA)
+#  define GDO_DEFAULT_LIB GDO_DEFAULT_LIBA
+# endif
+#endif
+
 /* glibc + _GNU_SOURCE detection */
 #if defined(_GNU_SOURCE) && defined(__GLIBC__)
 # define GDO_GNU_SOURCE

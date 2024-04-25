@@ -20,7 +20,7 @@ run_examples: $(BINS)
 	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests))
 
 @W32@run_examples_wine: $(BINS)
-@W32@	$(_v)(set +e ; bins="$(BINS)" ; wine="$(WINE)" ; $(run_tests))
+@W32@	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests_wine))
 
 
 # appindicator

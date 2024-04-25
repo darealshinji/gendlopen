@@ -25,13 +25,13 @@
 #ifndef _GENDLOPEN_HPP_
 #define _GENDLOPEN_HPP_
 
+#include <iostream>
 #include <fstream>
 #include <regex>
 #include <string>
 #include <vector>
 #include <cassert>
 #include <cstring>
-#include "cio.hpp"
 
 
 /* typedefs */
@@ -55,10 +55,208 @@ namespace output
         c,
         cxx,
         minimal,
-        minimal_cxx,
-        error
+        minimal_cxx
     } format;
 }
+
+
+namespace cio
+{
+
+/* wrapper class to enable reading input from
+ * a file or std::cin using the same object */
+class ifstream;
+
+/* wrapper class to enable writing output to
+ * a file or std::cout using the same object */
+class ofstream;
+
+
+class ifstream
+{
+private:
+
+    bool m_stdin = false;
+    std::string m_buf;
+    std::ifstream m_ifs;
+
+public:
+
+    ifstream() {}
+    virtual ~ifstream() {}
+
+    /* enable binary mode by default because of Windows */
+    bool open(const std::string &file, std::ios::openmode mode = std::ios::in | std::ios::binary)
+    {
+        close();
+
+        if (file == "-") {
+            /* STDIN */
+            m_stdin = true;
+        } else {
+            /* file */
+            m_ifs.open(file.c_str(), mode);
+        }
+
+        /* clear buffer */
+        m_buf.clear();
+
+        return is_open();
+    }
+
+    bool is_open() const
+    {
+        if (!m_buf.empty()) {
+            return true;
+        }
+        return m_stdin ? true : m_ifs.is_open();
+    }
+
+    void close() {
+        if (m_ifs.is_open()) m_ifs.close();
+    }
+
+    bool get(char &c)
+    {
+        if (!m_buf.empty()) {
+            /* buffer */
+            c = m_buf.front();
+            m_buf.erase(0, 1);
+            return true;
+        } else if (m_stdin) {
+            /* STDIN */
+            return std::cin.get(c) ? true : false;
+        }
+
+        /* file */
+        return m_ifs.get(c) ? true : false;
+    }
+
+    int peek()
+    {
+        if (!m_buf.empty()) {
+            return m_buf.front();
+        }
+        return m_stdin ? std::cin.peek() : m_ifs.peek();
+    }
+
+    bool good() const
+    {
+        if (!m_buf.empty()) {
+            return true;
+        }
+        return m_stdin ? std::cin.good() : m_ifs.good();
+    }
+
+    void ignore()
+    {
+        if (!m_buf.empty()) {
+            /* buffer */
+            m_buf.erase(0, 1);
+        } else if (m_stdin) {
+            /* STDIN */
+            std::cin.ignore();
+        } else {
+            /* file */
+            m_ifs.ignore();
+        }
+    }
+
+    bool getline(std::string &out)
+    {
+        if (!m_buf.empty()) {
+            /* buffer */
+            out = m_buf;
+            m_buf.clear();
+
+            if (out.back() == '\n') {
+                out.pop_back();
+            }
+            return true;
+        } else if (m_stdin) {
+            /* STDIN */
+            return std::getline(std::cin, out) ? true : false;
+        }
+
+        /* file */
+        return std::getline(m_ifs, out) ? true : false;
+    }
+
+    /* get a preview of the next line */
+    bool peek_line(std::string &out)
+    {
+        if (m_buf.empty() && !getline(m_buf)) {
+            return false;
+        }
+
+        /* always add a newline to buffer so we can
+         * extract it as a whole line again */
+        if (m_buf.back() != '\n') {
+            m_buf.push_back('\n');
+        }
+
+        out = m_buf;
+
+        /* remove newline */
+        out.pop_back();
+
+        return true;
+    }
+};
+
+
+class ofstream
+{
+private:
+
+    bool m_stdout = false;
+    std::ofstream m_ofs;
+
+public:
+
+    ofstream() {}
+    virtual ~ofstream() {}
+
+    /* enable binary mode by default because of Windows */
+    bool open(const std::string &file, std::ios::openmode mode = std::ios::out | std::ios::binary)
+    {
+        if (file == "-") {
+            /* STDOUT */
+            m_stdout = true;
+        } else {
+            /* file */
+            m_ofs.open(file.c_str(), mode);
+        }
+
+        return is_open();
+    }
+
+    bool is_open() const {
+        return m_stdout ? true : m_ofs.is_open();
+    }
+
+    void close()
+    {
+        if (m_stdout) {
+            /* flush content */
+            std::cout << std::flush;
+        } else if (m_ofs.is_open()) {
+            m_ofs.close();
+        }
+    }
+
+    /* overloading "<<" operator */
+    template<class T>
+    std::ostream& operator<<(const T &obj)
+    {
+        if (m_stdout) {
+            return std::cout << obj;
+        }
+        return m_ofs << obj;
+    }
+};
+
+} /* namespace cio */
 
 
 /* common functions */
@@ -147,11 +345,15 @@ private:
         return (fmt == output::c || fmt == output::cxx);
     }
 
-    vstring_t m_deflib, m_includes, m_symbols, m_prefix;
+    int *m_argc = NULL;
+    char ***m_argv = NULL;
+
+    vstring_t m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
 
     std::string m_name_upper, m_name_lower;
     std::string m_ifile, m_defines, m_custom_template;
+    std::string m_deflib_a, m_deflib_w;
 
     output::format m_format = output::c;
 
@@ -159,8 +361,6 @@ private:
     bool m_separate = false;
     bool m_skip_parameter_names = false;
     bool m_ast_all_symbols = false;
-    int *m_argc = NULL;
-    char ***m_argv = NULL;
 
     /* clang-ast.cpp */
     bool clang_ast_line(cio::ifstream &ifs, std::string &line, int mode);
@@ -180,7 +380,8 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int *argc, char ***argv) : m_argc(argc), m_argv(argv)
+    gendlopen(int *argc, char ***argv, const std::string &ifile)
+    : m_argc(argc), m_argv(argv), m_ifile(ifile)
     {}
 
     /* d'tor */
@@ -188,7 +389,6 @@ public:
     {}
 
     /* set options */
-    void input(const std::string &s) { m_ifile = s; }
     void format(output::format val) { m_format = val; }
     void custom_template(const std::string &s) { m_custom_template = s; }
     void force(bool b) { m_force = b; }
@@ -198,9 +398,8 @@ public:
 
     void default_lib(const std::string &lib_a, const std::string &lib_w) {
         assert(!lib_a.empty() && !lib_w.empty());
-        m_deflib.clear();
-        m_deflib.push_back(lib_a);
-        m_deflib.push_back(lib_w);
+        m_deflib_a = lib_a;
+        m_deflib_w = lib_w;
     }
 
     /* add code */
