@@ -172,6 +172,8 @@ GDO_NOALIAS
 
 
 %SKIP_BEGIN%
+//%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin of the
+//%DNL%//  commentary sequence if "--skip-parameter-names" was set
 /*
 %SKIP_END%
 #if defined(GDO_WRAP_FUNCTIONS)
@@ -184,14 +186,17 @@ GDO_NOALIAS
 %SKIP_BEGIN%
 */
 
+//%DNL%//  this is commented out if "--skip-parameter-names" was set
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
 
+//%DNL%//  this is commented out if "--skip-parameter-names" was set
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
 #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
 
+//%DNL%//  this is commented out if "--skip-parameter-names" was set
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 #define GDO_HAS_MSG_CB
 #endif
@@ -939,6 +944,7 @@ public:
 
         /* pick any symbol pointer */
         const void *ptr = reinterpret_cast<void *>(m_ptr_%%any_symbol%%);
+        //%DNL%//  ^^^ this line is NOT repeated in a loop
 
         if (::dladdr(ptr, &info) == 0) {
             m_errmsg = "dladdr() error";
@@ -975,7 +981,7 @@ public:
 #endif // !GDO_NOALIAS
 
 %SKIP_BEGIN%
-#endif
+#endif // !GDO_WRAP_FUNCTIONS && !GDO_ENABLE_AUTOLOAD
 %SKIP_END%
 
 /* aliases to raw object pointers */

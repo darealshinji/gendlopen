@@ -647,7 +647,11 @@ int main(int argc, char **argv)
 
     All lines between a line `%SKIP_BEGIN%' and a line `%SKIP_END%' will be
     commented out if `--skip-parameter-names' was passed. This is used to skip
-    code that would otherwise require parameter names.)"
+    code that would otherwise require parameter names.
+
+    Any line that contains `%DNL%' ("Do Not Lex") will be skipped entirely.
+    This can be used for meta comments. This is done after glueing lines that
+    end on `@'.)"
     };
 
     help_args.push_back(a_custom_template);

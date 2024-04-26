@@ -570,6 +570,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
     /* pick any symbol pointer */
     const void *ptr = gdo_hndl.%%any_symbol%%_ptr_;
+    //%DNL%//  ^^^ this line is NOT repeated in a loop
 
     if (dladdr(ptr, &info) == 0) {
         gdo_save_to_errbuf("dladdr() error");
@@ -587,6 +588,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 /*                                wrap code                                  */
 /*****************************************************************************/
 %SKIP_BEGIN%
+//%DNL%//  comment out this whole "wrap code" section if "--skip-parameter-names" was set
 
 /* autoload functions */
 #ifdef GDO_ENABLE_AUTOLOAD

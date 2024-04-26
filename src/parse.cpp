@@ -217,6 +217,12 @@ std::string gendlopen::parse(std::string &data)
             continue;
         }
 
+        /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
+        if (line.find("%DNL%") != std::string::npos) {
+            line.clear();
+            continue;
+        }
+
         /* check if we have to comment out lines
          * between "%SKIP_BEGIN%" and "%SKIP_END%" */
 

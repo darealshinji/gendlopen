@@ -170,6 +170,8 @@ LIBEXT
 
 
 %SKIP_BEGIN%
+//%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin of the
+//%DNL%//  commentary sequence if "--skip-parameter-names" was set
 /*
 %SKIP_END%
 #if defined(GDO_WRAP_FUNCTIONS)
@@ -181,10 +183,13 @@ LIBEXT
 #endif
 %SKIP_BEGIN%
 */
+
+//%DNL%//  this is commented out if "--skip-parameter-names" was set
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
 
+//%DNL%//  this is commented out if "--skip-parameter-names" was set
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
 #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
