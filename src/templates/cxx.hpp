@@ -927,8 +927,29 @@ public:
             return lm->l_name;
         }
 #else
-        clear_error();
-        m_errmsg = "dlinfo() is not implemented";
+        /* we need the symbols to be loaded to retrieve
+         * the library path from any symbol pointer */
+        if (!symbols_loaded()) {
+            clear_error();
+            m_errmsg = "no symbols were loaded";
+            return {};
+        }
+
+        Dl_info info;
+        void *ptr;
+
+        /* picks whatever the last pointer is */
+        ptr = reinterpret_cast<void *>(m_ptr_%%symbol%%);
+        ptr = reinterpret_cast<void *>(m_ptr_%%obj_symbol%%);
+
+        if (::dladdr(ptr, &info) == 0) {
+            m_errmsg = "dladdr() error";
+            return {};
+        }
+
+        if (info.dli_fname) {
+            return info.dli_fname;
+        }
 #endif //GDO_HAVE_DLINFO
 
         return {};

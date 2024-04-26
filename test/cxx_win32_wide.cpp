@@ -26,12 +26,10 @@ int main()
     std::wstring orig = loader.origin_w();
 
     if (orig.empty()) {
-        /* print error and return */
         std::cerr << loader.error() << std::endl;
-        return 1;
+    } else {
+        std::wcout << L"library loaded at: " << orig << std::endl;
     }
-
-    std::wcout << L"library loaded at: " << orig << std::endl;
 
 
     /* our code */

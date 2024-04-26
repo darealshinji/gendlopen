@@ -552,21 +552,33 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     struct link_map *lm = NULL;
 
     if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        /* dlinfo() failed */
         gdo_save_dlerror();
         return NULL;
     }
 
-    if (lm->l_name) {
-        /* copy string */
-        return strdup(lm->l_name);
-    }
+    return lm->l_name ? strdup(lm->l_name) : NULL;
 #else
-    /* no dlinfo() available */
-    gdo_save_to_errbuf("dlinfo() is not implemented");
-#endif //GDO_WINAPI
+    /* use dladdr() to get the library path from a symbol pointer */
 
-    return NULL;
+    if (!gdo_symbols_loaded()) {
+        gdo_save_to_errbuf("no symbols were loaded");
+        return NULL;
+    }
+
+    Dl_info info;
+    void *ptr;
+
+    /* picks whatever the last pointer is */
+    ptr = (void *)gdo_hndl.%%symbol%%_ptr_;
+    ptr = (void *)gdo_hndl.%%obj_symbol%%_ptr_;
+
+    if (dladdr(ptr, &info) == 0) {
+        gdo_save_to_errbuf("dladdr() error");
+        return NULL;
+    }
+
+    return info.dli_fname ? strdup(info.dli_fname) : NULL;
+#endif //GDO_WINAPI
 }
 /*****************************************************************************/
 

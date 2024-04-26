@@ -37,6 +37,14 @@ int main()
         return 1;
     }
 
+    const gdo_char_t *origin = gdo_lib_origin();
+
+    if (origin) {
+        printf("library loaded at: %s\n", origin);
+    } else {
+        fprintf(stderr, "%s\n", gdo_last_error());
+    }
+
     /* our code */
     helloworld *hw = helloworld_init();
     helloworld_callback = cb;
