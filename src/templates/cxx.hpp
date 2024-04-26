@@ -912,6 +912,8 @@ public:
     /* get path of loaded library */
     std::string origin()
     {
+        clear_error();
+
         if (!lib_loaded()) {
             set_error_invalid_handle();
             return {};
@@ -923,36 +925,28 @@ public:
         int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
         save_error();
 
-        if (ret != -1 && lm->l_name) {
-            return lm->l_name;
-        }
+        return (ret != -1 && lm->l_name) ? lm->l_name : "";
 #else
+        /* use dladdr() to get the library path from a symbol pointer */
+        Dl_info info;
+
         /* we need the symbols to be loaded to retrieve
          * the library path from any symbol pointer */
         if (!symbols_loaded()) {
-            clear_error();
             m_errmsg = "no symbols were loaded";
             return {};
         }
 
-        Dl_info info;
-        void *ptr;
-
-        /* picks whatever the last pointer is */
-        ptr = reinterpret_cast<void *>(m_ptr_%%symbol%%);
-        ptr = reinterpret_cast<void *>(m_ptr_%%obj_symbol%%);
+        /* pick any symbol pointer */
+        const void *ptr = reinterpret_cast<void *>(m_ptr_%%any_symbol%%);
 
         if (::dladdr(ptr, &info) == 0) {
             m_errmsg = "dladdr() error";
             return {};
         }
 
-        if (info.dli_fname) {
-            return info.dli_fname;
-        }
+        return info.dli_fname ? info.dli_fname : "";
 #endif //GDO_HAVE_DLINFO
-
-        return {};
     }
 
 

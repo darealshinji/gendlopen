@@ -628,6 +628,9 @@ int main(int argc, char **argv)
     If a prefix was set with `--name' then any instances of `GDO_' and `gdo_'
     will be substituted with it, converted to uppercase and lowercase.
 
+    Any instance of `%%any_symbol%%' will be replaced with a pseudo-randomly
+    selected symbol name. This is useful if you need a pointer for `dladdr()'.
+
     Any lines containing one or more of the following will be replaced multiple
     times with code from the input (used to generate typedefs, prototyes, etc.):
 
@@ -642,7 +645,7 @@ int main(int argc, char **argv)
     If a line ends on `@' it will be processed together with the next line as if
     there was no line break, but the line break will still appear in the output.
 
-    All lines between a line `%%SKIP_BEGIN%%' and a line `%%SKIP_END%%' will be
+    All lines between a line `%SKIP_BEGIN%' and a line `%SKIP_END%' will be
     commented out if `--skip-parameter-names' was passed. This is used to skip
     code that would otherwise require parameter names.)"
     };
