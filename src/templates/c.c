@@ -290,9 +290,9 @@ GDO_LINKAGE bool gdo_free_lib(void)
 
 
 /*****************************************************************************/
-/*                    check if all symbols are loaded                        */
+/*                    check if ALL symbols were loaded                       */
 /*****************************************************************************/
-GDO_LINKAGE bool gdo_symbols_loaded(void)
+GDO_LINKAGE bool gdo_all_symbols_loaded(void)
 {
     if (true
         && gdo_hndl.%%symbol%%_loaded_
@@ -308,6 +308,40 @@ GDO_LINKAGE bool gdo_symbols_loaded(void)
 
 
 /*****************************************************************************/
+/*                    check if NO symbols were loaded                        */
+/*****************************************************************************/
+GDO_LINKAGE bool gdo_no_symbols_loaded(void)
+{
+    if (true
+        && gdo_hndl.%%symbol%%_loaded_ == false
+        && gdo_hndl.%%obj_symbol%%_loaded_ == false
+    ) {
+        return true;
+    }
+
+    return false;
+}
+/*****************************************************************************/
+
+
+/*****************************************************************************/
+/*                     check if ANY symbol was loaded                        */
+/*****************************************************************************/
+GDO_LINKAGE bool gdo_any_symbol_loaded(void)
+{
+    if (false
+        || gdo_hndl.%%symbol%%_loaded_
+        || gdo_hndl.%%obj_symbol%%_loaded_
+    ) {
+        return true;
+    }
+
+    return false;
+}
+/*****************************************************************************/
+
+
+/*****************************************************************************/
 /*          load all symbols; can safely be called multiple times            */
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
@@ -315,7 +349,7 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     gdo_clear_errbuf();
 
     /* already loaded all symbols */
-    if (gdo_symbols_loaded()) {
+    if (gdo_all_symbols_loaded()) {
         return true;
     }
 
@@ -351,7 +385,7 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 
     gdo_clear_errbuf();
 
-    return gdo_symbols_loaded();
+    return gdo_all_symbols_loaded();
 }
 
 #ifdef GDO_WINAPI
@@ -562,10 +596,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     Dl_info info;
 
     /* check if no symbols were loaded at all */
-    if (true
-        && gdo_hndl.%%symbol%%_loaded_ == false
-        && gdo_hndl.%%obj_symbol%%_loaded_ == false
-    ) {
+    if (gdo_no_symbols_loaded()) {
         gdo_save_to_errbuf("no symbols were loaded");
         return NULL;
     }
@@ -640,7 +671,7 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 
     /* return immediately if everything is already loaded,
      * otherwise load library + all symbols */
-    if (gdo_symbols_loaded() || gdo_load_lib_and_symbols()) {
+    if (gdo_all_symbols_loaded() || gdo_load_lib_and_symbols()) {
         return;
     }
 #endif

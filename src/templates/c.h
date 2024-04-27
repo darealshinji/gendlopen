@@ -19,10 +19,17 @@ bool               gdo_load_lib ();
 bool               gdo_load_lib_and_symbols ();
 bool               gdo_load_lib_name (const gdo_char_t *filename);
 bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
+
 bool               gdo_load_symbols (bool ignore_errors);
 bool               gdo_load_symbol (const char *symbol);
+
 bool               gdo_free_lib ();
+
 bool               gdo_lib_is_loaded ();
+bool               gdo_all_symbols_loaded ();
+bool               gdo_no_symbols_loaded ();
+bool               gdo_any_symbol_loaded ();
+
 const gdo_char_t * gdo_last_error ();
 gdo_char_t *       gdo_lib_origin ();
 
@@ -74,6 +81,21 @@ bool gdo_free_lib ();
 bool gdo_lib_is_loaded ();
 
     Returns true if the library was successfully loaded.
+
+
+bool gdo_all_symbols_loaded ();
+
+    Returns true if ALL symbols were successfully loaded.
+
+
+bool gdo_no_symbols_loaded ();
+
+    Returns true if NO symbols were loaded at all.
+
+
+bool gdo_any_symbol_loaded ();
+
+    Returns true if 1 or more symbols were successfully loaded.
 
 
 const gdo_char_t *gdo_last_error ();

@@ -68,8 +68,16 @@ public:
     bool load_symbol(const std::string &symbol);
 
 
-    /* check if all symbols are loaded */
-    bool symbols_loaded();
+    /* check if ALL symbols were loaded */
+    bool all_symbols_loaded();
+
+
+    /* check if NO symbols were loaded */
+    bool no_symbols_loaded();
+
+
+    /* check if ANY symbol was loaded */
+    bool any_symbol_loaded();
 
 
     /* free library */
@@ -691,7 +699,7 @@ public:
     {
         clear_error();
 
-        if (symbols_loaded()) {
+        if (all_symbols_loaded()) {
             return true;
         } else if (!lib_loaded()) {
             set_error_invalid_handle();
@@ -714,7 +722,7 @@ public:
 
         clear_error();
 
-        return symbols_loaded();
+        return all_symbols_loaded();
     }
 
 
@@ -763,12 +771,40 @@ public:
     }
 
 
-    /* check if all symbols are loaded */
-    bool symbols_loaded() const
+    /* check if ALL symbols were loaded */
+    bool all_symbols_loaded() const
     {
         if (true
             && m_loaded_%%symbol%%
             && m_loaded_%%obj_symbol%%
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /* check if NO symbols were loaded */
+    bool no_symbols_loaded() const
+    {
+        if (true
+            && m_loaded_%%symbol%% == false
+            && m_loaded_%%obj_symbol%% == false
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /* check if ANY symbol was loaded */
+    bool any_symbol_loaded() const
+    {
+        if (false
+            || m_loaded_%%symbol%%
+            || m_loaded_%%obj_symbol%%
         ) {
             return true;
         }
@@ -937,10 +973,7 @@ public:
         const void *ptr;
 
         /* check if no symbols were loaded at all */
-        if (true
-            && m_loaded_%%symbol%% == false
-            && m_loaded_%%obj_symbol%% == false
-        ) {
+        if (no_symbols_loaded()) {
             m_errmsg = "no symbols were loaded";
             return {};
         }
@@ -972,7 +1005,7 @@ public:
 
 
     /* retrieve the last error */
-    std::string error()
+    std::string error() const
     {
         return m_errmsg;
     }
