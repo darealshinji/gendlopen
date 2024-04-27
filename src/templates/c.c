@@ -561,23 +561,37 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     /* use dladdr() to get the library path from a symbol pointer */
     Dl_info info;
 
-    /* we need the symbols to be loaded to retrieve
-     * the library path from any symbol pointer */
-    if (!gdo_symbols_loaded()) {
+    /* check if no symbols were loaded at all */
+    if (true
+        && gdo_hndl.%%symbol%%_loaded_ == false
+        && gdo_hndl.%%obj_symbol%%_loaded_ == false
+    ) {
         gdo_save_to_errbuf("no symbols were loaded");
         return NULL;
     }
-
-    /* pick any symbol pointer */
-    const void *ptr = gdo_hndl.%%any_symbol%%_ptr_;
-    //%DNL%//  ^^^ this line is NOT repeated in a loop
-
-    if (dladdr(ptr, &info) == 0) {
-        gdo_save_to_errbuf("dladdr() error");
-        return NULL;
+                                                                        //%DNL%
+//%DNL%// check function pointers
+@
+    if (gdo_hndl.%%symbol%%_loaded_ &&@
+        dladdr((const void *)gdo_hndl.%%symbol%%_ptr_, &info) != 0 &&@
+        info.dli_fname != NULL)@
+    {@
+        return strdup(info.dli_fname);@
+    }
+                                                                        //%DNL%
+//%DNL%// check object pointers
+@
+    if (gdo_hndl.%%obj_symbol%%_loaded_ &&@
+        dladdr((const void *)gdo_hndl.%%obj_symbol%%_ptr_, &info) != 0 &&@
+        info.dli_fname != NULL)@
+    {@
+        return strdup(info.dli_fname);@
     }
 
-    return info.dli_fname ? strdup(info.dli_fname) : NULL;
+    /* could not retrieve path */
+    gdo_save_to_errbuf("dladdr() failed to get library path");
+
+    return NULL;
 #endif //GDO_WINAPI
 }
 /*****************************************************************************/

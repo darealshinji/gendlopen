@@ -934,24 +934,39 @@ public:
 #else
         /* use dladdr() to get the library path from a symbol pointer */
         Dl_info info;
+        const void *ptr;
 
-        /* we need the symbols to be loaded to retrieve
-         * the library path from any symbol pointer */
-        if (!symbols_loaded()) {
+        /* check if no symbols were loaded at all */
+        if (true
+            && m_loaded_%%symbol%% == false
+            && m_loaded_%%obj_symbol%% == false
+        ) {
             m_errmsg = "no symbols were loaded";
             return {};
         }
-
-        /* pick any symbol pointer */
-        const void *ptr = reinterpret_cast<void *>(m_ptr_%%any_symbol%%);
-        //%DNL%//  ^^^ this line is NOT repeated in a loop
-
-        if (::dladdr(ptr, &info) == 0) {
-            m_errmsg = "dladdr() error";
-            return {};
+                                                                        //%DNL%
+//%DNL%// check function pointers
+@
+        if (m_loaded_%%symbol%%) {@
+            ptr = reinterpret_cast<void *>(m_ptr_%%symbol%%);@
+            if (::dladdr(ptr, &info) != 0 && info.dli_fname != NULL) {@
+                return info.dli_fname;@
+            }@
+        }
+                                                                        //%DNL%
+//%DNL%// check object pointers
+@
+        if (m_loaded_%%obj_symbol%%) {@
+            ptr = reinterpret_cast<void *>(m_ptr_%%obj_symbol%%);@
+            if (::dladdr(ptr, &info) != 0 && info.dli_fname != NULL) {@
+                return info.dli_fname;@
+            }@
         }
 
-        return info.dli_fname ? info.dli_fname : "";
+        /* could not retrieve path */
+        m_errmsg = "dladdr() failed to get library path";
+
+        return {};
 #endif //GDO_HAVE_DLINFO
     }
 

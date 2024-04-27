@@ -628,9 +628,6 @@ int main(int argc, char **argv)
     If a prefix was set with `--name' then any instances of `GDO_' and `gdo_'
     will be substituted with it, converted to uppercase and lowercase.
 
-    Any instance of `%%any_symbol%%' will be replaced with a pseudo-randomly
-    selected symbol name. This is useful if you need a pointer for `dladdr()'.
-
     Any lines containing one or more of the following will be replaced multiple
     times with code from the input (used to generate typedefs, prototyes, etc.):
 

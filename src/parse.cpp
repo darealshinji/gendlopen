@@ -105,26 +105,6 @@ namespace /* anonymous */
             buffer += copy;
         }
     }
-
-    /* return any pseudo-randomly selected symbol name from the 2 vectors */
-    std::string pick_any_symbol(const vproto_t &proto1, const vproto_t &proto2)
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::vector<const char *> vec;
-
-        for (const auto &e : proto1) {
-            vec.push_back(e.symbol.c_str());
-        }
-
-        for (const auto &e : proto2) {
-            vec.push_back(e.symbol.c_str());
-        }
-
-        auto pos = gen() % vec.size();
-
-        return vec.at(pos);
-    }
 }
 
 /* parse the template data */
@@ -187,9 +167,6 @@ std::string gendlopen::parse(std::string &data)
      * a lot easier. */
     utils::replace("\r\n", "\n", data);
 
-    /* pick random symbol before we start the loop */
-    auto any_symbol = pick_any_symbol(m_prototypes, m_objects);
-
     /* read data character by character */
     for (const char *p = data.c_str(); *p != 0; p++)
     {
@@ -245,8 +222,6 @@ std::string gendlopen::parse(std::string &data)
             line.clear();
             continue;
         }
-
-        utils::replace("%%any_symbol%%", any_symbol, line);
 
         /* check if the line needs to be processed in a loop */
         bool has_func = find_keyword(line, function_keywords);
