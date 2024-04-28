@@ -241,11 +241,10 @@ typedef struct gdo_handle
     gdo_char_t buf[8*1024];
 
     /* symbols */
-    %%type%% (*%%symbol%%_ptr_)(%%args%%);
+    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);
     %%obj_type%% *%%obj_symbol%%_ptr_;
 
     bool %%symbol%%_loaded_;
-    bool %%obj_symbol%%_loaded_;
 
 } gdo_handle_t;
 
@@ -270,7 +269,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
 /* aliases to raw function pointers */
 #if !defined(GDO_NOALIAS)
-#define %%symbol%% gdo_hndl.%%symbol%%_ptr_
+#define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_
 #endif // !GDO_NOALIAS
 
 #endif // !GDO_WRAP_FUNCTIONS && !GDO_ENABLE_AUTOLOAD

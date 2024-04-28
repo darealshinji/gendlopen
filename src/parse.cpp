@@ -42,19 +42,19 @@ namespace /* anonymous */
     using list_t = std::list<const char *>;
 
     /* check for keywords from a list */
-    bool find_keyword(const std::string &line, const list_t &list)
+    int find_keyword(const std::string &line, const list_t &list)
     {
         if (line.find("%%") == std::string::npos) {
-            return false;
+            return 0;
         }
 
         for (const auto &e : list) {
             if (line.find(e) != std::string::npos) {
-                return true;
+                return 1;
             }
         }
 
-        return false;
+        return 0;
     }
 
     /* check for a "%SKIP_BEGIN%" or "%SKIP_END%" line and
@@ -98,10 +98,35 @@ namespace /* anonymous */
                 utils::replace("%%type%% ", e.type, copy);
             }
             utils::replace("%%type%%", e.type, copy);
-            utils::replace("%%symbol%%", e.symbol, copy);
+            utils::replace("%%func_symbol%%", e.symbol, copy);
             utils::replace("%%args%%", e.args, copy);
             utils::replace("%%notype_args%%", e.notype_args, copy);
 
+            buffer += copy;
+        }
+    }
+
+    void replace_symbol_names(vproto_t &proto, vproto_t &obj, const std::string &line, std::string &buffer)
+    {
+        std::string copy, type;
+
+        for (const auto &e : proto) {
+            copy = line;
+
+            /* (%%sym_type%%) == (%%type%% (*)(%%args%%)) */
+            type = e.type + " (*)(" + e.args + ")";
+            utils::replace("%%sym_type%%", type, copy);
+            utils::replace("%%symbol%%", e.symbol, copy);
+            buffer += copy;
+        }
+
+        for (const auto &e : obj) {
+            copy = line;
+
+            /* (%%sym_type%%) == (%%obj_type%% *) */
+            type = e.type + " *";
+            utils::replace("%%sym_type%%", type, copy);
+            utils::replace("%%symbol%%", e.symbol, copy);
             buffer += copy;
         }
     }
@@ -117,7 +142,7 @@ std::string gendlopen::parse(std::string &data)
     const list_t function_keywords = {
         "%%return%%",
         "%%type%%",
-        "%%symbol%%",
+        "%%func_symbol%%",
         "%%args%%",
         "%%notype_args%%"
     };
@@ -125,6 +150,11 @@ std::string gendlopen::parse(std::string &data)
     const list_t object_keywords = {
         "%%obj_type%%",
         "%%obj_symbol%%"
+    };
+
+    const list_t symbol_keywords = {
+        "%%sym_type%%",
+        "%%symbol%%"
     };
 
     if (data.empty()) {
@@ -141,7 +171,6 @@ std::string gendlopen::parse(std::string &data)
     const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)([A-Za-z0-9_])");
     const std::regex reg_nmspc("([^A-Za-z0-9_]?)(gdo::)");
 
-    /* lambda function to replace prefixes in lines */
     const bool custom_prefix = (m_name_upper != "GDO");
 
     if (custom_prefix) {
@@ -150,6 +179,7 @@ std::string gendlopen::parse(std::string &data)
         fmt_namespace = "$1" + (m_name_lower + "::");
     }
 
+    /* lambda function to replace prefixes in lines */
     auto replace_prefixes = [&] (const std::string &in) -> std::string
     {
         if (custom_prefix) {
@@ -224,15 +254,16 @@ std::string gendlopen::parse(std::string &data)
         }
 
         /* check if the line needs to be processed in a loop */
-        bool has_func = find_keyword(line, function_keywords);
-        bool has_obj = find_keyword(line, object_keywords);
+        int has_func = find_keyword(line, function_keywords);
+        int has_obj = find_keyword(line, object_keywords);
+        int has_sym = find_keyword(line, symbol_keywords);
 
-        if (has_func && has_obj) {
+        if ((has_func + has_obj + has_sym) > 1) {
             /* error */
-            std::cerr << "error: cannot use function and object prototypes in the same line(s):\n";
+            std::cerr << "error: cannot mix function, object and regular symbol placeholders:\n";
             std::cerr << line << std::endl;
             std::exit(1);
-        } else if (has_func) {
+        } else if (has_func == 1) {
             /* function prototypes */
 
             if (m_prototypes.empty()) {
@@ -242,7 +273,7 @@ std::string gendlopen::parse(std::string &data)
 
             line = replace_prefixes(line);
             replace_function_prototypes(m_prototypes, line, buf);
-        } else if (has_obj) {
+        } else if (has_obj == 1) {
             /* object prototypes */
 
             if (m_objects.empty()) {
@@ -258,6 +289,10 @@ std::string gendlopen::parse(std::string &data)
                 utils::replace("%%obj_symbol%%", e.symbol, copy);
                 buf += copy;
             }
+        } else if (has_sym == 1) {
+            /* any symbol */
+            line = replace_prefixes(line);
+            replace_symbol_names(m_prototypes, m_objects, line, buf);
         } else {
             /* nothing to loop, just append */
             buf += replace_prefixes(line);

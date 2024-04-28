@@ -6,11 +6,10 @@ gdo::message_callback_t gdo::dl::m_message_callback = nullptr;
 
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
-gdo::dl::fptr_%%symbol%%_t gdo::dl::m_ptr_%%symbol%% = nullptr;
+%%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;
 %%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;
 
 bool gdo::dl::m_loaded_%%symbol%% = false;
-bool gdo::dl::m_loaded_%%obj_symbol%% = false;
 
 
 
@@ -37,11 +36,11 @@ namespace /* anonymous */
 
 /* function wrappers */
 @
-GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
-    if (!gdo::dl::m_loaded_%%symbol%%) {@
-        error_exit("error: symbol `%%symbol%%' was not loaded");@
+GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
+    if (!gdo::dl::m_loaded_%%func_symbol%%) {@
+        error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
-    %%return%% gdo::dl::m_ptr_%%symbol%%(%%notype_args%%);@
+    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@
 }
 
 
@@ -88,9 +87,9 @@ namespace /* anonymous */
 
 /* autoload function wrappers */
 @
-GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
-    quick_load("%%symbol%%");@
-    %%return%% gdo::dl::m_ptr_%%symbol%%(%%notype_args%%);@
+GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
+    quick_load("%%func_symbol%%");@
+    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@
 }
 
 #endif //GDO_ENABLE_AUTOLOAD

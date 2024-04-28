@@ -41,7 +41,7 @@ namespace gdo
     /* symbol pointers */
     namespace ptr
     {
-        %%type%% (*%%symbol%%)(%%args%%) = nullptr;
+        %%type%% (*%%func_symbol%%)(%%args%%) = nullptr;
         %%obj_type%% *%%obj_symbol%% = nullptr;
     }
 
@@ -130,20 +130,11 @@ namespace gdo
     @
         /* %%symbol%% */@
         ptr::%%symbol%% =@
-            reinterpret_cast<%%type%% (*)(%%args%%)>(@
+            reinterpret_cast<%%sym_type%%>(@
                 get_symbol(handle, "%%symbol%%"));@
         if (!ptr::%%symbol%%) {@
             free_lib(handle);@
             throw SymbolError("%%symbol%%");@
-        }
-    @
-        /* %%obj_symbol%% */@
-        ptr::%%obj_symbol%% =@
-            reinterpret_cast<%%obj_type%% *>(@
-                get_symbol(handle, "%%obj_symbol%%"));@
-        if (!ptr::%%obj_symbol%%) {@
-            free_lib(handle);@
-            throw SymbolError("%%obj_symbol%%");@
         }
     }
 
@@ -152,10 +143,8 @@ namespace gdo
 
 #if !defined(GDO_NOALIAS)
 
-/* aliases to raw function pointers */
-#define %%symbol%% gdo::ptr::%%symbol%%
-
-/* aliases to raw object pointers */
+/* aliases to raw symbol pointers */
+#define %%func_symbol%% gdo::ptr::%%func_symbol%%
 #define %%obj_symbol%% *gdo::ptr::%%obj_symbol%%
 
 #endif // !GDO_NOALIAS

@@ -277,11 +277,9 @@ GDO_LINKAGE bool gdo_free_lib(void)
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
     gdo_hndl.%%symbol%%_ptr_ = NULL;
-    gdo_hndl.%%obj_symbol%%_ptr_ = NULL;
 
     /* set back to false */
     gdo_hndl.%%symbol%%_loaded_ = false;
-    gdo_hndl.%%obj_symbol%%_loaded_ = false;
 
     return true;
 }
@@ -296,7 +294,6 @@ GDO_LINKAGE bool gdo_all_symbols_loaded(void)
 {
     if (true
         && gdo_hndl.%%symbol%%_loaded_
-        && gdo_hndl.%%obj_symbol%%_loaded_
     ) {
         return true;
     }
@@ -314,7 +311,6 @@ GDO_LINKAGE bool gdo_no_symbols_loaded(void)
 {
     if (true
         && gdo_hndl.%%symbol%%_loaded_ == false
-        && gdo_hndl.%%obj_symbol%%_loaded_ == false
     ) {
         return true;
     }
@@ -331,7 +327,6 @@ GDO_LINKAGE bool gdo_any_symbol_loaded(void)
 {
     if (false
         || gdo_hndl.%%symbol%%_loaded_
-        || gdo_hndl.%%obj_symbol%%_loaded_
     ) {
         return true;
     }
@@ -370,16 +365,9 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
 @
     /* %%symbol%% */@
     gdo_hndl.%%symbol%%_ptr_ = @
-        (%%type%% (*)(%%args%%))@
+        (%%sym_type%%)@
             _gdo_sym("%%symbol%%", &gdo_hndl.%%symbol%%_loaded_);@
     if (!gdo_hndl.%%symbol%%_loaded_ && !ignore_errors) {@
-        return false;@
-    }
-@
-    /* %%obj_symbol%% */@
-    gdo_hndl.%%obj_symbol%%_ptr_ = (%%obj_type%% *)@
-            _gdo_sym("%%obj_symbol%%", &gdo_hndl.%%obj_symbol%%_loaded_);@
-    if (!gdo_hndl.%%obj_symbol%%_loaded_ && !ignore_errors) {@
         return false;@
     }
 
@@ -459,16 +447,9 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         /* %%symbol%% */@
         if (strcmp("%%symbol%%", symbol) == 0) {@
             gdo_hndl.%%symbol%%_ptr_ =@
-                (%%type%% (*)(%%args%%))@
+                (%%sym_type%%)@
                     _gdo_sym("%%symbol%%", &gdo_hndl.%%symbol%%_loaded_);@
             return gdo_hndl.%%symbol%%_loaded_;@
-        }
-@
-        /* %%obj_symbol%% */@
-        if (strcmp("%%obj_symbol%%", symbol) == 0) {@
-            gdo_hndl.%%obj_symbol%%_ptr_ = (%%obj_type%% *)@
-                    _gdo_sym("%%obj_symbol%%", &gdo_hndl.%%obj_symbol%%_loaded_);@
-            return gdo_hndl.%%obj_symbol%%_loaded_;@
         }
     }
 
@@ -600,20 +581,9 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         gdo_save_to_errbuf("no symbols were loaded");
         return NULL;
     }
-                                                                        //%DNL%
-//%DNL%// check function pointers
 @
     if (gdo_hndl.%%symbol%%_loaded_ &&@
         dladdr((const void *)gdo_hndl.%%symbol%%_ptr_, &info) != 0 &&@
-        info.dli_fname != NULL)@
-    {@
-        return strdup(info.dli_fname);@
-    }
-                                                                        //%DNL%
-//%DNL%// check object pointers
-@
-    if (gdo_hndl.%%obj_symbol%%_loaded_ &&@
-        dladdr((const void *)gdo_hndl.%%obj_symbol%%_ptr_, &info) != 0 &&@
         info.dli_fname != NULL)@
     {@
         return strdup(info.dli_fname);@
@@ -730,10 +700,10 @@ GDO_LINKAGE void gdo_abort(const gdo_char_t *symbol)
 /* wrapped functions
  * (creating wrapped symbols doesn't work well with pointers to objects) */
 @
-GDO_VISIBILITY %%type%% %%symbol%%(%%args%%) {@
-    gdo_quick_load("%%symbol%%", _T("%%symbol%%"));@
-    if (!gdo_hndl.%%symbol%%_loaded_) gdo_abort(_T("%%symbol%%"));@
-    %%return%% gdo_hndl.%%symbol%%_ptr_(%%notype_args%%);@
+GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
+    gdo_quick_load("%%func_symbol%%", _T("%%func_symbol%%"));@
+    if (!gdo_hndl.%%func_symbol%%_loaded_) gdo_abort(_T("%%func_symbol%%"));@
+    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
 }
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD

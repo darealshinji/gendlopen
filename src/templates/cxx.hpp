@@ -237,16 +237,12 @@ public:
      * Useful i.e. on plugins. */
     static constexpr const char * const libext = LIBEXTA;
 
-    /* function pointer typedefs */
-    using fptr_%%symbol%%_t = %%type%% (*)(%%args%%);
-
     /* symbol pointers */
-    static fptr_%%symbol%%_t m_ptr_%%symbol%%;
+    static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);
     static %%obj_type%% *m_ptr_%%obj_symbol%%;
 
     /* whether or not a symbol was loaded */
     static bool m_loaded_%%symbol%%;
-    static bool m_loaded_%%obj_symbol%%;
 
 
 private:
@@ -708,15 +704,9 @@ public:
 
         /* get symbol addresses */
 @
-        m_ptr_%%symbol%% = reinterpret_cast<fptr_%%symbol%%_t>(@
+        m_ptr_%%symbol%% = reinterpret_cast<%%sym_type%%>(@
             sym("%%symbol%%", m_loaded_%%symbol%%));@
         if (!m_loaded_%%symbol%% && !ignore_errors) {@
-            return false;@
-        }
-@
-        m_ptr_%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
-            sym("%%obj_symbol%%", m_loaded_%%obj_symbol%%));@
-        if (!m_loaded_%%obj_symbol%% && !ignore_errors) {@
             return false;@
         }
 
@@ -747,15 +737,9 @@ public:
         /* get symbol address */
 @
         if (symbol == "%%symbol%%") {@
-            m_ptr_%%symbol%% = reinterpret_cast<fptr_%%symbol%%_t>(@
+            m_ptr_%%symbol%% = reinterpret_cast<%%sym_type%%>(@
                 sym("%%symbol%%", m_loaded_%%symbol%%));@
             return m_loaded_%%symbol%%;@
-        }
-@
-        if (symbol == "%%obj_symbol%%") {@
-            m_ptr_%%obj_symbol%% = reinterpret_cast<%%obj_type%% *>(@
-                sym("%%obj_symbol%%", m_loaded_%%obj_symbol%%));@
-            return m_loaded_%%obj_symbol%%;@
         }
 
         clear_error();
@@ -776,7 +760,6 @@ public:
     {
         if (true
             && m_loaded_%%symbol%%
-            && m_loaded_%%obj_symbol%%
         ) {
             return true;
         }
@@ -790,7 +773,6 @@ public:
     {
         if (true
             && m_loaded_%%symbol%% == false
-            && m_loaded_%%obj_symbol%% == false
         ) {
             return true;
         }
@@ -804,7 +786,6 @@ public:
     {
         if (false
             || m_loaded_%%symbol%%
-            || m_loaded_%%obj_symbol%%
         ) {
             return true;
         }
@@ -832,10 +813,8 @@ public:
         m_handle = nullptr;
 
         m_ptr_%%symbol%% = nullptr;
-        m_ptr_%%obj_symbol%% = nullptr;
 
         m_loaded_%%symbol%% = false;
-        m_loaded_%%obj_symbol%% = false;
 
         return true;
     }
@@ -977,20 +956,9 @@ public:
             m_errmsg = "no symbols were loaded";
             return {};
         }
-                                                                        //%DNL%
-//%DNL%// check function pointers
 @
         if (m_loaded_%%symbol%%) {@
             ptr = reinterpret_cast<void *>(m_ptr_%%symbol%%);@
-            if (::dladdr(ptr, &info) != 0 && info.dli_fname != NULL) {@
-                return info.dli_fname;@
-            }@
-        }
-                                                                        //%DNL%
-//%DNL%// check object pointers
-@
-        if (m_loaded_%%obj_symbol%%) {@
-            ptr = reinterpret_cast<void *>(m_ptr_%%obj_symbol%%);@
             if (::dladdr(ptr, &info) != 0 && info.dli_fname != NULL) {@
                 return info.dli_fname;@
             }@
@@ -1025,7 +993,7 @@ public:
 
 /* aliases to raw function pointers */
 #if !defined(GDO_NOALIAS)
-#define %%symbol%% gdo::dl::m_ptr_%%symbol%%
+#define %%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%
 #endif // !GDO_NOALIAS
 
 %SKIP_BEGIN%

@@ -31,7 +31,7 @@ typedef struct gdo_handle
     void *handle;
 #endif
 
-    %%type%% (*%%symbol%%)(%%args%%);
+    %%type%% (*%%func_symbol%%)(%%args%%);
     %%obj_type%% *%%obj_symbol%%;
 
 } gdo_handle_t;
@@ -50,19 +50,11 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 @
     /* %%symbol%% */@
     gdo_hndl.%%symbol%% = @
-        (%%type%% (*)(%%args%%))@
+        (%%sym_type%%)@
             GDO_GET_SYM(gdo_hndl.handle, "%%symbol%%");@
     if (!gdo_hndl.%%symbol%%) {@
         GDO_FREE_LIB(gdo_hndl.handle);@
         return "failed to load symbol: %%symbol%%";@
-    }
-@
-    /* %%obj_symbol%% */@
-    gdo_hndl.%%obj_symbol%% = (%%obj_type%% *)@
-        GDO_GET_SYM(gdo_hndl.handle, "%%obj_symbol%%");@
-    if (!gdo_hndl.%%obj_symbol%%) {@
-        GDO_FREE_LIB(gdo_hndl.handle);@
-        return "failed to load symbol: %%obj_symbol%%";@
     }
 
     return NULL;
@@ -71,10 +63,8 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 
 #if !defined(GDO_NOALIAS)
 
-/* aliases to raw function pointers */
-#define %%symbol%% gdo_hndl.%%symbol%%
-
-/* aliases to raw object pointers */
+/* aliases to raw symbol pointers */
+#define %%func_symbol%% gdo_hndl.%%func_symbol%%
 #define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%
 
 #endif // !GDO_NOALIAS

@@ -633,11 +633,13 @@ int main(int argc, char **argv)
 
     %%return%%: empty if function doesn't return anything (void), else `return'
     %%type%%: function return type
-    %%symbol%%: function symbol name
+    %%func_symbol%%: function symbol name
     %%args%%: function arguments
     %%notype_args%%: function argument names without type
     %%obj_type%%: object type
     %%obj_symbol%%: object symbol name
+    %%sym_type%%: function or object symbol type
+    %%symbol%: function or object symbol name
 
     If a line ends on `@' it will be processed together with the next line as if
     there was no line break, but the line break will still appear in the output.
