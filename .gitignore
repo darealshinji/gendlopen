@@ -21,6 +21,7 @@ lib*.so.*
 *~
 
 /Makefile
+/config.h
 /settings.mk
 
 examples/Makefile

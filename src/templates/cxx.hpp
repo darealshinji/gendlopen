@@ -171,6 +171,17 @@ GDO_VISIBILITY
 GDO_NOALIAS
     Don't use preprocessor macros to alias symbol names. Use with care.
 
+
+********************************************************
+* Global settings (can be used as feature test macros) *
+********************************************************
+
+HAVE_DLMOPEN
+    Enables usage of `dlmopen()'. Has no effect if win32 API is used.
+
+HAVE_DLINFO
+    Enables usage of `dlinfo()'. Has no effect if win32 API is used.
+
 ***/
 
 #include <iostream>
@@ -180,8 +191,8 @@ GDO_NOALIAS
 
 
 %SKIP_BEGIN%
-//%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin of the
-//%DNL%//  commentary sequence if "--skip-parameter-names" was set
+//%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin and end
+//%DNL%//  of the commentary sequence if "--skip-parameter-names" was set
 /*
 %SKIP_END%
 #if defined(GDO_WRAP_FUNCTIONS)

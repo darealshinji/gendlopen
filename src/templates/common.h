@@ -26,38 +26,14 @@
 # endif
 #endif
 
-/* glibc + _GNU_SOURCE detection */
-#if defined(_GNU_SOURCE) && defined(__GLIBC__)
-# define GDO_GNU_SOURCE
-#endif
-
-/* Solaris detection */
-#if (defined(sun) || defined(__sun)) && (defined(__SVR4) || defined(__svr4__))
-# define GDO_OS_SOLARIS
-#endif
-
-/* whether to use dlmopen(3) GNU extension */
-#if defined(HAVE_DLMOPEN) || defined(GDO_GNU_SOURCE) || defined(GDO_OS_SOLARIS)
-# define GDO_HAVE_DLMOPEN
-#endif
-
-/**
-* whether to use dlinfo(3)
-*
-* available: Glibc + _GNU_SOURCE, FreeBSD, NetBSD, DragonFlyBSD, Solaris
-* missing: OpenBSD, macOS
-*
-* We could try to dynamically load dlinfo() but the used flag RTLD_DI_LINKMAP
-* is not guaranteed to be (or stay) the same, i.e. on NetBSD it's defined as 3
-* but on most other systems it's 2.
-*/
-#if defined(GDO_GNU_SOURCE) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || defined(GDO_OS_SOLARIS)
-# ifdef RTLD_DI_LINKMAP
-#  define GDO_HAVE_DLINFO
-# endif
-#endif
-#if defined(HAVE_DLINFO) && !defined(GDO_HAVE_DLINFO)
+/* whether to use dlinfo(3) */
+#if defined(HAVE_DLINFO) && !defined(GDO_WINAPI)
 # define GDO_HAVE_DLINFO
+#endif
+
+/* whether to use dlmopen(3) */
+#if defined(HAVE_DLMOPEN) && !defined(GDO_WINAPI)
+# define GDO_HAVE_DLMOPEN
 #endif
 
 /* dlopen(3) flags for compatibility with LoadLibrary() */

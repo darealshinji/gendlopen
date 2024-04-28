@@ -631,13 +631,15 @@ int main(int argc, char **argv)
     Any lines containing one or more of the following will be replaced multiple
     times with code from the input (used to generate typedefs, prototyes, etc.):
 
-    %%return%%: empty if function doesn't return anything (void), else `return'
     %%type%%: function return type
     %%func_symbol%%: function symbol name
     %%args%%: function arguments
     %%notype_args%%: function argument names without type
+    %%return%%: empty if function doesn't return anything (void), else `return'
+
     %%obj_type%%: object type
     %%obj_symbol%%: object symbol name
+
     %%sym_type%%: function or object symbol type
     %%symbol%: function or object symbol name
 

@@ -18,6 +18,8 @@ nix="yes"
 with_notify="no"
 with_appind="no"
 
+xhave_dlmopen="//"
+xhave_dlinfo="//"
 have_dlmopen="no"
 have_dlinfo="no"
 with_gnu_source="no"
@@ -629,9 +631,11 @@ else
         fi
         if [ "x$have_dlmopen" = "xyes" ]; then
             cppflags="$cppflags -DHAVE_DLMOPEN"
+            xhave_dlmopen=""
         fi
         if [ "x$have_dlinfo" = "xyes" ]; then
             cppflags="$cppflags -DHAVE_DLINFO"
+            xhave_dlinfo=""
         fi
 
         dll_cflags="-fPIC"
@@ -722,6 +726,18 @@ else
 fi
 
 # output
+
+cat <<EOF > config.h
+/* whether dlinfo(3) is available */
+${xhave_dlinfo}#ifndef HAVE_DLINFO
+${xhave_dlinfo}#define HAVE_DLINFO 1
+${xhave_dlinfo}#endif
+
+/* whether dlmopen(3) is available */
+${xhave_dlmopen}#ifndef HAVE_DLMOPEN
+${xhave_dlmopen}#define HAVE_DLMOPEN 1
+${xhave_dlmopen}#endif
+EOF
 
 cat <<EOF > settings.mk
 
