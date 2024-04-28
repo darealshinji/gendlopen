@@ -619,8 +619,8 @@ else
 
     dll_cflags="-fPIC"
     dll_ldflags="-shared"
-    rpath_origin="-Wl,-rpath,'\$\$ORIGIN'"
     libdl="$libdl"
+    ld_library_path_test="LD_LIBRARY_PATH=\"$PWD/test\""
 fi
 
 
@@ -731,7 +731,8 @@ DLL_LDFLAGS   = $dll_ldflags
 
 TEST_CFLAGS   = \$(CFLAGS) $dlmopen_cppflags
 TEST_CXXFLAGS = \$(CXXFLAGS) $test_cxx11 $dlmopen_cppflags
-TEST_LDFLAGS  = \$(LDFLAGS) $rpath_origin
+TEST_LDFLAGS  = \$(LDFLAGS)
+TEST_LIBPATH  = $ld_library_path_test
 UNICODE_FLAGS = $unicode_flags
 LIBDL         = $libdl
 

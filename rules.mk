@@ -32,7 +32,7 @@ gen_v     = $(gen_v_$(V))
 
 
 run_tests = for x in $$bins ; do \
-	  echo $$x ; ./$$x ; \
+	  echo $$x ; $(TEST_LIBPATH) ./$$x ; \
 	  echo "return value: $$?" ; echo ; \
 	done
 
