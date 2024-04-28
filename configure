@@ -544,83 +544,100 @@ if [ "x$cl" != "x" ]; then
     dll="libhelloworld-0.dll"
     dll_cflags="-DBUILDING_DLL -LD"
     unicode_flags="-DUNICODE -D_UNICODE"
-elif $cc -dumpmachine 2>/dev/null | grep mingw >/dev/null ; then
-    # MinGW
-    win32="yes"
-    nix="no"
-
-    if [ "x$cppflags" = "x:" ]; then
-        cppflags="-DWIN32_LEAN_AND_MEAN"
-    fi
-    if [ "x$cflags" = "x:" ]; then
-        cflags="-Wall -Wextra -O2"
-    fi
-    if [ "x$cxxflags" = "x:" ]; then
-        cxxflags="-Wall -Wextra -O2"
-    fi
-    if [ "x$ldflags" = "x:" ]; then
-        ldflags=""
-    fi
-
-    if [ "x$check_std" = "xyes" ]; then
-        check_std_version
-        check_cxx_flag 1 "-std=c++11"
-        test_cxx11="$flag"
-    fi
-
-    exeext=".exe"
-    dll="libhelloworld-0.dll"
-    dll_cflags="-DBUILDING_DLL"
-    dll_ldflags="-shared"
-    unicode_flags="-DUNICODE -D_UNICODE -municode"
 else
-    # *nix
-    if [ "x$cppflags" = "x:" ]; then
-        cppflags=""
-    fi
-    if [ "x$cflags" = "x:" ]; then
-        cflags="-Wall -Wextra -O2"
-    fi
-    if [ "x$cxxflags" = "x:" ]; then
-        cxxflags="-Wall -Wextra -O2"
-    fi
-    if [ "x$ldflags" = "x:" ]; then
-        ldflags=""
-    fi
+    # GCC / Clang
 
-    if [ "x$check_std" = "xyes" ]; then
-        check_std_version
-        check_cxx_flag 1 "-std=c++11"
-        test_cxx11="$flag"
-    fi
-
-    check_libdl
-    check_dlmopen
-    check_dlinfo
-
-    if [ "x$with_gnu_source" = "xyes" ]; then
-        cppflags="$cppflags -D_GNU_SOURCE"
-    fi
-    if [ "x$have_dlmopen" = "xyes" ]; then
-        cppflags="$cppflags -DHAVE_DLMOPEN"
-    fi
-    if [ "x$have_dlinfo" = "xyes" ]; then
-        cppflags="$cppflags -DHAVE_DLINFO"
-    fi
-
-    # library name
-    if $cc -dumpmachine 2>/dev/null | grep darwin >/dev/null ; then
-        dll="libhelloworld.0.dylib"
-    elif $cc -dumpmachine 2>/dev/null | grep aix >/dev/null ; then
-        dll="libhelloworld.a"
-    else
-        dll="libhelloworld.so.0"
-    fi
-
-    dll_cflags="-fPIC"
-    dll_ldflags="-shared"
-    libdl="$libdl"
+    dll="libhelloworld.so.0"
     ld_library_path_test="LD_LIBRARY_PATH=\"$PWD/test\""
+
+    case $cc_triple in
+        *-mingw*)
+            target="mingw"
+            dll="libhelloworld-0.dll"
+            ld_library_path_test=""
+            ;;
+        *-darwin)
+            dll="libhelloworld.0.dylib"
+            # LD_LIBRARY_PATH works too
+            #ld_library_path_test="DYLD_LIBRARY_PATH=\"$PWD/test\""
+            ;;
+        *-haiku)
+            ld_library_path_test="LIBRARY_PATH=\"$PWD/test:$LIBRARY_PATH\""
+            ;;
+        *-aix)
+            dll="libhelloworld.a"
+            ;;
+        *)
+            ;;
+    esac
+
+    if [ "$target" = "mingw" ]; then
+        # MinGW
+        win32="yes"
+        nix="no"
+
+        if [ "x$cppflags" = "x:" ]; then
+            cppflags="-DWIN32_LEAN_AND_MEAN"
+        fi
+        if [ "x$cflags" = "x:" ]; then
+            cflags="-Wall -Wextra -O2"
+        fi
+        if [ "x$cxxflags" = "x:" ]; then
+            cxxflags="-Wall -Wextra -O2"
+        fi
+        if [ "x$ldflags" = "x:" ]; then
+            ldflags=""
+        fi
+
+        if [ "x$check_std" = "xyes" ]; then
+            check_std_version
+            check_cxx_flag 1 "-std=c++11"
+            test_cxx11="$flag"
+        fi
+
+        exeext=".exe"
+        dll_cflags="-DBUILDING_DLL"
+        dll_ldflags="-shared"
+        unicode_flags="-DUNICODE -D_UNICODE -municode"
+    else
+        # *nix
+        if [ "x$cppflags" = "x:" ]; then
+            cppflags=""
+        fi
+        if [ "x$cflags" = "x:" ]; then
+            cflags="-Wall -Wextra -O2"
+        fi
+        if [ "x$cxxflags" = "x:" ]; then
+            cxxflags="-Wall -Wextra -O2"
+        fi
+        if [ "x$ldflags" = "x:" ]; then
+            ldflags=""
+        fi
+
+        if [ "x$check_std" = "xyes" ]; then
+            check_std_version
+            check_cxx_flag 1 "-std=c++11"
+            test_cxx11="$flag"
+        fi
+
+        check_libdl
+        check_dlmopen
+        check_dlinfo
+
+        if [ "x$with_gnu_source" = "xyes" ]; then
+            cppflags="$cppflags -D_GNU_SOURCE"
+        fi
+        if [ "x$have_dlmopen" = "xyes" ]; then
+            cppflags="$cppflags -DHAVE_DLMOPEN"
+        fi
+        if [ "x$have_dlinfo" = "xyes" ]; then
+            cppflags="$cppflags -DHAVE_DLINFO"
+        fi
+
+        dll_cflags="-fPIC"
+        dll_ldflags="-shared"
+        libdl="$libdl"
+    fi
 fi
 
 
