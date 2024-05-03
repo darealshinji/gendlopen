@@ -25,317 +25,9 @@
 #include <iostream>
 #include <regex>
 #include <sstream>
+#include <vector>
 #include <cstdlib>
 #include "gendlopen.hpp"
-
-
-typedef struct {
-    const char *long_opt;
-    char short_opt;
-    const char *help;
-    const char *more_help;
-} arg_t;
-
-
-/* helper functions to parse command line arguments */
-namespace args
-{
-
-/* search vector for boolean flag, delete from vector if found */
-bool parse_vector_for_flag(
-    vstring_t &vec,
-    const std::string &long_opt,
-    const std::string &short_opt)
-{
-    auto error_value = [] (const std::string &opt, const std::string &val) {
-        std::cerr << "error: flag `" << opt << "' provided a value but none was expected: "
-            << val << std::endl;
-        std::exit(1);
-    };
-
-    for (auto it = vec.begin(); it != vec.end(); it++) {
-        auto arg = *it;
-
-        /* short option */
-        if (!short_opt.empty()) {
-            if (arg == short_opt) {
-                /* -x */
-                vec.erase(it);
-                return true;
-            } else if (arg.size() > 2 && arg.starts_with(short_opt)) {
-                /* -xvalue */
-                error_value(short_opt, arg.substr(2));
-            }
-        }
-
-        /* long option */
-        if (!long_opt.empty()) {
-            if (arg == long_opt) {
-                /* --arg */
-                vec.erase(it);
-                return true;
-            } else if (arg.size() > long_opt.size() &&
-                arg.starts_with(long_opt) && arg.at(long_opt.size()) == '=')
-            {
-                /* --arg=value */
-                arg.erase(0, long_opt.size() + 1);
-                error_value(long_opt, arg);
-            }
-        }
-    }
-
-    return false;
-}
-
-/* search vector for argument with value, delete from vector if found */
-std::string parse_vector_for_value(
-    vstring_t &vec,
-    const std::string &long_opt,
-    const std::string &short_opt)
-{
-    auto error_no_value = [] (const std::string &opt) {
-        std::cerr << "error: argument `" << opt << "' expected a value but none was provided" << std::endl;
-        std::exit(1);
-    };
-
-    auto error_empty_value = [] (const std::string &opt) {
-        std::cerr << "error: argument `" << opt << "' expected a non-empty value" << std::endl;
-        std::exit(1);
-    };
-
-    std::string value;
-    auto it = vec.begin();
-    auto next = vec.begin() + 1;
-
-    /* get value from next iterator */
-    auto get_next_iter = [&] (const std::string &opt) {
-        if (next == vec.end()) {
-            error_no_value(opt);
-        }
-
-        value = *next;
-
-        if (value.empty()) {
-            error_empty_value(opt);
-        }
-
-        vec.erase(it, next+1);
-    };
-
-    for ( ; it != vec.end(); ++it, ++next) {
-        auto arg = *it;
-
-        /* short option */
-        if (!short_opt.empty()) {
-            if (arg == short_opt) {
-                /* -x value */
-                get_next_iter(short_opt);
-                return value;
-            } else if (arg.size() > 2 && arg.starts_with(short_opt)) {
-                /* -xvalue */
-                vec.erase(it);
-                return arg.substr(2);
-            }
-        }
-
-        /* long option */
-        if (!long_opt.empty()) {
-            if (arg == long_opt) {
-                /* --arg value */
-                get_next_iter(long_opt);
-                return value;
-            } else if (arg.size() > long_opt.size() &&
-                arg.starts_with(long_opt) && arg.at(long_opt.size()) == '=')
-            {
-                /* --arg=value */
-                arg.erase(0, long_opt.size() + 1);
-
-                if (arg.empty()) {
-                    error_empty_value(long_opt);
-                }
-
-                vec.erase(it);
-                return arg;
-            }
-        }
-    }
-
-    return {};
-}
-
-/* find boolean flag */
-bool get_flag(vstring_t &vec, const arg_t &arg)
-{
-    std::string long_opt, short_opt;
-
-    if (arg.long_opt != NULL) {
-        long_opt = "--";
-        long_opt += arg.long_opt;
-    }
-
-    if (arg.short_opt != 0) {
-        short_opt = "-";
-        short_opt += arg.short_opt;
-    }
-
-    if (!parse_vector_for_flag(vec, long_opt, short_opt)) {
-        return false;
-    }
-
-    /* parse the rest to clear redundant flags from vector */
-    while (parse_vector_for_flag(vec, long_opt, short_opt))
-    {}
-
-    return true;
-}
-
-/* find argument with value */
-std::string get_value(vstring_t &vec, const arg_t &arg)
-{
-    std::string long_opt, short_opt;
-
-    if (arg.long_opt != NULL) {
-        long_opt = "--";
-        long_opt += arg.long_opt;
-    }
-
-    if (arg.short_opt != 0) {
-        short_opt = "-";
-        short_opt += arg.short_opt;
-    }
-
-    std::string value = parse_vector_for_value(vec, long_opt, short_opt);
-
-    if (value.empty()) {
-        return "";
-    }
-
-    /* we don't want the argument to be used multiple times */
-    std::string temp = parse_vector_for_value(vec, long_opt, short_opt);
-
-    if (!temp.empty()) {
-        std::cerr << "error: argument `" << long_opt << "' was provided more than once" << std::endl;
-        std::exit(1);
-    }
-
-    return value;
-}
-
-/* find argument(s) with value and add to list */
-vstring_t get_value_list(vstring_t &vec, const arg_t &arg)
-{
-    vstring_t list;
-    std::string long_opt, short_opt;
-
-    if (arg.long_opt != NULL) {
-        long_opt = "--";
-        long_opt += arg.long_opt;
-    }
-
-    if (arg.short_opt != 0) {
-        short_opt = "-";
-        short_opt += arg.short_opt;
-    }
-
-    std::string value = parse_vector_for_value(vec, long_opt, short_opt);
-
-    while (!value.empty()) {
-        list.push_back(value);
-        value = parse_vector_for_value(vec, long_opt, short_opt);
-    }
-
-    return list;
-}
-
-/* parse "help <cmd>" switch */
-int parse_help_switch(int &argc, char **&argv, const std::vector<arg_t> &help_args)
-{
-    if (argc != 3) {
-        std::cerr << "error: switch `help' expected an option but none was provided" << std::endl;
-        return 1;
-    }
-
-    std::string arg = argv[2];
-    const char *help_text = nullptr;
-
-    if (arg.size() == 2 && arg.front() == '-') {
-        /* searching short opts */
-        char opt = arg.at(1);
-
-        for (const auto &e : help_args) {
-            if (opt == e.short_opt) {
-                help_text = e.more_help;
-                break;
-            }
-        }
-    } else if (arg.size() > 3 && arg.starts_with("--")) {
-        /* searching long opts */
-        arg.erase(0, 2);
-
-        for (const auto &e : help_args) {
-            if (arg == e.long_opt) {
-                help_text = e.more_help;
-                break;
-            }
-        }
-    }
-
-    /* print help for option */
-    if (help_text) {
-        std::cout << "Option `" << argv[2] << "':\n" << help_text << '\n' << std::endl;
-        return 0;
-    }
-
-    /* nothing found */
-    std::cerr << "error: option not found: " << arg << std::endl;
-
-    return 1;
-}
-
-/* vectorize arguments and check for --help */
-vstring_t parse_args(int &argc, char **&argv, const std::vector<arg_t> &help_args)
-{
-    auto print_usage = [] (const char *argv0) {
-        std::cout << "usage: " << argv0 << " [OPTIONS..]\n";
-        std::cout << "       " << argv0 << " help <option>\n\n";
-        std::cout << "Options:\n";
-        std::cout << std::endl;
-    };
-
-    vstring_t vec;
-
-    for (int i = 1; i < argc; i++) {
-        /* quick help check */
-        if (*argv[i] == '-') {
-            if (strcmp(argv[i], "-h") == 0 ||
-                strcmp(argv[i], "--help") == 0 ||
-                strcmp(argv[i], "-?") == 0)
-            {
-                print_usage(*argv);
-
-                for (const auto &e : help_args) {
-                    std::cout << e.help << std::endl;
-                }
-                std::cout << std::endl;
-                std::exit(0);
-            } else if (strcmp(argv[i], "--full-help") == 0) {
-                print_usage(*argv);
-
-                for (const auto &e : help_args) {
-                    std::cout << e.more_help << '\n' << std::endl;
-                }
-                std::exit(0);
-            }
-        }
-
-        /* copy args into vector */
-        vec.push_back(argv[i]);
-    }
-
-    return vec;
-}
-
-} /* namespace args end */
 
 
 /* anonymous */
@@ -479,13 +171,13 @@ namespace
 
 int main(int argc, char **argv)
 {
-    std::vector<arg_t> help_args;
+    std::vector<args::arg_t> help_args;
 
 
     /********************* declare command line arguments *********************/
 
     /* --help */
-    arg_t a_help = {
+    args::arg_t a_help = {
         "help", 'h',
 
         /* help */
@@ -503,7 +195,7 @@ int main(int argc, char **argv)
 
 
     /* --full-help */
-    arg_t a_full_help = {
+    args::arg_t a_full_help = {
         "full-help", 0,
 
         /* help */
@@ -520,7 +212,7 @@ int main(int argc, char **argv)
 
 
     /* --input */
-    arg_t a_input = {
+    args::arg_t a_input = {
         "input", 'i',
 
         /* help */
@@ -547,7 +239,7 @@ int main(int argc, char **argv)
 
 
     /* --output */
-    arg_t a_output = {
+    args::arg_t a_output = {
         "output", 'o',
 
         /* help */
@@ -565,7 +257,7 @@ int main(int argc, char **argv)
 
     /* --name */
 
-    arg_t a_name = {
+    args::arg_t a_name = {
         "name", 'n',
 
         /* help */
@@ -586,7 +278,7 @@ int main(int argc, char **argv)
 
     /* --format */
 
-    arg_t a_format = {
+    args::arg_t a_format = {
         "format", 'F',
 
         /* help */
@@ -610,7 +302,7 @@ int main(int argc, char **argv)
 
     /* --custom-template */
 
-    arg_t a_custom_template = {
+    args::arg_t a_custom_template = {
         "custom-template", 0,
 
         /* help */
@@ -660,7 +352,7 @@ int main(int argc, char **argv)
 
     /* --library */
 
-    arg_t a_library = {
+    args::arg_t a_library = {
         "library", 'l',
 
         /* help */
@@ -695,7 +387,7 @@ int main(int argc, char **argv)
 
     /* --include */
 
-    arg_t a_include = {
+    args::arg_t a_include = {
         "include", 'I',
 
         /* help */
@@ -725,7 +417,7 @@ int main(int argc, char **argv)
 
     /* --define */
 
-    arg_t a_define = {
+    args::arg_t a_define = {
         "define", 'D',
 
         /* help */
@@ -747,7 +439,7 @@ int main(int argc, char **argv)
 
     /* --separate */
 
-    arg_t a_separate = {
+    args::arg_t a_separate = {
         "separate", 's',
 
         /* help */
@@ -767,7 +459,7 @@ int main(int argc, char **argv)
 
     /* --force */
 
-    arg_t a_force = {
+    args::arg_t a_force = {
         "force", 'f',
 
         /* help */
@@ -785,7 +477,7 @@ int main(int argc, char **argv)
 
     /* --skip-parameter-names */
 
-    arg_t a_skip_parameter_names = {
+    args::arg_t a_skip_parameter_names = {
         "skip-parameter-names", 0,
 
         /* help */
@@ -805,7 +497,7 @@ int main(int argc, char **argv)
 
     /* --prefix */
 
-    arg_t a_prefix = {
+    args::arg_t a_prefix = {
         "prefix", 'P',
 
         /* help */
@@ -826,7 +518,7 @@ int main(int argc, char **argv)
 
     /* --symbol */
 
-    arg_t a_symbol = {
+    args::arg_t a_symbol = {
         "symbol", 'S',
 
         /* help */
@@ -849,7 +541,7 @@ int main(int argc, char **argv)
 
     /* --ast-all-symbols */
 
-    arg_t a_ast_all_symbols = {
+    args::arg_t a_ast_all_symbols = {
         "--ast-all-symbols", 0,
 
         /* help */

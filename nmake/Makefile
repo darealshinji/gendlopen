@@ -56,12 +56,16 @@ cleanfiles_check = \
 	libhelloworld_dl.*
 
 sources = \
-	$(s)\src\main.cpp \
+	$(s)\src\args.cpp \
+	$(s)\src\cio_ifstream.cpp \
+	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
 	$(s)\src\generate.cpp \
+	$(s)\src\main.cpp \
 	$(s)\src\parse.cpp \
 	$(s)\src\tokenize.cpp \
 	$(s)\src\utils.cpp
+
 
 gen_hdr  = gendlopen.exe -i $(s)\test\helloworld.txt -f -o
 cc_test  = $(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\test $(s)\test\$*.c -Fe$@ -link $(LFLAGS)

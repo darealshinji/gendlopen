@@ -33,12 +33,14 @@
 #include <cstdlib>
 #include "gendlopen.hpp"
 
-#define SKIP_BEGIN 0
-#define SKIP_END 1
-
 
 namespace /* anonymous */
 {
+    enum {
+        SKIP_BEGIN = 0,
+        SKIP_END = 1
+    };
+
     using list_t = std::list<const char *>;
 
     /* check for keywords from a list */
