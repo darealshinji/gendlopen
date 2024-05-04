@@ -153,7 +153,7 @@ c_test.h:
 	$(gen_v)$(GENHDR) $@ -DGDO_WRAP_FUNCTIONS
 
 c_auto_free.h:
-	$(gen_v)$(GENHDR) $@ --skip-parameter-names
+	$(gen_v)$(GENHDR) $@ --skip-param
 
 c_autoload.h:
 	$(gen_v)$(GENHDR) $@
@@ -169,7 +169,7 @@ c_multi.h:
 	  --include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 
 cxx_test.hpp:
-	$(gen_v)$(GENHDR) $@ --format=C++ --skip-parameter-names
+	$(gen_v)$(GENHDR) $@ --format=C++ --skip-param
 
 cxx_autoload.hpp:
 	$(gen_v)$(GENHDR) $@ --format=C++ --library=API:0:helloworld

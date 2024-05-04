@@ -14,6 +14,7 @@ check_std="yes"
 check_xxd="yes"
 
 win32="no"
+msvc="no"
 nix="yes"
 with_notify="no"
 with_appind="no"
@@ -37,6 +38,7 @@ create_makefile()
     if [ "x$with_appind" != "xyes" ]; then xappind="#"; fi
     if [ "x$with_notify" != "xyes" ]; then xnotify="#"; fi
     if [ "x$win32"       != "xyes" ]; then xwin32="#"; fi
+    if [ "x$msvc"        != "xyes" ]; then xmsvc="#"; fi
     if [ "x$nix"         != "xyes" ]; then xnix="#"; fi
     if [ "x$clang"        = "x"    ]; then xclang="#"; fi
     if [ "x$ar"           = "x"    ]; then xar="#"; fi
@@ -49,6 +51,7 @@ create_makefile()
         -e "s,@CLANG@,$xclang,g" \
         -e "s,@AR@,$xar,g" \
         -e "s,@W32@,$xwin32,g" \
+        -e "s,@MSVC@,$xmsvc,g" \
         -e "s,@NIX@,$xnix,g" \
         > "${1}Makefile"
 }
@@ -520,6 +523,7 @@ fi
 if [ "x$cl" != "x" ]; then
     # MSVC
     win32="yes"
+    msvc="yes"
     nix="no"
 
     if [ "x$cppflags" = "x:" ]; then

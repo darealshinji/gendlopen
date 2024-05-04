@@ -1,5 +1,8 @@
+@MSVC@GETOPT_O = msvc/getopt.o
+@MSVC@GETOPT_INC = -Imsvc
+
 OBJS = \
-	args.o \
+	$(GETOPT_O) \
 	cio_ifstream.o \
 	cio_ofstream.o \
 	clang-ast.o \
@@ -10,7 +13,7 @@ OBJS = \
 	utils.o \
 	$(NULL)
 
-HDRS = args.hpp cio_ifstream.hpp cio_ofstream.hpp gendlopen_class.hpp gendlopen.hpp types.hpp utils.hpp
+HDRS = cio_ifstream.hpp cio_ofstream.hpp gendlopen_class.hpp gendlopen.hpp types.hpp utils.hpp
 
 
 
@@ -19,7 +22,7 @@ HDRS = args.hpp cio_ifstream.hpp cio_ofstream.hpp gendlopen_class.hpp gendlopen.
 all: gendlopen$(EXEEXT)
 
 clean:
-	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o
+	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o msvc/*.o
 
 
 gen_template_h: gen_template_h.c
@@ -36,8 +39,8 @@ $(OBJS): $(HDRS)
 generate.o: template.h
 
 
-args.o: args.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c args.cpp -o $@
+@MSVC@msvc/getopt.o: msvc/getopt.c msvc/getopt.h
+@MSVC@	$(cc_v)$(CC) $(CFLAGS) -c msvc/getopt.c -o $@
 
 cio_ifstream.o: cio_ifstream.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ifstream.cpp -o $@
@@ -52,7 +55,7 @@ generate.o: generate.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
 
 main.o: main.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) $(GETOPT_INC) -c main.cpp -o $@
 
 parse.o: parse.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse.cpp -o $@

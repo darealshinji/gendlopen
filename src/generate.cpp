@@ -216,7 +216,14 @@ bool gendlopen::tokenize_input()
 
     /* Clang AST */
     if (line.starts_with("TranslationUnitDecl 0x")) {
-        if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
+        /* excluding flags/settings */
+        if (m_ast_all_symbols && (!m_symbols.empty() || !m_prefix.empty())) {
+            std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
+            return false;
+        }
+
+        /* no symbols */
+        if (!m_ast_all_symbols && m_symbols.empty() && m_prefix.empty()) {
             std::cerr << "error: Clang AST: no symbols provided to look for; use `--symbol' and/or `--prefix'" << std::endl;
             std::cerr << "You can also pass `--ast-all-symbols' if you REALLY want to use all symbols." << std::endl;
             return false;
@@ -263,8 +270,10 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 }
 
 /* generate output */
-int gendlopen::generate(const std::string &ofile, const std::string &name)
+int gendlopen::generate(const std::string ifile, const std::string ofile, const std::string name)
 {
+    m_ifile = ifile;
+
     /* tokenize */
     if (!tokenize_input()) {
         return 1;
@@ -274,7 +283,7 @@ int gendlopen::generate(const std::string &ofile, const std::string &name)
     m_name_upper = utils::convert_to_upper(name);
     m_name_lower = utils::convert_to_lower(name);
 
-    /* read and parse custom template */
+    /* read and parse custom template (`--format' will be ignored) */
     if (!m_custom_template.empty()) {
         return parse_custom_template(ofile);
     }

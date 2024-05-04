@@ -27,7 +27,21 @@
 #include <sstream>
 #include <vector>
 #include <cstdlib>
+
+#ifdef _MSC_VER
+#include "getopt.h"
+#else
+#include <getopt.h>
+#endif
+
 #include "gendlopen.hpp"
+
+typedef struct {
+    const char *l;     /* long_opt */
+    char        s;     /* short_opt */
+    const char *help;
+    const char *more_help;
+} arg_t;
 
 
 /* anonymous */
@@ -138,7 +152,7 @@ namespace
 
 
     /* format */
-    void str_to_format_enum(const std::string &in, output::format &out)
+    void str_to_format_enum(const char *in, output::format &out)
     {
         std::string s = utils::convert_to_lower(in, false);
 
@@ -166,27 +180,105 @@ namespace
         std::exit(1);
     }
 
+
+    /* print help */
+    void print_help(char **&argv, const std::vector<arg_t> &help_args, bool full_help)
+    {
+        std::cout << "usage: " << argv[0] << " [OPTIONS..]\n";
+        std::cout << "       " << argv[0] << " help <option>\n\n";
+        std::cout << "Options:\n";
+        std::cout << std::endl;
+
+        if (full_help) {
+            for (const auto &e : help_args) {
+                std::cout << e.more_help << '\n' << std::endl;
+            }
+        } else {
+            for (const auto &e : help_args) {
+                std::cout << e.help << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    };
+
+
+    /* parse "help <cmd>" switch */
+    int parse_help_switch(int &argc, char **&argv, const std::vector<arg_t> &help_args)
+    {
+        if (argc != 3) {
+            std::cerr << "error: switch `help' expected an option but none was provided" << std::endl;
+            return 1;
+        }
+
+        std::string arg = argv[2];
+        const char *help_text = NULL;
+        bool opt_found = false;
+
+        if (arg.size() == 2 && arg.front() == '-') {
+            /* searching short opt */
+            char opt = arg.at(1);
+
+            for (const auto &e : help_args) {
+                if (opt == e.s) {
+                    help_text = e.more_help;
+                    opt_found = true;
+                    break;
+                }
+            }
+        } else if (arg.size() > 3 && arg.starts_with("--")) {
+            /* searching long opt */
+            arg.erase(0, 2);
+
+            for (const auto &e : help_args) {
+                if (e.l && arg == e.l) {
+                    help_text = e.more_help;
+                    opt_found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!opt_found) {
+            std::cerr << "error: unknown option: " << argv[2] << std::endl;
+            return 1;
+        }
+
+        if (help_text) {
+            std::cout << "Option `" << argv[2] << "':" << std::endl;
+            std::cout << help_text << '\n' << std::endl;
+        } else {
+            std::cerr << "warning: no entry found for option: " << argv[2] << std::endl;
+        }
+
+        return 0;
+    }
+
 } /* anonymous namespace */
 
 
 int main(int argc, char **argv)
 {
-    std::vector<args::arg_t> help_args;
+    std::vector<arg_t> help_args;
 
 
     /********************* declare command line arguments *********************/
 
+    enum {
+        LONGONLY_FULL_HELP,  /* --full-help */
+        LONGONLY_SKIP_PARAM  /* --skip-param */
+    };
+
     /* --help */
-    args::arg_t a_help = {
+    constexpr arg_t a_help = {
         "help", 'h',
 
         /* help */
     ////"..########################.#####################################################"
-        "  -? -h --help             Display this information",
+        "  -h --help                Display this information",
 
         /* more help */
         R"(
-  -?, -h, --help
+  -h, --help
 
     Show a brief description of all command line arguments.)"
     };
@@ -195,8 +287,8 @@ int main(int argc, char **argv)
 
 
     /* --full-help */
-    args::arg_t a_full_help = {
-        "full-help", 0,
+    constexpr arg_t a_full_help = {
+        "full-help", LONGONLY_FULL_HELP,
 
         /* help */
         "  --full-help              Show more detailed information",
@@ -212,7 +304,7 @@ int main(int argc, char **argv)
 
 
     /* --input */
-    args::arg_t a_input = {
+    constexpr arg_t a_input = {
         "input", 'i',
 
         /* help */
@@ -239,7 +331,7 @@ int main(int argc, char **argv)
 
 
     /* --output */
-    args::arg_t a_output = {
+    constexpr arg_t a_output = {
         "output", 'o',
 
         /* help */
@@ -257,7 +349,7 @@ int main(int argc, char **argv)
 
     /* --name */
 
-    args::arg_t a_name = {
+    constexpr arg_t a_name = {
         "name", 'n',
 
         /* help */
@@ -278,7 +370,7 @@ int main(int argc, char **argv)
 
     /* --format */
 
-    args::arg_t a_format = {
+    constexpr arg_t a_format = {
         "format", 'F',
 
         /* help */
@@ -300,17 +392,17 @@ int main(int argc, char **argv)
     help_args.push_back(a_format);
 
 
-    /* --custom-template */
+    /* --template */
 
-    args::arg_t a_custom_template = {
-        "custom-template", 0,
+    constexpr arg_t a_template = {
+        "template", 't',
 
         /* help */
-        "  --custom-template=<file> Use a custom template (`--format' will be ignored)",
+        "  -t --template=<file>     Use a custom template (`--format' will be ignored)",
 
         /* more help */
         R"(
-  --custom-template=<file>
+  -t <file>, --template=<file>
 
     Use a custom template file to generate output from. The flag `--format' will
     be ignored in this case.
@@ -339,20 +431,20 @@ int main(int argc, char **argv)
     there was no line break, but the line break will still appear in the output.
 
     All lines between a line `%SKIP_BEGIN%' and a line `%SKIP_END%' will be
-    commented out if `--skip-parameter-names' was passed. This is used to skip
+    commented out if `--skip-param' was passed. This is used to skip
     code that would otherwise require parameter names.
 
     Any line that contains `%DNL%' ("Do Not Lex") will be skipped entirely.
-    This can be used for meta comments. This is done after glueing lines that
+    This can be used for meta comments. This is done AFTER glueing lines that
     end on `@'.)"
     };
 
-    help_args.push_back(a_custom_template);
+    help_args.push_back(a_template);
 
 
     /* --library */
 
-    args::arg_t a_library = {
+    constexpr arg_t a_library = {
         "library", 'l',
 
         /* help */
@@ -387,7 +479,7 @@ int main(int argc, char **argv)
 
     /* --include */
 
-    args::arg_t a_include = {
+    constexpr arg_t a_include = {
         "include", 'I',
 
         /* help */
@@ -417,7 +509,7 @@ int main(int argc, char **argv)
 
     /* --define */
 
-    args::arg_t a_define = {
+    constexpr arg_t a_define = {
         "define", 'D',
 
         /* help */
@@ -439,7 +531,7 @@ int main(int argc, char **argv)
 
     /* --separate */
 
-    args::arg_t a_separate = {
+    constexpr arg_t a_separate = {
         "separate", 's',
 
         /* help */
@@ -459,7 +551,7 @@ int main(int argc, char **argv)
 
     /* --force */
 
-    args::arg_t a_force = {
+    constexpr arg_t a_force = {
         "force", 'f',
 
         /* help */
@@ -475,29 +567,29 @@ int main(int argc, char **argv)
     help_args.push_back(a_force);
 
 
-    /* --skip-parameter-names */
+    /* --skip-param */
 
-    args::arg_t a_skip_parameter_names = {
-        "skip-parameter-names", 0,
+    constexpr arg_t a_skip_param = {
+        "skip-param", LONGONLY_SKIP_PARAM,
 
         /* help */
-        "  --skip-parameter-names   Don't look for parameter names in function prototypes",
+        "  --skip-param             Don't look for parameter names in function prototypes",
 
         /* more help */
         R"(
-  --skip-parameter-names
+  --skip-param
 
     Don't try to look for parameter names in function prototypes when the input
     is being processed. This will disable any kind of wrapped functions in the
     output (if the selected output format makes use of them).)"
     };
 
-    help_args.push_back(a_skip_parameter_names);
+    help_args.push_back(a_skip_param);
 
 
     /* --prefix */
 
-    args::arg_t a_prefix = {
+    constexpr arg_t a_prefix = {
         "prefix", 'P',
 
         /* help */
@@ -515,10 +607,9 @@ int main(int argc, char **argv)
     help_args.push_back(a_prefix);
 
 
-
     /* --symbol */
 
-    args::arg_t a_symbol = {
+    constexpr arg_t a_symbol = {
         "symbol", 'S',
 
         /* help */
@@ -541,8 +632,8 @@ int main(int argc, char **argv)
 
     /* --ast-all-symbols */
 
-    args::arg_t a_ast_all_symbols = {
-        "--ast-all-symbols", 0,
+    constexpr arg_t a_ast_all_symbols = {
+        "--ast-all-symbols", 'a',
 
         /* help */
         "  --ast-all-symbols        Use all symbols from a Clang AST",
@@ -561,130 +652,177 @@ int main(int argc, char **argv)
 
     help_args.push_back(a_ast_all_symbols);
 
+
     /**************************************************************************/
 
 
-    /* parse arguments */
+    /* parse "help" switch */
     if (argc > 1 && strcmp(argv[1], "help") == 0) {
-        return args::parse_help_switch(argc, argv, help_args);
+        return parse_help_switch(argc, argv, help_args);
     }
 
-    /* vectorize arguments and check for --help */
-    vstring_t arg_vec = args::parse_args(argc, argv, help_args);
 
-    /* single values (never empty if passed) */
-    auto input = args::get_value(arg_vec, a_input);
-    auto output = args::get_value(arg_vec, a_output);
-    auto name = args::get_value(arg_vec, a_name);
-    auto format = args::get_value(arg_vec, a_format);
-    auto custom_template = args::get_value(arg_vec, a_custom_template);
-    auto library = args::get_value(arg_vec, a_library);
+    /**************************************************************************/
 
-    /* value lists (never empty if passed) */
-    auto includes = args::get_value_list(arg_vec, a_include);
-    auto defines = args::get_value_list(arg_vec, a_define);
-    auto symbols = args::get_value_list(arg_vec, a_symbol);
-    auto prefixes = args::get_value_list(arg_vec, a_prefix);
 
-    /* boolean flags */
-    bool separate = args::get_flag(arg_vec, a_separate);
-    bool force = args::get_flag(arg_vec, a_force);
-    bool skip_parameter_names = args::get_flag(arg_vec, a_skip_parameter_names);
-    //bool use_param_names = !skip_parameter_names;
-    bool ast_all_symbols = args::get_flag(arg_vec, a_ast_all_symbols);
+#define ENTRY_ARG(a)    { a.l, required_argument, 0, a.s }
+#define ENTRY_NOARG(a)  { a.l, no_argument,       0, a.s }
 
-    /* check if anything is left */
-    if (arg_vec.size() != 0) {
-        if (arg_vec.size() == 1) {
-            std::cerr << "error: option not found: " << arg_vec.at(0) << std::endl;
-        } else {
-            std::cerr << "error: options not found:";
+    struct option options[] =
+    {
+        ENTRY_NOARG( a_help ),
+        ENTRY_NOARG( a_full_help ),
+        ENTRY_ARG( a_input ),
+        ENTRY_ARG( a_output ),
+        ENTRY_ARG( a_name ),
+        ENTRY_ARG( a_format ),
+        ENTRY_ARG( a_template ),
+        ENTRY_ARG( a_library ),
+        ENTRY_ARG( a_include ),
+        ENTRY_ARG( a_define ),
+        ENTRY_ARG( a_prefix ),
+        ENTRY_ARG( a_symbol ),
+        ENTRY_NOARG( a_separate ),
+        ENTRY_NOARG( a_force ),
+        ENTRY_NOARG( a_skip_param ),
+        ENTRY_NOARG( a_ast_all_symbols ),
+        { 0, 0, 0, 0 }
+    };
 
-            for (const auto &e : arg_vec) {
-                std::cerr << ' ' << e;
-            }
-            std::cerr << std::endl;
+    /* default settings */
+    const char *input = NULL;
+    const char *output = "-";
+    const char *name = "gdo";
+    output::format fmt = output::c;
+
+    /* create optstring from table entries */
+    std::string optstring;
+
+    for (int i = 0; options[i].name != NULL; i++) {
+        if (utils::range<int>(options[i].val, 'a', 'z') ||
+            utils::range<int>(options[i].val, 'A', 'Z'))
+        {
+            optstring.push_back(options[i].val);
         }
 
-        return 1;
+        if (options[i].has_arg == required_argument) {
+            optstring.push_back(':');
+        }
     }
 
-    /* required flags */
-    if (input.empty()) {
+    /* initialize class to receive options */
+    auto gdo = gendlopen(&argc, &argv);
+
+    while (true)
+    {
+        int option_index = 0;
+        std::string lib_a, lib_w;
+
+        int c = getopt_long(argc, argv, optstring.c_str(), options, &option_index);
+
+        if (c == -1) {
+            break;
+        }
+
+        switch (c)
+        {
+        case a_help.s:
+            print_help(argv, help_args, false);
+            return 0;
+
+        case a_full_help.s:
+            print_help(argv, help_args, true);
+            return 0;
+
+        case a_input.s:
+            input = optarg;
+            break;
+
+        case a_output.s:
+            output = optarg;
+            break;
+
+        case a_name.s:
+            /* silently use the default if optarg is empty */
+            if (*optarg) {
+                name = optarg;
+            }
+            break;
+
+        case a_format.s:
+            str_to_format_enum(optarg, fmt);
+            gdo.format(fmt);
+            break;
+
+        case a_template.s:
+            gdo.custom_template(optarg);
+            break;
+
+        case a_library.s:
+            lib_a = format_libname(optarg, false);
+            lib_w = format_libname(optarg, true);
+            gdo.default_lib(lib_a, lib_w);
+            break;
+
+        case a_include.s:
+            gdo.add_inc(format_inc(optarg));
+            break;
+
+        case a_define.s:
+            gdo.add_def(format_def(optarg));
+            break;
+
+        case a_prefix.s:
+            gdo.add_pfx(optarg);
+            break;
+
+        case a_symbol.s:
+            gdo.add_sym(optarg);
+            break;
+
+        case a_separate.s:
+            gdo.separate(true);
+            break;
+
+        case a_force.s:
+            gdo.force(true);
+            break;
+
+        case a_skip_param.s:
+            gdo.skip_parameter_names(true);
+            break;
+
+        case a_ast_all_symbols.s:
+            gdo.ast_all_symbols(true);
+            break;
+
+        case '?':
+            /* error */
+            return 1;
+
+        default:
+            fprintf(stderr, "error: getopt_long() returned unknown character code 0%o\n", c);
+            return 1;
+        }
+
+        if (optind < argc) {
+            std::cerr << "error: non-option elements:";
+
+            while (optind < argc) {
+                std::cerr << ' ' << argv[optind++];
+            }
+            std::cerr << std::endl;
+
+            return 1;
+        }
+    }
+
+    /* input is required */
+    if (!input) {
         std::cerr << "error: `--input' is required" << std::endl;
         return 1;
     }
 
-    /* excluding flags */
-    if (ast_all_symbols && (!symbols.empty() || !prefixes.empty())) {
-        std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
-        return 1;
-    }
-
-    /* "--format" will be ignored if "--custom-template" is given */
-    if (!custom_template.empty()) {
-        format.clear();
-    }
-
-
-    /* set options */
-
-    auto gdo = gendlopen(&argc, &argv, input);
-
-    /* --format */
-    if (!format.empty()) {
-        output::format out = output::c;
-        str_to_format_enum(format, out);
-        gdo.format(out);
-    }
-
-    /* --custom-template */
-    if (!custom_template.empty()) {
-        gdo.custom_template(custom_template);
-    }
-
-    /* --library */
-    if (!library.empty()) {
-        auto lib_a = format_libname(library, false);
-        auto lib_w = format_libname(library, true);
-        gdo.default_lib(lib_a, lib_w);
-    }
-
-    /* --define */
-    for (const auto &e : defines) {
-        gdo.add_def(format_def(e));
-    }
-
-    /* --include */
-    for (const auto &e : includes) {
-        gdo.add_inc(format_inc(e));
-    }
-
-    /* --prefix */
-    for (const auto &e : prefixes) {
-        gdo.add_pfx(e);
-    }
-
-    /* --symbol */
-    for (const auto &e : symbols) {
-        gdo.add_sym(e);
-    }
-
-    /* other flags */
-    gdo.force(force);
-    gdo.separate(separate);
-    gdo.skip_parameter_names(skip_parameter_names);
-    gdo.ast_all_symbols(ast_all_symbols);
-
     /* generate output */
-
-    if (output.empty()) {
-        output = "-";
-    }
-
-    if (name.empty()) {
-        name = "gdo";
-    }
-
-    return gdo.generate(output, name);
+    return gdo.generate(input, output, name);
 }

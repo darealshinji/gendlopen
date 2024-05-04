@@ -69,8 +69,8 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int *argc, char ***argv, const std::string &ifile)
-    : m_argc(argc), m_argv(argv), m_ifile(ifile)
+    gendlopen(int *argc, char ***argv)
+    : m_argc(argc), m_argv(argv)
     {}
 
     /* d'tor */
@@ -98,7 +98,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    int generate(const std::string &ofile, const std::string &name);
+    int generate(const std::string ifile, const std::string ofile, const std::string name);
 
 };
 

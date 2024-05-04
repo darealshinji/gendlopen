@@ -56,6 +56,7 @@ cleanfiles_check = \
 	libhelloworld_dl.*
 
 sources = \
+	$(s)\src\msvc\getopt.c \
 	$(s)\src\args.cpp \
 	$(s)\src\cio_ifstream.cpp \
 	$(s)\src\cio_ofstream.cpp \
@@ -98,7 +99,7 @@ gen_template_h.exe: $(s)\src\gen_template_h.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
 
 gendlopen.exe: $(sources)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\msvc $** -Fe$@ -link $(LFLAGS)
 
 $(s)\src\generate.cpp: template.h
 
@@ -115,7 +116,7 @@ c_test.exe:
 	$(gen_hdr) $*.h -DGDO_WRAP_FUNCTIONS && $(cc_test)
 
 c_auto_free.exe:
-	$(gen_hdr) $*.h --skip-parameter-names && $(cc_test)
+	$(gen_hdr) $*.h --skip-param && $(cc_test)
 
 c_autoload.exe:
 	$(gen_hdr) $*.h && $(cc_test)
@@ -137,7 +138,7 @@ c_multi.exe:
 ## C++ tests ##
 
 cxx_test.exe:
-	$(gen_hdr) $*.hpp --format=C++ --skip-parameter-names && \
+	$(gen_hdr) $*.hpp --format=C++ --skip-param && \
 	  $(cxx_test)
 
 cxx_autoload.exe:
