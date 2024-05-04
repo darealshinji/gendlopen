@@ -210,27 +210,24 @@ namespace
             return 1;
         }
 
-        std::string arg = argv[2];
-        const char *help_text = NULL;
         bool opt_found = false;
+        const char *help_text = NULL;
+        const char *arg = argv[2];
+        size_t arglen = strlen(arg);
 
-        if (arg.size() == 2 && arg.front() == '-') {
-            /* searching short opt */
-            char opt = arg.at(1);
-
+        if (arglen == 2 && arg[0] == '-') {
+            /* searching for short opt */
             for (const auto &e : help_args) {
-                if (opt == e.s) {
+                if (e.s == arg[1]) {
                     help_text = e.more_help;
                     opt_found = true;
                     break;
                 }
             }
-        } else if (arg.size() > 3 && arg.starts_with("--")) {
-            /* searching long opt */
-            arg.erase(0, 2);
-
+        } else if (arglen > 3 && arg[0] == '-' && arg[1] == '-') {
+            /* searching for long opt */
             for (const auto &e : help_args) {
-                if (e.l && arg == e.l) {
+                if (strcmp(e.l, arg+2) == 0) {
                     help_text = e.more_help;
                     opt_found = true;
                     break;
@@ -239,15 +236,15 @@ namespace
         }
 
         if (!opt_found) {
-            std::cerr << "error: unknown option: " << argv[2] << std::endl;
+            std::cerr << "error: unknown option: " << arg << std::endl;
             return 1;
         }
 
         if (help_text) {
-            std::cout << "Option `" << argv[2] << "':" << std::endl;
+            std::cout << "Option `" << arg << "':" << std::endl;
             std::cout << help_text << '\n' << std::endl;
         } else {
-            std::cerr << "warning: no entry found for option: " << argv[2] << std::endl;
+            std::cerr << "warning: no entry found for option: " << arg << std::endl;
         }
 
         return 0;
@@ -268,9 +265,15 @@ int main(int argc, char **argv)
         LONGONLY_SKIP_PARAM  /* --skip-param */
     };
 
+
+    /**************************************************************************/
     /* --help */
     constexpr arg_t a_help = {
-        "help", 'h',
+        /* long */
+        "help",
+
+        /* short */
+        'h',
 
         /* help */
     ////"..########################.#####################################################"
@@ -286,9 +289,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_help);
 
 
+    /**************************************************************************/
     /* --full-help */
-    constexpr arg_t a_full_help = {
-        "full-help", LONGONLY_FULL_HELP,
+    constexpr arg_t a_full_help =
+    {
+        /* long */
+        "full-help",
+
+        /* short */
+        LONGONLY_FULL_HELP,
 
         /* help */
         "  --full-help              Show more detailed information",
@@ -303,9 +312,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_full_help);
 
 
+    /**************************************************************************/
     /* --input */
-    constexpr arg_t a_input = {
-        "input", 'i',
+    constexpr arg_t a_input =
+    {
+        /* long */
+        "input",
+
+        /* short */
+        'i',
 
         /* help */
         "  -i --input=<file>        Input file, use `-' to read from STDIN",
@@ -330,9 +345,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_input);
 
 
+    /**************************************************************************/
     /* --output */
-    constexpr arg_t a_output = {
-        "output", 'o',
+    constexpr arg_t a_output =
+    {
+        /* long */
+        "output",
+
+        /* short */
+        'o',
 
         /* help */
         "  -o --output=<file>       Output file (defaults to STDOUT if not set)",
@@ -347,10 +368,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_output);
 
 
+    /**************************************************************************/
     /* --name */
+    constexpr arg_t a_name =
+    {
+        /* long */
+        "name",
 
-    constexpr arg_t a_name = {
-        "name", 'n',
+        /* short */
+        'n',
 
         /* help */
         "  -n --name=<string>       Use STRING in names of functions, macros and C++\n"
@@ -368,10 +394,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_name);
 
 
+    /**************************************************************************/
     /* --format */
+    constexpr arg_t a_format =
+    {
+        /* long */
+        "format",
 
-    constexpr arg_t a_format = {
-        "format", 'F',
+        /* short */
+        'F',
 
         /* help */
         "  -F --format=<fmt>        Output format: c (default), c++, minimal, minimal-c++",
@@ -392,10 +423,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_format);
 
 
+    /**************************************************************************/
     /* --template */
+    constexpr arg_t a_template =
+    {
+        /* long */
+        "template",
 
-    constexpr arg_t a_template = {
-        "template", 't',
+        /* short */
+        't',
 
         /* help */
         "  -t --template=<file>     Use a custom template (`--format' will be ignored)",
@@ -442,10 +478,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_template);
 
 
+    /**************************************************************************/
     /* --library */
+    constexpr arg_t a_library =
+    {
+        /* long */
+        "library",
 
-    constexpr arg_t a_library = {
-        "library", 'l',
+        /* short */
+        'l',
 
         /* help */
         "  -l --library=<lib>       Set a default library name to load\n"
@@ -477,10 +518,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_library);
 
 
+    /**************************************************************************/
     /* --include */
+    constexpr arg_t a_include =
+    {
+        /* long */
+        "include",
 
-    constexpr arg_t a_include = {
-        "include", 'I',
+        /* short */
+        'I',
 
         /* help */
         "  -I --include=<file>      Include a header file (this flag may be passed\n"
@@ -507,10 +553,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_include);
 
 
+    /**************************************************************************/
     /* --define */
+    constexpr arg_t a_define =
+    {
+        /* long */
+        "define",
 
-    constexpr arg_t a_define = {
-        "define", 'D',
+        /* short */
+        'D',
 
         /* help */
         "  -D --define=<string>     Define a preprocessor macro to be used (this flag\n"
@@ -529,10 +580,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_define);
 
 
+    /**************************************************************************/
     /* --separate */
+    constexpr arg_t a_separate =
+    {
+        /* long */
+        "separate",
 
-    constexpr arg_t a_separate = {
-        "separate", 's',
+        /* short */
+        's',
 
         /* help */
         "  -s --separate            Save output into separate body and header files",
@@ -549,10 +605,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_separate);
 
 
+    /**************************************************************************/
     /* --force */
+    constexpr arg_t a_force =
+    {
+        /* long */
+        "force",
 
-    constexpr arg_t a_force = {
-        "force", 'f',
+        /* short */
+        'f',
 
         /* help */
         "  -f --force               Always overwrite existing output files",
@@ -567,10 +628,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_force);
 
 
+    /**************************************************************************/
     /* --skip-param */
+    constexpr arg_t a_skip_param =
+    {
+        /* long */
+        "skip-param",
 
-    constexpr arg_t a_skip_param = {
-        "skip-param", LONGONLY_SKIP_PARAM,
+        /* short */
+        LONGONLY_SKIP_PARAM,
 
         /* help */
         "  --skip-param             Don't look for parameter names in function prototypes",
@@ -587,10 +653,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_skip_param);
 
 
+    /**************************************************************************/
     /* --prefix */
+    constexpr arg_t a_prefix =
+    {
+        /* long */
+        "prefix",
 
-    constexpr arg_t a_prefix = {
-        "prefix", 'P',
+        /* short */
+        'P',
 
         /* help */
         "  -P --prefix=<string>     Look for symbols prefixed with <string>",
@@ -607,10 +678,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_prefix);
 
 
+    /**************************************************************************/
     /* --symbol */
+    constexpr arg_t a_symbol =
+    {
+        /* long */
+        "symbol",
 
-    constexpr arg_t a_symbol = {
-        "symbol", 'S',
+        /* short */
+        'S',
 
         /* help */
         "  -S --symbol=<string>     Look for symbol name <string> (this flag may be\n"
@@ -630,10 +706,15 @@ int main(int argc, char **argv)
     help_args.push_back(a_symbol);
 
 
+    /**************************************************************************/
     /* --ast-all-symbols */
+    constexpr arg_t a_ast_all_symbols =
+    {
+        /* long */
+        "--ast-all-symbols",
 
-    constexpr arg_t a_ast_all_symbols = {
-        "--ast-all-symbols", 'a',
+        /* short */
+        'a',
 
         /* help */
         "  --ast-all-symbols        Use all symbols from a Clang AST",
@@ -656,7 +737,7 @@ int main(int argc, char **argv)
     /**************************************************************************/
 
 
-    /* parse "help" switch */
+    /* parse "help <cmd>" switch */
     if (argc > 1 && strcmp(argv[1], "help") == 0) {
         return parse_help_switch(argc, argv, help_args);
     }
@@ -665,28 +746,28 @@ int main(int argc, char **argv)
     /**************************************************************************/
 
 
-#define ENTRY_ARG(a)    { a.l, required_argument, 0, a.s }
-#define ENTRY_NOARG(a)  { a.l, no_argument,       0, a.s }
+#define RQ_ARG(a)  { a.l, required_argument, NULL, a.s }
+#define NO_ARG(a)  { a.l, no_argument,       NULL, a.s }
 
-    struct option options[] =
+    struct option longopts[] =
     {
-        ENTRY_NOARG( a_help ),
-        ENTRY_NOARG( a_full_help ),
-        ENTRY_ARG( a_input ),
-        ENTRY_ARG( a_output ),
-        ENTRY_ARG( a_name ),
-        ENTRY_ARG( a_format ),
-        ENTRY_ARG( a_template ),
-        ENTRY_ARG( a_library ),
-        ENTRY_ARG( a_include ),
-        ENTRY_ARG( a_define ),
-        ENTRY_ARG( a_prefix ),
-        ENTRY_ARG( a_symbol ),
-        ENTRY_NOARG( a_separate ),
-        ENTRY_NOARG( a_force ),
-        ENTRY_NOARG( a_skip_param ),
-        ENTRY_NOARG( a_ast_all_symbols ),
-        { 0, 0, 0, 0 }
+        NO_ARG( a_help ),
+        NO_ARG( a_full_help ),
+        RQ_ARG( a_input ),
+        RQ_ARG( a_output ),
+        RQ_ARG( a_name ),
+        RQ_ARG( a_format ),
+        RQ_ARG( a_template ),
+        RQ_ARG( a_library ),
+        RQ_ARG( a_include ),
+        RQ_ARG( a_define ),
+        RQ_ARG( a_prefix ),
+        RQ_ARG( a_symbol ),
+        NO_ARG( a_separate ),
+        NO_ARG( a_force ),
+        NO_ARG( a_skip_param ),
+        NO_ARG( a_ast_all_symbols ),
+        { NULL, 0, NULL, 0 }
     };
 
     /* default settings */
@@ -698,14 +779,14 @@ int main(int argc, char **argv)
     /* create optstring from table entries */
     std::string optstring;
 
-    for (int i = 0; options[i].name != NULL; i++) {
-        if (utils::range<int>(options[i].val, 'a', 'z') ||
-            utils::range<int>(options[i].val, 'A', 'Z'))
+    for (int i = 0; longopts[i].name != NULL; i++) {
+        if (utils::range<int>(longopts[i].val, 'a', 'z') ||
+            utils::range<int>(longopts[i].val, 'A', 'Z'))
         {
-            optstring.push_back(options[i].val);
+            optstring.push_back(longopts[i].val);
         }
 
-        if (options[i].has_arg == required_argument) {
+        if (longopts[i].has_arg == required_argument) {
             optstring.push_back(':');
         }
     }
@@ -713,17 +794,12 @@ int main(int argc, char **argv)
     /* initialize class to receive options */
     auto gdo = gendlopen(&argc, &argv);
 
-    while (true)
+    int c;
+    int longindex = 0;
+    std::string lib_a, lib_w;
+
+    while ((c = getopt_long(argc, argv, optstring.c_str(), longopts, &longindex)) != -1)
     {
-        int option_index = 0;
-        std::string lib_a, lib_w;
-
-        int c = getopt_long(argc, argv, optstring.c_str(), options, &option_index);
-
-        if (c == -1) {
-            break;
-        }
-
         switch (c)
         {
         case a_help.s:
@@ -743,10 +819,7 @@ int main(int argc, char **argv)
             break;
 
         case a_name.s:
-            /* silently use the default if optarg is empty */
-            if (*optarg) {
-                name = optarg;
-            }
+            name = optarg;
             break;
 
         case a_format.s:
@@ -797,24 +870,23 @@ int main(int argc, char **argv)
             break;
 
         case '?':
-            /* error */
             return 1;
 
         default:
-            fprintf(stderr, "error: getopt_long() returned unknown character code 0%o\n", c);
+            fprintf(stderr, "error: getopt_long() returned character code 0%o\n", c);
             return 1;
         }
+    }
 
-        if (optind < argc) {
-            std::cerr << "error: non-option elements:";
+    if (optind < argc) {
+        std::cerr << "error: non-option ARGV elements:";
 
-            while (optind < argc) {
-                std::cerr << ' ' << argv[optind++];
-            }
-            std::cerr << std::endl;
-
-            return 1;
+        while (optind < argc) {
+            std::cerr << ' ' << argv[optind++];
         }
+        std::cerr << std::endl;
+
+        return 1;
     }
 
     /* input is required */
