@@ -228,6 +228,7 @@ check_dlmopen()
 
     cat <<EOF > test.c
 #include <dlfcn.h>
+#include <link.h>
 int main() {
 void *handle;
 handle = dlmopen(LM_ID_NEWLM, "foo.so", RTLD_LAZY);
