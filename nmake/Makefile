@@ -57,7 +57,6 @@ cleanfiles_check = \
 
 sources = \
 	$(s)\src\msvc\getopt.c \
-	$(s)\src\args.cpp \
 	$(s)\src\cio_ifstream.cpp \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
