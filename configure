@@ -9,6 +9,7 @@ ldflags=":"
 gtk_cflags=":"
 glib_cflags=":"
 pkgconfig=":"
+ld=":"
 
 check_std="yes"
 check_xxd="yes"
@@ -367,6 +368,9 @@ host triplet:
 set clang-cl:
     cl=..
 
+set ld:
+    ld=..
+
 set clang:
     clang=..
 
@@ -406,6 +410,7 @@ EOL
     ccbuild=*)      cc_build="${i#*=}";;
     host=*)         host="${i#*=}";;
     cl=*)           cl="${i#*=}";;
+    ld=*)           ld="${i#*=}";;
     clang=*)        clang="${i#*=}";;
     ar=*)           ar="${i#*=}";;
     pkgconfig=*)    pkgconfig="${i#*=}";;
@@ -570,7 +575,12 @@ if [ "x$cl" != "x" ]; then
         test_cxx11="$flag"
     fi
 
-    link_flag="-link"
+    if [ "x$ld" = "x:" ]; then
+        link_flag="-link"
+    else
+        link_flag="-fuse-ld=$ld -link"
+    fi
+
     exeext=".exe"
     dll="libhelloworld-0.dll"
     dll_cflags="-DBUILDING_DLL -LD"
@@ -624,6 +634,10 @@ else
             check_std_version
             check_cxx_flag 1 "-std=c++11"
             test_cxx11="$flag"
+        fi
+
+        if [ "x$ld" != "x:" ]; then
+            link_flag="-fuse-ld=$ld"
         fi
 
         exeext=".exe"

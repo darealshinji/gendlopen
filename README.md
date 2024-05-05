@@ -112,8 +112,8 @@ cp src/gendlopen xgendlopen
 ./configure gdo="$PWD/xgendlopen" host=x86_64-w64-mingw32
 make clean && make check
 
-# clang-cl (using lld)
-./configure gdo="$PWD/xgendlopen" cl="clang-cl -fuse-ld=lld"
+# clang-cl with lld-link
+./configure gdo="$PWD/xgendlopen" cl=clang-cl ld=lld-link
 make clean && make check
 ```
 
