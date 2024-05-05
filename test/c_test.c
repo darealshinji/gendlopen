@@ -21,8 +21,12 @@ int main()
     int flags = GDO_DEFAULT_FLAGS;
 
     /* whether or not to load symbols into a new namespace */
+#ifdef __illumos__
+    /* libhelloworld fails to use the callback if we use dlmopen() */
+    bool new_namespace = false;
+#else
     bool new_namespace = true;
-
+#endif
 
     /* load library and symbols */
     if (!gdo_load_lib_args(filename, flags, new_namespace) ||

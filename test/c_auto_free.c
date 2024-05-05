@@ -15,10 +15,17 @@ void cb(const char *msg)
 
 int main()
 {
-    /* this code is practically identical to example_1.c except
-     * that there is no explicit call to gdo_free_lib() */
+    /* whether or not to load symbols into a new namespace */
+#ifdef __illumos__
+    /* libhelloworld fails to use the callback if we use dlmopen() */
+    bool new_namespace = false;
+#else
+    bool new_namespace = true;
+#endif
 
-    if (!gdo_load_lib_args(LIBNAME(helloworld,0), GDO_DEFAULT_FLAGS, true) ||
+    /* no explicit call to gdo_free_lib() */
+
+    if (!gdo_load_lib_args(LIBNAME(helloworld,0), GDO_DEFAULT_FLAGS, new_namespace) ||
         !gdo_load_symbols(false))
     {
         fprintf(stderr, "%s\n", gdo_last_error());
