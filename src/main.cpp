@@ -711,7 +711,7 @@ int main(int argc, char **argv)
     constexpr arg_t a_ast_all_symbols =
     {
         /* long */
-        "--ast-all-symbols",
+        "ast-all-symbols",
 
         /* short */
         'a',
