@@ -67,13 +67,37 @@ run_cmd()
 _check_tool()
 {
     printf "check for $1 ... "
-    tool="$(which $1 2>/dev/null)"
+    #tool="$(which $1 2>/dev/null)"
+
+    oldIFS="$IFS"
+
+    # behavior of `which' isn't identical across systems
+    # so we do our own lookup
+
+    case "$(uname -s)" in
+        CYGWIN*|MINGW*|MSYS*|Windows*|UWIN*)
+        IFS=';'
+        ;;
+        *)
+        IFS=':'
+        ;;
+    esac
+
+    for p in $PATH ; do
+        if [ -x "$p/$1" ]; then
+            tool="$p/$1"
+            break
+        fi
+    done
+
+    # revert old IFS value
+    IFS="$oldIFS"
 
     if [ "x$tool" = "x" ]; then
         echo "not found"
     else
-        echo "OK"
-        tool="$1"
+        echo "$tool"
+        tool="$1"  # set to command-only
     fi
 }
 
