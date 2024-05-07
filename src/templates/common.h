@@ -36,6 +36,13 @@
 # define GDO_HAVE_DLMOPEN
 #endif
 
+/* whether to use dlfunc(3) */
+#ifndef GDO_WINAPI
+# if defined(HAVE_DLFUNC) || defined(__FreeBSD__) || defined(__DragonFly__)
+#  define GDO_HAVE_DLFUNC
+# endif
+#endif
+
 /* dlopen(3) flags for compatibility with LoadLibrary() */
 /* taken from different implementations of dlfcn.h */
 #ifndef RTLD_LAZY

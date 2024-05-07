@@ -20,7 +20,7 @@
 typedef void GDO_UNUSED_REF;
 typedef void GDO_UNUSED_RESULT;
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef GDO_HAVE_DLFUNC
 typedef dlfunc_t  gdo_func_t;  /* dlfunc() */
 #else
 typedef void *    gdo_func_t;  /* dlsym() */
@@ -424,7 +424,7 @@ GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *
 
     (GDO_UNUSED_REF) msg;
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef GDO_HAVE_DLFUNC
     gdo_func_t ptr = dlfunc(gdo_hndl.handle, symbol);
 #else
     gdo_func_t ptr = dlsym(gdo_hndl.handle, symbol);

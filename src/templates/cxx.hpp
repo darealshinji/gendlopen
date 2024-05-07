@@ -502,7 +502,7 @@ private:
 
 
     /* symbol pointer type */
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef GDO_HAVE_DLFUNC
     using func_t = dlfunc_t;
 #else
     using func_t = void *;
@@ -585,7 +585,7 @@ private:
     {
         clear_error();
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef GDO_HAVE_DLFUNC
         func_t ptr = ::dlfunc(m_handle, symbol);
 #else
         func_t ptr = ::dlsym(m_handle, symbol);
