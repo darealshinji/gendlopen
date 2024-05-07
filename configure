@@ -105,12 +105,10 @@ _check_tool()
 check_tool()
 {
     tool=""
-
-    if [ "x$tool" = "x" ]; then
-        _check_tool "$1"
-    fi
+    _check_tool "$1"
 
     if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
+        echo "error: nothing found"
         exit 1
     fi
 }
@@ -118,16 +116,10 @@ check_tool()
 check_host_tool()
 {
     tool=""
-
-    if [ "x$host" != "x" ]; then
-        _check_tool "${host}$1"
-    fi
-
-    if [ "x$tool" = "x" ]; then
-        _check_tool "$1"
-    fi
+    _check_tool "${host}$1"
 
     if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
+        echo "error: nothing found"
         exit 1
     fi
 }
