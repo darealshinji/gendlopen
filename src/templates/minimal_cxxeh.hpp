@@ -1,5 +1,5 @@
 /* whether to use WinAPI */
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN) && !defined(__CYGWIN__) && !defined(__MSYS__)
     #define GDO_WINAPI
 #endif
 
@@ -62,6 +62,7 @@ namespace gdo
 
     /* get symbol */
     inline void *get_symbol(HMODULE handle, const char *symbol) {
+        /* cast to void* to avoid warnings such as [-Wcast-function-type] */
         return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));
     }
 
@@ -81,9 +82,15 @@ namespace gdo
     }
 
     /* get symbol */
+# if defined(__FreeBSD__) || defined(__DragonFly__)
+    inline dlfunc_t get_symbol(void *handle, const char *symbol) {
+        return ::dlfunc(handle, symbol);
+    }
+# else
     inline void *get_symbol(void *handle, const char *symbol) {
         return ::dlsym(handle, symbol);
     }
+# endif
 
 #endif //GDO_WINAPI
 

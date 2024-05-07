@@ -6,6 +6,7 @@
     #include <tchar.h>
 #endif
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +15,16 @@
     #define _T(x) x
 #endif
 
+
+/* typedefs */
 typedef void GDO_UNUSED_REF;
 typedef void GDO_UNUSED_RESULT;
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+typedef dlfunc_t  gdo_func_t;  /* dlfunc() */
+#else
+typedef void *    gdo_func_t;  /* dlsym() */
+#endif
 
 
 /* library handle */
@@ -23,15 +32,9 @@ GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 
 
 /* forward declarations */
+GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_LINKAGE void gdo_register_free_lib(void);
-
-#ifdef GDO_WINAPI
-GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
-#define _gdo_sym(a, b)  gdo_sym(a, _T(a), b)
-#else
-GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv);
-#define _gdo_sym(a, b)  gdo_sym(a, b)
-#endif
+GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
 
 
 
@@ -158,8 +161,6 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
     }
 
 #ifdef GDO_WINAPI
-    (GDO_UNUSED_REF) new_namespace;
-
     /* empty filename */
     if (!filename || *filename == 0) {
         gdo_clear_errbuf();
@@ -168,15 +169,14 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
         return false;
     }
 
-    gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
+    gdo_load_library(filename, flags, new_namespace);
 
     if (!gdo_lib_is_loaded()) {
         gdo_save_GetLastError(filename);
         return false;
     }
 
-#else
-/*********************************** dlfcn ***********************************/
+#else /* dlfcn */
 
     /* an empty filename will actually return a handle to the main program,
      * but we don't want that */
@@ -186,30 +186,56 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
         return false;
     }
 
-#ifdef GDO_HAVE_DLMOPEN
-    /* call dlmopen() for new namespace, otherwise dlopen() */
-    if (new_namespace) {
-        gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
-    } else {
-        gdo_hndl.handle = dlopen(filename, flags);
+#ifdef _AIX
+    errno = 0;
+    gdo_load_library(filename, flags, new_namespace);
+    int errsav = errno;
+
+    if (!gdo_lib_is_loaded()) {
+        gdo_clear_errbuf();
+        const char *ptr = (errsav == ENOEXEC) ? dlerror() : strerror(errsav);
+        gdo_save_to_errbuf(ptr);
     }
 #else
-    /* no dlmopen() */
-    (GDO_UNUSED_REF) new_namespace;
-    gdo_hndl.handle = dlopen(filename, flags);
-#endif
+    gdo_load_library(filename, flags, new_namespace);
 
-    /* check if dl(m)open() was successful */
     if (!gdo_lib_is_loaded()) {
         gdo_save_dlerror();
         return false;
     }
+#endif //!_AIX
 
 #endif //!GDO_WINAPI
 
     gdo_register_free_lib();
 
     return true;
+}
+
+/* call LoadLibraryEx/dlopen/dlmopen */
+GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)
+{
+#ifdef GDO_WINAPI
+
+    (GDO_UNUSED_REF) new_namespace;
+    gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
+
+#elif defined(GDO_HAVE_DLMOPEN)
+
+    /* call dlmopen() for new namespace, otherwise dlopen() */
+    if (new_namespace) {
+        gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
+    } else {
+        gdo_hndl.handle = dlopen(filename, flags);
+    }
+
+#else
+
+    /* no dlmopen() */
+    (GDO_UNUSED_REF) new_namespace;
+    gdo_hndl.handle = dlopen(filename, flags);
+
+#endif //!GDO_WINAPI
 }
 
 /* If registered with atexit() this function will be called at
@@ -237,6 +263,7 @@ GDO_LINKAGE void gdo_register_free_lib(void)
 #endif
 }
 /*****************************************************************************/
+
 
 
 /*****************************************************************************/
@@ -320,6 +347,7 @@ GDO_LINKAGE bool gdo_no_symbols_loaded(void)
 /*****************************************************************************/
 
 
+
 /*****************************************************************************/
 /*                     check if ANY symbol was loaded                        */
 /*****************************************************************************/
@@ -334,6 +362,7 @@ GDO_LINKAGE bool gdo_any_symbol_loaded(void)
     return false;
 }
 /*****************************************************************************/
+
 
 
 /*****************************************************************************/
@@ -366,7 +395,7 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     /* %%symbol%% */@
     gdo_hndl.%%symbol%%_ptr_ = @
         (%%sym_type%%)@
-            _gdo_sym("%%symbol%%", &gdo_hndl.%%symbol%%_loaded_);@
+            gdo_sym("%%symbol%%", _T("%%symbol%%"), &gdo_hndl.%%symbol%%_loaded_);@
     if (!gdo_hndl.%%symbol%%_loaded_ && !ignore_errors) {@
         return false;@
     }
@@ -376,13 +405,14 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     return gdo_all_symbols_loaded();
 }
 
-#ifdef GDO_WINAPI
-
-GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
+GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
 {
     gdo_clear_errbuf();
 
-    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
+#ifdef GDO_WINAPI
+
+    /* cast to gdo_func_t (a.k.a. void*) to avoid warnings such as [-Wcast-function-type] */
+    gdo_func_t ptr = (gdo_func_t)GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
         gdo_save_GetLastError(msg);
@@ -390,17 +420,15 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
         return NULL;
     }
 
-    *rv = true;
-    return ptr;
-}
+#else
 
-#else //!GDO_WINAPI
+    (GDO_UNUSED_REF) msg;
 
-GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv)
-{
-    gdo_clear_errbuf();
-
-    void *ptr = dlsym(gdo_hndl.handle, symbol);
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+    gdo_func_t ptr = dlfunc(gdo_hndl.handle, symbol);
+#else
+    gdo_func_t ptr = dlsym(gdo_hndl.handle, symbol);
+#endif
 
     /* NULL can be a valid value (unusual but possible),
      * so call dlerror() to check for errors */
@@ -416,11 +444,11 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, bool *rv)
         }
     }
 
+#endif //!GDO_WINAPI
+
     *rv = true;
     return ptr;
 }
-
-#endif //!GDO_WINAPI
 /*****************************************************************************/
 
 
@@ -448,7 +476,7 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         if (strcmp("%%symbol%%", symbol) == 0) {@
             gdo_hndl.%%symbol%%_ptr_ =@
                 (%%sym_type%%)@
-                    _gdo_sym("%%symbol%%", &gdo_hndl.%%symbol%%_loaded_);@
+                    gdo_sym("%%symbol%%", _T("%%symbol%%"), &gdo_hndl.%%symbol%%_loaded_);@
             return gdo_hndl.%%symbol%%_loaded_;@
         }
     }

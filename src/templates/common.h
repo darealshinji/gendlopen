@@ -1,9 +1,9 @@
 /* whether to use WinAPI */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MSYS__)
 # define GDO_OS_WIN32
-#endif
-#if defined(GDO_OS_WIN32) && !defined(GDO_USE_DLOPEN)
-# define GDO_WINAPI
+# ifndef GDO_USE_DLOPEN
+#  define GDO_WINAPI
+# endif
 #endif
 
 /* default headers to include */
@@ -140,8 +140,8 @@
 /* default flags */
 #ifndef GDO_DEFAULT_FLAGS
 # ifdef GDO_WINAPI
-#  define GDO_DEFAULT_FLAGS  0
+#  define GDO_DEFAULT_FLAGS 0
 # else
-#  define GDO_DEFAULT_FLAGS  (RTLD_LAZY | RTLD_MEMBER)
+#  define GDO_DEFAULT_FLAGS (RTLD_LAZY|RTLD_MEMBER)
 # endif
 #endif

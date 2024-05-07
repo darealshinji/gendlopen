@@ -186,6 +186,7 @@ HAVE_DLINFO
 
 #include <iostream>
 #include <string>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -399,15 +400,16 @@ private:
     {
         clear_error();
 
+        /* cast to void* to avoid warnings such as [-Wcast-function-type] */
         void *ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
 
         if (!ptr) {
             save_error(symbol);
             rv = false;
-            return nullptr;
+        } else {
+            rv = true;
         }
 
-        rv = true;
         return ptr;
     }
 
@@ -499,6 +501,13 @@ private:
 /*********************************** dlfcn ***********************************/
 
 
+    /* symbol pointer type */
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+    using func_t = dlfunc_t;
+#else
+    using func_t = void *;
+#endif
+
     /* library handle */
     using handle_t = void*;
     static handle_t m_handle;
@@ -572,11 +581,15 @@ private:
 
 
     /* load symbol address */
-    void *sym(const char *symbol, bool &rv)
+    func_t sym(const char *symbol, bool &rv)
     {
         clear_error();
 
-        void *ptr = ::dlsym(m_handle, symbol);
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+        func_t ptr = ::dlfunc(m_handle, symbol);
+#else
+        func_t ptr = ::dlsym(m_handle, symbol);
+#endif
 
         /* NULL can be a valid value (unusual but possible),
          * so call dlerror() to check for errors */
@@ -641,8 +654,20 @@ public:
         }
 
         clear_error();
+
+#ifdef _AIX
+        errno = 0;
+        load_lib(filename.c_str(), flags, new_namespace);
+        int errsav = errno;
+
+        if (!lib_loaded()) {
+            const char *ptr = (errsav == ENOEXEC) ? ::dlerror() : ::strerror(errsav);
+            m_errmsg = ptr ? ptr : "";
+        }
+#else
         load_lib(filename.c_str(), flags, new_namespace);
         save_error(filename);
+#endif //!_AIX
 
         return lib_loaded();
     }
@@ -842,9 +867,9 @@ public:
      * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
     static std::string libname(const std::string &name, unsigned int api)
     {
-#if defined(GDO_OS_WIN32)
+#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MSYS__)
         return "lib" + (name + ('-' + (std::to_string(api) + ".dll")));
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && defined(__MACH__)
         return "lib" + (name + ('.' + (std::to_string(api) + ".dylib")));
 #elif defined(_AIX)
         (UNUSED_REF) api;
@@ -979,7 +1004,7 @@ public:
         m_errmsg = "dladdr() failed to get library path";
 
         return {};
-#endif //GDO_HAVE_DLINFO
+#endif // !GDO_HAVE_DLINFO
     }
 
 
