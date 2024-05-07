@@ -80,6 +80,12 @@
 #ifndef RTLD_FIRST
 #define RTLD_FIRST 0  /* macOS, Solaris */
 #endif
+#ifndef RTLD_MEMBER
+#define RTLD_MEMBER 0  /* AIX */
+#endif
+#ifndef RTLD_NOAUTODEFER
+#define RTLD_NOAUTODEFER 0  /* AIX */
+#endif
 #ifndef DL_LAZY
 #define DL_LAZY RTLD_LAZY  /* NetBSD, OpenBSD */
 #endif
@@ -134,8 +140,8 @@
 /* default flags */
 #ifndef GDO_DEFAULT_FLAGS
 # ifdef GDO_WINAPI
-#  define GDO_DEFAULT_FLAGS 0
+#  define GDO_DEFAULT_FLAGS  0
 # else
-#  define GDO_DEFAULT_FLAGS RTLD_LAZY
+#  define GDO_DEFAULT_FLAGS  (RTLD_LAZY | RTLD_MEMBER)
 # endif
 #endif
