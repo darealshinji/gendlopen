@@ -34,7 +34,10 @@ GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 /* forward declarations */
 GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_LINKAGE void gdo_register_free_lib(void);
-GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv);
+GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg);
+#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
+GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
+#endif
 
 
 
@@ -305,9 +308,6 @@ GDO_LINKAGE bool gdo_free_lib(void)
     gdo_hndl.handle = NULL;
     gdo_hndl.%%symbol%%_ptr_ = NULL;
 
-    /* set back to false */
-    gdo_hndl.%%symbol%%_loaded_ = false;
-
     return true;
 }
 /*****************************************************************************/
@@ -320,7 +320,7 @@ GDO_LINKAGE bool gdo_free_lib(void)
 GDO_LINKAGE bool gdo_all_symbols_loaded(void)
 {
     if (true
-        && gdo_hndl.%%symbol%%_loaded_
+        && gdo_hndl.%%symbol%%_ptr_ != NULL
     ) {
         return true;
     }
@@ -337,7 +337,7 @@ GDO_LINKAGE bool gdo_all_symbols_loaded(void)
 GDO_LINKAGE bool gdo_no_symbols_loaded(void)
 {
     if (true
-        && gdo_hndl.%%symbol%%_loaded_ == false
+        && gdo_hndl.%%symbol%%_ptr_ == NULL
     ) {
         return true;
     }
@@ -354,7 +354,7 @@ GDO_LINKAGE bool gdo_no_symbols_loaded(void)
 GDO_LINKAGE bool gdo_any_symbol_loaded(void)
 {
     if (false
-        || gdo_hndl.%%symbol%%_loaded_
+        || gdo_hndl.%%symbol%%_ptr_ != NULL
     ) {
         return true;
     }
@@ -395,8 +395,8 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     /* %%symbol%% */@
     gdo_hndl.%%symbol%%_ptr_ = @
         (%%sym_type%%)@
-            gdo_sym("%%symbol%%", _T("%%symbol%%"), &gdo_hndl.%%symbol%%_loaded_);@
-    if (!gdo_hndl.%%symbol%%_loaded_ && !ignore_errors) {@
+            gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+    if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {@
         return false;@
     }
 
@@ -405,7 +405,7 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     return gdo_all_symbols_loaded();
 }
 
-GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *rv)
+GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
     gdo_clear_errbuf();
 
@@ -416,8 +416,6 @@ GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *
 
     if (!ptr) {
         gdo_save_GetLastError(msg);
-        *rv = false;
-        return NULL;
     }
 
 #else
@@ -430,23 +428,18 @@ GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg, bool *
     gdo_func_t ptr = dlsym(gdo_hndl.handle, symbol);
 #endif
 
-    /* NULL can be a valid value (unusual but possible),
-     * so call dlerror() to check for errors */
+    /**
+     * Linux man page mentions cases where NULL pointer is a valid address.
+     * These however seem to be edge-cases that are irrelevant to us.
+     * Furthermore this is contradicting POSIX which says a NULL pointer shall
+     * be returned on an error.
+     */
     if (!ptr) {
-        const char *err = dlerror();
-
-        if (err) {
-            /* must save our error message manually instead of
-             * invoking gdo_save_dlerror() */
-            gdo_save_to_errbuf(err);
-            *rv = false;
-            return NULL;
-        }
+        gdo_save_dlerror();
     }
 
 #endif //!GDO_WINAPI
 
-    *rv = true;
     return ptr;
 }
 /*****************************************************************************/
@@ -469,16 +462,24 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         return false;
     }
 
+    if (!symbol) {
+        gdo_save_to_errbuf("symbol == NULL");
+        return false;
+    }
+
+    if (symbol[0] == 0) {
+        gdo_save_to_errbuf("'symbol' is empty");
+        return false;
+    }
+
     /* get symbol address */
-    if (symbol && *symbol) {
 @
-        /* %%symbol%% */@
-        if (strcmp("%%symbol%%", symbol) == 0) {@
-            gdo_hndl.%%symbol%%_ptr_ =@
-                (%%sym_type%%)@
-                    gdo_sym("%%symbol%%", _T("%%symbol%%"), &gdo_hndl.%%symbol%%_loaded_);@
-            return gdo_hndl.%%symbol%%_loaded_;@
-        }
+    /* %%symbol%% */@
+    if (strcmp("%%symbol%%", symbol) == 0) {@
+        gdo_hndl.%%symbol%%_ptr_ =@
+            (%%sym_type%%)@
+                gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+        return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
     }
 
 #ifdef GDO_WINAPI
@@ -602,27 +603,34 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     return lm->l_name ? strdup(lm->l_name) : NULL;
 #else
     /* use dladdr() to get the library path from a symbol pointer */
-    Dl_info info;
+    char *fname;
 
-    /* check if no symbols were loaded at all */
     if (gdo_no_symbols_loaded()) {
         gdo_save_to_errbuf("no symbols were loaded");
         return NULL;
     }
-@
-    if (gdo_hndl.%%symbol%%_loaded_ &&@
-        dladdr((const void *)gdo_hndl.%%symbol%%_ptr_, &info) != 0 &&@
-        info.dli_fname != NULL)@
-    {@
-        return strdup(info.dli_fname);@
-    }
 
-    /* could not retrieve path */
+    fname = gdo_dladdr_get_fname((void *)gdo_hndl.%%symbol%%_ptr_);@
+    if (fname) return fname;
+
     gdo_save_to_errbuf("dladdr() failed to get library path");
 
     return NULL;
 #endif //GDO_WINAPI
 }
+
+#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
+GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
+{
+    Dl_info info;
+
+    if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {
+        return strdup(info.dli_fname);
+    }
+
+    return NULL;
+}
+#endif // !GDO_WINAPI && !GDO_HAVE_DLINFO
 /*****************************************************************************/
 
 
@@ -631,7 +639,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 /*                                wrap code                                  */
 /*****************************************************************************/
 %SKIP_BEGIN%
-//%DNL%//  comment out this whole "wrap code" section if "--skip-parameter-names" was set
+//%DNL%//  comment out this whole "wrap code" section if "--skip-param" was set
 
 /* autoload functions */
 #ifdef GDO_ENABLE_AUTOLOAD
@@ -730,7 +738,7 @@ GDO_LINKAGE void gdo_abort(const gdo_char_t *symbol)
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo_quick_load("%%func_symbol%%", _T("%%func_symbol%%"));@
-    if (!gdo_hndl.%%func_symbol%%_loaded_) gdo_abort(_T("%%func_symbol%%"));@
+    if (!gdo_hndl.%%func_symbol%%_ptr_) gdo_abort(_T("%%func_symbol%%"));@
     %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
 }
 

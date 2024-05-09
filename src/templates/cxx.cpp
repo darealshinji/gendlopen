@@ -9,8 +9,6 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 %%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;
 %%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;
 
-bool gdo::dl::m_loaded_%%symbol%% = false;
-
 
 
 %SKIP_BEGIN%
@@ -37,7 +35,7 @@ namespace /* anonymous */
 /* function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    if (!gdo::dl::m_loaded_%%func_symbol%%) {@
+    if (!gdo::dl::m_ptr_%%func_symbol%%) {@
         error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
     %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@

@@ -193,30 +193,30 @@ HAVE_DLINFO
 
 %SKIP_BEGIN%
 //%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin and end
-//%DNL%//  of the commentary sequence if "--skip-parameter-names" was set
+//%DNL%//  of the commentary sequence if "--skip-param" was set
 /*
 %SKIP_END%
 #if defined(GDO_WRAP_FUNCTIONS)
-#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-parameter-names"
+#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-param"
 #endif
 
 #if defined(GDO_ENABLE_AUTOLOAD)
-#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-parameter-names"
+#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-param"
 #endif
 %SKIP_BEGIN%
 */
 
-//%DNL%//  this is commented out if "--skip-parameter-names" was set
+//%DNL%//  this is commented out if "--skip-param" was set
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
 
-//%DNL%//  this is commented out if "--skip-parameter-names" was set
+//%DNL%//  this is commented out if "--skip-param" was set
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
 #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
 
-//%DNL%//  this is commented out if "--skip-parameter-names" was set
+//%DNL%//  this is commented out if "--skip-param" was set
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 #define GDO_HAS_MSG_CB
 #endif
@@ -252,9 +252,6 @@ public:
     /* symbol pointers */
     static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);
     static %%obj_type%% *m_ptr_%%obj_symbol%%;
-
-    /* whether or not a symbol was loaded */
-    static bool m_loaded_%%symbol%%;
 
 
 private:
@@ -396,7 +393,7 @@ private:
 
 
     /* load symbol address */
-    void *sym(const char *symbol, bool &rv)
+    void *sym(const char *symbol)
     {
         clear_error();
 
@@ -405,9 +402,6 @@ private:
 
         if (!ptr) {
             save_error(symbol);
-            rv = false;
-        } else {
-            rv = true;
         }
 
         return ptr;
@@ -581,7 +575,7 @@ private:
 
 
     /* load symbol address */
-    func_t sym(const char *symbol, bool &rv)
+    func_t sym(const char *symbol)
     {
         clear_error();
 
@@ -591,25 +585,16 @@ private:
         func_t ptr = ::dlsym(m_handle, symbol);
 #endif
 
-        /* NULL can be a valid value (unusual but possible),
-         * so call dlerror() to check for errors */
+        /**
+        * Linux man page mentions cases where NULL pointer is a valid address.
+        * These however seem to be edge-cases that are irrelevant to us.
+        * Furthermore this is contradicting POSIX which says a NULL pointer shall
+        * be returned on an error.
+        */
         if (!ptr) {
-            auto err = ::dlerror();
-
-            if (err) {
-                /* must save our error message manually instead of
-                 * invoking save_error() */
-                m_errmsg = err;
-
-                /* clear error */
-                (UNUSED_RESULT) ::dlerror();
-
-                rv = false;
-                return nullptr;
-            }
+            save_error();
         }
 
-        rv = true;
         return ptr;
     }
 
@@ -740,9 +725,10 @@ public:
 
         /* get symbol addresses */
 @
-        m_ptr_%%symbol%% = reinterpret_cast<%%sym_type%%>(@
-            sym("%%symbol%%", m_loaded_%%symbol%%));@
-        if (!m_loaded_%%symbol%% && !ignore_errors) {@
+        m_ptr_%%symbol%% =@
+            reinterpret_cast<%%sym_type%%>(@
+                sym("%%symbol%%"));@
+        if (!m_ptr_%%symbol%% && !ignore_errors) {@
             return false;@
         }
 
@@ -773,9 +759,10 @@ public:
         /* get symbol address */
 @
         if (symbol == "%%symbol%%") {@
-            m_ptr_%%symbol%% = reinterpret_cast<%%sym_type%%>(@
-                sym("%%symbol%%", m_loaded_%%symbol%%));@
-            return m_loaded_%%symbol%%;@
+            m_ptr_%%symbol%% =@
+                reinterpret_cast<%%sym_type%%>(@
+                    sym("%%symbol%%"));@
+            return (m_ptr_%%symbol%% != nullptr);@
         }
 
         clear_error();
@@ -795,7 +782,7 @@ public:
     bool all_symbols_loaded() const
     {
         if (true
-            && m_loaded_%%symbol%%
+            && m_ptr_%%symbol%% != nullptr
         ) {
             return true;
         }
@@ -808,7 +795,7 @@ public:
     bool no_symbols_loaded() const
     {
         if (true
-            && m_loaded_%%symbol%% == false
+            && m_ptr_%%symbol%% == nullptr
         ) {
             return true;
         }
@@ -821,7 +808,7 @@ public:
     bool any_symbol_loaded() const
     {
         if (false
-            || m_loaded_%%symbol%%
+            || m_ptr_%%symbol%% != nullptr
         ) {
             return true;
         }
@@ -849,8 +836,6 @@ public:
         m_handle = nullptr;
 
         m_ptr_%%symbol%% = nullptr;
-
-        m_loaded_%%symbol%% = false;
 
         return true;
     }
@@ -984,23 +969,25 @@ public:
         return (ret != -1 && lm->l_name) ? lm->l_name : "";
 #else
         /* use dladdr() to get the library path from a symbol pointer */
-        Dl_info info;
-        const void *ptr;
+        std::string fname;
 
-        /* check if no symbols were loaded at all */
         if (no_symbols_loaded()) {
             m_errmsg = "no symbols were loaded";
             return {};
         }
-@
-        if (m_loaded_%%symbol%%) {@
-            ptr = reinterpret_cast<void *>(m_ptr_%%symbol%%);@
-            if (::dladdr(ptr, &info) != 0 && info.dli_fname != NULL) {@
-                return info.dli_fname;@
-            }@
-        }
 
-        /* could not retrieve path */
+        auto get_fname = [] (const void *ptr, std::string &s)
+        {
+            Dl_info info;
+
+            if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {
+                s = info.dli_fname;
+            }
+        };
+
+        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%), fname);@
+        if (!fname.empty()) return fname;
+
         m_errmsg = "dladdr() failed to get library path";
 
         return {};

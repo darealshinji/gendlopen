@@ -206,25 +206,25 @@ HAVE_DLINFO
 
 %SKIP_BEGIN%
 //%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin of the
-//%DNL%//  commentary sequence if "--skip-parameter-names" was set
+//%DNL%//  commentary sequence if "--skip-param" was set
 /*
 %SKIP_END%
 #if defined(GDO_WRAP_FUNCTIONS)
-#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-parameter-names"
+#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-param"
 #endif
 
 #if defined(GDO_ENABLE_AUTOLOAD)
-#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-parameter-names"
+#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-param"
 #endif
 %SKIP_BEGIN%
 */
 
-//%DNL%//  this is commented out if "--skip-parameter-names" was set
+//%DNL%//  this is commented out if "--skip-param" was set
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
 
-//%DNL%//  this is commented out if "--skip-parameter-names" was set
+//%DNL%//  this is commented out if "--skip-param" was set
 #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
 #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
 #endif
@@ -256,8 +256,6 @@ typedef struct gdo_handle
     /* symbols */
     %%type%% (*%%func_symbol%%_ptr_)(%%args%%);
     %%obj_type%% *%%obj_symbol%%_ptr_;
-
-    bool %%symbol%%_loaded_;
 
 } gdo_handle_t;
 
