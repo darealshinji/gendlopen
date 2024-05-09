@@ -463,12 +463,12 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
     }
 
     if (!symbol) {
-        gdo_save_to_errbuf("symbol == NULL");
+        gdo_save_to_errbuf(_T("symbol == NULL"));
         return false;
     }
 
     if (symbol[0] == 0) {
-        gdo_save_to_errbuf("'symbol' is empty");
+        gdo_save_to_errbuf(_T("'symbol' is empty"));
         return false;
     }
 

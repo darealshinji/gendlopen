@@ -393,18 +393,22 @@ private:
 
 
     /* load symbol address */
-    void *sym(const char *symbol)
+    template<typename T>
+    T sym(const char *symbol)
     {
         clear_error();
 
-        /* cast to void* to avoid warnings such as [-Wcast-function-type] */
-        void *ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
+        FARPROC proc = ::GetProcAddress(m_handle, symbol);
 
-        if (!ptr) {
+        if (!proc) {
             save_error(symbol);
+            return nullptr;
         }
 
-        return ptr;
+        /* casting to void* first prevents [-Wcast-function-type] warnings on GCC */
+        void *ptr = reinterpret_cast<void *>(proc);
+
+        return reinterpret_cast<T>(ptr);
     }
 
 
@@ -495,13 +499,6 @@ private:
 /*********************************** dlfcn ***********************************/
 
 
-    /* symbol pointer type */
-#ifdef GDO_HAVE_DLFUNC
-    using func_t = dlfunc_t;
-#else
-    using func_t = void *;
-#endif
-
     /* library handle */
     using handle_t = void*;
     static handle_t m_handle;
@@ -575,15 +572,12 @@ private:
 
 
     /* load symbol address */
-    func_t sym(const char *symbol)
+    template<typename T>
+    T sym(const char *symbol)
     {
         clear_error();
 
-#ifdef GDO_HAVE_DLFUNC
-        func_t ptr = ::dlfunc(m_handle, symbol);
-#else
-        func_t ptr = ::dlsym(m_handle, symbol);
-#endif
+        T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
 
         /**
         * Linux man page mentions cases where NULL pointer is a valid address.
@@ -725,9 +719,7 @@ public:
 
         /* get symbol addresses */
 @
-        m_ptr_%%symbol%% =@
-            reinterpret_cast<%%sym_type%%>(@
-                sym("%%symbol%%"));@
+        m_ptr_%%symbol%% = sym<%%sym_type%%>("%%symbol%%");@
         if (!m_ptr_%%symbol%% && !ignore_errors) {@
             return false;@
         }
@@ -759,9 +751,7 @@ public:
         /* get symbol address */
 @
         if (symbol == "%%symbol%%") {@
-            m_ptr_%%symbol%% =@
-                reinterpret_cast<%%sym_type%%>(@
-                    sym("%%symbol%%"));@
+            m_ptr_%%symbol%% = sym<%%sym_type%%>("%%symbol%%");@
             return (m_ptr_%%symbol%% != nullptr);@
         }
 
