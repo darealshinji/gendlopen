@@ -581,21 +581,24 @@ else
     # GCC / Clang
 
     dll="libhelloworld.so.0"
-    ld_library_path_test="LD_LIBRARY_PATH=\"$PWD/test\""
+    ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test:\$\$LD_LIBRARY_PATH\""
 
     case $cc_triple in
         *-mingw*)
             target="mingw"
             dll="libhelloworld-0.dll"
-            ld_library_path_test=""
+            ld_library_path_test="" # not needed
             ;;
         *-darwin)
             dll="libhelloworld.0.dylib"
+            # don't need to use DYLD_LIBRARY_PATH,
             # LD_LIBRARY_PATH works too
-            #ld_library_path_test="DYLD_LIBRARY_PATH=\"$PWD/test\""
+            ;;
+        *-netbsd)
+            ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test:/usr/pkg/lib:\$\$LD_LIBRARY_PATH\""
             ;;
         *-haiku)
-            ld_library_path_test="LIBRARY_PATH=\"$PWD/test:$LIBRARY_PATH\""
+            ld_library_path_test="LIBRARY_PATH=\"\$\$PWD/../test:\$\$LIBRARY_PATH\""
             ;;
         *-aix)
             dll="libhelloworld.a"
@@ -604,6 +607,7 @@ else
             ;;
     esac
 
+    # add $sysroot/include in case we're cross-compiling
     sysroot="$($cc -print-sysroot 2>/dev/null)"
 
     if [ "x$sysroot" != "x" ]; then
