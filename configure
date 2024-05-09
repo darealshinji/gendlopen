@@ -604,6 +604,12 @@ else
             ;;
     esac
 
+    sysroot="$($cc -print-sysroot 2>/dev/null)"
+
+    if [ "x$sysroot" != "x" ]; then
+        sysroot_inc="-I$sysroot/include"
+    fi
+
     if [ "$target" = "mingw" ]; then
         # MinGW
         win32="yes"
@@ -792,6 +798,7 @@ CPPFLAGS      = $cppflags $xcppflags
 CFLAGS        = $cflags $xcflags \$(CPPFLAGS)
 CXXFLAGS      = $cxxflags $cxxstd $xcxxflags \$(CPPFLAGS)
 LDFLAGS       = $link_flag $ldflags $xldflags
+SYSROOT_INC   = $sysroot_inc
 
 DLL           = $dll
 DLL_CFLAGS    = $dll_cflags

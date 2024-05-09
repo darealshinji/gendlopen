@@ -52,8 +52,7 @@ run_examples: $(BINS)
 
 # UUID
 
-@CLANG@DUMP_AST = $(CLANG) -Xclang -ast-dump $(CLANG_TARGET) -Wno-pragma-pack
-#-I$$HOME/opt/mxe/usr/x86_64-w64-mingw32.static/include
+@CLANG@DUMP_AST = $(CLANG) -Xclang -ast-dump $(CLANG_TARGET) -Wno-pragma-pack $(SYSROOT_INC)
 
 @CLANG@@NIX@uuid_nix_dl.h: uuid_nix.h
 @CLANG@@NIX@	$(gen_v)$(DUMP_AST) -Ithirdparty/uuid uuid_nix.h | \
