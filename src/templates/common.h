@@ -152,3 +152,27 @@
 #  define GDO_DEFAULT_FLAGS (RTLD_LAZY|RTLD_MEMBER)
 # endif
 #endif
+
+
+%SKIP_BEGIN%
+#define _GDO_USE_PARAM 1
+%SKIP_END%
+
+#ifdef _GDO_USE_PARAM
+    #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
+    #error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
+    #endif
+    #if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
+    #error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
+    #endif
+    #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+    #define GDO_HAS_MSG_CB
+    #endif
+#else
+    #if defined(GDO_WRAP_FUNCTIONS)
+    #error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-param"
+    #endif
+    #if defined(GDO_ENABLE_AUTOLOAD)
+    #error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-param"
+    #endif
+#endif

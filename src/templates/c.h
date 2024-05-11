@@ -204,33 +204,6 @@ HAVE_DLINFO
 #endif
 
 
-%SKIP_BEGIN%
-//%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin of the
-//%DNL%//  commentary sequence if "--skip-param" was set
-/*
-%SKIP_END%
-#if defined(GDO_WRAP_FUNCTIONS)
-#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-param"
-#endif
-
-#if defined(GDO_ENABLE_AUTOLOAD)
-#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-param"
-#endif
-%SKIP_BEGIN%
-*/
-
-//%DNL%//  this is commented out if "--skip-param" was set
-#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
-#error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
-#endif
-
-//%DNL%//  this is commented out if "--skip-param" was set
-#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
-#error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
-#endif
-%SKIP_END%
-
-
 /* char / wchar_t */
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 typedef wchar_t gdo_char_t;
@@ -276,15 +249,10 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
 
 
-#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-
 /* aliases to raw function pointers */
-#if !defined(GDO_NOALIAS)
+#if !defined(GDO_NOALIAS) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_
 #endif // !GDO_NOALIAS
-
-#endif // !GDO_WRAP_FUNCTIONS && !GDO_ENABLE_AUTOLOAD
-
 
 /* aliases to raw object pointers */
 #if !defined(GDO_NOALIAS)

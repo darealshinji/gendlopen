@@ -1,9 +1,6 @@
-%SKIP_BEGIN%
 #ifdef GDO_HAS_MSG_CB
 gdo::message_callback_t gdo::dl::m_message_callback = nullptr;
 #endif
-%SKIP_END%
-
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 %%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;
@@ -12,6 +9,7 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 %SKIP_BEGIN%
+//%DNL%//  comment out this whole section if "--skip-param" was set
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 

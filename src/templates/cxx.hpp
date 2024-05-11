@@ -191,38 +191,6 @@ HAVE_DLINFO
 #include <string.h>
 
 
-%SKIP_BEGIN%
-//%DNL%//  %SKIP_BEGIN% / %SKIP_END% will comment out the begin and end
-//%DNL%//  of the commentary sequence if "--skip-param" was set
-/*
-%SKIP_END%
-#if defined(GDO_WRAP_FUNCTIONS)
-#error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-param"
-#endif
-
-#if defined(GDO_ENABLE_AUTOLOAD)
-#error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-param"
-#endif
-%SKIP_BEGIN%
-*/
-
-//%DNL%//  this is commented out if "--skip-param" was set
-#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
-#error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
-#endif
-
-//%DNL%//  this is commented out if "--skip-param" was set
-#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
-#error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
-#endif
-
-//%DNL%//  this is commented out if "--skip-param" was set
-#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-#define GDO_HAS_MSG_CB
-#endif
-%SKIP_END%
-
-
 
 /*****************************************************************************/
 /*                          begin of namespace                               */
@@ -256,12 +224,10 @@ public:
 
 private:
 
-%SKIP_BEGIN%
 #ifdef GDO_HAS_MSG_CB
     /* function pointer to error message callback */
     static message_callback_t m_message_callback;
 #endif
-%SKIP_END%
 
     std::string m_filename;
     int m_flags = default_flags;
@@ -862,7 +828,6 @@ public:
 #endif //GDO_WINAPI
 
 
-%SKIP_BEGIN%
 #ifdef GDO_HAS_MSG_CB
 
     /* Set a message callback function. */
@@ -879,7 +844,6 @@ public:
     }
 
 #endif //GDO_HAS_MSG_CB
-%SKIP_END%
 
 
 #ifdef GDO_WINAPI
@@ -1000,18 +964,10 @@ public:
 /***************************** end of namespace ******************************/
 
 
-%SKIP_BEGIN%
-#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-%SKIP_END%
-
 /* aliases to raw function pointers */
-#if !defined(GDO_NOALIAS)
+#if !defined(GDO_NOALIAS) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%
 #endif // !GDO_NOALIAS
-
-%SKIP_BEGIN%
-#endif // !GDO_WRAP_FUNCTIONS && !GDO_ENABLE_AUTOLOAD
-%SKIP_END%
 
 /* aliases to raw object pointers */
 #if !defined(GDO_NOALIAS)

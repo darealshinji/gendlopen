@@ -639,7 +639,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 /*                                wrap code                                  */
 /*****************************************************************************/
 %SKIP_BEGIN%
-//%DNL%//  comment out this whole "wrap code" section if "--skip-param" was set
+//%DNL%//  comment out this whole section if "--skip-param" was set
 
 /* autoload functions */
 #ifdef GDO_ENABLE_AUTOLOAD
