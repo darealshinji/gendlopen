@@ -168,7 +168,7 @@ GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with
     GDO_WRAP_FUNCTIONS) using this macro.
 
-GDO_NOALIAS
+GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names. Use with care.
 
 
@@ -965,12 +965,12 @@ public:
 
 
 /* aliases to raw function pointers */
-#if !defined(GDO_NOALIAS) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
+#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%
-#endif // !GDO_NOALIAS
+#endif
 
 /* aliases to raw object pointers */
-#if !defined(GDO_NOALIAS)
+#if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%
-#endif // !GDO_NOALIAS
+#endif
 
