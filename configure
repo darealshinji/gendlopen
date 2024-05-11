@@ -2,6 +2,11 @@
 
 gendlopen="\$(DEF_GENDLOPEN)"
 
+opt_gcc="-O2"
+opt_ld=""
+opt_msc="-O2"
+opt_link=""
+
 cflags=":"
 cxxflags=":"
 cppflags=":"
@@ -375,6 +380,9 @@ append extra flags:
 set flags for GTK2 and GLib headers (ignored for win32):
     gtk-cflags=..  glib-cflags=..
 
+optimizing build type:
+    opt=[release|debug|minsize]
+
 set ar tool:
     ar=..
 
@@ -415,6 +423,7 @@ EOL
     xcxxflags=*)    xcxxflags="${i#*=}";;
     xcppflags=*)    xcppflags="${i#*=}";;
     xldflags=*)     xldflags="${i#*=}";;
+    opt=*)          opt="${i#*=}";;
     gtk-cflags=*)   gtk_cflags="${i#*=}";;
     glib-cflags=*)  glib_cflags="${i#*=}";;
 
@@ -432,6 +441,24 @@ EOL
         ;;
 esac
 done
+
+# optimization flags
+if [ "x$opt" = "xrelease" ]; then
+    opt_gcc="-O3 -ffunction-sections -fdata-sections"
+    opt_ld="-Wl,--gc-sections -s"
+    opt_msc="-O2"
+    opt_link="-release"
+elif [ "x$opt" = "xdebug" ]; then
+    opt_gcc="-O0 -g"
+    opt_ld=""
+    opt_msc="-Od -g"
+    opt_link="-debug"
+elif [ "x$opt" = "xminsize" ]; then
+    opt_gcc="-Os -ffunction-sections -fdata-sections"
+    opt_ld="-Wl,--gc-sections -s"
+    opt_msc="-Od -g"
+    opt_link="-release"
+fi
 
 
 
@@ -552,13 +579,13 @@ if [ "x$cl" != "x" ]; then
         cppflags="-DWIN32_LEAN_AND_MEAN"
     fi
     if [ "x$cflags" = "x:" ]; then
-        cflags="-W3 -O2"
+        cflags="-W3 $opt_msc"
     fi
     if [ "x$cxxflags" = "x:" ]; then
-        cxxflags="-W3 -O2 -EHsc"
+        cxxflags="-W3 $opt_msc -EHsc"
     fi
     if [ "x$ldflags" = "x:" ]; then
-        ldflags="-subsystem:console -release"
+        ldflags="-subsystem:console $opt_link"
     fi
 
     if [ "x$check_std" = "xyes" ]; then
@@ -614,6 +641,26 @@ else
         sysroot_inc="-I$sysroot/include"
     fi
 
+    if [ "x$cflags" = "x:" ]; then
+        cflags="-Wall -Wextra $opt_gcc"
+    fi
+    if [ "x$cxxflags" = "x:" ]; then
+        cxxflags="-Wall -Wextra $opt_gcc"
+    fi
+    if [ "x$ldflags" = "x:" ]; then
+        ldflags="$opt_ld"
+    fi
+
+    if [ "x$check_std" = "xyes" ]; then
+        check_std_version
+        check_cxx_flag 1 "-std=c++11"
+        test_cxx11="$flag"
+    fi
+
+    if [ "x$ld" != "x:" ]; then
+        link_flag="-fuse-ld=$ld"
+    fi
+
     if [ "$target" = "mingw" ]; then
         # MinGW
         win32="yes"
@@ -621,25 +668,6 @@ else
 
         if [ "x$cppflags" = "x:" ]; then
             cppflags="-DWIN32_LEAN_AND_MEAN"
-        fi
-        if [ "x$cflags" = "x:" ]; then
-            cflags="-Wall -Wextra -O2"
-        fi
-        if [ "x$cxxflags" = "x:" ]; then
-            cxxflags="-Wall -Wextra -O2"
-        fi
-        if [ "x$ldflags" = "x:" ]; then
-            ldflags=""
-        fi
-
-        if [ "x$check_std" = "xyes" ]; then
-            check_std_version
-            check_cxx_flag 1 "-std=c++11"
-            test_cxx11="$flag"
-        fi
-
-        if [ "x$ld" != "x:" ]; then
-            link_flag="-fuse-ld=$ld"
         fi
 
         exeext=".exe"
@@ -650,21 +678,6 @@ else
         # *nix
         if [ "x$cppflags" = "x:" ]; then
             cppflags=""
-        fi
-        if [ "x$cflags" = "x:" ]; then
-            cflags="-Wall -Wextra -O2"
-        fi
-        if [ "x$cxxflags" = "x:" ]; then
-            cxxflags="-Wall -Wextra -O2"
-        fi
-        if [ "x$ldflags" = "x:" ]; then
-            ldflags=""
-        fi
-
-        if [ "x$check_std" = "xyes" ]; then
-            check_std_version
-            check_cxx_flag 1 "-std=c++11"
-            test_cxx11="$flag"
         fi
 
         check_libdl
