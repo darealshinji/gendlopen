@@ -59,11 +59,11 @@ namespace /* anonymous */
         return 0;
     }
 
-    /* check for a "%SKIP_BEGIN%" or "%SKIP_END%" line and
+    /* check for a "%SKIP_PARAM_UNUSED_BEGIN%" or "%SKIP_PARAM_UNUSED_END%" line and
      * return either SKIP_BEGIN, SKIP_END or -1 if nothing was found */
     int check_skip_keyword(const std::string &line)
     {
-        const std::regex reg(R"(^\s*?%SKIP_(BEGIN|END)%\s*?$)");
+        const std::regex reg(R"(^\s*?%SKIP_PARAM_UNUSED_(BEGIN|END)%\s*?$)");
         std::smatch m;
 
         if (!std::regex_match(line, m, reg) || m.size() != 2) {

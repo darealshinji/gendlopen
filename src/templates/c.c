@@ -638,7 +638,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-%SKIP_BEGIN%
+%SKIP_PARAM_UNUSED_BEGIN%
 //%DNL%//  comment out this whole section if "--skip-param" was set
 
 /* autoload functions */
@@ -744,5 +744,5 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
-%SKIP_END%
+%SKIP_PARAM_UNUSED_END%
 /***************************** end of wrap code ******************************/

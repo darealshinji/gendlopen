@@ -434,9 +434,9 @@ int main(int argc, char **argv)
     If a line ends on `@' it will be processed together with the next line as if
     there was no line break, but the line break will still appear in the output.
 
-    All lines between a line `%SKIP_BEGIN%' and a line `%SKIP_END%' will be
-    commented out if `--skip-param' was passed. This is used to skip
-    code that would otherwise require parameter names.
+    All lines between a line `%SKIP_PARAM_UNUSED_BEGIN%' and a line
+    `%SKIP_PARAM_UNUSED_END%' will be commented out if `--skip-param' was
+    passed. This will skip code that would otherwise require parameter names.
 
     Any line that contains `%DNL%' ("Do Not Lex") will be skipped entirely.
     This can be used for meta comments. This is done AFTER glueing lines that

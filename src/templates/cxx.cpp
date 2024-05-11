@@ -8,7 +8,7 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 
-%SKIP_BEGIN%
+%SKIP_PARAM_UNUSED_BEGIN%
 //%DNL%//  comment out this whole section if "--skip-param" was set
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
@@ -89,4 +89,4 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 }
 
 #endif //GDO_ENABLE_AUTOLOAD
-%SKIP_END%
+%SKIP_PARAM_UNUSED_END%
