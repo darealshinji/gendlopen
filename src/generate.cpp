@@ -45,18 +45,29 @@
 namespace /* anonymous */
 {
 
-inline struct tm *localtime_wrapper(const time_t *timep, struct tm *tm)
-{
-#ifdef _WIN32
-    return (::localtime_s(tm, timep) == 0) ? tm : nullptr;
-#else
-    return ::localtime_r(timep, tm);
-#endif
-}
+const char * const extern_c_begin =
+    "#ifdef __cplusplus\n"
+    "extern \"C\" {\n"
+    "#endif\n\n";
+
+const char * const extern_c_end =
+    "\n"
+    "#ifdef __cplusplus\n"
+    "} /* extern \"C\" */\n"
+    "#endif\n";
 
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char ** &argv)
 {
+    auto localtime_wrapper = [] (const time_t *timep, struct tm *tm) -> struct tm *
+    {
+#ifdef _WIN32
+        return (::localtime_s(tm, timep) == 0) ? tm : nullptr;
+#else
+        return ::localtime_r(timep, tm);
+#endif
+    };
+
     std::string line = "//";
     std::stringstream out;
 
@@ -97,18 +108,44 @@ std::string create_note(int &argc, char ** &argv)
 }
 
 /* define default library name */
-void print_deflib_defines(
+void print_default_libname(
     cio::ofstream &out,
     const std::string &pfx,
     const std::string &lib_a,
     const std::string &lib_w)
 {
-    out << "#ifndef " << pfx << "_DEFAULT_LIBA\n";
-    out << "#define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n";
-    out << "#endif\n";
-    out << "#ifndef " << pfx << "_DEFAULT_LIBW\n";
-    out << "#define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n";
-    out << "#endif\n\n";
+    if (!lib_a.empty() && !lib_w.empty()) {
+        out << "/* default library */\n";
+        out << "#ifndef " << pfx << "_DEFAULT_LIBA\n";
+        out << "#define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n";
+        out << "#endif\n";
+        out << "#ifndef " << pfx << "_DEFAULT_LIBW\n";
+        out << "#define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n";
+        out << "#endif\n\n";
+    }
+}
+
+/* extra defines */
+void print_extra_defines(cio::ofstream &out, const std::string &defs)
+{
+    if (!defs.empty()) {
+        out << "/* extra defines */\n";
+        out << defs;
+        out << '\n';
+    }
+}
+
+/* extra includes */
+void print_includes(cio::ofstream &out, const vstring_t &incs)
+{
+    if (!incs.empty()) {
+        out << "/* extra headers */\n";
+
+        for (auto &e : incs) {
+            out << "#include " << e << '\n';
+        }
+        out << '\n';
+    }
 }
 
 /* open file for writing */
@@ -146,6 +183,22 @@ void create_template_data(
 {
     switch (format)
     {
+    default:
+        /* FALLTHROUGH */
+
+    case output::c:
+        {
+            header_data += common_header_data;
+            header_data += c_header_data;
+
+            if (separate) {
+                body_data = c_body_data;
+            } else {
+                header_data += c_body_data;
+            }
+        }
+        break;
+
     case output::cxx:
         {
             header_data += common_header_data;
@@ -157,28 +210,15 @@ void create_template_data(
                 header_data += cxx_body_data;
             }
         }
-        return;
+        break;
 
     case output::minimal:
         header_data = min_c_header_data;
-        return;
+        break;
 
     case output::minimal_cxx:
         header_data = min_cxx_header_data;
-        return;
-
-    default:
         break;
-    }
-
-    /* output::c */
-    header_data += common_header_data;
-    header_data += c_header_data;
-
-    if (separate) {
-        body_data = c_body_data;
-    } else {
-        header_data += c_body_data;
     }
 }
 
@@ -216,13 +256,13 @@ bool gendlopen::tokenize_input()
 
     /* Clang AST */
     if (line.starts_with("TranslationUnitDecl 0x")) {
-        /* excluding flags/settings */
+        /* flags/settings that exclude each other */
         if (m_ast_all_symbols && (!m_symbols.empty() || !m_prefix.empty())) {
             std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
             return false;
         }
 
-        /* no symbols */
+        /* no symbols provided */
         if (!m_ast_all_symbols && m_symbols.empty() && m_prefix.empty()) {
             std::cerr << "error: Clang AST: no symbols provided to look for; use `--symbol' and/or `--prefix'" << std::endl;
             std::cerr << "You can also pass `--ast-all-symbols' if you REALLY want to use all symbols." << std::endl;
@@ -259,7 +299,6 @@ int gendlopen::parse_custom_template(const std::string &ofile)
     ifs.close();
 
     /* output file */
-
     if (!open_ofstream(out, ofile, m_force)) {
         return 1;
     }
@@ -272,37 +311,37 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 /* generate output */
 int gendlopen::generate(const std::string ifile, const std::string ofile, const std::string name)
 {
+    std::filesystem::path ofhdr, ofbody;
+    std::string header_data, body_data, header_name;
+    cio::ofstream out, out_body;
+
+    /* set member variables */
     m_ifile = ifile;
+    m_name_upper = utils::convert_to_upper(name);
+    m_name_lower = utils::convert_to_lower(name);
 
     /* tokenize */
     if (!tokenize_input()) {
         return 1;
     }
 
-    /* name used on variables and macros */
-    m_name_upper = utils::convert_to_upper(name);
-    m_name_lower = utils::convert_to_lower(name);
-
     /* read and parse custom template (`--format' will be ignored) */
     if (!m_custom_template.empty()) {
         return parse_custom_template(ofile);
     }
 
-    /* is output C or C++? */
-    const bool is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
-
     /* output filename */
-    std::filesystem::path ofhdr(ofile);
-    auto ofbody = ofhdr;
+    ofbody = ofhdr = ofile;
+
     const bool use_stdout = (ofile == "-");
 
-    if (use_stdout || (m_separate && !separate_is_supported(m_format))) {
+    if (use_stdout || !separate_is_supported()) {
         m_separate = false;
     }
 
     /* rename file extensions only if we save into separate files */
     if (m_separate) {
-        if (is_c) {
+        if (output_is_c()) {
             ofhdr.replace_extension(".h");
             ofbody.replace_extension(".c");
         } else {
@@ -312,11 +351,9 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
     }
 
     /* create header filename and header guard */
-    std::string header_name;
-
     if (use_stdout) {
         header_name = name;
-        header_name += is_c ? ".h" : ".hpp";
+        header_name += output_is_c() ? ".h" : ".hpp";
     } else {
         header_name = ofhdr.filename().string();
     }
@@ -326,72 +363,35 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     /************** header begin ***************/
 
-    /* open file */
-    cio::ofstream out;
-
     if (!open_ofstream(out, ofhdr.string(), m_force)) {
         return 1;
     }
 
-    /* notification + license text */
     std::string note = create_note(*m_argc, *m_argv);
-    out << note;
 
-    /* header guard begin */
+    out << note;
     out << "#ifndef _" << header_guard << "_\n";
     out << "#define _" << header_guard << "_\n\n";
 
-    /* insert filename macros before defines and headers */
+    /* insert filename macros BEFORE defines and headers */
     out << filename_macros_data << '\n';
 
-    /* extra defines */
-    if (!m_defines.empty()) {
-        out << "/* extra defines */\n";
-        out << m_defines;
-        out << '\n';
+    print_extra_defines(out, m_defines);
+    print_default_libname(out, m_name_upper, m_deflib_a, m_deflib_w);
+    print_includes(out, m_includes);
+
+    if (output_is_c()) {
+        out << extern_c_begin;
     }
 
-    /* default library name */
-    if (!m_deflib_a.empty() && !m_deflib_w.empty()) {
-        out << "/* default library */\n";
-        print_deflib_defines(out, m_name_upper, m_deflib_a, m_deflib_w);
-    }
-
-    /* extra includes */
-    if (!m_includes.empty()) {
-        out << "/* extra headers */\n";
-
-        for (auto &e : m_includes) {
-            out << "#include " << e << '\n';
-        }
-        out << '\n';
-    }
-
-    /* extern "C" begin */
-    if (is_c) {
-        out << "#ifdef __cplusplus\n";
-        out << "extern \"C\" {\n";
-        out << "#endif\n\n";
-    }
-
-    /* create template code */
-    std::string header_data, body_data;
     create_template_data(header_data, body_data, m_format, m_separate);
-
-    /* parse header template */
     out << parse(header_data);
 
-    /* extern "C" end */
-    if (is_c) {
-        out << '\n';
-        out << "#ifdef __cplusplus\n";
-        out << "} /* extern \"C\" */\n";
-        out << "#endif\n";
+    if (output_is_c()) {
+        out << extern_c_end;
     }
 
-    /* header guard end */
-    out << '\n';
-    out << "#endif //_" << header_guard << "_\n";
+    out << "\n#endif //_" << header_guard << "_\n";
 
     out.close();
 
@@ -399,12 +399,7 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
         return 0;
     }
 
-    /************** header end ***************/
-
-
-    /* body data */
-
-    cio::ofstream out_body;
+    /************** body data ***************/
 
     if (!open_ofstream(out_body, ofbody.string(), m_force)) {
         return 1;
