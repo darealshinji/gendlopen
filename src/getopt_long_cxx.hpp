@@ -70,7 +70,6 @@ private:
 
     int m_argc;
     char **m_argv;
-    const char *m_input = NULL;
 
     std::vector<struct args> m_args;
     struct option *m_longopts = NULL;
