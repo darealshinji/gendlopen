@@ -57,7 +57,7 @@ const char * const extern_c_end =
     "#endif\n";
 
 /* create a note to put at the beginning of the output */
-std::string create_note(int &argc, char ** &argv)
+std::string create_note(int &argc, char **&argv)
 {
     auto localtime_wrapper = [] (const time_t *timep, struct tm *tm) -> struct tm *
     {
@@ -367,11 +367,15 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
         return 1;
     }
 
-    std::string note = create_note(*m_argc, *m_argv);
+    std::string note = create_note(m_argc, m_argv);
 
     out << note;
     out << "#ifndef _" << header_guard << "_\n";
     out << "#define _" << header_guard << "_\n\n";
+
+    if (output_is_c()) {
+        out << extern_c_begin;
+    }
 
     /* insert filename macros BEFORE defines and headers */
     out << filename_macros_data << '\n';
@@ -379,10 +383,6 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
     print_extra_defines(out, m_defines);
     print_default_libname(out, m_name_upper, m_deflib_a, m_deflib_w);
     print_includes(out, m_includes);
-
-    if (output_is_c()) {
-        out << extern_c_begin;
-    }
 
     create_template_data(header_data, body_data, m_format, m_separate);
     out << parse(header_data);

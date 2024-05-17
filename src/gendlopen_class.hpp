@@ -30,8 +30,8 @@ class gendlopen
 {
 private:
 
-    int *m_argc = NULL;
-    char ***m_argv = NULL;
+    int m_argc;
+    char **m_argv;
 
     vstring_t m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
@@ -73,8 +73,7 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int *argc, char ***argv)
-    : m_argc(argc), m_argv(argv)
+    gendlopen(int &argc, char **&argv) : m_argc(argc), m_argv(argv)
     {}
 
     /* d'tor */

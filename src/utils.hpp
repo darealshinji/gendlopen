@@ -34,6 +34,12 @@ namespace utils
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);
 
+/* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
+inline bool prefixed_case(const std::string &str, const std::string &pfx)
+{
+    return (str.size() > pfx.size() && eq_str_case(str.substr(0, pfx.size()), pfx));
+}
+
 /* convert a string to uppercase or lowercase
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
