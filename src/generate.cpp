@@ -59,15 +59,6 @@ const char * const extern_c_end =
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char **&argv)
 {
-    auto localtime_wrapper = [] (const time_t *timep, struct tm *tm) -> struct tm *
-    {
-#ifdef _WIN32
-        return (::localtime_s(tm, timep) == 0) ? tm : nullptr;
-#else
-        return ::localtime_r(timep, tm);
-#endif
-    };
-
     std::string line = "//";
     std::stringstream out;
 
@@ -78,14 +69,18 @@ std::string create_note(int &argc, char **&argv)
     struct tm tm = {};
     time_t t = std::time(nullptr);
 
-    if (localtime_wrapper(&t, &tm))
-    {
-#if !defined(_WIN32)
-        out.imbue(std::locale("C"));
-#endif
+#ifdef _WIN32
+    if (::localtime_s(&tm, &t) == 0) {
         out << "on " << std::put_time(&tm, "%c %Z") << '\n';
         out << "// ";
     }
+#else
+    if (::localtime_r(&t, &tm)) {
+        out.imbue(std::locale("C"));
+        out << "on " << std::put_time(&tm, "%c %Z") << '\n';
+        out << "// ";
+    }
+#endif
 
     out << "using the following flags:\n\n";
 
