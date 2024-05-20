@@ -80,18 +80,12 @@ private:
         "usage: %s [OPTIONS..]\n"
         "       %s help <option>\n"
         "\n"
-        "Options:\n"
+        "switches:\n"
+        "\n"
+        "  help <option>          print information about <option>\n"
+        "\n"
+        "options:\n"
         "\n";
-
-
-    void throw_if_empty(const char *val, const std::string &msg)
-    {
-        if (!val) {
-            throw error(msg + " == NULL");
-        } else if (*val == 0) {
-            throw error(msg + " is empty");
-        }
-    }
 
 
     /* create option table and optstring */
@@ -144,8 +138,16 @@ private:
     void print_arg_help(const struct args &arg)
     {
         /* options */
-        std::string line = "  -";
-        line += arg.val_short;
+        std::string line;
+
+        if (arg.val_short > ' ') {
+            /* short option is a printable character */
+            line = "  -";
+            line += arg.val_short;
+        } else {
+            line = "    ";
+        }
+
         line += " --";
         line += arg.val_long;
 
@@ -183,15 +185,22 @@ private:
     void print_arg_more_help(const struct args &arg)
     {
         /* print first line with options */
-        std::string line = "  -";
-        line += arg.val_short;
+        std::string line;
 
-        if (arg.val_arg && *arg.val_arg) {
-            line += ' ';
-            line += arg.val_arg;
+        if (arg.val_short > ' ') {
+            /* short option is a printable character */
+            line = "  -";
+            line += arg.val_short;
+
+            if (arg.val_arg && *arg.val_arg) {
+                line += ' ';
+                line += arg.val_arg;
+            }
+            line += ", --";
+        } else {
+            line = "  --";
         }
 
-        line += ", --";
         line += arg.val_long;
 
         if (arg.val_arg && *arg.val_arg) {
@@ -255,6 +264,14 @@ public:
     /* add option */
     void add(const char *val_long, char val_short, const char *val_arg, const char *help, const char *more_help)
     {
+        auto throw_if_empty = [] (const char *val, const std::string &msg) {
+            if (!val) {
+                throw error(msg + " == NULL");
+            } else if (*val == 0) {
+                throw error(msg + " is empty");
+            }
+        };
+
         throw_if_empty(val_long, "val_long");
         throw_if_empty(help, "help");
         throw_if_empty(more_help, "more_help");

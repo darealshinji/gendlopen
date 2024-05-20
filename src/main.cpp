@@ -34,22 +34,22 @@
 
 /* short option values */
 enum {
-    ARG_HELP        = 'h',
-    ARG_FULL_HELP   = 'H',
-    ARG_INPUT       = 'i',
-    ARG_OUTPUT      = 'o',
-    ARG_NAME        = 'n',
-    ARG_FORMAT      = 'F',
-    ARG_TEMPLATE    = 't',
-    ARG_LIBRARY     = 'l',
-    ARG_INLCUDE     = 'I',
+    ARG_AST_ALL_SYM = 1,
     ARG_DEFINE      = 'D',
-    ARG_PREFIX      = 'P',
-    ARG_SYMBOL      = 'S',
-    ARG_SEPARATE    = 's',
     ARG_FORCE       = 'f',
-    ARG_SKIP_PARAM  = 'x',
-    ARG_AST_ALL_SYM = 'a'
+    ARG_FORMAT      = 'F',
+    ARG_FULL_HELP   = 2,
+    ARG_HELP        = 'h',
+    ARG_INLCUDE     = 'I',
+    ARG_INPUT       = 'i',
+    ARG_LIBRARY     = 'l',
+    ARG_NAME        = 'n',
+    ARG_OUTPUT      = 'o',
+    ARG_PREFIX      = 'P',
+    ARG_SEPARATE    = 's',
+    ARG_SKIP_PARAM  = 3,
+    ARG_SYMBOL      = 'S',
+    ARG_TEMPLATE    = 4
 };
 
 
@@ -548,7 +548,7 @@ int main(int argc, char **argv)
             break;
 
         case '?':
-            /* getopt_long() error */
+            std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
             return 1;
 
         default:
