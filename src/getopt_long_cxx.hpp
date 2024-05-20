@@ -84,6 +84,7 @@ private:
         "\n"
         "  help <option>          print information about <option>\n"
         "\n"
+        "\n"
         "options:\n"
         "\n";
 
@@ -185,11 +186,11 @@ private:
     void print_arg_more_help(const struct args &arg)
     {
         /* print first line with options */
-        std::string line;
+        std::string line = "\n  ";
 
         if (arg.val_short > ' ') {
             /* short option is a printable character */
-            line = "  -";
+            line += '-';
             line += arg.val_short;
 
             if (arg.val_arg && *arg.val_arg) {
@@ -198,7 +199,7 @@ private:
             }
             line += ", --";
         } else {
-            line = "  --";
+            line += "--";
         }
 
         line += arg.val_long;

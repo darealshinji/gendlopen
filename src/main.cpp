@@ -473,19 +473,19 @@ int main(int argc, char **argv)
     /* initialize class */
     gendlopen gdo(argc, argv);
 
-    int ret;
+    int ret, help = 0;
 
     while (opt.getopt(ret))
     {
         switch (ret)
         {
         case ARG_HELP:
-            opt.print_help();
-            return 0;
+            help = ARG_HELP;
+            break;
 
         case ARG_FULL_HELP:
-            opt.print_full_help();
-            return 0;
+            help = ARG_FULL_HELP;
+            break;
 
         case ARG_INPUT:
             input = opt.arg();
@@ -555,6 +555,15 @@ int main(int argc, char **argv)
             fprintf(stderr, "error: getopt_long() returned character code 0x%x\n", ret);
             return 1;
         }
+    }
+
+    /* print help */
+    if (help == ARG_HELP) {
+        opt.print_help();
+        return 0;
+    } else if (help == ARG_FULL_HELP) {
+        opt.print_full_help();
+        return 0;
     }
 
     /* input is required */
