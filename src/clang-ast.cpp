@@ -237,7 +237,8 @@ bool gendlopen::clang_ast(cio::ifstream &ifs)
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {
-        std::cerr << "error: no function or object prototypes found in file: " << m_ifile << std::endl;
+        std::cerr << "error: no function or object prototypes found in file: ";
+        utils::print_filename(m_ifile, true);
         return false;
     }
 

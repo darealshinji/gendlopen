@@ -466,7 +466,8 @@ int main(int argc, char **argv)
         }
     }
     catch (const getopt_long_cxx::error &e) {
-        std::cerr << argv[0] << ": " << e.what() << std::endl;
+        utils::print_filename(argv[0], false);
+        std::cerr << ": " << e.what() << std::endl;
         return 1;
     }
 
@@ -548,7 +549,9 @@ int main(int argc, char **argv)
             break;
 
         case '?':
-            std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
+            std::cerr << "Try '";
+            utils::print_filename(argv[0], false);
+            std::cerr << " --help' for more information." << std::endl;
             return 1;
 
         default:

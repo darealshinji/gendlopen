@@ -353,8 +353,8 @@ bool has_duplicate_symbols(const vproto_t &proto, const vproto_t &objs, const st
     auto it = std::ranges::adjacent_find(list);
 
     if (it != list.end()) {
-        std::cerr << "error: multiple definitions of symbol `" << *it
-            << "' found in file: " << ifile << std::endl;
+        std::cerr << "error: multiple definitions of symbol `" << *it << "' found in file: ";
+        utils::print_filename(ifile, true);
         return true;
     }
 
@@ -438,7 +438,8 @@ bool gendlopen::tokenize(cio::ifstream &ifs)
 
     /* nothing found? */
     if (tmp_proto.empty() && tmp_objs.empty()) {
-        std::cerr << "error: no function or object prototypes found in file: " << m_ifile << std::endl;
+        std::cerr << "error: no function or object prototypes found in file: ";
+        utils::print_filename(m_ifile, true);
         return false;
     }
 

@@ -23,8 +23,66 @@
  */
 
 #include <string>
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+#include <stdio.h>
+#include <wchar.h>
+
 #include "gendlopen.hpp"
 
+
+/* print filename to STDERR;
+ * try not to mess up multibyte characters on Windows */
+void utils::print_filename(const std::string &name, bool newline)
+{
+#ifdef _WIN32
+    const wchar_t *fmt = newline ? L"%ls\n" : L"%ls";
+    wchar_t *wstr = convert_str_to_wcs(name.c_str());
+
+    if (wstr) {
+        int oldmode = _setmode(_fileno(stderr), _O_U16TEXT);
+        fwprintf(stderr, fmt, wstr);
+        _setmode(_fileno(stderr), oldmode);
+        delete[] wstr;
+    }
+#else
+    const char *fmt = newline ? "%s\n" : "%s";
+    fprintf(stderr, fmt, name.c_str());
+#endif
+
+    fflush(stderr);
+}
+
+/* convert string to wstring */
+wchar_t *utils::convert_str_to_wcs(const char *str)
+{
+#ifdef _WIN32
+    size_t len, n;
+    wchar_t *buf;
+
+    if (!str) return NULL;
+
+    if (::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+        return NULL;
+    }
+
+    buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+    if (!buf) return NULL;
+
+    if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
+        delete[] buf;
+        return NULL;
+    }
+
+    buf[len] = '\0';
+    return buf;
+#else
+    (void) str;
+    return NULL;
+#endif
+}
 
 /* case-insensitive string comparison (ignoring current locale) */
 bool utils::eq_str_case(const std::string &str1, const std::string &str2)

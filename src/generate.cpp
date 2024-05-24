@@ -159,7 +159,8 @@ bool open_ofstream(cio::ofstream &ofs, const std::string &ofile, bool force)
 
         /* check symlink and not its target */
         if (fs::exists(fs::symlink_status(p))) {
-            std::cerr << "error: file already exists: " << ofile << std::endl;
+            std::cerr << "error: file already exists: ";
+            utils::print_filename(ofile, true);
             return false;
         }
     }
@@ -168,7 +169,8 @@ bool open_ofstream(cio::ofstream &ofs, const std::string &ofile, bool force)
     ofs.open(ofile);
 
     if (!ofs.is_open()) {
-        std::cerr << "error: failed to open file for writing: " << ofile << std::endl;
+        std::cerr << "error: failed to open file for writing: ";
+        utils::print_filename(ofile, true);
         return false;
     }
 
@@ -234,13 +236,15 @@ bool gendlopen::tokenize_input()
 
     /* open file for reading */
     if (!ifs.open(m_ifile)) {
-        std::cerr << "error: failed to open file for reading: " << m_ifile << std::endl;
+        std::cerr << "error: failed to open file for reading: ";
+        utils::print_filename(m_ifile, true);
         return false;
     }
 
     /* check first line */
     if (!ifs.peek_line(line)) {
-        std::cerr << "error: failed to read first line from file: " << m_ifile << std::endl;
+        std::cerr << "error: failed to read first line from file: ";
+        utils::print_filename(m_ifile, true);
         return false;
     }
 
@@ -288,7 +292,8 @@ int gendlopen::parse_custom_template(const std::string &ofile)
     std::ifstream ifs(m_custom_template, std::ios::in | std::ios::binary);
 
     if (!ifs.is_open()) {
-        std::cerr << "error: failed to open file for reading: " << m_custom_template << std::endl;
+        std::cerr << "error: failed to open file for reading: ";
+        utils::print_filename(m_custom_template, true);
         return 1;
     }
 
