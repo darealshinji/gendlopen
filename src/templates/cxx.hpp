@@ -250,21 +250,29 @@ private:
     std::string wstr_to_str(const std::wstring &wstr)
     {
         size_t len, n;
-        std::string buf;
+        char *buf;
+        std::string str;
 
-        if (wstr.empty() || ::wcstombs_s(&len, nullptr, 0, wstr.c_str(), 0) != 0 ||
-            len == 0)
-        {
+        if (wstr.empty()) {
             return {};
         }
 
-        buf.reserve(len+1);
-
-        if (::wcstombs_s(&n, &buf[0], len+1, wstr.c_str(), len) != 0 || n == 0) {
+        if (::wcstombs_s(&len, nullptr, 0, wstr.c_str(), 0) != 0 || len == 0) {
             return {};
         }
 
-        return buf;
+        buf = new char[len + 1];
+        if (!buf) return {};
+
+        if (::wcstombs_s(&n, buf, len+1, wstr.c_str(), len) != 0 || n == 0) {
+            return {};
+        }
+
+        buf[len] = '\0';
+        str = buf;
+        delete[] buf;
+
+        return str;
     }
 
 
@@ -272,21 +280,30 @@ private:
     std::wstring str_to_wstr(const std::string &str)
     {
         size_t len, n;
-        std::wstring buf;
+        wchar_t *buf;
+        std::wstring wstr;
 
-        if (str.empty() || ::mbstowcs_s(&len, nullptr, 0, str.c_str(), 0) != 0
-            || len == 0)
-        {
+        if (str.empty()) {
             return {};
         }
 
-        buf.reserve(len+1);
-
-        if (::mbstowcs_s(&n, &buf[0], len+1, str.c_str(), len) != 0 || n == 0) {
+        if (::mbstowcs_s(&len, nullptr, 0, str.c_str(), 0) != 0 || len == 0) {
             return {};
         }
 
-        return buf;
+        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+        if (!buf) return {};
+
+        if (::mbstowcs_s(&n, buf, len+1, str.c_str(), len) != 0 || n == 0) {
+            delete[] buf;
+            return {};
+        }
+
+        buf[len] = L'\0';
+        wstr = buf;
+        delete[] buf;
+
+        return wstr;
     }
 
 
