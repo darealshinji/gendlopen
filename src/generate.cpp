@@ -41,6 +41,8 @@
 #include "template.h"
 #include "gendlopen.hpp"
 
+namespace fs = std::filesystem;
+
 
 namespace /* anonymous */
 {
@@ -146,20 +148,24 @@ void print_includes(cio::ofstream &out, const vstring_t &incs)
 /* open file for writing */
 bool open_ofstream(cio::ofstream &ofs, const std::string &ofile, bool force)
 {
-    /* check if file already exists by opening it for reading */
-    if (!force && ofile != "-") {
-        ofs.open(ofile);
+    /* output is not STDOUT */
+    if (ofile != "-") {
+        fs::path p = ofile;
 
-        if (ofs.is_open()) {
+        /* delete file to prevent writing data into symlink target */
+        if (force) {
+            fs::remove(p);
+        }
+
+        /* check symlink and not its target */
+        if (fs::exists(fs::symlink_status(p))) {
             std::cerr << "error: file already exists: " << ofile << std::endl;
             return false;
         }
-
-        ofs.close();
     }
 
-    /* open file for writing and truncate it */
-    ofs.open(ofile, std::ios::out | std::ios::binary | std::ios::trunc);
+    /* open file for writing */
+    ofs.open(ofile);
 
     if (!ofs.is_open()) {
         std::cerr << "error: failed to open file for writing: " << ofile << std::endl;

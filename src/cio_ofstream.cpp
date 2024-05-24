@@ -38,6 +38,8 @@ ofstream::~ofstream()
 
 bool ofstream::open(const std::string &file, std::ios::openmode mode)
 {
+    close();
+
     if (file == "-") {
         /* STDOUT */
         m_stdout = true;

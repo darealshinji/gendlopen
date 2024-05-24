@@ -48,22 +48,27 @@ bool ifstream::open(const std::string &file, std::ios::openmode mode)
         m_ifs.open(file.c_str(), mode);
     }
 
-    /* clear buffer */
-    m_buf.clear();
-
     return is_open();
 }
 
 bool ifstream::is_open() const
 {
     if (!m_buf.empty()) {
+        /* still data in buffer */
         return true;
     }
     return m_stdin ? true : m_ifs.is_open();
 }
 
-void ifstream::close() {
-    if (m_ifs.is_open()) m_ifs.close();
+void ifstream::close()
+{
+    /* clear buffer */
+    m_buf.clear();
+
+    /* close stream */
+    if (m_ifs.is_open()) {
+        m_ifs.close();
+    }
 }
 
 bool ifstream::get(char &c)
