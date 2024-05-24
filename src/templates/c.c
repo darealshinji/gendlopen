@@ -595,6 +595,8 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
 
+    //fprintf(stderr, "DEBUG: using dlinfo()\n");
+
     if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         gdo_save_dlerror();
         return NULL;
@@ -604,6 +606,8 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #else
     /* use dladdr() to get the library path from a symbol pointer */
     char *fname;
+
+    //fprintf(stderr, "DEBUG: using dladdr()\n");
 
     if (gdo_no_symbols_loaded()) {
         gdo_save_to_errbuf("no symbols were loaded");
