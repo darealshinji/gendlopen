@@ -785,7 +785,8 @@ fi
 
 # output
 
-cat <<EOF > config.h
+#cat <<EOF > config.h
+cat <<EOF > /dev/null
 /* whether dlinfo(3) is available */
 ${xhave_dlinfo}#ifndef HAVE_DLINFO
 ${xhave_dlinfo}#define HAVE_DLINFO 1

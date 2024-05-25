@@ -571,7 +571,8 @@ int main(int argc, char **argv)
 
     /* input is required */
     if (!input) {
-        std::cerr << argv[0] << ": option '--input' is required" << std::endl;
+        utils::print_filename(argv[0], false);
+        std::cerr << ": option '--input' is required" << std::endl;
         return 1;
     }
 
