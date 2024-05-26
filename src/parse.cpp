@@ -238,7 +238,7 @@ std::string gendlopen::parse(std::string &data)
         int skip = check_skip_keyword(line);
 
         if (skip == SKIP_BEGIN) {
-            /* set as "true" if "--skip-parameter-names" was given,
+            /* set as "true" if "--skip-param" was given,
              * otherwise set as false and nothing is commented out */
             comment_out = m_skip_parameter_names;
             line.clear();

@@ -131,7 +131,7 @@ bool get_parameter_names(proto_t &proto)
                 {
                     std::cerr << "error: a parameter name is missing: "
                         << proto.symbol << '(' << proto.args << ");" << std::endl;
-                    std::cerr << "hint: try again with `--skip-parameter-names'" << std::endl;
+                    std::cerr << "hint: try again with `--skip-param'" << std::endl;
                     return false;
                 }
 
