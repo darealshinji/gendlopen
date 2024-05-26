@@ -2,6 +2,7 @@
 #define _GENDLOPEN_HPP_
 
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <string>

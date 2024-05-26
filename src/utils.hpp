@@ -32,10 +32,13 @@ namespace utils
 {
 
 /* print filename to STDERR */
-void print_filename(const std::string &name, bool newline);
+void print_filename(const std::filesystem::path &path, bool newline);
+void print_filename(const char *name, bool newline);
 
-/* string to wstring */
-wchar_t *convert_str_to_wcs(const char *str);
+inline void print_filename(const std::string &name, bool newline)
+{
+    print_filename(name.c_str(), newline);
+}
 
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);

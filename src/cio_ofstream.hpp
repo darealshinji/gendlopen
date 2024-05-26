@@ -29,6 +29,8 @@
 namespace cio
 {
 
+/* wrapper class to enable writing output to
+ * a file or std::cout using the same object */
 class ofstream
 {
 private:
@@ -41,8 +43,8 @@ public:
     ofstream();
     virtual ~ofstream();
 
-    /* enable binary mode by default because of Windows */
-    bool open(const std::string &file, std::ios::openmode mode = std::ios::out | std::ios::binary);
+    bool open(const std::filesystem::path &path);
+    bool open(const std::string &file);
 
     bool is_open() const;
     void close();

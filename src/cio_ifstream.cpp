@@ -36,17 +36,24 @@ ifstream::ifstream() : m_stdin(false)
 ifstream::~ifstream()
 {}
 
-bool ifstream::open(const std::string &file, std::ios::openmode mode)
+/* on Windows std::filesystem does the filename conversion for us */
+bool ifstream::open(const std::filesystem::path &path)
 {
     close();
+    m_ifs.open(path, std::ios_base::in | std::ios_base::binary);
 
-    if (file == "-") {
-        /* STDIN */
-        m_stdin = true;
-    } else {
-        /* file */
-        m_ifs.open(file.c_str(), mode);
+    return is_open();
+}
+
+bool ifstream::open(const std::string &file)
+{
+    if (file != "-") {
+        return open(std::filesystem::path(file));
     }
+
+    /* STDIN */
+    close();
+    m_stdin = true;
 
     return is_open();
 }
@@ -69,6 +76,8 @@ void ifstream::close()
     if (m_ifs.is_open()) {
         m_ifs.close();
     }
+
+    m_stdin = false;
 }
 
 bool ifstream::get(char &c)

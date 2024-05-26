@@ -31,7 +31,6 @@ namespace cio
 
 /* wrapper class to enable reading input from
  * a file or std::cin using the same object */
-
 class ifstream
 {
 private:
@@ -45,8 +44,8 @@ public:
     ifstream();
     virtual ~ifstream();
 
-    /* enable binary mode by default because of Windows */
-    bool open(const std::string &file, std::ios::openmode mode = std::ios::in | std::ios::binary);
+    bool open(const std::filesystem::path &path);
+    bool open(const std::string &file);
 
     bool is_open() const;
     void close();

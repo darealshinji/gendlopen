@@ -58,6 +58,7 @@ const char * const extern_c_end =
     "} /* extern \"C\" */\n"
     "#endif\n";
 
+
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char **&argv)
 {
@@ -146,31 +147,28 @@ void print_includes(cio::ofstream &out, const vstring_t &incs)
 }
 
 /* open file for writing */
-bool open_ofstream(cio::ofstream &ofs, const std::string &ofile, bool force)
+bool open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool force)
 {
     /* output is not STDOUT */
-    if (ofile != "-") {
-        fs::path p = ofile;
+    if (opath.compare("-") != 0) {
 
         /* delete file to prevent writing data into symlink target */
         if (force) {
-            fs::remove(p);
+            fs::remove(opath);
         }
 
         /* check symlink and not its target */
-        if (fs::exists(fs::symlink_status(p))) {
+        if (fs::exists(fs::symlink_status(opath))) {
             std::cerr << "error: file already exists: ";
-            utils::print_filename(ofile, true);
+            utils::print_filename(opath, true);
             return false;
         }
     }
 
     /* open file for writing */
-    ofs.open(ofile);
-
-    if (!ofs.is_open()) {
+    if (!ofs.open(opath)) {
         std::cerr << "error: failed to open file for writing: ";
-        utils::print_filename(ofile, true);
+        utils::print_filename(opath, true);
         return false;
     }
 
@@ -284,14 +282,13 @@ bool gendlopen::tokenize_input()
 /* read and parse custom template */
 int gendlopen::parse_custom_template(const std::string &ofile)
 {
+    cio::ifstream ifs;
     cio::ofstream out;
     std::string data;
     char c;
 
-    /* input file */
-    std::ifstream ifs(m_custom_template, std::ios::in | std::ios::binary);
-
-    if (!ifs.is_open()) {
+    /* open file for reading */
+    if (!ifs.open(m_custom_template)) {
         std::cerr << "error: failed to open file for reading: ";
         utils::print_filename(m_custom_template, true);
         return 1;
@@ -317,7 +314,7 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 /* generate output */
 int gendlopen::generate(const std::string ifile, const std::string ofile, const std::string name)
 {
-    std::filesystem::path ofhdr, ofbody;
+    fs::path ofhdr, ofbody;
     std::string header_data, body_data, header_name;
     cio::ofstream out, out_body;
 
@@ -369,7 +366,7 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     /************** header begin ***************/
 
-    if (!open_ofstream(out, ofhdr.string(), m_force)) {
+    if (!open_ofstream(out, ofhdr, m_force)) {
         return 1;
     }
 
@@ -407,7 +404,7 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     /************** body data ***************/
 
-    if (!open_ofstream(out_body, ofbody.string(), m_force)) {
+    if (!open_ofstream(out_body, ofbody, m_force)) {
         return 1;
     }
 

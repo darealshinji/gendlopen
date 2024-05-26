@@ -22,13 +22,13 @@
  * THE SOFTWARE
  */
 
+#include <filesystem>
 #include <string>
 #include <stdio.h>
 #include <wchar.h>
-#if defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MSYS__)
+#ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
-#define WCHAR_FILENAME 1
 #endif
 
 #include "gendlopen.hpp"
@@ -36,52 +36,46 @@
 
 /* print filename to STDERR;
  * try not to mess up multibyte characters on Windows */
-void utils::print_filename(const std::string &name, bool newline)
-{
-#ifdef WCHAR_FILENAME
-    const wchar_t *fmt = newline ? L"%ls\n" : L"%ls";
-    wchar_t *wstr = convert_str_to_wcs(name.c_str());
 
-    if (wstr) {
-        int oldmode = _setmode(_fileno(stderr), _O_U16TEXT);
-        fwprintf(stderr, fmt, wstr);
-        _setmode(_fileno(stderr), oldmode);
-        delete[] wstr;
-    }
-#else
-    const char *fmt = newline ? "%s\n" : "%s";
-    fprintf(stderr, fmt, name.c_str());
+void utils::print_filename(const std::filesystem::path &path, bool newline)
+{
+#ifdef _WIN32
+
+#ifdef _MSC_VER
+    int oldmode = _setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
-    fflush(stderr);
+    if (newline) {
+        std::wcerr << path.wstring() << std::endl;
+    } else {
+        std::wcerr << path.wstring() << std::flush;
+    }
+
+#ifdef _MSC_VER
+    _setmode(_fileno(stderr), oldmode);
+#endif
+
+#else
+
+    if (newline) {
+        std::cerr << path.c_str() << std::endl;
+    } else {
+        std::cerr << path.c_str() << std::flush;
+    }
+
+#endif
 }
 
-/* convert string to wstring */
-wchar_t *utils::convert_str_to_wcs(const char *str)
+void utils::print_filename(const char *name, bool newline)
 {
-#ifdef WCHAR_FILENAME
-    size_t len, n;
-    wchar_t *buf;
-
-    if (!str) return NULL;
-
-    if (::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
-        return NULL;
-    }
-
-    buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
-    if (!buf) return NULL;
-
-    if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
-        delete[] buf;
-        return NULL;
-    }
-
-    buf[len] = '\0';
-    return buf;
+#ifdef _WIN32
+    utils::print_filename(std::filesystem::path(name), newline);
 #else
-    (void) str;
-    return NULL;
+    if (newline) {
+        std::cerr << name << std::endl;
+    } else {
+        std::cerr << name << std::flush;
+    }
 #endif
 }
 

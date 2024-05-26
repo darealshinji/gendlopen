@@ -36,17 +36,24 @@ ofstream::ofstream() : m_stdout(false)
 ofstream::~ofstream()
 {}
 
-bool ofstream::open(const std::string &file, std::ios::openmode mode)
+/* on Windows std::filesystem does the filename conversion for us */
+bool ofstream::open(const std::filesystem::path &path)
 {
     close();
+    m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
 
-    if (file == "-") {
-        /* STDOUT */
-        m_stdout = true;
-    } else {
-        /* file */
-        m_ofs.open(file.c_str(), mode);
+    return is_open();
+}
+
+bool ofstream::open(const std::string &file)
+{
+    if (file != "-") {
+        return open(std::filesystem::path(file));
     }
+
+    /* STDOUT */
+    close();
+    m_stdout = true;
 
     return is_open();
 }
@@ -63,6 +70,8 @@ void ofstream::close()
     } else if (m_ofs.is_open()) {
         m_ofs.close();
     }
+
+    m_stdout = false;
 }
 
 } /* namespace cio */
