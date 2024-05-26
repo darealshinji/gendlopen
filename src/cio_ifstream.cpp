@@ -30,7 +30,7 @@
 namespace cio
 {
 
-ifstream::ifstream() : m_stdin(false)
+ifstream::ifstream()
 {}
 
 ifstream::~ifstream()
@@ -42,7 +42,7 @@ bool ifstream::open(const std::filesystem::path &path)
     close();
     m_ifs.open(path, std::ios_base::in | std::ios_base::binary);
 
-    return is_open();
+    return m_ifs.is_open();
 }
 
 bool ifstream::open(const std::string &file)
@@ -53,31 +53,17 @@ bool ifstream::open(const std::string &file)
 
     /* STDIN */
     close();
-    m_stdin = true;
 
-    return is_open();
-}
-
-bool ifstream::is_open() const
-{
-    if (!m_buf.empty()) {
-        /* still data in buffer */
-        return true;
-    }
-    return m_stdin ? true : m_ifs.is_open();
+    return true;
 }
 
 void ifstream::close()
 {
-    /* clear buffer */
     m_buf.clear();
 
-    /* close stream */
     if (m_ifs.is_open()) {
         m_ifs.close();
     }
-
-    m_stdin = false;
 }
 
 bool ifstream::get(char &c)
@@ -87,13 +73,13 @@ bool ifstream::get(char &c)
         c = m_buf.front();
         m_buf.erase(0, 1);
         return true;
-    } else if (m_stdin) {
-        /* STDIN */
-        return std::cin.get(c) ? true : false;
+    } else if (m_ifs.is_open()) {
+        /* file */
+        return m_ifs.get(c) ? true : false;
     }
 
-    /* file */
-    return m_ifs.get(c) ? true : false;
+    /* STDIN */
+    return std::cin.get(c) ? true : false;
 }
 
 int ifstream::peek()
@@ -101,7 +87,8 @@ int ifstream::peek()
     if (!m_buf.empty()) {
         return m_buf.front();
     }
-    return m_stdin ? std::cin.peek() : m_ifs.peek();
+
+    return m_ifs.is_open() ? m_ifs.peek() : std::cin.peek();
 }
 
 bool ifstream::good() const
@@ -109,7 +96,8 @@ bool ifstream::good() const
     if (!m_buf.empty()) {
         return true;
     }
-    return m_stdin ? std::cin.good() : m_ifs.good();
+
+    return m_ifs.is_open() ? m_ifs.good() : std::cin.good();
 }
 
 void ifstream::ignore()
@@ -117,12 +105,12 @@ void ifstream::ignore()
     if (!m_buf.empty()) {
         /* buffer */
         m_buf.erase(0, 1);
-    } else if (m_stdin) {
-        /* STDIN */
-        std::cin.ignore();
-    } else {
+    } else if (m_ifs.is_open()) {
         /* file */
         m_ifs.ignore();
+    } else {
+        /* STDIN */
+        std::cin.ignore();
     }
 }
 
@@ -137,13 +125,13 @@ bool ifstream::getline(std::string &out)
             out.pop_back();
         }
         return true;
-    } else if (m_stdin) {
-        /* STDIN */
-        return std::getline(std::cin, out) ? true : false;
+    } else if (m_ifs.is_open()) {
+        /* file */
+        return std::getline(m_ifs, out) ? true : false;
     }
 
-    /* file */
-    return std::getline(m_ifs, out) ? true : false;
+    /* STDIN */
+    return std::getline(std::cin, out) ? true : false;
 }
 
 /* get a preview of the next line */

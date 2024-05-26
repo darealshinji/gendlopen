@@ -30,7 +30,7 @@
 namespace cio
 {
 
-ofstream::ofstream() : m_stdout(false)
+ofstream::ofstream()
 {}
 
 ofstream::~ofstream()
@@ -42,7 +42,7 @@ bool ofstream::open(const std::filesystem::path &path)
     close();
     m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
 
-    return is_open();
+    return m_ofs.is_open();
 }
 
 bool ofstream::open(const std::string &file)
@@ -53,25 +53,17 @@ bool ofstream::open(const std::string &file)
 
     /* STDOUT */
     close();
-    m_stdout = true;
 
-    return is_open();
-}
-
-bool ofstream::is_open() const {
-    return m_stdout ? true : m_ofs.is_open();
+    return true;
 }
 
 void ofstream::close()
 {
-    if (m_stdout) {
-        /* flush content */
-        std::cout << std::flush;
-    } else if (m_ofs.is_open()) {
+    std::cout << std::flush;
+
+    if (m_ofs.is_open()) {
         m_ofs.close();
     }
-
-    m_stdout = false;
 }
 
 } /* namespace cio */

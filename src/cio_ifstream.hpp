@@ -35,7 +35,6 @@ class ifstream
 {
 private:
 
-    bool m_stdin;
     std::string m_buf;
     std::ifstream m_ifs;
 

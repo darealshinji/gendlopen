@@ -149,20 +149,16 @@ void print_includes(cio::ofstream &out, const vstring_t &incs)
 /* open file for writing */
 bool open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool force)
 {
-    /* output is not STDOUT */
-    if (opath.compare("-") != 0) {
+    /* delete file to prevent writing data into symlink target */
+    if (force) {
+        fs::remove(opath);
+    }
 
-        /* delete file to prevent writing data into symlink target */
-        if (force) {
-            fs::remove(opath);
-        }
-
-        /* check symlink and not its target */
-        if (fs::exists(fs::symlink_status(opath))) {
-            std::cerr << "error: file already exists: ";
-            utils::print_filename(opath, true);
-            return false;
-        }
+    /* check symlink and not its target */
+    if (fs::exists(fs::symlink_status(opath))) {
+        std::cerr << "error: file already exists: ";
+        utils::print_filename(opath, true);
+        return false;
     }
 
     /* open file for writing */
@@ -301,8 +297,7 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 
     ifs.close();
 
-    /* output file */
-    if (!open_ofstream(out, ofile, m_force)) {
+    if (ofile != "-" && !open_ofstream(out, ofile, m_force)) {
         return 1;
     }
 
@@ -366,7 +361,7 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     /************** header begin ***************/
 
-    if (!open_ofstream(out, ofhdr, m_force)) {
+    if (!use_stdout && !open_ofstream(out, ofhdr, m_force)) {
         return 1;
     }
 
@@ -404,7 +399,7 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     /************** body data ***************/
 
-    if (!open_ofstream(out_body, ofbody, m_force)) {
+    if (!use_stdout && !open_ofstream(out_body, ofbody, m_force)) {
         return 1;
     }
 

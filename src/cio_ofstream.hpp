@@ -35,7 +35,6 @@ class ofstream
 {
 private:
 
-    bool m_stdout;
     std::ofstream m_ofs;
 
 public:
@@ -46,17 +45,16 @@ public:
     bool open(const std::filesystem::path &path);
     bool open(const std::string &file);
 
-    bool is_open() const;
     void close();
 
     /* overloading "<<" operator */
     template<class T>
     std::ostream& operator<<(const T &obj)
     {
-        if (m_stdout) {
-            return std::cout << obj;
+        if (m_ofs.is_open()) {
+            return m_ofs << obj;
         }
-        return m_ofs << obj;
+        return std::cout << obj;
     }
 };
 

@@ -40,10 +40,7 @@
 void utils::print_filename(const std::filesystem::path &path, bool newline)
 {
 #ifdef _WIN32
-
-#ifdef _MSC_VER
     int oldmode = _setmode(_fileno(stderr), _O_WTEXT);
-#endif
 
     if (newline) {
         std::wcerr << path.wstring() << std::endl;
@@ -51,18 +48,13 @@ void utils::print_filename(const std::filesystem::path &path, bool newline)
         std::wcerr << path.wstring() << std::flush;
     }
 
-#ifdef _MSC_VER
     _setmode(_fileno(stderr), oldmode);
-#endif
-
 #else
-
     if (newline) {
         std::cerr << path.c_str() << std::endl;
     } else {
         std::cerr << path.c_str() << std::flush;
     }
-
 #endif
 }
 
