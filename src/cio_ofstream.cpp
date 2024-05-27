@@ -36,7 +36,6 @@ ofstream::ofstream()
 ofstream::~ofstream()
 {}
 
-/* on Windows std::filesystem does the filename conversion for us */
 bool ofstream::open(const std::filesystem::path &path)
 {
     close();
@@ -47,8 +46,17 @@ bool ofstream::open(const std::filesystem::path &path)
 
 bool ofstream::open(const std::string &file)
 {
-    if (file != "-") {
+    if (file != "-")
+    {
+#ifdef _MSC_VER
+        /* std::filesystem does the filename conversion for us;
+         * this is broken on MinGW32 */
         return open(std::filesystem::path(file));
+#else
+        close();
+        m_ofs.open(file, std::ios_base::out | std::ios_base::binary);
+        return m_ofs.is_open();
+#endif
     }
 
     /* STDOUT */

@@ -26,7 +26,7 @@
 #include <string>
 #include <stdio.h>
 #include <wchar.h>
-#ifdef _WIN32
+#ifdef _MSC_VER
 #include <io.h>
 #include <fcntl.h>
 #endif
@@ -39,7 +39,8 @@
 
 void utils::print_filename(const std::filesystem::path &path, bool newline)
 {
-#ifdef _WIN32
+#ifdef _MSC_VER
+    /* this is broken on MinGW32 */
     int oldmode = _setmode(_fileno(stderr), _O_WTEXT);
 
     if (newline) {
@@ -51,16 +52,16 @@ void utils::print_filename(const std::filesystem::path &path, bool newline)
     _setmode(_fileno(stderr), oldmode);
 #else
     if (newline) {
-        std::cerr << path.c_str() << std::endl;
+        std::cerr << path.string() << std::endl;
     } else {
-        std::cerr << path.c_str() << std::flush;
+        std::cerr << path.string() << std::flush;
     }
 #endif
 }
 
 void utils::print_filename(const char *name, bool newline)
 {
-#ifdef _WIN32
+#ifdef _MSC_VER
     utils::print_filename(std::filesystem::path(name), newline);
 #else
     if (newline) {
