@@ -37,6 +37,7 @@
 #include <cassert>
 #include <cstring>
 #include <ctime>
+#include <cwchar>
 
 #include "template.h"
 #include "gendlopen.hpp"
@@ -58,6 +59,49 @@ const char * const extern_c_end =
     "} /* extern \"C\" */\n"
     "#endif\n";
 
+/**
+ * convert from string to wstring;
+ * this is required because on MinGW std::filesystem will throw an exception
+ * if the string contains non-ASCII characters (this doesn't happend with MSVC)
+ */
+#ifdef __MINGW32__
+wchar_t *_str_to_wchar(const std::string &str)
+{
+    size_t len, n;
+    wchar_t *buf;
+
+    if (::mbstowcs_s(&len, NULL, 0, str.c_str(), 0) != 0 || len == 0) {
+        return nullptr;
+    }
+
+    buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+    if (!buf) return nullptr;
+
+    if (::mbstowcs_s(&n, buf, len+1, str.c_str(), len) != 0 || n == 0) {
+        delete[] buf;
+        return nullptr;
+    }
+
+    buf[len] = L'\0';
+    return buf;
+}
+
+std::wstring str_to_wstr(const std::string &str)
+{
+    wchar_t *buf = _str_to_wchar(str);
+
+    if (!buf) {
+        std::cerr << "error: failed to convert string to wide characters: "
+            << str << std::endl;
+        std::abort();
+    }
+
+    std::wstring ws = buf;
+    delete[] buf;
+
+    return ws;
+}
+#endif // __MINGW32__
 
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char **&argv)
@@ -156,15 +200,13 @@ bool open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool force)
 
     /* check symlink and not its target */
     if (fs::exists(fs::symlink_status(opath))) {
-        std::cerr << "error: file already exists: ";
-        utils::print_filename(opath, true);
+        std::cerr << "error: file already exists: " << opath << std::endl;
         return false;
     }
 
     /* open file for writing */
     if (!ofs.open(opath)) {
-        std::cerr << "error: failed to open file for writing: ";
-        utils::print_filename(opath, true);
+        std::cerr << "error: failed to open file for writing: " << opath << std::endl;
         return false;
     }
 
@@ -230,15 +272,13 @@ bool gendlopen::tokenize_input()
 
     /* open file for reading */
     if (!ifs.open(m_ifile)) {
-        std::cerr << "error: failed to open file for reading: ";
-        utils::print_filename(m_ifile, true);
+        std::cerr << "error: failed to open file for reading: " << m_ifile << std::endl;
         return false;
     }
 
     /* check first line */
     if (!ifs.peek_line(line)) {
-        std::cerr << "error: failed to read first line from file: ";
-        utils::print_filename(m_ifile, true);
+        std::cerr << "error: failed to read first line from file: " << m_ifile << std::endl;
         return false;
     }
 
@@ -285,8 +325,7 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 
     /* open file for reading */
     if (!ifs.open(m_custom_template)) {
-        std::cerr << "error: failed to open file for reading: ";
-        utils::print_filename(m_custom_template, true);
+        std::cerr << "error: failed to open file for reading: " << m_custom_template << std::endl;
         return 1;
     }
 
@@ -329,9 +368,16 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
     }
 
     /* output filename */
-    ofbody = ofhdr = ofile;
-
     const bool use_stdout = (ofile == "-");
+
+    if (!use_stdout)
+    {
+#ifdef __MINGW32__
+        ofbody = ofhdr = str_to_wstr(ofile);
+#else
+        ofbody = ofhdr = ofile;
+#endif
+    }
 
     if (use_stdout || !separate_is_supported()) {
         m_separate = false;

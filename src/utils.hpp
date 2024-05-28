@@ -31,14 +31,9 @@
 namespace utils
 {
 
-/* print filename to STDERR */
-void print_filename(const std::filesystem::path &path, bool newline);
-void print_filename(const char *name, bool newline);
-
-inline void print_filename(const std::string &name, bool newline)
-{
-    print_filename(name.c_str(), newline);
-}
+#ifdef __MINGW32__
+std::wstring str_to_wstr(const char *str);
+#endif
 
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);

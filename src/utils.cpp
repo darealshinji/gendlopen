@@ -25,52 +25,9 @@
 #include <filesystem>
 #include <string>
 #include <stdio.h>
-#include <wchar.h>
-#ifdef _MSC_VER
-#include <io.h>
-#include <fcntl.h>
-#endif
 
 #include "gendlopen.hpp"
 
-
-/* print filename to STDERR;
- * try not to mess up multibyte characters on Windows */
-
-void utils::print_filename(const std::filesystem::path &path, bool newline)
-{
-#ifdef _MSC_VER
-    /* this is broken on MinGW32 */
-    int oldmode = _setmode(_fileno(stderr), _O_WTEXT);
-
-    if (newline) {
-        std::wcerr << path.wstring() << std::endl;
-    } else {
-        std::wcerr << path.wstring() << std::flush;
-    }
-
-    _setmode(_fileno(stderr), oldmode);
-#else
-    if (newline) {
-        std::cerr << path.string() << std::endl;
-    } else {
-        std::cerr << path.string() << std::flush;
-    }
-#endif
-}
-
-void utils::print_filename(const char *name, bool newline)
-{
-#ifdef _MSC_VER
-    utils::print_filename(std::filesystem::path(name), newline);
-#else
-    if (newline) {
-        std::cerr << name << std::endl;
-    } else {
-        std::cerr << name << std::flush;
-    }
-#endif
-}
 
 /* case-insensitive string comparison (ignoring current locale) */
 bool utils::eq_str_case(const std::string &str1, const std::string &str2)
