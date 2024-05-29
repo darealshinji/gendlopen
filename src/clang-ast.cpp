@@ -46,6 +46,7 @@ TranslationUnitDecl 0x5f2a1096a4b8 <<invalid sloc>> <invalid sloc>
 
 ***/
 
+#include <stdexcept>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -210,7 +211,7 @@ bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
 }
 
 /* read Clang AST */
-bool gendlopen::clang_ast(cio::ifstream &ifs)
+void gendlopen::clang_ast(cio::ifstream &ifs)
 {
     std::string line;
     int mode = M_ALL;
@@ -237,11 +238,9 @@ bool gendlopen::clang_ast(cio::ifstream &ifs)
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {
-        std::cerr << "error: no function or object prototypes found in file: "
-            << m_ifile << std::endl;
-        return false;
+        std::string msg = "no function or object prototypes found in file: ";
+        msg += m_ifile;
+        throw error(msg);
     }
-
-    return true;
 }
 

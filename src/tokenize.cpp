@@ -237,7 +237,7 @@ bool handle_character(cio::ifstream &ifs, std::string &line, char &c, char &comm
 }
 
 /* read input and strip comments */
-bool read_input(cio::ifstream &ifs, vstring_t &vec)
+void read_input(cio::ifstream &ifs, vstring_t &vec)
 {
     std::string line;
     char c, comment = 0;
@@ -269,8 +269,6 @@ bool read_input(cio::ifstream &ifs, vstring_t &vec)
     if (!line.empty()) {
         vec.push_back(line);
     }
-
-    return true;
 }
 
 /* assume a function prototype and tokenize */
@@ -336,31 +334,6 @@ bool tokenize_object(const std::string &s, vproto_t &objects)
     return true;
 }
 
-/* check for duplicates */
-bool has_duplicate_symbols(const vproto_t &proto, const vproto_t &objs, const std::string &ifile)
-{
-    vstring_t list;
-
-    for (const auto &s : proto) {
-        list.push_back(s.symbol);
-    }
-
-    for (const auto &s : objs) {
-        list.push_back(s.symbol);
-    }
-
-    std::sort(list.begin(), list.end());
-    auto it = std::ranges::adjacent_find(list);
-
-    if (it != list.end()) {
-        std::cerr << "error: multiple definitions of symbol `" << *it
-            << "' found in file: " << ifile << std::endl;
-        return true;
-    }
-
-    return false;
-}
-
 /* add to vector only if the symbol wasn't already saved */
 void push_back_if_unique(vproto_t &vec, const proto_t &proto)
 {
@@ -414,16 +387,13 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
 }
 
 /* read input and tokenize */
-bool gendlopen::tokenize(cio::ifstream &ifs)
+void gendlopen::tokenize(cio::ifstream &ifs)
 {
-    vstring_t vec;
+    vstring_t vec, duplist;
     vproto_t tmp_proto, tmp_objs;
 
     /* read and tokenize input */
-    if (!read_input(ifs, vec)) {
-        return false;
-    }
-
+    read_input(ifs, vec);
     ifs.close();
 
     /* process prototypes */
@@ -431,20 +401,37 @@ bool gendlopen::tokenize(cio::ifstream &ifs)
         if (!tokenize_function(str, tmp_proto, m_skip_parameter_names) &&
             !tokenize_object(str, tmp_objs))
         {
-            std::cerr << "error: malformed prototype:\n" << str << std::endl;
-            return false;
+            std::string msg = "malformed prototype:\n";
+            msg += str;
+            throw error(msg);
         }
     }
 
     /* nothing found? */
     if (tmp_proto.empty() && tmp_objs.empty()) {
-        std::cerr << "error: no function or object prototypes found in file: " << m_ifile << std::endl;
-        return false;
+        std::string msg = "no function or object prototypes found in file: ";
+        msg += m_ifile;
+        throw error(msg);
     }
 
     /* check for duplicates */
-    if (has_duplicate_symbols(tmp_proto, tmp_objs, m_ifile)) {
-        return false;
+    for (const auto &s : tmp_proto) {
+        duplist.push_back(s.symbol);
+    }
+
+    for (const auto &s : tmp_objs) {
+        duplist.push_back(s.symbol);
+    }
+
+    std::sort(duplist.begin(), duplist.end());
+    auto it = std::ranges::adjacent_find(duplist);
+
+    if (it != duplist.end()) {
+        std::string msg = "multiple definitions of symbol `";
+        msg += *it;
+        msg += "' found in file: ";
+        msg += m_ifile;
+        throw error(msg);
     }
 
     /* copy */
@@ -464,6 +451,4 @@ bool gendlopen::tokenize(cio::ifstream &ifs)
         utils::replace(" [", "[", p.args);
         utils::replace(" ]", "]", p.args);
     }
-
-    return true;
 }

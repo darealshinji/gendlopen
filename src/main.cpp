@@ -31,6 +31,8 @@
 #include "gendlopen.hpp"
 #include "getopt_long_cxx.hpp"
 
+#define PROGNAME "gendlopen"
+
 
 /* short option values */
 enum {
@@ -74,7 +76,7 @@ namespace
         utils::strip_spaces(name);
 
         if (name.empty()) {
-            std::cerr << "error: Flag 'define' cannot be just white-spaces" << std::endl;
+            std::cerr << "error: flag 'define' cannot be just white-spaces" << std::endl;
             std::exit(1);
         }
 
@@ -454,7 +456,7 @@ int main(int argc, char **argv)
     output::format fmt = output::c;
 
     /* initialize command line options */
-    getopt_long_cxx opt(argc, argv);
+    getopt_long_cxx opt(PROGNAME, argc, argv);
 
     try {
         add_options(opt);
@@ -573,5 +575,13 @@ int main(int argc, char **argv)
     }
 
     /* generate output */
-    return gdo.generate(input, output, name);
+    try {
+        gdo.generate(input, output, name);
+    }
+    catch (const gendlopen::error &e) {
+        std::cerr << argv[0] << ": " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
 }

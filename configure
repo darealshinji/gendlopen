@@ -670,6 +670,7 @@ else
             cppflags="-DWIN32_LEAN_AND_MEAN"
         fi
 
+        ldflags="$ldflags -mconsole"
         exeext=".exe"
         dll_cflags="-DBUILDING_DLL"
         dll_ldflags="-shared"

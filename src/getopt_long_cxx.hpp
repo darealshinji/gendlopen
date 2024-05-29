@@ -68,6 +68,8 @@ private:
         const char *more_help;
     };
 
+    /* initialized by c'tor */
+    std::string m_progname;
     int m_argc;
     char **m_argv;
 
@@ -76,7 +78,7 @@ private:
     std::string m_optstring;
     int m_longindex = 0;
 
-    const char * const m_usage_string =
+    static constexpr const char *m_usage_string =
         "usage: %s [OPTIONS..]\n"
         "       %s help <option>\n"
         "\n"
@@ -252,7 +254,8 @@ private:
 
 public:
 
-    getopt_long_cxx(int &argc, char **&argv) : m_argc(argc), m_argv(argv)
+    getopt_long_cxx(const char *progname, int &argc, char **&argv)
+    : m_progname(progname), m_argc(argc), m_argv(argv)
     {}
 
     ~getopt_long_cxx()
@@ -306,7 +309,7 @@ public:
 
     void print_help()
     {
-        printf(m_usage_string, m_argv[0], m_argv[0]);
+        printf(m_usage_string, m_progname.c_str(), m_progname.c_str());
 
         for (const auto &e : m_args) {
             print_arg_help(e);
@@ -317,7 +320,7 @@ public:
 
     void print_full_help()
     {
-        printf(m_usage_string, m_argv[0], m_argv[0]);
+        printf(m_usage_string, m_progname.c_str(), m_progname.c_str());
 
         for (const auto &e : m_args) {
             print_arg_more_help(e);

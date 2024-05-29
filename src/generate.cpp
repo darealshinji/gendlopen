@@ -59,50 +59,6 @@ const char * const extern_c_end =
     "} /* extern \"C\" */\n"
     "#endif\n";
 
-/**
- * convert from string to wstring;
- * this is required because on MinGW std::filesystem will throw an exception
- * if the string contains non-ASCII characters (this doesn't happend with MSVC)
- */
-#ifdef __MINGW32__
-wchar_t *_str_to_wchar(const std::string &str)
-{
-    size_t len, n;
-    wchar_t *buf;
-
-    if (::mbstowcs_s(&len, NULL, 0, str.c_str(), 0) != 0 || len == 0) {
-        return nullptr;
-    }
-
-    buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
-    if (!buf) return nullptr;
-
-    if (::mbstowcs_s(&n, buf, len+1, str.c_str(), len) != 0 || n == 0) {
-        delete[] buf;
-        return nullptr;
-    }
-
-    buf[len] = L'\0';
-    return buf;
-}
-
-std::wstring str_to_wstr(const std::string &str)
-{
-    wchar_t *buf = _str_to_wchar(str);
-
-    if (!buf) {
-        std::cerr << "error: failed to convert string to wide characters: "
-            << str << std::endl;
-        std::abort();
-    }
-
-    std::wstring ws = buf;
-    delete[] buf;
-
-    return ws;
-}
-#endif // __MINGW32__
-
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char **&argv)
 {
@@ -187,29 +143,6 @@ void print_includes(cio::ofstream &out, const vstring_t &incs)
     }
 }
 
-/* open file for writing */
-bool open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool force)
-{
-    /* delete file to prevent writing data into symlink target */
-    if (force) {
-        fs::remove(opath);
-    }
-
-    /* check symlink and not its target */
-    if (fs::exists(fs::symlink_status(opath))) {
-        std::cerr << "error: file already exists: " << opath << std::endl;
-        return false;
-    }
-
-    /* open file for writing */
-    if (!ofs.open(opath)) {
-        std::cerr << "error: failed to open file for writing: " << opath << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
 /* create template data (concatenate) */
 void create_template_data(
     std::string &header_data,
@@ -261,22 +194,47 @@ void create_template_data(
 } /* end anonymous namespace */
 
 
+/* open file for writing */
+void gendlopen::open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool force)
+{
+    /* delete file to prevent writing data into symlink target */
+    if (force) {
+        fs::remove(opath);
+    }
+
+    /* check symlink and not its target */
+    if (fs::exists(fs::symlink_status(opath))) {
+        std::string msg = "file already exists: ";
+        msg += opath.string();
+        throw error(msg);
+    }
+
+    /* open file for writing */
+    if (!ofs.open(opath)) {
+        std::string msg = "failed to open file for writing: ";
+        msg += opath.string();
+        throw error(msg);
+    }
+}
+
 /* read input and tokenize */
-bool gendlopen::tokenize_input()
+void gendlopen::tokenize_input()
 {
     std::string line;
     cio::ifstream ifs;
 
     /* open file for reading */
     if (!ifs.open(m_ifile)) {
-        std::cerr << "error: failed to open file for reading: " << m_ifile << std::endl;
-        return false;
+        std::string msg = "failed to open file for reading: ";
+        msg += m_ifile;
+        throw error(msg);
     }
 
     /* check first line */
     if (!ifs.peek_line(line)) {
-        std::cerr << "error: failed to read first line from file: " << m_ifile << std::endl;
-        return false;
+        std::string msg = "failed to read first line from file: ";
+        msg += m_ifile;
+        throw error(msg);
     }
 
     /* sort vectors and remove duplicates */
@@ -294,26 +252,24 @@ bool gendlopen::tokenize_input()
     if (line.starts_with("TranslationUnitDecl 0x")) {
         /* flags/settings that exclude each other */
         if (m_ast_all_symbols && (!m_symbols.empty() || !m_prefix.empty())) {
-            std::cerr << "error: cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'" << std::endl;
-            return false;
+            throw error("cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'");
         }
 
         /* no symbols provided */
         if (!m_ast_all_symbols && m_symbols.empty() && m_prefix.empty()) {
-            std::cerr << "error: Clang AST: no symbols provided to look for; use `--symbol' and/or `--prefix'" << std::endl;
-            std::cerr << "You can also pass `--ast-all-symbols' if you REALLY want to use all symbols." << std::endl;
-            return false;
+            throw error("Clang AST: no symbols provided to look for\n"
+                        "use `--symbol', `--prefix' or `--ast-all-symbols'");
         }
 
-        return clang_ast(ifs);
+        clang_ast(ifs);
+    } else {
+        /* regular tokenizer */
+        tokenize(ifs);
     }
-
-    /* regular tokenizer */
-    return tokenize(ifs);
 }
 
 /* read and parse custom template */
-int gendlopen::parse_custom_template(const std::string &ofile)
+void gendlopen::parse_custom_template(const std::string &ofile)
 {
     cio::ifstream ifs;
     cio::ofstream out;
@@ -322,8 +278,9 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 
     /* open file for reading */
     if (!ifs.open(m_custom_template)) {
-        std::cerr << "error: failed to open file for reading: " << m_custom_template << std::endl;
-        return 1;
+        std::string msg = "failed to open file for reading: ";
+        msg += m_custom_template;
+        throw error(msg);
     }
 
     /* read data */
@@ -333,17 +290,16 @@ int gendlopen::parse_custom_template(const std::string &ofile)
 
     ifs.close();
 
-    if (ofile != "-" && !open_ofstream(out, ofile, m_force)) {
-        return 1;
+    if (ofile != "-") {
+        /* create output file */
+        open_ofstream(out, ofile, m_force);
     }
 
     out << parse(data);
-
-    return 0;
 }
 
 /* generate output */
-int gendlopen::generate(const std::string ifile, const std::string ofile, const std::string name)
+void gendlopen::generate(const std::string ifile, const std::string ofile, const std::string name)
 {
     fs::path ofhdr, ofbody;
     std::string header_data, body_data, header_name;
@@ -355,13 +311,12 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
     m_name_lower = utils::convert_to_lower(name);
 
     /* tokenize */
-    if (!tokenize_input()) {
-        return 1;
-    }
+    tokenize_input();
 
     /* read and parse custom template (`--format' will be ignored) */
     if (!m_custom_template.empty()) {
-        return parse_custom_template(ofile);
+        parse_custom_template(ofile);
+        return;
     }
 
     /* output filename */
@@ -370,7 +325,7 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
     if (!use_stdout)
     {
 #ifdef __MINGW32__
-        ofbody = ofhdr = str_to_wstr(ofile);
+        ofbody = ofhdr = utils::str_to_wstr(ofile);
 #else
         ofbody = ofhdr = ofile;
 #endif
@@ -404,8 +359,8 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     /************** header begin ***************/
 
-    if (!use_stdout && !open_ofstream(out, ofhdr, m_force)) {
-        return 1;
+    if (!use_stdout) {
+        open_ofstream(out, ofhdr, m_force);
     }
 
     std::string note = create_note(m_argc, m_argv);
@@ -436,20 +391,16 @@ int gendlopen::generate(const std::string ifile, const std::string ofile, const 
 
     out.close();
 
-    if (!m_separate) {
-        return 0;
-    }
-
     /************** body data ***************/
 
-    if (!use_stdout && !open_ofstream(out_body, ofbody, m_force)) {
-        return 1;
+    if (m_separate) {
+        if (!use_stdout) {
+            open_ofstream(out_body, ofbody, m_force);
+        }
+
+        out_body << note;
+        out_body << "#include \"" << header_name << "\"\n\n";
+        out_body << parse(body_data);
     }
-
-    out_body << note;
-    out_body << "#include \"" << header_name << "\"\n\n";
-    out_body << parse(body_data);
-
-    return 0;
 }
 

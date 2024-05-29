@@ -28,6 +28,15 @@
 
 class gendlopen
 {
+public:
+
+    class error : public std::runtime_error
+    {
+        public:
+            error(const std::string &message) : std::runtime_error(message) {}
+            virtual ~error() {}
+    };
+
 private:
 
     int m_argc;
@@ -57,15 +66,16 @@ private:
 
     /* clang-ast.cpp */
     bool clang_ast_line(cio::ifstream &ifs, std::string &line, int mode);
-    bool clang_ast(cio::ifstream &ifs);
+    void clang_ast(cio::ifstream &ifs);
 
     /* tokenize.cpp */
-    bool tokenize(cio::ifstream &ifs);
+    void tokenize(cio::ifstream &ifs);
     void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
 
     /* generate.cpp */
-    bool tokenize_input();
-    int parse_custom_template(const std::string &ofile);
+    void open_ofstream(cio::ofstream &ofs, const std::filesystem::path &opath, bool force);
+    void tokenize_input();
+    void parse_custom_template(const std::string &ofile);
 
     /* parse.cpp */
     std::string parse(std::string &data);
@@ -101,7 +111,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    int generate(const std::string ifile, const std::string ofile, const std::string name);
+    void generate(const std::string ifile, const std::string ofile, const std::string name);
 
 };
 

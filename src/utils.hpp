@@ -32,7 +32,8 @@ namespace utils
 {
 
 #ifdef __MINGW32__
-std::wstring str_to_wstr(const char *str);
+wchar_t *char_to_wchar(const char *str);
+std::wstring str_to_wstr(const std::string &str);
 #endif
 
 /* case-insensitive string comparison */

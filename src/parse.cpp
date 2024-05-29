@@ -164,8 +164,7 @@ std::string gendlopen::parse(std::string &data)
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {
-        std::cerr << "error: no function or object prototypes" << std::endl;
-        std::exit(1);
+        throw error("no function or object prototypes");
     }
 
     /* regex for prefixes: [_]GDO_* / [_]gdo_* / gdo:: */
@@ -262,9 +261,9 @@ std::string gendlopen::parse(std::string &data)
 
         if ((has_func + has_obj + has_sym) > 1) {
             /* error */
-            std::cerr << "error: cannot mix function, object and regular symbol placeholders:\n";
-            std::cerr << line << std::endl;
-            std::exit(1);
+            std::string msg = "cannot mix function, object and regular symbol placeholders:\n";
+            msg += line;
+            throw error(msg);
         } else if (has_func == 1) {
             /* function prototypes */
 
