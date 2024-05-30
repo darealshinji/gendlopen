@@ -1,5 +1,4 @@
-@MSVC@GETOPT_O = msvc/getopt.o
-@MSVC@GETOPT_INC = -Imsvc
+@MSVC@GETOPT_O = getopt/getopt.o
 
 OBJS = \
 	$(GETOPT_O) \
@@ -31,7 +30,7 @@ HDRS = \
 all: gendlopen$(EXEEXT)
 
 clean:
-	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o msvc/*.o
+	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o getopt/*.o
 
 
 gen_template_h: gen_template_h.c
@@ -48,8 +47,8 @@ $(OBJS): $(HDRS)
 generate.o: template.h
 
 
-@MSVC@msvc/getopt.o: msvc/getopt.c msvc/getopt.h
-@MSVC@	$(cc_v)$(CC) $(CFLAGS) -c msvc/getopt.c -o $@
+@MSVC@getopt/getopt.o: getopt/getopt.c getopt/getopt.h
+@MSVC@	$(cc_v)$(CC) $(CFLAGS) -c getopt/getopt.c -o $@
 
 cio_ifstream.o: cio_ifstream.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ifstream.cpp -o $@
@@ -67,7 +66,7 @@ getopt_long_cxx.o: getopt_long_cxx.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c getopt_long_cxx.cpp -o $@
 
 main.o: main.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) $(GETOPT_INC) -c main.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
 
 parse.o: parse.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse.cpp -o $@

@@ -347,6 +347,11 @@ check_std_version()
 ## parse arguments
 ###############################################################################
 
+if [ "x$(pwd | grep ' ')" != "x" ]; then
+    echo "error: path to source directory cannot contain spaces!"
+    exit 1
+fi
+
 rm -f test.log
 
 for i in "$@"
@@ -576,7 +581,7 @@ if [ "x$cl" != "x" ]; then
     nix="no"
 
     if [ "x$cppflags" = "x:" ]; then
-        cppflags="-imsvc msvc -DWIN32_LEAN_AND_MEAN"
+        cppflags="-Igetopt -DWIN32_LEAN_AND_MEAN"
     fi
     if [ "x$cflags" = "x:" ]; then
         cflags="-W3 $opt_msc"

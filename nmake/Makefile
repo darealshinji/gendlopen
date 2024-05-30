@@ -25,6 +25,8 @@ CFLAGS   = -W3 -O2 -I.
 CXXFLAGS = -W3 -O2 -I. -std:c++latest -EHsc
 LFLAGS   = -subsystem:console -release
 
+JOBS = 4
+
 # top source directory
 s = ..
 
@@ -56,7 +58,7 @@ cleanfiles_check = \
 	libhelloworld_dl.*
 
 sources = \
-	$(s)\src\msvc\getopt.c \
+	$(s)\src\getopt\getopt.c \
 	$(s)\src\cio_ifstream.cpp \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
@@ -99,7 +101,7 @@ gen_template_h.exe: $(s)\src\gen_template_h.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
 
 gendlopen.exe: $(sources)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\msvc $** -Fe$@ -link $(LFLAGS)
+	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\getopt $** -Fe$@ -link $(LFLAGS)
 
 $(s)\src\generate.cpp: template.h
 
