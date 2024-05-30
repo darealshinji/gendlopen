@@ -22,6 +22,20 @@
  * THE SOFTWARE
  */
 
+#if defined(__linux__) || defined(__GNU__)
+# ifndef HAVE_PROGRAM_INVOCATION_NAME
+#  define HAVE_PROGRAM_INVOCATION_NAME
+# endif
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE
+# endif
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
+    defined(__DragonFly__) || defined(__APPLE__)
+# ifndef HAVE_GETPROGNAME
+#  define HAVE_GETPROGNAME
+# endif
+#endif
+
 #include <iostream>
 #include <regex>
 #include <sstream>
@@ -30,8 +44,6 @@
 
 #include "gendlopen.hpp"
 #include "getopt_long_cxx.hpp"
-
-#define PROGNAME "gendlopen"
 
 
 /* short option values */
@@ -58,6 +70,16 @@ enum {
 /* anonymous */
 namespace
 {
+    template<typename T=char>
+    bool is_path_separator(T c)
+    {
+#ifdef _WIN32
+        return (c == '\\' || c == '/');
+#else
+        return (c == '/');
+#endif
+    }
+
     /* create "#define" lines */
     std::string format_def(std::string def)
     {
@@ -197,6 +219,44 @@ namespace
 
         std::cerr << "error: unknown output format given: " << in << std::endl;
         std::exit(1);
+    }
+
+
+    /* usage: <PROG> ... */
+    void print_usage(const char *prog)
+    {
+        /* get program name without full path */
+#ifdef HAVE_PROGRAM_INVOCATION_NAME
+        prog = program_invocation_short_name;
+#elif defined(HAVE_GETPROGNAME)
+        prog = getprogname();
+#else
+        const char *sub = NULL;
+
+        for (auto p = prog; *p != 0; p++) {
+            if (is_path_separator(*p) && *(p+1) != 0) {
+                sub = p + 1;
+            }
+        }
+
+        if (sub) {
+            prog = sub;
+        }
+#endif
+
+        printf(
+            "usage: %s [OPTIONS..]\n"
+            "       %s help <option>\n"
+            "\n"
+            "switches:\n"
+            "\n"
+            "  help <option>          print information about <option>\n"
+            "\n"
+            "\n"
+            "options:\n"
+            "\n",
+            prog, prog
+        );
     }
 
 
@@ -456,7 +516,7 @@ int main(int argc, char **argv)
     output::format fmt = output::c;
 
     /* initialize command line options */
-    getopt_long_cxx opt(PROGNAME, argc, argv);
+    getopt_long_cxx opt(argc, argv);
 
     try {
         add_options(opt);
@@ -561,9 +621,11 @@ int main(int argc, char **argv)
 
     /* print help */
     if (help == ARG_HELP) {
+        print_usage(argv[0]);
         opt.print_help();
         return 0;
     } else if (help == ARG_FULL_HELP) {
+        print_usage(argv[0]);
         opt.print_full_help();
         return 0;
     }

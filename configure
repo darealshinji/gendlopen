@@ -576,7 +576,7 @@ if [ "x$cl" != "x" ]; then
     nix="no"
 
     if [ "x$cppflags" = "x:" ]; then
-        cppflags="-DWIN32_LEAN_AND_MEAN"
+        cppflags="-imsvc msvc -DWIN32_LEAN_AND_MEAN"
     fi
     if [ "x$cflags" = "x:" ]; then
         cflags="-W3 $opt_msc"

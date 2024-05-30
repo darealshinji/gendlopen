@@ -7,13 +7,22 @@ OBJS = \
 	cio_ofstream.o \
 	clang-ast.o \
 	generate.o \
+	getopt_long_cxx.o \
 	main.o \
 	parse.o \
 	tokenize.o \
 	utils.o \
 	$(NULL)
 
-HDRS = cio_ifstream.hpp cio_ofstream.hpp gendlopen_class.hpp gendlopen.hpp types.hpp utils.hpp
+HDRS = \
+	cio_ifstream.hpp \
+	cio_ofstream.hpp \
+	gendlopen_class.hpp \
+	gendlopen.hpp \
+	getopt_long_cxx.hpp \
+	types.hpp \
+	utils.hpp \
+	$(NULL)
 
 
 
@@ -53,6 +62,9 @@ clang-ast.o: clang-ast.cpp
 
 generate.o: generate.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
+
+getopt_long_cxx.o: getopt_long_cxx.cpp
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c getopt_long_cxx.cpp -o $@
 
 main.o: main.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) $(GETOPT_INC) -c main.cpp -o $@
