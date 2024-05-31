@@ -26,20 +26,31 @@
 #define GETOPT_LONG_CXX_HPP
 
 #include <stdexcept>
+#include <list>
 #include <string>
-#include <vector>
 #include <getopt.h>
 
 
 /**
  * Convenience wrapper class around getopt_long()
  *
- * It automatically creates the struct option array and the optstring,
- * and it provides formatted help output.
+ * - create struct option array and optstring
+ * - print formatted help output
+ * - provide "help" switch
+ * - check given option list for empty strings
+ * - treat trailing non-option arguments as error (we want that)
  */
 class getopt_long_cxx
 {
 public:
+
+    typedef struct {
+        const char *val_long;
+        char val_short;
+        const char *val_arg;
+        const char *help;
+        const char *more_help;
+    } arg_t;
 
     class error : public std::runtime_error
     {
@@ -48,38 +59,34 @@ public:
             virtual ~error() {}
     };
 
-
 private:
-
-    struct args {
-        const char *val_long;
-        char val_short;
-        const char *val_arg;
-        const char *help;
-        const char *more_help;
-    };
 
     int m_argc;
     char **m_argv;
+    const std::list<arg_t> *m_args;
 
-    std::vector<struct args> m_args;
-    struct option *m_longopts = NULL;
+    struct option *m_longopts = nullptr;
     std::string m_optstring;
     int m_longindex = 0;
 
     /* create option table and optstring */
     void init_longopts();
 
+    /* print formatted full help of argument "arg" */
+    void print_arg_full_help(const arg_t &arg);
+
 public:
 
     /* c'tor */
-    getopt_long_cxx(int &argc, char **&argv);
+    getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args);
 
     /* d'tor */
     ~getopt_long_cxx();
 
-    /* add option */
-    void add(const char *val_long, char val_short, const char *val_arg, const char *help, const char *more_help);
+    /* initialize options for parsing;
+     * will also be called by getopt() but manually calling it might
+     * be desired to catch and exception */
+    void init();
 
     /* call getopt_long() and save return value */
     bool getopt(int &c);

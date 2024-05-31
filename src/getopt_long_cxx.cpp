@@ -24,8 +24,8 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <list>
 #include <sstream>
-#include <vector>
 #include <errno.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -35,38 +35,9 @@
 #include "getopt_long_cxx.hpp"
 
 
-/* create option table and optstring */
-void getopt_long_cxx::init_longopts()
-{
-    if (m_longopts) {
-        /* already initialized */
-        return;
-    }
-
-    m_longopts = new struct option[m_args.size() + 1];
-    m_optstring.clear();
-
-    for (size_t i = 0; i < m_args.size(); i++) {
-        const auto &e = m_args[i];
-
-        int has_arg = (e.val_arg && *e.val_arg) ? required_argument : no_argument;
-        m_longopts[i] = { e.val_long, has_arg, NULL, e.val_short };
-
-        /* append short option to optstring */
-        m_optstring.push_back(e.val_short);
-
-        if (has_arg == required_argument) {
-            m_optstring.push_back(':');
-        }
-    }
-
-    m_longopts[m_args.size()] = { NULL, 0, NULL, 0 };
-}
-
-
 /* c'tor */
-getopt_long_cxx::getopt_long_cxx(int &argc, char **&argv)
-: m_argc(argc), m_argv(argv)
+getopt_long_cxx::getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args)
+    : m_argc(argc), m_argv(argv), m_args(&args)
 {
 }
 
@@ -80,9 +51,8 @@ getopt_long_cxx::~getopt_long_cxx()
 }
 
 
-/* add option */
-void getopt_long_cxx::add(const char *val_long, char val_short, const char *val_arg,
-                          const char *help, const char *more_help)
+/* initialize options for parsing with getopt_long() */
+void getopt_long_cxx::init()
 {
     auto throw_if_empty = [] (const char *val, const std::string &msg) {
         if (!val) {
@@ -92,22 +62,47 @@ void getopt_long_cxx::add(const char *val_long, char val_short, const char *val_
         }
     };
 
-    throw_if_empty(val_long, "val_long");
-    throw_if_empty(help, "help");
-    throw_if_empty(more_help, "more_help");
-
-    if (val_short == 0) {
-        throw error("val_short == 0");
+    /* already initialized? */
+    if (m_longopts) {
+        return;
     }
 
-    m_args.push_back( { val_long, val_short, val_arg, help, more_help } );
+    /* check options */
+    for (const auto &opt : *m_args) {
+        throw_if_empty(opt.val_long, "val_long");
+        throw_if_empty(opt.help, "help");
+        throw_if_empty(opt.more_help, "more_help");
+
+        if (opt.val_short == 0) {
+            throw error("val_short == 0");
+        }
+    }
+
+    /* create option table and optstring */
+    auto ptr = m_longopts = new struct option[m_args->size() + 1];
+
+    for (const auto &opt : *m_args) {
+        int has_arg = (opt.val_arg && *opt.val_arg) ?
+            required_argument : no_argument;
+
+        *ptr++ = { opt.val_long, has_arg, NULL, opt.val_short };
+
+        /* append short option to optstring */
+        m_optstring.push_back(opt.val_short);
+
+        if (has_arg == required_argument) {
+            m_optstring.push_back(':');
+        }
+    }
+
+    *ptr = { NULL, 0, NULL, 0 };
 }
 
 
 /* call getopt_long() and save return value */
 bool getopt_long_cxx::getopt(int &c)
 {
-    init_longopts();
+    init();
 
     /* returns -1 if there are no more option characters */
     c = getopt_long(m_argc, m_argv, m_optstring.c_str(), m_longopts, &m_longindex);
@@ -146,7 +141,7 @@ const char *getopt_long_cxx::arg() const {
 /* print help with automatic indentation and line breaks */
 void getopt_long_cxx::print_help()
 {
-    for (const auto &arg : m_args) {
+    for (const auto &arg : *m_args) {
         /* options */
         std::string line;
 
@@ -197,70 +192,78 @@ void getopt_long_cxx::print_help()
 /* print full help with automatic indentation and line breaks */
 void getopt_long_cxx::print_full_help()
 {
-    for (const auto &arg : m_args) {
-        /* print first line with options */
-        std::string line = "\n  ";
+    for (const auto &arg : *m_args) {
+        print_arg_full_help(arg);
+        std::cout << std::endl;
+    }
+}
 
-        if (arg.val_short > ' ') {
-            /* short option is a printable character */
-            line += '-';
-            line += arg.val_short;
 
-            if (arg.val_arg && *arg.val_arg) {
-                line += ' ';
-                line += arg.val_arg;
-            }
-            line += ", --";
-        } else {
-            line += "--";
-        }
+/* print formatted full help of argument "arg" */
+void getopt_long_cxx::print_arg_full_help(const arg_t &arg)
+{
+    /* print first line with options */
+    std::string line = "\n  ";
 
-        line += arg.val_long;
+    if (arg.val_short > ' ') {
+        /* short option is a printable character */
+        line += '-';
+        line += arg.val_short;
 
         if (arg.val_arg && *arg.val_arg) {
-            line += '=';
+            line += ' ';
             line += arg.val_arg;
         }
+        line += ", --";
+    } else {
+        line += "--";
+    }
 
-        std::cout << line << "\n\n";
-        line.clear();
+    line += arg.val_long;
 
-        /* print help, split long lines, use indentation of 4 spaces */
-        for (const char *p = arg.more_help; *p != 0; p++) {
-            if (*p != '\n') {
-                line += *p;
+    if (arg.val_arg && *arg.val_arg) {
+        line += '=';
+        line += arg.val_arg;
+    }
 
-                if (*(p+1) != 0) {
-                    continue;
-                }
+    std::cout << line << "\n\n";
+    line.clear();
+
+    /* print help, split long lines, use indentation of 4 spaces */
+    for (const char *p = arg.more_help; *p != 0; p++) {
+        if (*p != '\n') {
+            line += *p;
+
+            if (*(p+1) != 0) {
+                continue;
+            }
+        }
+
+        if (line.empty()) {
+            std::cout << std::endl;
+        } else if (line.size() <= 76) {
+            std::cout << "    " << line << std::endl;
+            line.clear();
+        } else {
+            size_t pos = 0;
+
+            while (line.size() > 76 && (pos = line.rfind(' ', 76)) != std::string::npos) {
+                std::cout << "    " << line.substr(0, pos) << std::endl;
+                line.erase(0, pos+1);
             }
 
-            if (line.empty()) {
-                std::cout << std::endl;
-            } else if (line.size() <= 76) {
+            if (!line.empty()) {
                 std::cout << "    " << line << std::endl;
                 line.clear();
-            } else {
-                size_t pos = 0;
-
-                while (line.size() > 76 && (pos = line.rfind(' ', 76)) != std::string::npos) {
-                    std::cout << "    " << line.substr(0, pos) << std::endl;
-                    line.erase(0, pos+1);
-                }
-
-                if (!line.empty()) {
-                    std::cout << "    " << line << std::endl;
-                    line.clear();
-                }
             }
         }
-
-        if (!line.empty()) {
-            std::cout << "    " << line << std::endl;
-        }
-
-        std::cout << '\n' << std::endl;
     }
+
+    if (!line.empty()) {
+        std::cout << "    " << line << std::endl;
+    }
+
+    std::cout << std::endl;
 }
 
 
@@ -276,35 +279,57 @@ bool getopt_long_cxx::parse_help_switch()
         throw error("switch 'help' expected an option");
     }
 
-    const char *help_text = NULL;
-    const char *arg = m_argv[2];
-    const size_t arglen = strlen(arg);
+    const char *opt = m_argv[2];
+    const size_t len = strlen(opt);
+    char short_opt = 0;
+    const char *long_opt = NULL;
 
-    if (arglen == 2 && arg[0] == '-') {
+    if (len == 1) {
+        /* i */
+        short_opt = *opt;
+    } else if (len == 2 && *opt == '-') {
+        /* -i */
+        short_opt = opt[1];
+    } else if (len > 2 && *opt == '-') {
+        if (opt[1] == '-') {
+            /* --input */
+            long_opt = opt + 2;
+        } else {
+            /* -iFILE */
+            short_opt = opt[1];
+        }
+    } else {
+        /* input */
+        long_opt = opt;
+    }
+
+    if (short_opt) {
         /* searching for short opt */
-        for (const auto &e : m_args) {
-            if (e.val_short == arg[1]) {
-                help_text = e.more_help;
-                break;
+        for (const auto &e : *m_args) {
+            if (e.val_short == short_opt) {
+                print_arg_full_help(e);
+                return true;
             }
         }
-    } else if (arglen > 2 && arg[0] == '-' && arg[1] == '-') {
+    } else if (long_opt) {
+        /* if an argument was given remove it */
+        std::string s = long_opt;
+        size_t pos = s.find('=');
+
+        if (pos != std::string::npos) {
+            s.erase(pos);
+        }
+
         /* searching for long opt */
-        for (const auto &e : m_args) {
-            if (strcmp(e.val_long, arg + 2) == 0) {
-                help_text = e.more_help;
-                break;
+        for (const auto &e : *m_args) {
+            if (e.val_long == s) {
+                print_arg_full_help(e);
+                return true;
             }
         }
     }
 
-    if (!help_text) {
-        std::string msg = "unknown option: ";
-        msg += arg;
-        throw error(msg);
-    }
-
-    std::cout << help_text << '\n' << std::endl;
-
-    return true;
+    std::string msg = "unknown option: ";
+    msg += opt;
+    throw error(msg);
 }
