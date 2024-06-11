@@ -56,14 +56,6 @@ private:
     bool m_skip_parameter_names = false;
     bool m_ast_all_symbols = false;
 
-    bool separate_is_supported() const {
-        return (m_format == output::c || m_format == output::cxx);
-    }
-
-    bool output_is_c() const {
-        return (m_format != output::cxx && m_format != output::minimal_cxx);
-    }
-
     /* clang-ast.cpp */
     bool clang_ast_line(cio::ifstream &ifs, std::string &line, int mode);
     void clang_ast(cio::ifstream &ifs);

@@ -34,7 +34,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <cwchar>
@@ -59,6 +59,59 @@ const char * const extern_c_end =
     "} /* extern \"C\" */\n"
     "#endif\n";
 
+/**
+ * convert from string to wstring;
+ * this is required because on MinGW std::filesystem will throw an exception
+ * if the string contains non-ASCII characters (this doesn't happend with MSVC)
+ */
+#ifdef __MINGW32__
+
+wchar_t *char_to_wchar(const char *str)
+{
+    size_t len, n;
+    wchar_t *buf;
+
+    if (!str || ::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+        return nullptr;
+    }
+
+    buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+    if (!buf) return nullptr;
+
+    if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
+        delete[] buf;
+        return nullptr;
+    }
+
+    buf[len] = L'\0';
+    return buf;
+}
+
+std::wstring convert_filename(const std::string &str)
+{
+    wchar_t *buf = char_to_wchar(str.c_str());
+
+    if (!buf) {
+        std::cerr << "error: failed to convert string to wide characters: "
+            << str << std::endl;
+        std::abort();
+    }
+
+    std::wstring ws = buf;
+    delete[] buf;
+
+    return ws;
+}
+
+#define CONV_STR(x)  convert_filename(x)
+
+#else
+
+#define CONV_STR(x)  x
+
+#endif // __MINGW32__
+
+
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char **&argv)
 {
@@ -71,14 +124,15 @@ std::string create_note(int &argc, char **&argv)
     /* print date */
     struct tm tm = {};
     time_t t = std::time(nullptr);
+    bool tm_ok;
 
 #ifdef _WIN32
-    bool localtime_ok = (::localtime_s(&tm, &t) == 0);
+    tm_ok = (::localtime_s(&tm, &t) == 0);
 #else
-    bool localtime_ok = (::localtime_r(&t, &tm) != nullptr);
+    tm_ok = (::localtime_r(&t, &tm) != nullptr);
 #endif
 
-    if (localtime_ok) {
+    if (tm_ok) {
         out << "on " << std::put_time(&tm, "%F %T %z") << '\n';
         out << "// ";
     }
@@ -220,7 +274,7 @@ void gendlopen::open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool fo
 /* read input and tokenize */
 void gendlopen::tokenize_input()
 {
-    std::string line;
+    std::string peek;
     cio::ifstream ifs;
 
     /* open file for reading */
@@ -231,7 +285,7 @@ void gendlopen::tokenize_input()
     }
 
     /* check first line */
-    if (!ifs.peek_line(line)) {
+    if (!ifs.peek_line(peek)) {
         std::string msg = "failed to read first line from file: ";
         msg += m_ifile;
         throw error(msg);
@@ -246,10 +300,16 @@ void gendlopen::tokenize_input()
     sort_vstring(m_prefix);
     sort_vstring(m_symbols);
 
-    utils::strip_ansi_colors(line);
+    /* skip UTF-8 Byte Order Mark */
+    if (peek.starts_with("\xEF\xBB\xBF")) {
+        peek.erase(0, 3);
+        ifs.ignore(3);
+    }
+
+    utils::strip_ansi_colors(peek);
 
     /* Clang AST */
-    if (line.starts_with("TranslationUnitDecl 0x")) {
+    if (peek.starts_with("TranslationUnitDecl 0x")) {
         /* flags/settings that exclude each other */
         if (m_ast_all_symbols && (!m_symbols.empty() || !m_prefix.empty())) {
             throw error("cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'");
@@ -260,6 +320,8 @@ void gendlopen::tokenize_input()
             throw error("Clang AST: no symbols provided to look for\n"
                         "use `--symbol', `--prefix' or `--ast-all-symbols'");
         }
+
+        ifs.ignore_line();
 
         clang_ast(ifs);
     } else {
@@ -322,22 +384,20 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     /* output filename */
     const bool use_stdout = (ofile == "-");
 
-    if (!use_stdout)
-    {
-#ifdef __MINGW32__
-        ofbody = ofhdr = utils::str_to_wstr(ofile);
-#else
-        ofbody = ofhdr = ofile;
-#endif
+    if (!use_stdout) {
+        ofbody = ofhdr = CONV_STR(ofile);
     }
 
-    if (use_stdout || !separate_is_supported()) {
+    /* DISABLE separate files on stdout or minimal output */
+    if (use_stdout || m_format == output::minimal || m_format == output::minimal_cxx) {
         m_separate = false;
     }
 
     /* rename file extensions only if we save into separate files */
+    const bool output_is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
+
     if (m_separate) {
-        if (output_is_c()) {
+        if (output_is_c) {
             ofhdr.replace_extension(".h");
             ofbody.replace_extension(".c");
         } else {
@@ -349,7 +409,7 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     /* create header filename and header guard */
     if (use_stdout) {
         header_name = name;
-        header_name += output_is_c() ? ".h" : ".hpp";
+        header_name += output_is_c ? ".h" : ".hpp";
     } else {
         header_name = ofhdr.filename().string();
     }
@@ -369,7 +429,7 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     out << "#ifndef _" << header_guard << "_\n";
     out << "#define _" << header_guard << "_\n\n";
 
-    if (output_is_c()) {
+    if (output_is_c) {
         out << extern_c_begin;
     }
 
@@ -383,7 +443,7 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     create_template_data(header_data, body_data, m_format, m_separate);
     out << parse(header_data);
 
-    if (output_is_c()) {
+    if (output_is_c) {
         out << extern_c_end;
     }
 

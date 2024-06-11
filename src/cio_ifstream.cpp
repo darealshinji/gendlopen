@@ -122,6 +122,19 @@ void ifstream::ignore()
     }
 }
 
+void ifstream::ignore(size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        ignore();
+    }
+}
+
+void ifstream::ignore_line()
+{
+    std::string line;
+    getline(line);
+}
+
 bool ifstream::getline(std::string &out)
 {
     if (!m_buf.empty()) {
@@ -150,7 +163,7 @@ bool ifstream::peek_line(std::string &out)
     }
 
     /* always add a newline to buffer so we can
-        * extract it as a whole line again */
+     * extract it as a whole line again */
     if (m_buf.back() != '\n') {
         m_buf.push_back('\n');
     }

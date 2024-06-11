@@ -29,50 +29,6 @@
 #include "gendlopen.hpp"
 
 
-/**
- * convert from string to wstring;
- * this is required because on MinGW std::filesystem will throw an exception
- * if the string contains non-ASCII characters (this doesn't happend with MSVC)
- */
-#ifdef __MINGW32__
-wchar_t *utils::char_to_wchar(const char *str)
-{
-    size_t len, n;
-    wchar_t *buf;
-
-    if (!str || ::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
-        return nullptr;
-    }
-
-    buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
-    if (!buf) return nullptr;
-
-    if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
-        delete[] buf;
-        return nullptr;
-    }
-
-    buf[len] = L'\0';
-    return buf;
-}
-
-std::wstring utils::str_to_wstr(const std::string &str)
-{
-    wchar_t *buf = utils::char_to_wchar(str.c_str());
-
-    if (!buf) {
-        std::cerr << "error: failed to convert string to wide characters: "
-            << str << std::endl;
-        std::abort();
-    }
-
-    std::wstring ws = buf;
-    delete[] buf;
-
-    return ws;
-}
-#endif // __MINGW32__
-
 /* case-insensitive string comparison (ignoring current locale) */
 bool utils::eq_str_case(const std::string &str1, const std::string &str2)
 {

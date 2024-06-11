@@ -50,9 +50,12 @@ public:
     void close();
 
     bool get(char &c);
-    int peek();
+    int  peek();
     bool good() const;
+
     void ignore();
+    void ignore(size_t n);
+    void ignore_line();
 
     bool getline(std::string &out);
 
