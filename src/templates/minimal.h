@@ -65,6 +65,12 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
     return NULL;
 }
 
+/* free library handle, no error checks */
+GDO_LINKAGE void gdo_free_library(void)
+{
+    GDO_FREE_LIB(gdo_hndl.handle);
+}
+
 
 #if !defined(GDO_NOALIAS)
 

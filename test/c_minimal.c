@@ -26,5 +26,8 @@ int main()
     helloworld_hello(hw);
     helloworld_release(hw);
 
+    /* release */
+    gdo_free_library();
+
     return 0;
 }
