@@ -236,6 +236,12 @@ private:
 
 #ifdef GDO_WINAPI
 
+    template<typename T>
+    T function_cast(FARPROC proc) {
+        /* cast to void* to supress compiler warnings */
+        return reinterpret_cast<T>(reinterpret_cast<void *>(proc));
+    }
+
     /* library handle */
     using handle_t = HMODULE;
     static handle_t m_handle;
@@ -381,17 +387,13 @@ private:
     {
         clear_error();
 
-        FARPROC proc = ::GetProcAddress(m_handle, symbol);
+        T proc = function_cast<T>(::GetProcAddress(m_handle, symbol));
 
         if (!proc) {
             save_error(symbol);
-            return nullptr;
         }
 
-        /* casting to void* first prevents [-Wcast-function-type] warnings on GCC */
-        void *ptr = reinterpret_cast<void *>(proc);
-
-        return reinterpret_cast<T>(ptr);
+        return proc;
     }
 
 
@@ -700,9 +702,19 @@ public:
             return false;
         }
 
+        /* We can ignore errors in which case dlsym() or GetProcAddress()
+         * is called for each symbol and continue to do so even if it fails.
+         * The function will however in the end still return false if 1 or more
+         * symbols failed to load.
+         * If we do not ignore errors the function will simply return false on
+         * the first error it encounters. */
+
         /* get symbol addresses */
 @
-        m_ptr_%%symbol%% = sym<%%sym_type%%>("%%symbol%%");@
+        /* %%symbol%% */@
+        m_ptr_%%symbol%% =@
+            sym<%%sym_type%%>@
+                ("%%symbol%%");@
         if (!m_ptr_%%symbol%% && !ignore_errors) {@
             return false;@
         }
