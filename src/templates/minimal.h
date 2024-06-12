@@ -1,25 +1,25 @@
 /* whether to use WinAPI */
 #if defined(_WIN32) && !defined(GDO_USE_DLOPEN) && !defined(__CYGWIN__) && !defined(__MSYS__)
-    #define GDO_WINAPI
+# define GDO_WINAPI
 #endif
 
 #ifdef GDO_WINAPI
-    #include <windows.h>
-    #define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)
-    #define GDO_FREE_LIB(handle)         FreeLibrary(handle)
-    /* cast to void* to avoid compiler warnings */
-    #define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)
+# include <windows.h>
+# define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)
+# define GDO_FREE_LIB(handle)         FreeLibrary(handle)
+/* cast to void* to avoid compiler warnings */
+# define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)
 #else
-    #include <dlfcn.h>
-    #define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)
-    #define GDO_FREE_LIB(handle)         dlclose(handle)
-    #define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
+# include <dlfcn.h>
+# define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)
+# define GDO_FREE_LIB(handle)         dlclose(handle)
+# define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
 #endif
 
 #ifdef GDO_STATIC
-    #define GDO_LINKAGE  static
+# define GDO_LINKAGE  static
 #else
-    #define GDO_LINKAGE  /**/
+# define GDO_LINKAGE  /**/
 #endif
 
 
@@ -71,7 +71,7 @@ GDO_LINKAGE void gdo_free_library(void)
 #if !defined(GDO_NOALIAS)
 
 /* aliases to raw symbol pointers */
-#define %%func_symbol%% gdo_hndl.%%func_symbol%%
-#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%
+#define %%func_symbol%%  gdo_hndl.%%func_symbol%%
+#define %%obj_symbol%%  *gdo_hndl.%%obj_symbol%%
 
 #endif // !GDO_NOALIAS
