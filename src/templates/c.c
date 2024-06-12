@@ -655,11 +655,11 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
     const gdo_char_t *err = gdo_last_error();
 
-    const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err);
-    gdo_char_t *buf = (gdo_char_t *)malloc((len + 1) * sizeof(gdo_char_t));
+    const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;
+    gdo_char_t *buf = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
     assert(buf != NULL);
 
-    _sntprintf_s(buf, len, _TRUNCATE, fmt, symbol, err);
+    _sntprintf_s(buf, len - 1, _TRUNCATE, fmt, symbol, err);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 
     free(buf);
@@ -725,7 +725,7 @@ GDO_LINKAGE void gdo_abort(const gdo_char_t *symbol)
 {
 #if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     gdo_char_t buf[128];
-    _sntprintf_s(buf, 128, _TRUNCATE, _T("symbol `") XPRIs _T("' not loaded"), symbol);
+    _sntprintf_s(buf, sizeof(buf)-1, _TRUNCATE, _T("symbol `") XPRIs _T("' not loaded"), symbol);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 #elif defined(GDO_OS_WIN32) && defined(_UNICODE)
     fwprintf(stderr, L"error: symbol `%ls' not loaded\n", symbol);
