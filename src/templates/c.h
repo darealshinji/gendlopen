@@ -198,9 +198,9 @@ HAVE_DLINFO
 
 /* static linkage */
 #ifdef GDO_STATIC
-    #define GDO_LINKAGE  static
+# define GDO_LINKAGE  static
 #else
-    #define GDO_LINKAGE  /**/
+# define GDO_LINKAGE  /**/
 #endif
 
 

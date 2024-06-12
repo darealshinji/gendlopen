@@ -1,9 +1,9 @@
 #if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)
-    #pragma comment(lib, "user32.lib")
+# pragma comment(lib, "user32.lib")
 #endif
 
 #ifdef GDO_WINAPI
-    #include <tchar.h>
+# include <tchar.h>
 #endif
 #include <assert.h>
 #include <errno.h>
@@ -12,19 +12,21 @@
 #include <string.h>
 
 #ifndef _T
-    #define _T(x) x
+# define _T(x) x
+#endif
+
+#ifdef GDO_WINAPI
+# ifdef _UNICODE
+#  define XPRIs L"%ls"
+# else
+#  define XPRIs "%s"
+# endif
 #endif
 
 
 /* typedefs */
 typedef void GDO_UNUSED_REF;
 typedef void GDO_UNUSED_RESULT;
-
-#ifdef GDO_HAVE_DLFUNC
-typedef dlfunc_t  gdo_func_t;  /* dlfunc() */
-#else
-typedef void *    gdo_func_t;  /* dlsym() */
-#endif
 
 
 /* library handle */
@@ -34,7 +36,7 @@ GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
 /* forward declarations */
 GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_LINKAGE void gdo_register_free_lib(void);
-GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg);
+GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
 #if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
 GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
 #endif
@@ -49,7 +51,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
-        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, _T("%Ts"), msg);
+        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, XPRIs, msg);
     }
 }
 
@@ -405,14 +407,14 @@ GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
     return gdo_all_symbols_loaded();
 }
 
-GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg)
+GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
     gdo_clear_errbuf();
 
 #ifdef GDO_WINAPI
 
-    /* cast to gdo_func_t (a.k.a. void*) to avoid warnings such as [-Wcast-function-type] */
-    gdo_func_t ptr = (gdo_func_t)GetProcAddress(gdo_hndl.handle, symbol);
+    /* cast to void* to supress compiler warnings */
+    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
         gdo_save_GetLastError(msg);
@@ -422,11 +424,7 @@ GDO_LINKAGE gdo_func_t gdo_sym(const char *symbol, const gdo_char_t *msg)
 
     (GDO_UNUSED_REF) msg;
 
-#ifdef GDO_HAVE_DLFUNC
-    gdo_func_t ptr = dlfunc(gdo_hndl.handle, symbol);
-#else
-    gdo_func_t ptr = dlsym(gdo_hndl.handle, symbol);
-#endif
+    void *ptr = dlsym(gdo_hndl.handle, symbol);
 
     /**
      * Linux man page mentions cases where NULL pointer is a valid address.
@@ -524,9 +522,9 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     if (buf) {
         /* put custom message in front of system error message */
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < bufmax) {
-            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%Ts: %Ts"), msg, buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, XPRIs _T(": ") XPRIs, msg, buf);
         } else {
-            _sntprintf_s(out, bufmax, _TRUNCATE, _T("%Ts"), buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, XPRIs, buf);
         }
         LocalFree(buf);
     } else {
@@ -652,7 +650,9 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 /* Windows: show message in a MessageBox window */
 GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
-    const gdo_char_t *fmt = _T("error in wrapper function for symbol `%Ts':\n\n%Ts");
+    const gdo_char_t *fmt = _T("error in wrapper function for symbol")
+        _T("`") XPRIs _T("':\n\n") XPRIs;
+
     const gdo_char_t *err = gdo_last_error();
 
     const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err);
@@ -693,7 +693,7 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
     gdo_win32_last_error_messagebox(symbol);
 #elif defined(GDO_OS_WIN32) && defined(_UNICODE)
     /* Windows: output to console (wide characters) */
-    fwprintf(stderr, L"error in wrapper function for symbol `%Ts':\n%Ts\n",
+    fwprintf(stderr, L"error in wrapper function for symbol `%ls':\n%ls\n",
         symbol, gdo_last_error());
 #else
     /* default: UTF-8 output to console (any operating system) */
@@ -725,10 +725,10 @@ GDO_LINKAGE void gdo_abort(const gdo_char_t *symbol)
 {
 #if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     gdo_char_t buf[128];
-    _sntprintf_s(buf, 128, _TRUNCATE, L"symbol `%Ts' not loaded", symbol);
+    _sntprintf_s(buf, 128, _TRUNCATE, _T("symbol `") XPRIs _T("' not loaded"), symbol);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 #elif defined(GDO_OS_WIN32) && defined(_UNICODE)
-    fwprintf(stderr, L"error: symbol `%Ts' not loaded\n", symbol);
+    fwprintf(stderr, L"error: symbol `%ls' not loaded\n", symbol);
 #else
     fprintf(stderr, "error: symbol `%s' not loaded\n", symbol);
 #endif

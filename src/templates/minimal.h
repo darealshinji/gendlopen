@@ -7,17 +7,13 @@
     #include <windows.h>
     #define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)
     #define GDO_FREE_LIB(handle)         FreeLibrary(handle)
-    /* cast to void* to avoid warnings such as [-Wcast-function-type] */
+    /* cast to void* to avoid compiler warnings */
     #define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)
 #else
     #include <dlfcn.h>
     #define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)
     #define GDO_FREE_LIB(handle)         dlclose(handle)
-    #if defined(__FreeBSD__) || defined(__DragonFly__)
-        #define GDO_GET_SYM(handle, symbol)  dlfunc(handle, symbol)
-    #else
-        #define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
-    #endif
+    #define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
 #endif
 
 #ifdef GDO_STATIC
