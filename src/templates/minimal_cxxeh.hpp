@@ -1,14 +1,14 @@
 /* whether to use WinAPI */
 #if defined(_WIN32) && !defined(GDO_USE_DLOPEN) && !defined(__CYGWIN__) && !defined(__MSYS__)
-    #define GDO_WINAPI
+# define GDO_WINAPI
 #endif
 
 #include <stdexcept>
 #include <string>
 #ifdef GDO_WINAPI
-    #include <windows.h>
+# include <windows.h>
 #else
-    #include <dlfcn.h>
+# include <dlfcn.h>
 #endif
 
 
@@ -82,15 +82,9 @@ namespace gdo
     }
 
     /* get symbol */
-# if defined(__FreeBSD__) || defined(__DragonFly__)
-    inline dlfunc_t get_symbol(void *handle, const char *symbol) {
-        return ::dlfunc(handle, symbol);
-    }
-# else
     inline void *get_symbol(void *handle, const char *symbol) {
         return ::dlsym(handle, symbol);
     }
-# endif
 
 #endif //GDO_WINAPI
 
@@ -151,7 +145,7 @@ namespace gdo
 #if !defined(GDO_NOALIAS)
 
 /* aliases to raw symbol pointers */
-#define %%func_symbol%% gdo::ptr::%%func_symbol%%
-#define %%obj_symbol%% *gdo::ptr::%%obj_symbol%%
+#define %%func_symbol%%  gdo::ptr::%%func_symbol%%
+#define %%obj_symbol%%  *gdo::ptr::%%obj_symbol%%
 
 #endif // !GDO_NOALIAS
