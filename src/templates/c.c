@@ -17,9 +17,9 @@
 
 #ifdef GDO_WINAPI
 # ifdef _UNICODE
-#  define XPRIs L"%ls"
+#  define GDO_XS L"%ls"
 # else
-#  define XPRIs "%s"
+#  define GDO_XS "%s"
 # endif
 #endif
 
@@ -51,7 +51,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
-        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, XPRIs, msg);
+        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, GDO_XS, msg);
     }
 }
 
@@ -522,9 +522,9 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     if (buf) {
         /* put custom message in front of system error message */
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < bufmax) {
-            _sntprintf_s(out, bufmax, _TRUNCATE, XPRIs _T(": ") XPRIs, msg, buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, GDO_XS _T(": ") GDO_XS, msg, buf);
         } else {
-            _sntprintf_s(out, bufmax, _TRUNCATE, XPRIs, buf);
+            _sntprintf_s(out, bufmax, _TRUNCATE, GDO_XS, buf);
         }
         LocalFree(buf);
     } else {
@@ -592,8 +592,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #elif defined(GDO_HAVE_DLINFO)
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
-
-    //fprintf(stderr, "DEBUG: using dlinfo()\n");
+    //%DNL% //fprintf(stderr, "DEBUG: using dlinfo()\n");
 
     if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         gdo_save_dlerror();
@@ -604,8 +603,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #else
     /* use dladdr() to get the library path from a symbol pointer */
     char *fname;
-
-    //fprintf(stderr, "DEBUG: using dladdr()\n");
+    //%DNL% //fprintf(stderr, "DEBUG: using dladdr()\n");
 
     if (gdo_no_symbols_loaded()) {
         gdo_save_to_errbuf("no symbols were loaded");
@@ -642,16 +640,43 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 /*****************************************************************************/
 %SKIP_PARAM_UNUSED_BEGIN%
 //%DNL%//  comment out this whole section if "--skip-param" was set
+#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
-/* autoload functions */
-#ifdef GDO_ENABLE_AUTOLOAD
+
+GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)
+{
+#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+    MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
+#elif defined(GDO_OS_WIN32) && defined(_UNICODE)
+    fwprintf(stderr, L"%ls\n", msg);
+#else
+    fprintf(stderr, "%s\n", msg);
+#endif
+
+    gdo_free_lib();
+    exit(1);
+}
+
+
+/* function wrappers */
+@
+GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
+    if (!gdo_hndl.%%func_symbol%%_ptr_) {@
+        gdo_error_exit("error: symbol `%%func_symbol%%' was not loaded");@
+    }@
+    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
+}
+
+
+#elif defined(GDO_ENABLE_AUTOLOAD)
+
 
 #if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 /* Windows: show message in a MessageBox window */
 GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
     const gdo_char_t *fmt = _T("error in wrapper function for symbol")
-        _T("`") XPRIs _T("':\n\n") XPRIs;
+        _T("`") GDO_XS _T("':\n\n") GDO_XS;
 
     const gdo_char_t *err = gdo_last_error();
 
@@ -706,47 +731,14 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
     exit(1);
 }
 
-#elif defined(GDO_WRAP_FUNCTIONS)
 
-GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
-{
-    (GDO_UNUSED_REF) function;
-    (GDO_UNUSED_REF) symbol;
-}
-
-#endif //GDO_ENABLE_AUTOLOAD
-/*****************************************************************************/
-
-
-
-#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-
-GDO_LINKAGE void gdo_abort(const gdo_char_t *symbol)
-{
-#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-    gdo_char_t buf[128];
-    _sntprintf_s(buf, sizeof(buf)-1, _TRUNCATE, _T("symbol `") XPRIs _T("' not loaded"), symbol);
-    MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
-#elif defined(GDO_OS_WIN32) && defined(_UNICODE)
-    fwprintf(stderr, L"error: symbol `%ls' not loaded\n", symbol);
-#else
-    fprintf(stderr, "error: symbol `%s' not loaded\n", symbol);
-#endif
-
-    abort();
-}
-
-
-/* wrapped functions
- * (creating wrapped symbols doesn't work well with pointers to objects) */
+/* autoload function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo_quick_load("%%func_symbol%%", _T("%%func_symbol%%"));@
-    if (!gdo_hndl.%%func_symbol%%_ptr_) gdo_abort(_T("%%func_symbol%%"));@
     %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
 }
 
-#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
-
+#endif //GDO_ENABLE_AUTOLOAD
 %SKIP_PARAM_UNUSED_END%
 /***************************** end of wrap code ******************************/
