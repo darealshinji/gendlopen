@@ -46,30 +46,30 @@
 #include "getopt_long_cxx.hpp"
 
 
-/* short option values */
-enum {
-    ARG_AST_ALL_SYM = 1,
-    ARG_DEFINE      = 'D',
-    ARG_FORCE       = 'f',
-    ARG_FORMAT      = 'F',
-    ARG_FULL_HELP   = 2,
-    ARG_HELP        = 'h',
-    ARG_INLCUDE     = 'I',
-    ARG_INPUT       = 'i',
-    ARG_LIBRARY     = 'l',
-    ARG_NAME        = 'n',
-    ARG_OUTPUT      = 'o',
-    ARG_PREFIX      = 'P',
-    ARG_SEPARATE    = 's',
-    ARG_SKIP_PARAM  = 3,
-    ARG_SYMBOL      = 'S',
-    ARG_TEMPLATE    = 4
-};
-
-
 /* anonymous */
 namespace
 {
+    /* short option values */
+    enum {
+        ARG_AST_ALL_SYM = 1,
+        ARG_DEFINE      = 'D',
+        ARG_FORCE       = 'f',
+        ARG_FORMAT      = 'F',
+        ARG_FULL_HELP   = 2,
+        ARG_HELP        = 'h',
+        ARG_INLCUDE     = 'I',
+        ARG_INPUT       = 'i',
+        ARG_LIBRARY     = 'l',
+        ARG_NAME        = 'n',
+        ARG_OUTPUT      = 'o',
+        ARG_PREFIX      = 'P',
+        ARG_SEPARATE    = 's',
+        ARG_SKIP_PARAM  = 3,
+        ARG_SYMBOL      = 'S',
+        ARG_TEMPLATE    = 4
+    };
+
+
     template<typename T=char>
     bool is_path_separator(T c)
     {
@@ -79,6 +79,7 @@ namespace
         return (c == '/');
 #endif
     }
+
 
     /* create "#define" lines */
     std::string format_def(std::string def)
@@ -258,11 +259,8 @@ namespace
             prog, prog
         );
     }
-} /* anonymous namespace */
 
 
-int main(int argc, char **argv)
-{
     const std::list<getopt_long_cxx::arg_t> args_list =
     {
         { "help", ARG_HELP, NULL,
@@ -505,8 +503,11 @@ int main(int argc, char **argv)
     "This flag is ignored if the input isn't a Clang AST."
         }
     };
+} /* anonymous namespace */
 
 
+int main(int argc, char **argv)
+{
     /* default settings */
     const char *input = NULL;
     const char *output = "-";

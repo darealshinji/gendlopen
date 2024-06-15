@@ -85,7 +85,7 @@ public:
 
     /* initialize options for parsing;
      * will also be called by getopt() but manually calling it might
-     * be desired to catch and exception */
+     * be preferred to catch exceptions */
     void init();
 
     /* call getopt_long() and save return value */
