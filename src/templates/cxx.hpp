@@ -762,10 +762,16 @@ public:
 #endif
 
         /* get symbol address */
+        auto incr = [&len] (const char *str) -> const char* {
+            return str + len;
+        };
+
         const char *ptr = symbol.c_str() + len;
 @
-        if (strcmp("%%symbol%%" + len, ptr) == 0) {@
-            m_ptr_%%symbol%% = sym<%%sym_type%%>("%%symbol%%");@
+        if (strcmp(incr("%%symbol%%"), ptr) == 0) {@
+            m_ptr_%%symbol%% =@
+                sym<%%sym_type%%>@
+                    ("%%symbol%%");@
             return (m_ptr_%%symbol%% != nullptr);@
         }
 

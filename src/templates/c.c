@@ -495,7 +495,7 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
     if (check_symbols) {
 @
         /* %%symbol%% */@
-        if (strcmp("%%symbol%%" + len, ptr) == 0) {@
+        if (strcmp((const char *)"%%symbol%%" + len, ptr) == 0) {@
             gdo_hndl.%%symbol%%_ptr_ =@
                 (%%sym_type%%)@
                     gdo_sym("%%symbol%%", _T("%%symbol%%"));@
