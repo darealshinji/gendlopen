@@ -384,7 +384,7 @@ set flags for GTK2 and GLib headers (ignored for win32):
     gtk-cflags=..  glib-cflags=..
 
 optimizing build type:
-    opt=[release|debug|minsize]
+    opt=[release|debug|minsize|noopt]
 
 set ar tool:
     ar=..
@@ -461,6 +461,11 @@ elif [ "x$opt" = "xminsize" ]; then
     opt_ld="-Wl,--gc-sections -s"
     opt_msc="-Od -g"
     opt_link="-release"
+elif [ "x$opt" = "xnoopt" ]; then
+    opt_gcc="-O0"
+    opt_ld=""
+    opt_msc="-Od"
+    opt_link=""
 fi
 
 
