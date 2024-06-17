@@ -85,8 +85,9 @@ Or in C++ using the `gdo::dl` class:
     foobar_bar(y);
 ```
 
-You can find more information in the files from the `examples` directory or
-in the template files in `src/templates` as well as in the generated output files.
+You can find more information in the files from the `examples` and `test`
+directories, in the comments of the template files in `src/templates` as well as
+in the generated output files.
 
 
 Compiling

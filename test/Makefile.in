@@ -3,10 +3,12 @@ BINS_ANY = \
 	c_test$(EXEEXT) \
 	c_auto_free$(EXEEXT) \
 	c_autoload$(EXEEXT) \
+	c_load_symbol$(EXEEXT) \
 	c_minimal$(EXEEXT) \
 	c_multi$(EXEEXT) \
 	cxx_test$(EXEEXT) \
 	cxx_autoload$(EXEEXT) \
+	cxx_load_symbol$(EXEEXT) \
 	cxx_minimal$(EXEEXT) \
 	cxx_multi$(EXEEXT)
 
@@ -21,11 +23,13 @@ GEN_SOURCES_ANY = \
 	c_test.h \
 	c_auto_free.h \
 	c_autoload.h \
+	c_load_symbol.h \
 	c_minimal.h \
 	c_multi.h \
 	c_multi.c \
 	cxx_test.hpp \
 	cxx_autoload.hpp \
+	cxx_load_symbol.hpp \
 	cxx_minimal.hpp \
 	cxx_multi.hpp \
 	cxx_multi.cpp
@@ -71,6 +75,9 @@ c_auto_free$(EXEEXT): c_auto_free.h c_auto_free.c
 c_autoload$(EXEEXT): c_autoload.h c_autoload.c
 	$(cc_v)$(CC) $(TEST_CFLAGS) c_autoload.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
+c_load_symbol$(EXEEXT): c_load_symbol.h c_load_symbol.c
+	$(cc_v)$(CC) $(TEST_CFLAGS) c_load_symbol.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
 c_minimal$(EXEEXT): c_minimal.h c_minimal.c
 	$(cc_v)$(CC) $(TEST_CFLAGS) c_minimal.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
@@ -102,6 +109,9 @@ cxx_test$(EXEEXT): cxx_test.hpp cxx_test.cpp
 
 cxx_autoload$(EXEEXT): cxx_autoload.hpp cxx_autoload.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_autoload.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
+cxx_load_symbol$(EXEEXT): cxx_load_symbol.hpp cxx_load_symbol.cpp
+	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_load_symbol.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 cxx_minimal$(EXEEXT): cxx_minimal.hpp cxx_minimal.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_minimal.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
@@ -158,6 +168,9 @@ c_auto_free.h:
 c_autoload.h:
 	$(gen_v)$(GENHDR) $@
 
+c_load_symbol.h:
+	$(gen_v)$(GENHDR) $@
+
 c_minimal.h:
 	$(gen_v)$(GENHDR) $@ --format=minimal
 
@@ -173,6 +186,9 @@ cxx_test.hpp:
 
 cxx_autoload.hpp:
 	$(gen_v)$(GENHDR) $@ --format=C++ --library=API:0:helloworld
+
+cxx_load_symbol.hpp:
+	$(gen_v)$(GENHDR) $@ --format=C++
 
 cxx_minimal.hpp:
 	$(gen_v)$(GENHDR) $@ --format=minimal-C++

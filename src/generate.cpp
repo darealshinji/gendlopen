@@ -112,6 +112,49 @@ std::wstring convert_filename(const std::string &str)
 #endif // __MINGW32__
 
 
+/* get common symbol prefix */
+std::string get_common_prefix(const vproto_t &proto, const vproto_t &obj)
+{
+    std::string pfx = "";
+    vstring_t v;
+
+    if ((proto.size() + obj.size()) < 2) {
+        return "";
+    }
+
+    /* copy symbols into vector list */
+    for (const auto &e : proto) {
+        v.push_back(e.symbol);
+    }
+
+    for (const auto &e : obj) {
+        v.push_back(e.symbol);
+    }
+
+    /* get shortest symbol length */
+    size_t len = v.at(0).size();
+    auto it = v.begin() + 1;
+
+    for ( ; it != v.end(); it++) {
+        len = std::min(len, (*it).size());
+    }
+
+    /* compare symbol names */
+    for (size_t i = 0; i < len; i++) {
+        const char c = v.at(0)[i];
+
+        for (it = v.begin() + 1; it != v.end(); it++) {
+            if ((*it)[i] != c) {
+                return pfx;
+            }
+        }
+
+        pfx.push_back(c);
+    }
+
+    return pfx;
+}
+
 /* create a note to put at the beginning of the output */
 std::string create_note(int &argc, char **&argv)
 {
@@ -328,6 +371,16 @@ void gendlopen::tokenize_input()
         /* regular tokenizer */
         tokenize(ifs);
     }
+
+    /* look for a common symbol prefix */
+    std::string pfx = get_common_prefix(m_prototypes, m_objects);
+
+    if (pfx.size() > 0) {
+        std::stringstream out;
+        out << "#define " << m_name_upper << "_COMMON_PFX     \"" << pfx << "\"\n";
+        out << "#define " << m_name_upper << "_COMMON_PFX_LEN " << pfx.size() << '\n';
+        add_def(out.str());
+    }
 }
 
 /* read and parse custom template */
@@ -367,7 +420,7 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     std::string header_data, body_data, header_name;
     cio::ofstream out, out_body;
 
-    /* set member variables */
+    /* set member variables first */
     m_ifile = ifile;
     m_name_upper = utils::convert_to_upper(name);
     m_name_lower = utils::convert_to_lower(name);

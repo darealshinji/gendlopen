@@ -17,9 +17,11 @@
 
 #ifdef GDO_WINAPI
 # ifdef _UNICODE
-#  define GDO_XS L"%ls"
+#  define GDO_XS   L"%ls"
+#  define GDO_XHS  L"%hs"
 # else
-#  define GDO_XS "%s"
+#  define GDO_XS   "%s"
+#  define GDO_XHS  "%s"
 # endif
 #endif
 
@@ -51,7 +53,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
-        _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE, GDO_XS, msg);
+        _sntprintf_s(gdo_hndl.buf, _countof(gdo_hndl.buf)-1, _TRUNCATE, GDO_XS, msg);
     }
 }
 
@@ -452,6 +454,10 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 {
+    size_t len = 0;
+    bool check_symbols = true;
+    const char *ptr = symbol;
+
     gdo_clear_errbuf();
 
     /* no library was loaded */
@@ -460,6 +466,7 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         return false;
     }
 
+    /* empty symbol? */
     if (!symbol) {
         gdo_save_to_errbuf(_T("symbol == NULL"));
         return false;
@@ -470,20 +477,34 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         return false;
     }
 
+#if defined(GDO_COMMON_PFX) && defined(GDO_COMMON_PFX_LEN)
+    /* opt out if symbol doesn't begin with prefix */
+    len = GDO_COMMON_PFX_LEN;
+
+    if (strncmp(symbol, GDO_COMMON_PFX, len) != 0) {
+        //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
+        check_symbols = false;
+    }
+#endif
+
     /* get symbol address */
+    ptr += len;
+
+    if (check_symbols) {
 @
-    /* %%symbol%% */@
-    if (strcmp("%%symbol%%", symbol) == 0) {@
-        gdo_hndl.%%symbol%%_ptr_ =@
-            (%%sym_type%%)@
-                gdo_sym("%%symbol%%", _T("%%symbol%%"));@
-        return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
+        /* %%symbol%% */@
+        if (strcmp("%%symbol%%" + len, ptr) == 0) {@
+            gdo_hndl.%%symbol%%_ptr_ =@
+                (%%sym_type%%)@
+                    gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+            return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
+        }
     }
 
 #ifdef GDO_WINAPI
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
-    _sntprintf_s(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, _TRUNCATE,
-        _T("symbol not among lookup list: %hs"), symbol);
+    _sntprintf_s(gdo_hndl.buf, _countof(gdo_hndl.buf)-1, _TRUNCATE,
+        _T("symbol not among lookup list: ") GDO_XHS, symbol);
 #else
     snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1,
         "symbol not among lookup list: %s", symbol);
@@ -680,11 +701,11 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
     const gdo_char_t *err = gdo_last_error();
 
-    const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;
-    gdo_char_t *buf = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
+    const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err);
+    gdo_char_t *buf = (gdo_char_t *)malloc((len + 1) * sizeof(gdo_char_t));
     assert(buf != NULL);
 
-    _sntprintf_s(buf, len - 1, _TRUNCATE, fmt, symbol, err);
+    _sntprintf_s(buf, len, _TRUNCATE, fmt, symbol, err);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 
     free(buf);

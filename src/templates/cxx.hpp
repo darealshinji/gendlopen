@@ -728,6 +728,8 @@ public:
     /* load a specific symbol */
     bool load_symbol(const std::string &symbol)
     {
+        size_t len = 0;
+
         clear_error();
 
         if (!lib_loaded()) {
@@ -735,6 +737,7 @@ public:
             return false;
         }
 
+        /* empty symbol? */
         if (symbol.empty()) {
 #ifdef GDO_WINAPI
             m_last_error = ERROR_INVALID_PARAMETER;
@@ -743,16 +746,29 @@ public:
             return false;
         }
 
+#if defined(GDO_COMMON_PFX) && defined(GDO_COMMON_PFX_LEN)
+        /* opt out if symbol doesn't begin with prefix */
+        len = GDO_COMMON_PFX_LEN;
+
+        if (strncmp(symbol.c_str(), GDO_COMMON_PFX, len) != 0) {
+            //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
+# ifdef GDO_WINAPI
+            m_last_error = ERROR_NOT_FOUND;
+# endif
+            m_errmsg = "symbol not among lookup list: ";
+            m_errmsg += symbol;
+            return false;
+        }
+#endif
+
         /* get symbol address */
+        const char *ptr = symbol.c_str() + len;
 @
-        if (symbol == "%%symbol%%") {@
+        if (strcmp("%%symbol%%" + len, ptr) == 0) {@
             m_ptr_%%symbol%% = sym<%%sym_type%%>("%%symbol%%");@
             return (m_ptr_%%symbol%% != nullptr);@
         }
 
-        clear_error();
-
-        /* save error */
 #ifdef GDO_WINAPI
         m_last_error = ERROR_NOT_FOUND;
 #endif
