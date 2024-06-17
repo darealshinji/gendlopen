@@ -53,7 +53,8 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
-        _sntprintf_s(gdo_hndl.buf, _countof(gdo_hndl.buf)-1, _TRUNCATE, GDO_XS, msg);
+        const size_t buflen = _countof(gdo_hndl.buf);
+        _sntprintf_s(gdo_hndl.buf, buflen, buflen-1, GDO_XS, msg);
     }
 }
 
@@ -88,7 +89,7 @@ GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
-        snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1, "%s", msg);
+        snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf) - 1, "%s", msg);
     }
 }
 
@@ -454,7 +455,6 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 {
-    size_t len = 0;
     bool check_symbols = true;
     const char *ptr = symbol;
 
@@ -479,17 +479,19 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 
 #if defined(GDO_COMMON_PFX) && defined(GDO_COMMON_PFX_LEN)
     /* opt out if symbol doesn't begin with prefix */
-    len = GDO_COMMON_PFX_LEN;
+    const size_t len = GDO_COMMON_PFX_LEN;
 
     if (strncmp(symbol, GDO_COMMON_PFX, len) != 0) {
         //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
         check_symbols = false;
     }
+
+    ptr += len;
+#else
+    const size_t len = 0;
 #endif
 
     /* get symbol address */
-    ptr += len;
-
     if (check_symbols) {
 @
         /* %%symbol%% */@
@@ -499,14 +501,17 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
                     gdo_sym("%%symbol%%", _T("%%symbol%%"));@
             return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
         }
+
     }
 
 #ifdef GDO_WINAPI
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
-    _sntprintf_s(gdo_hndl.buf, _countof(gdo_hndl.buf)-1, _TRUNCATE,
+
+    const size_t buflen = _countof(gdo_hndl.buf);
+    _sntprintf_s(gdo_hndl.buf, buflen, buflen-1,
         _T("symbol not among lookup list: ") GDO_XHS, symbol);
 #else
-    snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf)-1,
+    snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf) - 1,
         "symbol not among lookup list: %s", symbol);
 #endif
 
@@ -529,7 +534,7 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
         return gdo_hndl.buf_formatted;
     }
 
-    const size_t bufmax = _countof(gdo_hndl.buf_formatted) - 1;
+    const size_t buflen = _countof(gdo_hndl.buf_formatted);
     gdo_char_t *buf = NULL;
     gdo_char_t *msg = gdo_hndl.buf;
     gdo_char_t *out = gdo_hndl.buf_formatted;
@@ -542,15 +547,15 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 
     if (buf) {
         /* put custom message in front of system error message */
-        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < bufmax) {
-            _sntprintf_s(out, bufmax, _TRUNCATE, GDO_XS _T(": ") GDO_XS, msg, buf);
+        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < (buflen-1)) {
+            _sntprintf_s(out, buflen, buflen-1, GDO_XS _T(": ") GDO_XS, msg, buf);
         } else {
-            _sntprintf_s(out, bufmax, _TRUNCATE, GDO_XS, buf);
+            _sntprintf_s(out, buflen, buflen-1, GDO_XS, buf);
         }
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, just print the error code */
-        _sntprintf_s(out, bufmax, _TRUNCATE, _T("Last saved error code: %lu"),
+        _sntprintf_s(out, buflen, buflen-1, _T("Last saved error code: %lu"),
             gdo_hndl.last_errno);
     }
 
@@ -701,11 +706,11 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
     const gdo_char_t *err = gdo_last_error();
 
-    const size_t len = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err);
-    gdo_char_t *buf = (gdo_char_t *)malloc((len + 1) * sizeof(gdo_char_t));
+    const size_t buflen = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;
+    gdo_char_t *buf = (gdo_char_t *)malloc(buflen * sizeof(gdo_char_t));
     assert(buf != NULL);
 
-    _sntprintf_s(buf, len, _TRUNCATE, fmt, symbol, err);
+    _sntprintf_s(buf, buflen, buflen-1, fmt, symbol, err);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 
     free(buf);
