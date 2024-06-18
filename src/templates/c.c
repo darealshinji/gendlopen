@@ -2,28 +2,38 @@
 # pragma comment(lib, "user32.lib")
 #endif
 
-#ifdef GDO_WINAPI
-# include <tchar.h>
-#endif
 #include <assert.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _T
-# define _T(x) x
-#endif
-
 #ifdef GDO_WINAPI
+# include <tchar.h>
 # ifdef _UNICODE
 #  define GDO_XS   L"%ls"
 #  define GDO_XHS  L"%hs"
-# else
-#  define GDO_XS   "%s"
-#  define GDO_XHS  "%s"
 # endif
 #endif
+#ifndef GDO_XS
+# define GDO_XS   "%s"
+# define GDO_XHS  "%s"
+#endif
+
+#ifndef _T
+# define _T(x) x
+#endif
+#ifndef _countof
+# define _countof(array) (sizeof(array) / sizeof(array[0]))
+#endif
+
+
+#define GDO_SNPRINTF(dst, fmt, ...) \
+    gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)
+
+#define GDO_STRLCPY(dst, src) \
+    gdo_strlcpy(dst, src, _countof(dst))
 
 
 /* typedefs */
@@ -48,15 +58,51 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
 /*****************************************************************************/
 /*                                save error                                 */
 /*****************************************************************************/
-#ifdef GDO_WINAPI
 
+/* simple implementation of snprintf */
+GDO_LINKAGE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *fmt, ...)
+{
+    /* max number of elements to write, not including the terminating NUL */
+    const size_t count = buflen - 1;
+
+    va_list ap;
+    va_start(ap, fmt);
+
+#ifdef GDO_WINAPI
+    _vsntprintf_s(str, buflen, count, fmt, ap);
+#else
+    vsnprintf(str, buflen, fmt, ap);
+#endif
+
+    va_end(ap);
+
+    /* just in case */
+    str[count] = 0;
+}
+
+/* simple implementation of strlcpy */
+GDO_LINKAGE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t dst_len)
+{
+    gdo_char_t *dst_end = dst + (dst_len - 1);
+
+    while (dst != dst_end) {
+        if ((*dst++ = *src++) == 0) {
+            return;
+        }
+    }
+
+    *dst_end = 0;
+}
+
+/* save message to error buffer */
 GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
-        const size_t buflen = _countof(gdo_hndl.buf);
-        _sntprintf_s(gdo_hndl.buf, buflen, buflen-1, GDO_XS, msg);
+        GDO_STRLCPY(gdo_hndl.buf, msg);
     }
 }
+
+#ifdef GDO_WINAPI
 
 /* Clear error buffers. */
 GDO_LINKAGE void gdo_clear_errbuf(void)
@@ -85,13 +131,6 @@ GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 
 #else
 /*********************************** dlfcn ***********************************/
-
-GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
-{
-    if (msg) {
-        snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf) - 1, "%s", msg);
-    }
-}
 
 /* Clear error buffers. */
 GDO_LINKAGE void gdo_clear_errbuf(void)
@@ -456,7 +495,6 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 {
     bool check_symbols = true;
-    const char *ptr = symbol;
 
     gdo_clear_errbuf();
 
@@ -477,22 +515,24 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         return false;
     }
 
-#if defined(GDO_COMMON_PFX) && defined(GDO_COMMON_PFX_LEN)
+#ifdef GDO_COMMON_PFX
     /* opt out if symbol doesn't begin with prefix */
-    const size_t len = GDO_COMMON_PFX_LEN;
+    const char * const pfx = GDO_COMMON_PFX;
+    const size_t len = sizeof(GDO_COMMON_PFX) - 1;
 
-    if (strncmp(symbol, GDO_COMMON_PFX, len) != 0) {
+    if ((len == 1 && *symbol != *pfx) ||
+        (len > 1 && strncmp(symbol, pfx, len) != 0))
+    {
         //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
         check_symbols = false;
     }
-
-    ptr += len;
 #else
     const size_t len = 0;
 #endif
 
     /* get symbol address */
     if (check_symbols) {
+        const char *ptr = symbol + len;
 @
         /* %%symbol%% */@
         if (strcmp((const char *)"%%symbol%%" + len, ptr) == 0) {@
@@ -506,14 +546,9 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 
 #ifdef GDO_WINAPI
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
-
-    const size_t buflen = _countof(gdo_hndl.buf);
-    _sntprintf_s(gdo_hndl.buf, buflen, buflen-1,
-        _T("symbol not among lookup list: ") GDO_XHS, symbol);
-#else
-    snprintf(gdo_hndl.buf, sizeof(gdo_hndl.buf) - 1,
-        "symbol not among lookup list: %s", symbol);
 #endif
+
+    GDO_SNPRINTF(gdo_hndl.buf, _T("symbol not among lookup list: ") GDO_XHS, symbol);
 
     return false;
 }
@@ -534,7 +569,6 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
         return gdo_hndl.buf_formatted;
     }
 
-    const size_t buflen = _countof(gdo_hndl.buf_formatted);
     gdo_char_t *buf = NULL;
     gdo_char_t *msg = gdo_hndl.buf;
     gdo_char_t *out = gdo_hndl.buf_formatted;
@@ -547,16 +581,17 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 
     if (buf) {
         /* put custom message in front of system error message */
-        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 3) < (buflen-1)) {
-            _sntprintf_s(out, buflen, buflen-1, GDO_XS _T(": ") GDO_XS, msg, buf);
+        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) <
+            _countof(gdo_hndl.buf_formatted))
+        {
+            GDO_SNPRINTF(out, GDO_XS _T(": ") GDO_XS, msg, buf);
         } else {
-            _sntprintf_s(out, buflen, buflen-1, GDO_XS, buf);
+            GDO_STRLCPY(out, buf);
         }
         LocalFree(buf);
     } else {
-        /* FormatMessage() failed, just print the error code */
-        _sntprintf_s(out, buflen, buflen-1, _T("Last saved error code: %lu"),
-            gdo_hndl.last_errno);
+        /* FormatMessage() failed, save the error code */
+        GDO_SNPRINTF(out, _T("Last saved error code: %lu"), gdo_hndl.last_errno);
     }
 
     return out;
@@ -710,7 +745,7 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
     gdo_char_t *buf = (gdo_char_t *)malloc(buflen * sizeof(gdo_char_t));
     assert(buf != NULL);
 
-    _sntprintf_s(buf, buflen, buflen-1, fmt, symbol, err);
+    gdo_snprintf(buf, buflen, fmt, symbol, err);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 
     free(buf);

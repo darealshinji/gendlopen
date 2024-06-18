@@ -95,9 +95,9 @@ Compiling
 
 `./configure && make && make test`
 
-On Windows you can run `nmake` inside the `nmake` directory.
+On Windows (MSVC) you can run `nmake` inside the `nmake` directory.
 
-To cross-compiling with MinGW and clang-cl:
+Cross-compiling with MinGW and clang-cl:
 ``` sh
 ./configure host=x86_64-w64-mingw32 && make
 ./configure cl=clang-cl && make

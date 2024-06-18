@@ -377,8 +377,7 @@ void gendlopen::tokenize_input()
 
     if (pfx.size() > 0) {
         std::stringstream out;
-        out << "#define " << m_name_upper << "_COMMON_PFX     \"" << pfx << "\"\n";
-        out << "#define " << m_name_upper << "_COMMON_PFX_LEN " << pfx.size() << '\n';
+        out << "#define " << m_name_upper << "_COMMON_PFX \"" << pfx << "\"\n";
         add_def(out.str());
     }
 }

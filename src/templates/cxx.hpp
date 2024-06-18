@@ -728,7 +728,14 @@ public:
     /* load a specific symbol */
     bool load_symbol(const std::string &symbol)
     {
-        size_t len = 0;
+        auto err_not_found = [&] ()
+        {
+# ifdef GDO_WINAPI
+            m_last_error = ERROR_NOT_FOUND;
+# endif
+            m_errmsg = "symbol not among lookup list: ";
+            m_errmsg += symbol;
+        };
 
         clear_error();
 
@@ -746,26 +753,28 @@ public:
             return false;
         }
 
-#if defined(GDO_COMMON_PFX) && defined(GDO_COMMON_PFX_LEN)
+#ifdef GDO_COMMON_PFX
         /* opt out if symbol doesn't begin with prefix */
-        len = GDO_COMMON_PFX_LEN;
+        const char * const pfx = GDO_COMMON_PFX;
+        const size_t len = sizeof(GDO_COMMON_PFX) - 1;
 
-        if (strncmp(symbol.c_str(), GDO_COMMON_PFX, len) != 0) {
+        if ((len == 1 && *symbol != *pfx) ||
+            (len > 1 && strncmp(symbol, pfx, len) != 0))
+        {
             //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
-# ifdef GDO_WINAPI
-            m_last_error = ERROR_NOT_FOUND;
-# endif
-            m_errmsg = "symbol not among lookup list: ";
-            m_errmsg += symbol;
+            err_not_found();
             return false;
         }
+#else
+        const size_t len = 0;
 #endif
 
-        /* get symbol address */
+        /* increment string */
         auto incr = [&len] (const char *str) -> const char* {
             return str + len;
         };
 
+        /* get symbol address */
         const char *ptr = symbol.c_str() + len;
 @
         if (strcmp(incr("%%symbol%%"), ptr) == 0) {@
@@ -775,11 +784,7 @@ public:
             return (m_ptr_%%symbol%% != nullptr);@
         }
 
-#ifdef GDO_WINAPI
-        m_last_error = ERROR_NOT_FOUND;
-#endif
-        m_errmsg = "symbol not among lookup list: ";
-        m_errmsg += symbol;
+        err_not_found();
 
         return false;
     }
