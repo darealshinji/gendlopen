@@ -49,6 +49,8 @@ test/c_auto_free
 test/c_auto_free.h
 test/c_autoload
 test/c_autoload.h
+test/c_load_symbol
+test/c_load_symbol.h
 test/c_minimal
 test/c_minimal.h
 test/c_multi
@@ -59,6 +61,8 @@ test/c_win32_wide
 test/c_win32_wide.h
 test/cxx_autoload
 test/cxx_autoload.hpp
+test/cxx_load_symbol
+test/cxx_load_symbol.hpp
 test/cxx_minimal
 test/cxx_minimal.hpp
 test/cxx_multi
