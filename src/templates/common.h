@@ -1,15 +1,15 @@
-/* whether to use WinAPI */
-#if defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MSYS__)
-# define GDO_OS_WIN32
-# ifndef GDO_USE_DLOPEN
-#  define GDO_WINAPI
-# endif
+//%DNL%// common macros and includes
+
+/* whether to use WinAPI or dlfcn */
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+# define GDO_WINAPI
 #endif
 
 /* default headers to include */
 #ifdef GDO_WINAPI
 # include <windows.h>
 #else
+# include <sys/types.h>
 # include <link.h>
 # include <dlfcn.h>
 #endif
@@ -20,19 +20,21 @@
 /* default library name */
 #ifndef GDO_DEFAULT_LIB
 # if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)
-#  define GDO_DEFAULT_LIB GDO_DEFAULT_LIBW
+#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW
 # elif defined(GDO_DEFAULT_LIBA)
-#  define GDO_DEFAULT_LIB GDO_DEFAULT_LIBA
+#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBA
 # endif
 #endif
 
-/* whether to use dlinfo(3) */
-#if defined(HAVE_DLINFO) && !defined(GDO_WINAPI)
+/* whether to use dlinfo(3);
+ * n/a on Windows (both APIs) and Haiku */
+#if !defined(_WIN32) && !defined(__HAIKU__)
 # define GDO_HAVE_DLINFO
 #endif
 
-/* whether to use dlmopen(3) */
-#if defined(HAVE_DLMOPEN) && !defined(GDO_WINAPI)
+/* whether to use dlmopen(3);
+ * only available on Glibc and Solaris/IllumOS */
+#if defined(__GLIBC__) || defined(__sun)
 # define GDO_HAVE_DLMOPEN
 #endif
 

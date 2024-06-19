@@ -171,17 +171,6 @@ GDO_VISIBILITY
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names. Use with care.
 
-
-********************************************************
-* Global settings (can be used as feature test macros) *
-********************************************************
-
-HAVE_DLMOPEN
-    Enables usage of `dlmopen()'. Has no effect if win32 API is used.
-
-HAVE_DLINFO
-    Enables usage of `dlinfo()'. Has no effect if win32 API is used.
-
 ***/
 
 #include <iostream>
@@ -758,10 +747,10 @@ public:
         const char * const pfx = GDO_COMMON_PFX;
         const size_t len = sizeof(GDO_COMMON_PFX) - 1;
 
-        if ((len == 1 && *symbol != *pfx) ||
-            (len > 1 && strncmp(symbol, pfx, len) != 0))
+        if ((len == 1 && symbol[0] != pfx[0]) ||
+            (len > 1 && strncmp(symbol.c_str(), pfx, len) != 0))
         {
-            //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
+            //%DNL%// std::cerr << "DEBUG: not a common symbol prefix" << std::endl;
             err_not_found();
             return false;
         }
@@ -864,7 +853,7 @@ public:
      * libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
     static std::string libname(const std::string &name, unsigned int api)
     {
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MSYS__)
+#ifdef _WIN32
         return "lib" + (name + ('-' + (std::to_string(api) + ".dll")));
 #elif defined(__APPLE__) && defined(__MACH__)
         return "lib" + (name + ('.' + (std::to_string(api) + ".dylib")));
@@ -972,8 +961,7 @@ public:
 
 #ifdef GDO_HAVE_DLINFO
         struct link_map *lm = nullptr;
-
-        //std::cerr << "DEBUG: using dlinfo()" << std::endl;
+        //%DNL%// std::cerr << "DEBUG: using dlinfo()" << std::endl;
 
         int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
         save_error();
@@ -982,24 +970,23 @@ public:
 #else
         /* use dladdr() to get the library path from a symbol pointer */
         std::string fname;
-
-        //std::cerr << "DEBUG: using dladdr()" << std::endl;
+        //%DNL%// std::cerr << "DEBUG: using dladdr()" << std::endl;
 
         if (no_symbols_loaded()) {
             m_errmsg = "no symbols were loaded";
             return {};
         }
 
-        auto get_fname = [] (const void *ptr, std::string &s)
+        auto get_fname = [&fname] (const void *ptr)
         {
             Dl_info info;
 
             if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {
-                s = info.dli_fname;
+                fname = info.dli_fname;
             }
         };
 
-        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%), fname);@
+        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%));@
         if (!fname.empty()) return fname;
 
         m_errmsg = "dladdr() failed to get library path";

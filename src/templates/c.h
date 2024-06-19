@@ -181,18 +181,6 @@ LIBEXT
     Shared library file extension without dot ("dll", "dylib" or "so").
     Useful i.e. on plugins.
 
-
-
-********************************************************
-* Global settings (can be used as feature test macros) *
-********************************************************
-
-HAVE_DLMOPEN
-    Enables usage of `dlmopen()'. Has no effect if win32 API is used.
-
-HAVE_DLINFO
-    Enables usage of `dlinfo()'. Has no effect if win32 API is used.
-
 ***/
 
 

@@ -8,7 +8,7 @@
 #ifdef LIBEXTW
 #undef LIBEXTW
 #endif
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MSYS__)
+#ifdef _WIN32
 # define LIBEXTA    ".dll"
 # define LIBEXTW   L".dll"
 #elif defined(__APPLE__) && defined(__MACH__)
@@ -33,7 +33,7 @@
 #ifdef LIBNAMEW
 #undef LIBNAMEW
 #endif
-#if defined(_WIN32) || defined(__CYGWIN__) || defined(__MSYS__)
+#ifdef _WIN32
 # define LIBNAMEA(NAME, API)    "lib" #NAME "-" #API ".dll"
 # define LIBNAMEW(NAME, API)   L"lib" #NAME "-" #API ".dll"
 #elif defined(__APPLE__) && defined(__MACH__)
@@ -49,7 +49,7 @@
 
 
 /* Unicode/ANSI default macros */
-#if defined(_WIN32) && defined(_UNICODE) && !defined(__CYGWIN__) && !defined(__MSYS__)
+#if defined(_WIN32) && defined(_UNICODE)
 # define LIBEXT              LIBEXTW
 # define LIBNAME(NAME, API)  LIBNAMEW(NAME, API)
 #else

@@ -523,7 +523,7 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
     if ((len == 1 && *symbol != *pfx) ||
         (len > 1 && strncmp(symbol, pfx, len) != 0))
     {
-        //%DNL% //fprintf(stderr, "DEBUG: not a common symbol prefix\n");
+        //%DNL%// fprintf(stderr, "DEBUG: not a common symbol prefix\n");
         check_symbols = false;
     }
 #else
@@ -653,7 +653,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #elif defined(GDO_HAVE_DLINFO)
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
-    //%DNL% //fprintf(stderr, "DEBUG: using dlinfo()\n");
+    //%DNL%// fprintf(stderr, "DEBUG: using dlinfo()\n");
 
     if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         gdo_save_dlerror();
@@ -664,7 +664,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #else
     /* use dladdr() to get the library path from a symbol pointer */
     char *fname;
-    //%DNL% //fprintf(stderr, "DEBUG: using dladdr()\n");
+    //%DNL%// fprintf(stderr, "DEBUG: using dladdr()\n");
 
     if (gdo_no_symbols_loaded()) {
         gdo_save_to_errbuf("no symbols were loaded");
@@ -706,9 +706,9 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 
 GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)
 {
-#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
-#elif defined(GDO_OS_WIN32) && defined(_UNICODE)
+#elif defined(_WIN32) && defined(_UNICODE)
     fwprintf(stderr, L"%ls\n", msg);
 #else
     fprintf(stderr, "%s\n", msg);
@@ -732,7 +732,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 /* Windows: show message in a MessageBox window */
 GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
@@ -750,7 +750,7 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
     free(buf);
 }
-#endif //GDO_OS_WIN32 && GDO_USE_MESSAGE_BOX
+#endif //_WIN32 && GDO_USE_MESSAGE_BOX
 
 
 /* This function is used by the wrapper functions to perform the loading
@@ -774,10 +774,10 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 
     /* an error has occured: display an error message */
 
-#if defined(GDO_OS_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     /* Windows: popup message box window */
     gdo_win32_last_error_messagebox(symbol);
-#elif defined(GDO_OS_WIN32) && defined(_UNICODE)
+#elif defined(_WIN32) && defined(_UNICODE)
     /* Windows: output to console (wide characters) */
     fwprintf(stderr, L"error in wrapper function for symbol `%ls':\n%ls\n",
         symbol, gdo_last_error());
@@ -785,7 +785,7 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
     /* default: UTF-8 output to console (any operating system) */
     fprintf(stderr, "error in wrapper function for symbol `%s':\n%s\n",
         symbol, gdo_last_error());
-#endif //GDO_OS_WIN32 && GDO_USE_MESSAGE_BOX
+#endif //_WIN32 && GDO_USE_MESSAGE_BOX
 
     /* free library handle and exit */
     gdo_free_lib();
