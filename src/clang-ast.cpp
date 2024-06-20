@@ -83,8 +83,8 @@ decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vs
     decl_t decl;
     std::smatch m;
 
-    const std::regex reg("^[|`]"
-        "-(Function|Var)Decl 0x.*?"
+    const std::regex reg(
+        "^[|`]-(Function|Var)Decl 0x.*?"
         " ([A-Za-z0-9_]*?) "  /* symbol */
         "'(.*?)'.*"           /* type */
     );
@@ -143,7 +143,8 @@ decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vs
 /* get function parameter declaration */
 bool get_parameters(std::string &line, std::string &args, std::string &notype_args, size_t &count)
 {
-    const std::regex reg("^.*?-ParmVarDecl 0x.*?"
+    const std::regex reg(
+        "^.*?-ParmVarDecl 0x.*?"
         "'(.*?)'.*"  /* type */
     );
 

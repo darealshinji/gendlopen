@@ -58,6 +58,14 @@ inline bool is_prefixed(const std::string &s, const vstring_t &list)
     return false;
 }
 
+/* delete prefix from string */
+inline void delete_prefix(std::string &str, const std::string &prefix)
+{
+    if (str.starts_with(prefix)) {
+        str.erase(0, prefix.size());
+    }
+}
+
 /* delete suffix from string */
 inline void delete_suffix(std::string &str, const std::string &suffix)
 {

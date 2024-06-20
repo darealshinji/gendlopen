@@ -288,8 +288,10 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
     }
 
     proto_t proto = { m[1], m[2], m[3], "" };
+
     utils::strip_spaces(proto.type);
     utils::strip_spaces(proto.args);
+    utils::delete_prefix(proto.type, "extern ");
 
     if (skip_parameter_names) {
         /* just in case */
@@ -322,12 +324,9 @@ bool tokenize_object(const std::string &s, vproto_t &objects)
     }
 
     proto_t obj = { m[1], m[2], {}, {} };
-    utils::strip_spaces(obj.type);
 
-    /* remove "extern" keyword */
-    if (obj.type.starts_with("extern ")) {
-        obj.type.erase(0, 7);
-    }
+    utils::strip_spaces(obj.type);
+    utils::delete_prefix(obj.type, "extern ");
 
     objects.push_back(obj);
 
