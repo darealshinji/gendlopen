@@ -2,12 +2,13 @@
 
 namespace gdo
 {
-    using message_callback_t = void (*)(const char *);
-
 
 class dl
 {
 public:
+
+    using message_callback_t = void (*)(const char *);
+
 
     /* default flags */
     static constexpr const int default_flags;
@@ -195,16 +196,8 @@ GDO_DISABLE_ALIASING
 
 
 
-/*****************************************************************************/
-/*                          begin of namespace                               */
-/*****************************************************************************/
 namespace gdo
 {
-    using UNUSED_REF = void;
-    using UNUSED_RESULT = void;
-
-    using message_callback_t = void (*)(const char *);
-
 
 /*****************************************************************************/
 /*                          library loader class                             */
@@ -212,6 +205,9 @@ namespace gdo
 class dl
 {
 public:
+
+    using message_callback_t = void (*)(const char *);
+
 
     /* default flags */
     static constexpr const int default_flags = GDO_DEFAULT_FLAGS;
@@ -226,6 +222,9 @@ public:
 
 
 private:
+
+    using UNUSED_REF = void;
+    using UNUSED_RESULT = void;
 
 #ifdef GDO_HAS_MSG_CB
     /* function pointer to error message callback */
@@ -1073,7 +1072,7 @@ public:
 /******************************* end of class ********************************/
 
 } /* namespace gdo */
-/***************************** end of namespace ******************************/
+
 
 
 /* aliases to raw function pointers */

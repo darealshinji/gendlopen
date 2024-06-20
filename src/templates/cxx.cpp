@@ -1,5 +1,5 @@
 #ifdef GDO_HAS_MSG_CB
-gdo::message_callback_t gdo::dl::m_message_callback = nullptr;
+gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;
 #endif
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
