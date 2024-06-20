@@ -11,7 +11,7 @@ int main()
     gdo::dl loader;
 
     /* load library and each individual symbol */
-    if (!loader.load( gdo::dl::libname("helloworld", 0) ) ||
+    if (!loader.load( gdo::dl::make_libname("helloworld", 0) ) ||
         //!loader.load_symbol("helloworldinit") ||
         //!loader.load_symbol("helloworl_init") ||
         //!loader.load_symbol("xhelloworld_init") ||

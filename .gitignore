@@ -61,6 +61,8 @@ test/c_win32_wide
 test/c_win32_wide.h
 test/cxx_autoload
 test/cxx_autoload.hpp
+test/cxx_list
+test/cxx_list.hpp
 test/cxx_load_symbol
 test/cxx_load_symbol.hpp
 test/cxx_minimal

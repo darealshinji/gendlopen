@@ -8,6 +8,7 @@ BINS_ANY = \
 	c_multi$(EXEEXT) \
 	cxx_test$(EXEEXT) \
 	cxx_autoload$(EXEEXT) \
+	cxx_list$(EXEEXT) \
 	cxx_load_symbol$(EXEEXT) \
 	cxx_minimal$(EXEEXT) \
 	cxx_multi$(EXEEXT)
@@ -29,6 +30,7 @@ GEN_SOURCES_ANY = \
 	c_multi.c \
 	cxx_test.hpp \
 	cxx_autoload.hpp \
+	cxx_list.hpp \
 	cxx_load_symbol.hpp \
 	cxx_minimal.hpp \
 	cxx_multi.hpp \
@@ -110,6 +112,9 @@ cxx_test$(EXEEXT): cxx_test.hpp cxx_test.cpp
 cxx_autoload$(EXEEXT): cxx_autoload.hpp cxx_autoload.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_autoload.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
+cxx_list$(EXEEXT): cxx_list.hpp cxx_list.cpp
+	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_list.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
 cxx_load_symbol$(EXEEXT): cxx_load_symbol.hpp cxx_load_symbol.cpp
 	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_load_symbol.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
@@ -186,6 +191,9 @@ cxx_test.hpp:
 
 cxx_autoload.hpp:
 	$(gen_v)$(GENHDR) $@ --format=C++ --library=API:0:helloworld
+
+cxx_list.hpp:
+	$(gen_v)$(GENHDR) $@ --format=C++
 
 cxx_load_symbol.hpp:
 	$(gen_v)$(GENHDR) $@ --format=C++

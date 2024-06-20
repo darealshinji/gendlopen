@@ -1,29 +1,34 @@
 #include <iostream>
 #include <string>
+#include <vector>
 #include "helloworld.h"
 
 /* include generated header file */
-#include "cxx_test.hpp"
+#include "cxx_list.hpp"
 
 
 int main()
 {
-    /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( gdo::dl::make_libname("helloworld", 0) );
+    gdo::dl loader;
 
-    /* load library and symbols */
-    if (!loader.load_lib_and_symbols()) {
+#ifdef _WIN32
+    std::vector<std::wstring> list = {
+        L"helloworld.dll",
+        L"libhelloworld.dll",
+        L"libhelloworld-0.dll",
+    };
+#else
+    std::vector<std::string> list = {
+        "libhelloworld.0.dylib",
+        "libhelloworld.so.0",
+        "libhelloworld.so"
+    };
+#endif
+
+    if (!loader.load_from_list(list) || !loader.load_symbols()) {
         std::cerr << loader.error() << std::endl;
         return 1;
     }
-
-/*
-alternatively the object can be initialized without arguments
-and the filename is then specified during loading:
-
-    gdo::dl loader;
-    if (!loader.load( gdo::dl::make_libname("helloworld", 0) ) || ...
-*/
 
     /* get and print the full library path */
     std::string orig = loader.origin();
@@ -32,7 +37,8 @@ and the filename is then specified during loading:
         /* print error and return */
         std::cerr << loader.error() << std::endl;
     } else {
-        std::cout << "library loaded at: " << orig << std::endl;
+        std::cout << "library loaded at: "
+            << loader.filename() << " -> " << orig << std::endl;
     }
 
 
