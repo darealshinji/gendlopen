@@ -116,7 +116,11 @@ void getopt_long_cxx::init()
         return;
     }
 
-#if !defined(__OPTIMIZE__)
+#if (defined(__GNUC__) && !defined(__OPTIMIZE__)) || \
+    (defined(_MSC_VER) && defined(_DEBUG))
+
+    /* GCC/Clang: optimization disabled
+     * MSVC: debug build enabled */
 
     auto throw_if_empty = [] (const char *val, const std::string &msg) {
         if (!val) {
@@ -126,17 +130,17 @@ void getopt_long_cxx::init()
         }
     };
 
-    auto check_dup = [] (vstring_t &list, const std::string &msg)
+    auto check_dup = [] (vstring_t &list, const std::string &str)
     {
         std::sort(list.begin(), list.end());
         auto it = std::ranges::adjacent_find(list);
 
         if (it != list.end()) {
-            std::string s = msg;
-            s += '`';
-            s += *it;
-            s += "' is not unique";
-            throw error(s);
+            std::string msg = "getopt_long() " + str;
+            msg += " option `";
+            msg += *it;
+            msg += "' is not unique";
+            throw error(msg);
         }
     };
 
@@ -157,10 +161,10 @@ void getopt_long_cxx::init()
     }
 
     /* check for duplicates */
-    check_dup(list_long, "getopt_long() long option ");
-    check_dup(list_short, "getopt_long() short option ");
+    check_dup(list_long, "long");
+    check_dup(list_short, "short");
 
-#endif //!__OPTIMIZE__
+#endif
 
     /* create option table and optstring */
     for (const auto &opt : *m_args) {
