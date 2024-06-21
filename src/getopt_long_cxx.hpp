@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <list>
 #include <string>
+#include <vector>
 #include <getopt.h>
 
 
@@ -61,16 +62,23 @@ public:
 
 private:
 
-    int m_argc;
-    char **m_argv;
-    const std::list<arg_t> *m_args;
+    inline bool has_arg(const arg_t &opt) {
+        return (opt.val_arg && *opt.val_arg);
+    }
 
-    struct option *m_longopts = nullptr;
+    const std::list<arg_t> *m_args;
+    int m_argc = 0;
+    char **m_argv = nullptr;
+    std::vector<std::string> m_argv_strs;
+    std::vector<char *> m_argv_ptrs;
+
+    std::vector<struct option> m_longopts;
     std::string m_optstring;
     int m_longindex = 0;
 
-    /* create option table and optstring */
-    void init_longopts();
+    /* recursive checks for @file arguments */
+    void check_atfile_arg(const char *arg);
+    void parse_atfile_args(int &argc, char **&argv);
 
     /* print formatted full help of argument "arg" */
     void print_arg_full_help(const arg_t &arg);

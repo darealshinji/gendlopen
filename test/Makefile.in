@@ -204,7 +204,6 @@ cxx_minimal.hpp:
 @W32@cxx_win32_wide.hpp:
 @W32@	$(gen_v)$(GENHDR) $@ --format=C++
 
+#--format=C++ --separate --library=API:0:helloworld --include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 cxx_multi.hpp:
-	$(gen_v)$(GENHDR) $@ --format=C++ --separate --library=API:0:helloworld \
-	  --include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
-
+	$(gen_v)$(GENHDR) $@ @cxx_multi.txt

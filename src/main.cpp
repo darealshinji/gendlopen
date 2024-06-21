@@ -26,9 +26,6 @@
 # ifndef HAVE_PROGRAM_INVOCATION_NAME
 #  define HAVE_PROGRAM_INVOCATION_NAME
 # endif
-# ifndef _GNU_SOURCE
-#  define _GNU_SOURCE
-# endif
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
     defined(__DragonFly__) || defined(__APPLE__)
 # ifndef HAVE_GETPROGNAME
@@ -263,6 +260,19 @@ namespace
 
     const std::list<getopt_long_cxx::arg_t> args_list =
     {
+        { "@", '@', "<file>",
+
+    /* help */
+    "read command-line options from <file>",
+
+    /* more help */
+    "Read command-line options from <file>. The options read are inserted in place of the original @<file> option. "
+    "If <file> does not exist, or cannot be read, then the option will be treated literally, and not removed.\n"
+    "\n"
+    "Options in <file> are separated by newline. "
+    "The file may itself contain additional @<file> options; any such options will be processed recursively."
+        },
+
         { "help", ARG_HELP, NULL,
 
     /* help */
@@ -527,7 +537,7 @@ int main(int argc, char **argv)
         }
     }
     catch (const getopt_long_cxx::error &e) {
-        std::cerr << argv[0] << ": " << e.what() << std::endl;
+        std::cerr << argv[0] << ": error: " << e.what() << std::endl;
         return 1;
     }
 

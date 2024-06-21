@@ -23,8 +23,11 @@
  */
 
 #include <stdexcept>
+#include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <list>
+#include <ranges>
 #include <sstream>
 #include <errno.h>
 #include <getopt.h>
@@ -33,27 +36,88 @@
 #include <string.h>
 
 #include "getopt_long_cxx.hpp"
+#include "types.hpp"
 
 
 /* c'tor */
 getopt_long_cxx::getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args)
-    : m_argc(argc), m_argv(argv), m_args(&args)
+    : m_args(&args)
 {
+    for (const auto &opt : *m_args) {
+        if (opt.val_short == '@') {
+            parse_atfile_args(argc, argv);
+        }
+        break;
+    }
 }
 
 
 /* d'tor */
 getopt_long_cxx::~getopt_long_cxx()
 {
-    if (m_longopts) {
-        delete[] m_longopts;
+}
+
+
+/* check for @file argument */
+void getopt_long_cxx::check_atfile_arg(const char *arg)
+{
+    std::string line;
+    std::ifstream ifs;
+
+    /* try to open arg as a file */
+    if (*arg == '@') {
+        //std::cerr << "DEBUG: open file: " << (arg + 1) << std::endl;
+        ifs.open(arg + 1);
     }
+
+    if (ifs.is_open()) {
+        /* read lines, parse @file args recursively */
+        while (std::getline(ifs, line)) {
+            if (line[0] == '@' && line != arg) {
+                check_atfile_arg(line.c_str());
+            } else {
+                m_argv_strs.push_back(line);
+            }
+        }
+    } else {
+        m_argv_strs.push_back(arg);
+    }
+}
+
+
+/* recursive checks for @file argument */
+void getopt_long_cxx::parse_atfile_args(int &argc, char **&argv)
+{
+    /* add argv[0] first */
+    m_argv_strs.push_back(argv[0]);
+
+    /* check arguments for @file and parse if needed */
+    for (int i = 1; i < argc; i++) {
+        check_atfile_arg(argv[i]);
+    }
+
+    /* create new arg vector */
+    for (size_t i = 0; i < m_argv_strs.size(); i++) {
+        char *ptr = const_cast<char *>(m_argv_strs.at(i).c_str());
+        m_argv_ptrs.push_back(ptr);
+    }
+
+    m_argc = static_cast<int>(m_argv_ptrs.size());
+    m_argv_ptrs.push_back(nullptr);
+    m_argv = m_argv_ptrs.data();
 }
 
 
 /* initialize options for parsing with getopt_long() */
 void getopt_long_cxx::init()
 {
+    /* already initialized? */
+    if (!m_longopts.empty()) {
+        return;
+    }
+
+#if !defined(__OPTIMIZE__)
+
     auto throw_if_empty = [] (const char *val, const std::string &msg) {
         if (!val) {
             throw error(msg + " == NULL");
@@ -62,12 +126,23 @@ void getopt_long_cxx::init()
         }
     };
 
-    /* already initialized? */
-    if (m_longopts) {
-        return;
-    }
+    auto check_dup = [] (vstring_t &list, const std::string &msg)
+    {
+        std::sort(list.begin(), list.end());
+        auto it = std::ranges::adjacent_find(list);
 
-    /* check options */
+        if (it != list.end()) {
+            std::string s = msg;
+            s += '`';
+            s += *it;
+            s += "' is not unique";
+            throw error(s);
+        }
+    };
+
+    vstring_t list_long, list_short;
+
+    /* check for empty options */
     for (const auto &opt : *m_args) {
         throw_if_empty(opt.val_long, "val_long");
         throw_if_empty(opt.help, "help");
@@ -76,26 +151,33 @@ void getopt_long_cxx::init()
         if (opt.val_short == 0) {
             throw error("val_short == 0");
         }
+
+        list_long.push_back(opt.val_long);
+        list_short.push_back( std::string{ 1, opt.val_short } );
     }
 
+    /* check for duplicates */
+    check_dup(list_long, "getopt_long() long option ");
+    check_dup(list_short, "getopt_long() short option ");
+
+#endif //!__OPTIMIZE__
+
     /* create option table and optstring */
-    auto ptr = m_longopts = new struct option[m_args->size() + 1];
-
     for (const auto &opt : *m_args) {
-        int has_arg = (opt.val_arg && *opt.val_arg) ?
-            required_argument : no_argument;
+        int val_arg = has_arg(opt) ? required_argument : no_argument;
 
-        *ptr++ = { opt.val_long, has_arg, NULL, opt.val_short };
+        struct option lopt = { opt.val_long, val_arg, NULL, opt.val_short };
+        m_longopts.push_back(lopt);
 
         /* append short option to optstring */
         m_optstring.push_back(opt.val_short);
 
-        if (has_arg == required_argument) {
+        if (val_arg == required_argument) {
             m_optstring.push_back(':');
         }
     }
 
-    *ptr = { NULL, 0, NULL, 0 };
+    m_longopts.push_back( { NULL, 0, NULL, 0 } );
 }
 
 
@@ -105,7 +187,7 @@ bool getopt_long_cxx::getopt(int &c)
     init();
 
     /* returns -1 if there are no more option characters */
-    c = getopt_long(m_argc, m_argv, m_optstring.c_str(), m_longopts, &m_longindex);
+    c = getopt_long(m_argc, m_argv, m_optstring.c_str(), m_longopts.data(), &m_longindex);
 
     if (c != -1) {
         /* not done yet */
@@ -145,21 +227,31 @@ void getopt_long_cxx::print_help()
         /* options */
         std::string line;
 
-        if (arg.val_short > ' ') {
-            /* short option is a printable character */
-            line = "  -";
-            line += arg.val_short;
+        if (arg.val_short == '@') {
+            /* @file */
+            if (has_arg(arg)) {
+                line = "  @";
+                line += arg.val_arg;
+            } else {
+                line = "  @file";
+            }
         } else {
-            line = "    ";
-        }
+            if (arg.val_short > ' ') {
+                /* short option is a printable character */
+                line = "  -";
+                line += arg.val_short;
+            } else {
+                line = "    ";
+            }
 
-        line += " --";
-        line += arg.val_long;
+            line += " --";
+            line += arg.val_long;
 
-        if (arg.val_arg && *arg.val_arg) {
-            line += '=';
-            line += arg.val_arg;
-            line += " ";
+            if (has_arg(arg)) {
+                line += '=';
+                line += arg.val_arg;
+                line += " ";
+            }
         }
 
         /* append spaces */
@@ -205,25 +297,34 @@ void getopt_long_cxx::print_arg_full_help(const arg_t &arg)
     /* print first line with options */
     std::string line = "\n  ";
 
-    if (arg.val_short > ' ') {
-        /* short option is a printable character */
-        line += '-';
-        line += arg.val_short;
+    if (arg.val_short == '@') {
+        if (has_arg(arg)) {
+            line += '@';
+            line += arg.val_arg;
+        } else {
+            line += "@file";
+        }
+    } else {
+        if (arg.val_short > ' ') {
+            /* short option is a printable character */
+            line += '-';
+            line += arg.val_short;
 
-        if (arg.val_arg && *arg.val_arg) {
-            line += ' ';
+            if (has_arg(arg)) {
+                line += ' ';
+                line += arg.val_arg;
+            }
+            line += ", --";
+        } else {
+            line += "--";
+        }
+
+        line += arg.val_long;
+
+        if (has_arg(arg)) {
+            line += '=';
             line += arg.val_arg;
         }
-        line += ", --";
-    } else {
-        line += "--";
-    }
-
-    line += arg.val_long;
-
-    if (arg.val_arg && *arg.val_arg) {
-        line += '=';
-        line += arg.val_arg;
     }
 
     std::cout << line << "\n\n";
@@ -280,6 +381,11 @@ bool getopt_long_cxx::parse_help_switch()
     }
 
     const char *opt = m_argv[2];
+
+    if (*opt == '@') {
+        opt = "@";
+    }
+
     const size_t len = strlen(opt);
     char short_opt = 0;
     const char *long_opt = NULL;

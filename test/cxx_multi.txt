@@ -1,0 +1,7 @@
+--format=C++
+--separate
+--library
+API:0:helloworld
+--include=helloworld.h
+-DGDO_ENABLE_AUTOLOAD
+-DBUILDING_STATIC
