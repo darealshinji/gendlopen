@@ -260,19 +260,6 @@ namespace
 
     const std::list<getopt_long_cxx::arg_t> args_list =
     {
-        { "@", '@', "<file>",
-
-    /* help */
-    "read command-line options from <file>",
-
-    /* more help */
-    "Read command-line options from <file>. The options read are inserted in place of the original @<file> option. "
-    "If <file> does not exist, or cannot be read, then the option will be treated literally, and not removed.\n"
-    "\n"
-    "Options in <file> are separated by newline. "
-    "The file may itself contain additional @<file> options; any such options will be processed recursively."
-        },
-
         { "help", ARG_HELP, NULL,
 
     /* help */
@@ -513,6 +500,24 @@ namespace
     "This flag is ignored if the input isn't a Clang AST."
         }
     };
+
+
+    /* @file */
+    const getopt_long_cxx::arg_t atfile =
+    {
+        NULL, 0, "<file>",
+
+        /* help */
+        "read command-line options from <file>",
+
+        /* more help */
+        "Read command-line options from <file>. The options read are inserted in place of the original @<file> option. "
+        "If <file> does not exist, or cannot be read, then the option will be treated literally, and not removed.\n"
+        "\n"
+        "Options in <file> are separated by newline. "
+        "The file may itself contain additional @<file> options; any such options will be processed recursively."
+    };
+
 } /* anonymous namespace */
 
 
@@ -525,7 +530,7 @@ int main(int argc, char **argv)
     output::format fmt = output::c;
 
     /* initialize command line options */
-    getopt_long_cxx opt(argc, argv, args_list);
+    getopt_long_cxx opt(argc, argv, args_list, atfile);
 
     try {
         opt.init();

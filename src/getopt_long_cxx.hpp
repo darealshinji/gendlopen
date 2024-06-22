@@ -66,9 +66,12 @@ private:
         return (opt.val_arg && *opt.val_arg);
     }
 
+    int m_argc;
+    char **m_argv;
     const std::list<arg_t> *m_args;
-    int m_argc = 0;
-    char **m_argv = nullptr;
+    arg_t m_atfile;
+
+    bool m_have_atfile = false;
     std::vector<std::string> m_argv_strs;
     std::vector<char *> m_argv_ptrs;
 
@@ -80,13 +83,14 @@ private:
     void check_atfile_arg(const char *arg);
     void parse_atfile_args(int &argc, char **&argv);
 
-    /* print formatted full help of argument "arg" */
+    /* print formatted help of argument "arg" */
+    void print_arg_help(const arg_t &arg);
     void print_arg_full_help(const arg_t &arg);
 
 public:
 
     /* c'tor */
-    getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args);
+    getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args, const arg_t &atfile = {});
 
     /* d'tor */
     ~getopt_long_cxx();

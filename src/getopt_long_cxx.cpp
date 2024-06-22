@@ -40,14 +40,16 @@
 
 
 /* c'tor */
-getopt_long_cxx::getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args)
-    : m_args(&args)
+getopt_long_cxx::getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args, const arg_t &atfile)
+    : m_argc(argc), m_argv(argv), m_args(&args)
 {
-    for (const auto &opt : *m_args) {
-        if (opt.val_short == '@') {
-            parse_atfile_args(argc, argv);
-        }
-        break;
+    m_atfile = {
+        "@", '@', atfile.val_arg, atfile.help, atfile.more_help
+    };
+
+    if (atfile.help && *atfile.help && atfile.more_help && *atfile.more_help) {
+        m_have_atfile = true;
+        parse_atfile_args(argc, argv);
     }
 }
 
@@ -146,14 +148,22 @@ void getopt_long_cxx::init()
 
     vstring_t list_long, list_short;
 
-    /* check for empty options */
+    /* check for empty options or '@' */
     for (const auto &opt : *m_args) {
         throw_if_empty(opt.val_long, "val_long");
         throw_if_empty(opt.help, "help");
         throw_if_empty(opt.more_help, "more_help");
 
+        if (opt.val_long[0] == '@') {
+            throw error("val_long[0] == @");
+        }
+
         if (opt.val_short == 0) {
             throw error("val_short == 0");
+        }
+
+        if (opt.val_short == '@') {
+            throw error("val_short == @");
         }
 
         list_long.push_back(opt.val_long);
@@ -227,67 +237,83 @@ const char *getopt_long_cxx::arg() const {
 /* print help with automatic indentation and line breaks */
 void getopt_long_cxx::print_help()
 {
+    if (m_have_atfile) {
+        print_arg_help(m_atfile);
+    }
+
     for (const auto &arg : *m_args) {
-        /* options */
-        std::string line;
-
-        if (arg.val_short == '@') {
-            /* @file */
-            if (has_arg(arg)) {
-                line = "  @";
-                line += arg.val_arg;
-            } else {
-                line = "  @file";
-            }
-        } else {
-            if (arg.val_short > ' ') {
-                /* short option is a printable character */
-                line = "  -";
-                line += arg.val_short;
-            } else {
-                line = "    ";
-            }
-
-            line += " --";
-            line += arg.val_long;
-
-            if (has_arg(arg)) {
-                line += '=';
-                line += arg.val_arg;
-                line += " ";
-            }
-        }
-
-        /* append spaces */
-        while (line.size() < 24) {
-            line += ' ';
-        }
-
-        /* split lines and print with indentation of 25 spaces */
-        std::istringstream iss(arg.help);
-        std::string token;
-
-        while (iss >> token) {
-            if (line.size() + token.size() + 1 >= 80) {
-                std::cout << line << std::endl;
-                line.clear();
-                line.append(24, ' ');
-            }
-
-            line += ' ';
-            line += token;
-        }
-
-        std::cout << line << std::endl;
+        print_arg_help(arg);
     }
 
     std::cout << std::endl;
 }
 
 
+/* print formatted full help of argument "arg" */
+void getopt_long_cxx::print_arg_help(const arg_t &arg)
+{
+    /* options */
+    std::string line;
+
+    if (arg.val_short == '@') {
+        /* @file */
+        if (has_arg(arg)) {
+            line = "  @";
+            line += arg.val_arg;
+        } else {
+            line = "  @file";
+        }
+    } else {
+        if (arg.val_short > ' ') {
+            /* short option is a printable character */
+            line = "  -";
+            line += arg.val_short;
+        } else {
+            line = "    ";
+        }
+
+        line += " --";
+        line += arg.val_long;
+
+        if (has_arg(arg)) {
+            line += '=';
+            line += arg.val_arg;
+            line += " ";
+        }
+    }
+
+    /* append spaces */
+    while (line.size() < 24) {
+        line += ' ';
+    }
+
+    /* split lines and print with indentation of 25 spaces */
+    std::istringstream iss(arg.help);
+    std::string token;
+
+    while (iss >> token) {
+        if (line.size() + token.size() + 1 >= 80) {
+            std::cout << line << std::endl;
+            line.clear();
+            line.append(24, ' ');
+        }
+
+        line += ' ';
+        line += token;
+    }
+
+    std::cout << line << std::endl;
+}
+
+
 /* print full help with automatic indentation and line breaks */
 void getopt_long_cxx::print_full_help()
 {
+    if (m_have_atfile) {
+        print_arg_full_help(m_atfile);
+        std::cout << std::endl;
+    }
+
     for (const auto &arg : *m_args) {
         print_arg_full_help(arg);
         std::cout << std::endl;
@@ -385,32 +411,32 @@ bool getopt_long_cxx::parse_help_switch()
     }
 
     const char *opt = m_argv[2];
-
-    if (*opt == '@') {
-        opt = "@";
-    }
-
     const size_t len = strlen(opt);
     char short_opt = 0;
-    const char *long_opt = NULL;
+    const char *long_opt = nullptr;
 
-    if (len == 1) {
-        /* i */
-        short_opt = *opt;
-    } else if (len == 2 && *opt == '-') {
-        /* -i */
-        short_opt = opt[1];
-    } else if (len > 2 && *opt == '-') {
-        if (opt[1] == '-') {
-            /* --input */
-            long_opt = opt + 2;
-        } else {
-            /* -iFILE */
-            short_opt = opt[1];
-        }
+    if (*opt == '@' && m_have_atfile) {
+        print_arg_full_help(m_atfile);
+        return true;
     } else {
-        /* input */
-        long_opt = opt;
+        if (len == 1) {
+            /* i */
+            short_opt = *opt;
+        } else if (len == 2 && *opt == '-') {
+            /* -i */
+            short_opt = opt[1];
+        } else if (len > 2 && *opt == '-') {
+            if (opt[1] == '-') {
+                /* --input */
+                long_opt = opt + 2;
+            } else {
+                /* -iFILE */
+                short_opt = opt[1];
+            }
+        } else {
+            /* input */
+            long_opt = opt;
+        }
     }
 
     if (short_opt) {
