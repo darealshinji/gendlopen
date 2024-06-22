@@ -15,9 +15,12 @@ gtk_cflags=":"
 glib_cflags=":"
 pkgconfig=":"
 ld=":"
+opt=":"
 
 check_std="yes"
-check_xxd="yes"
+gen_template="asm"
+gen_template_bin=""
+template_h=""
 
 win32="no"
 msvc="no"
@@ -313,11 +316,14 @@ set pkg-config too:
 set gendlopen tool used for cross-compiling tests:
     gdo=..
 
+how to embed template files:
+    gen-template=[asm|gen|xxd]
+    asm: use inline assembly (default)
+    gen: compile and use custom code generator
+    xxd: use xxd to create code
+
 don't check for -std.. flags:
     -no-std-checks
-
-don't search for xxd tool:
-    -no-xxd
 
 print this help:
     -h, -help
@@ -347,13 +353,10 @@ EOL
     opt=*)          opt="${i#*=}";;
     gtk-cflags=*)   gtk_cflags="${i#*=}";;
     glib-cflags=*)  glib_cflags="${i#*=}";;
+    gen-template=*) gen_template="${i#*=}";;
 
     -no-std-checks)
         check_std="no"
-        ;;
-
-    -no-xxd)
-        check_xxd="no"
         ;;
 
     *)
@@ -364,27 +367,37 @@ esac
 done
 
 # optimization flags
-if [ "x$opt" = "xrelease" ]; then
-    opt_gcc="-O3 -ffunction-sections -fdata-sections"
-    opt_ld="-Wl,--gc-sections -s"
-    opt_msc="-O2"
-    opt_link="-release"
-elif [ "x$opt" = "xdebug" ]; then
-    opt_gcc="-O0 -g"
-    opt_ld=""
-    opt_msc="-Od -g"
-    opt_link="-debug"
-elif [ "x$opt" = "xminsize" ]; then
-    opt_gcc="-Os -ffunction-sections -fdata-sections"
-    opt_ld="-Wl,--gc-sections -s"
-    opt_msc="-Od -g"
-    opt_link="-release"
-elif [ "x$opt" = "xnoopt" ]; then
-    opt_gcc="-O0"
-    opt_ld=""
-    opt_msc="-Od"
-    opt_link=""
-fi
+case "x$opt" in
+    xrelease)
+        opt_gcc="-O3 -ffunction-sections -fdata-sections"
+        opt_ld="-Wl,--gc-sections -s"
+        opt_msc="-O2"
+        opt_link="-release"
+        ;;
+    xdebug)
+        opt_gcc="-O0 -g"
+        opt_ld=""
+        opt_msc="-Od -g"
+        opt_link="-debug"
+        ;;
+    xminsize)
+        opt_gcc="-Os -ffunction-sections -fdata-sections"
+        opt_ld="-Wl,--gc-sections -s"
+        opt_msc="-Od -g"
+        opt_link="-release"
+        ;;
+    xnoopt)
+        opt_gcc="-O0"
+        opt_ld=""
+        opt_msc="-Od"
+        opt_link=""
+        ;;
+    x:)
+        ;;
+    *)
+        echo "warning: ignoring unknown optimization setting \`$opt'"
+        ;;
+esac
 
 
 
@@ -479,15 +492,26 @@ if [ "x$ar" = "x" ]; then
     ar="$tool"
 fi
 
-# xxd
-gen_template="gen_template_h"
-if [ "x$check_xxd" = "xyes" ]; then
-    check_tool xxd
-
-    if [ "x$tool" != "x" ]; then
-        gen_template="gen_template_h.sh"
-    fi
-fi
+# template resources
+case "x$gen_template" in
+    xasm)
+        template_h=""
+        gen_template_bin=""
+        ;;
+    xgen)
+        template_h="template.h"
+        gen_template_bin="gen_template_h"
+        ;;
+    xxxd)
+        template_h="template.h"
+        gen_template_bin="gen_template_h.sh"
+        check_tool xxd exit
+        ;;
+    *)
+        echo "warning: ignoring unknown option for \`gen-template': \`$gen_template'"
+        gen_template="asm"
+        ;;
+esac
 
 
 
@@ -618,6 +642,12 @@ else
     fi
 fi
 
+if [ "x$template_h" != "x" ]; then
+    gen_cxxflags="-DUSE_TEMPLATE_H"
+else
+    gen_cxxflags="-DSRCPATH='\"$PWD/src/\"'"
+fi
+
 
 
 ###############################################################################
@@ -687,6 +717,14 @@ fi
 
 # examples
 echo ""
+
+printf "how to embed template resources: "
+case "x$gen_template" in
+    xasm) echo "inline ASM";;
+    xgen) echo "C header (custom code generator)";;
+    xxxd) echo "C header (xxd)";;
+esac
+
 echo "build appindicator example: $with_appind"
 echo "build notify example: $with_notify"
 printf "build UUID example: "
@@ -713,13 +751,15 @@ CLANG_TARGET  = $clang_ast_target
 EXEEXT        = $exeext
 DEF_GENDLOPEN = $PWD/src/gendlopen\$(EXEEXT)
 GENDLOPEN     = $gendlopen
-GEN_TEMPL     = $gen_template
+GEN_TEMPL     = $gen_template_bin
+TEMPLATE_H    = $template_h
 
 CPPFLAGS      = $cppflags $xcppflags
 CFLAGS        = $cflags $xcflags \$(CPPFLAGS)
 CXXFLAGS      = $cxxflags $cxxstd $xcxxflags \$(CPPFLAGS)
 LDFLAGS       = $link_flag $ldflags $xldflags
 SYSROOT_INC   = $sysroot_inc
+GEN_CXXFLAGS  = $gen_cxxflags
 
 DLL           = $dll
 DLL_CFLAGS    = $dll_cflags
@@ -743,6 +783,3 @@ create_makefile
 create_makefile "src/"
 create_makefile "test/"
 create_makefile "examples/"
-
-#cat settings.mk
-#rm settings.mk

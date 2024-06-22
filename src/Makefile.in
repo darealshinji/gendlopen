@@ -39,12 +39,11 @@ gen_template_h: gen_template_h.c
 template.h: $(GEN_TEMPL)
 	$(gen_v)./$(GEN_TEMPL) templates
 
-
 gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS): $(HDRS)
-generate.o: template.h
+generate.o: $(TEMPLATE_H)
 
 
 @MSVC@getopt/getopt.o: getopt/getopt.c getopt/getopt.h
@@ -60,7 +59,7 @@ clang-ast.o: clang-ast.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c clang-ast.cpp -o $@
 
 generate.o: generate.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
+	$(cxx_v)$(CXX) $(GEN_CXXFLAGS) $(CXXFLAGS) -c generate.cpp -o $@
 
 getopt_long_cxx.o: getopt_long_cxx.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c getopt_long_cxx.cpp -o $@

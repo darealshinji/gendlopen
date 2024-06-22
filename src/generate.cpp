@@ -39,14 +39,37 @@
 #include <ctime>
 #include <cwchar>
 
-#include "template.h"
 #include "gendlopen.hpp"
+
+#define INCBIN_PREFIX /* no symbol name prefix */
+#define INCBIN_STYLE INCBIN_STYLE_SNAKE /* "snake_case" */
+#include "incbin.h"
+
+#if defined(INCBIN_MSCL) || defined(USE_TEMPLATE_H)
+# include "template.h"
+#endif
+#ifndef SRCPATH
+# define SRCPATH ""
+#endif
 
 namespace fs = std::filesystem;
 
 
 namespace /* anonymous */
 {
+
+#if !defined(_TEMPLATE_H_)
+/* use inline asm directives to directly include text data */
+INCTXT(filename_macros, SRCPATH "templates/filename_macros.h");
+INCTXT(license,         SRCPATH "templates/license.h");
+INCTXT(common_header,   SRCPATH "templates/common.h");
+INCTXT(c_header,        SRCPATH "templates/c.h");
+INCTXT(c_body,          SRCPATH "templates/c.c");
+INCTXT(cxx_header,      SRCPATH "templates/cxx.hpp");
+INCTXT(cxx_body,        SRCPATH "templates/cxx.cpp");
+INCTXT(min_c_header,    SRCPATH "templates/minimal.h");
+INCTXT(min_cxx_header,  SRCPATH "templates/minimal_cxxeh.hpp");
+#endif
 
 const char * const extern_c_begin =
     "#ifdef __cplusplus\n"
