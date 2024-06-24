@@ -796,7 +796,7 @@ public:
 #endif
 
         /* increment string */
-        auto incr = [&len] (const char *str) -> const char* {
+        auto incr = [&] (const char *str) -> const char* {
             return str + len;
         };
 

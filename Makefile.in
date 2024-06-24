@@ -29,16 +29,20 @@ distclean: clean
 $(DEF_GENDLOPEN):
 	cd src && $(MAKE)
 
-check: $(GENDLOPEN)
+check: all_tests all_examples
+
+all_tests: $(GENDLOPEN)
 	cd test && $(MAKE)
+
+all_examples: $(GENDLOPEN)
 	cd examples && $(MAKE)
 
 run_check: run_tests run_examples
 
-run_tests: test
+run_tests:
 	cd test && $(MAKE) run_tests
 
-run_examples: examples
+run_examples:
 	cd examples && $(MAKE) run_examples
 
 @W32@run_check_wine: run_tests_wine run_examples_wine
