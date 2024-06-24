@@ -27,8 +27,8 @@
 #endif
 
 /* whether to use dlinfo(3);
- * n/a on Windows (both APIs) and Haiku */
-#if !defined(_WIN32) && !defined(__HAIKU__)
+ * n/a on Windows (both APIs), OpenBSD, Haiku */
+#if !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__)
 # define GDO_HAVE_DLINFO
 #endif
 
