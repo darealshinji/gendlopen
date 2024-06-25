@@ -1,5 +1,5 @@
 /* whether to use WinAPI */
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN) && !defined(__CYGWIN__) && !defined(__MSYS__)
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
 # define GDO_WINAPI
 #endif
 
@@ -128,7 +128,7 @@ namespace gdo
 
             throw LibraryError(filename);
         }
-    @
+@
         /* %%symbol%% */@
         ptr::%%symbol%% =@
             reinterpret_cast<%%sym_type%%>(@
