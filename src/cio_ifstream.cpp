@@ -30,12 +30,6 @@
 namespace cio
 {
 
-ifstream::ifstream()
-{}
-
-ifstream::~ifstream()
-{}
-
 bool ifstream::open(const std::filesystem::path &path)
 {
     close();

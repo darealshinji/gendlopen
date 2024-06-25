@@ -603,7 +603,7 @@ public:
 
 
     /* d'tor */
-    ~dl()
+    virtual ~dl()
     {
         if (m_free_lib_in_dtor && lib_loaded()) {
             free_lib();

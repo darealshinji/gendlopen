@@ -40,8 +40,8 @@ private:
 
 public:
 
-    ifstream();
-    virtual ~ifstream();
+    ifstream() {}
+    virtual ~ifstream() {}
 
     bool open(const std::filesystem::path &path);
     bool open(const std::string &file);

@@ -39,8 +39,8 @@ private:
 
 public:
 
-    ofstream();
-    virtual ~ofstream();
+    ofstream() {}
+    virtual ~ofstream() {}
 
     bool open(const std::filesystem::path &path);
     bool open(const std::string &file);

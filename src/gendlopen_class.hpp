@@ -79,7 +79,7 @@ public:
     {}
 
     /* d'tor */
-    ~gendlopen()
+    virtual ~gendlopen()
     {}
 
     /* set options */
