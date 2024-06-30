@@ -508,7 +508,7 @@ For more information, please refer to <http://unlicense.org/>
  */
 #if defined(INCBIN_MSCL) /* PR #65 */
 #  define INCTXT(NAME, FILENAME) \
-     INCBIN_EXTERN(NAME)
+     INCBIN_EXTERN_2(char, NAME)
 #else
 #  define INCTXT(NAME, FILENAME) \
      INCBIN_COMMON(char, NAME, FILENAME, INCBIN_BYTE "0\n")

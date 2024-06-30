@@ -82,7 +82,7 @@ clean-check:
 	-del /q $(cleanfiles_check) $(silence)
 
 clean: clean-check
-	-del /q *.exe *.obj template.h $(silence)
+	-del /q *.exe *.obj templates.stamp $(silence)
 
 check: $(test_bins)
 
@@ -94,16 +94,17 @@ $(test_bins): gendlopen.exe libhelloworld-0.dll
 
 ## main program ##
 
-template.h: gen_template_h.exe
-	$** $(s)\src\templates
+templates.stamp: gen_coff_obj.exe
+	$** $(s)\src\templates && echo '' > $@
 
-gen_template_h.exe: $(s)\src\gen_template_h.c
+gen_coff_obj.exe: $(s)\src\gen_coff_obj.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
 
 gendlopen.exe: $(sources)
-	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\getopt $** -Fe$@ -link $(LFLAGS)
+	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\getopt $** -Fe$@ \
+	  -link $(LFLAGS) -machine:$(VSCMD_ARG_TGT_ARCH) templ_*.obj
 
-$(s)\src\generate.cpp: template.h
+$(s)\src\generate.cpp: templates.stamp
 
 
 ## dll ##

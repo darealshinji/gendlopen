@@ -45,7 +45,7 @@
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE /* "snake_case" */
 #include "incbin.h"
 
-#if defined(INCBIN_MSCL) || defined(USE_TEMPLATE_H)
+#ifdef USE_TEMPLATE_H
 # include "template.h"
 #endif
 #ifndef SRCPATH

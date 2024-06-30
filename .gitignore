@@ -38,6 +38,7 @@ examples/uuid_win_dl.h
 
 nmake/*.[ch]
 nmake/*.[ch]pp
+nmake/templates.stamp
 
 src/Makefile
 src/gendlopen
