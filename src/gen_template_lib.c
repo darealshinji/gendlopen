@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,12 +76,6 @@
 # define MDEF munknown
 #endif
 
-/* on x86 __cdecl adds underscores to symbol names */
-#ifdef _M_IX86
-# define MANGLE "_"
-#else
-# define MANGLE ""
-#endif
 
 struct cfg {
     const char *infile;
@@ -90,6 +85,22 @@ struct cfg {
     const char *symbol;
     uint8_t machine[2];
 };
+
+/* IMAGE_FILE_MACHINE_AMD64 = 0x8664 */
+const uint8_t mx64[2] = { 0x64, 0x86 };
+
+/* IMAGE_FILE_MACHINE_I386 = 0x014C */
+const uint8_t mx86[2] = { 0x4C, 0x01 };
+
+/* IMAGE_FILE_MACHINE_ARM64 = 0xAA64 */
+const uint8_t marm64[2] = { 0x64, 0xAA };
+
+/* IMAGE_FILE_MACHINE_ARMNT = 0x01C4 */
+const uint8_t marmnt[2] = { 0xC4, 0x01 };
+
+/* IMAGE_FILE_MACHINE_UNKNOWN */
+const uint8_t munknown[2] = { 0x00, 0x00 };
+
 
 /* runtime endianness detection */
 #ifdef _MSC_VER
@@ -165,6 +176,7 @@ void save_to_coff(struct cfg *conf)
     uint32_t size_of_symbol;
     uint8_t *ptr;
     size_t nread;
+    bool mangle;
 
     uint8_t buffer[512] = {0};
     const uint8_t nullbyte = 0;
@@ -211,6 +223,9 @@ void save_to_coff(struct cfg *conf)
     coff_header[0] = conf->machine[0];
     coff_header[1] = conf->machine[1];
 
+    /* on x86 __cdecl adds underscores to symbol names */
+    mangle = (memcmp(conf->machine, mx86, 2) == 0);
+
     /* open input file */
     change_dir(conf->indir);
     fpIn = open_file(conf->infile, "rb");
@@ -225,7 +240,7 @@ void save_to_coff(struct cfg *conf)
 
     rewind(fpIn);
 
-    hSizeOfRawData++; /* plus 1 for NUL byte */
+    hSizeOfRawData++; /* + NUL byte */
     leSizeOfRawData = htole32(hSizeOfRawData);
     ptr = section_table;
     ptr += off_SizeOfRawData;
@@ -240,6 +255,12 @@ void save_to_coff(struct cfg *conf)
 
     /* string table length */
     size_of_symbol = (uint32_t)strlen(conf->symbol) + 1; /* strlen + NUL byte */
+
+    if (mangle) {
+        /* +1 leading underscore */
+        size_of_symbol++;
+    }
+
     leSizeOfStringTable = htole32(size_of_symbol + 4);
 
     /* open output file */
@@ -259,6 +280,10 @@ void save_to_coff(struct cfg *conf)
     WRITE_BUF(nullbyte, fpOut);
     WRITE_BUF(symbol_table, fpOut);
     WRITE_BUF(leSizeOfStringTable, fpOut);
+
+    if (mangle) {
+        write_data("_", 1, fpOut);
+    }
     write_data(conf->symbol, size_of_symbol, fpOut);
 
     fclose(fpOut);
@@ -268,21 +293,6 @@ void save_to_coff(struct cfg *conf)
 /* takes input files directory as optional argument */
 int main(int argc, char **argv)
 {
-    /* IMAGE_FILE_MACHINE_AMD64 = 0x8664 */
-    const uint8_t mx64[2] = { 0x64, 0x86 };
-
-    /* IMAGE_FILE_MACHINE_I386 = 0x014C */
-    const uint8_t mx86[2] = { 0x4C, 0x01 };
-
-    /* IMAGE_FILE_MACHINE_ARM64 = 0xAA64 */
-    const uint8_t marm64[2] = { 0x64, 0xAA };
-
-    /* IMAGE_FILE_MACHINE_ARMNT = 0x01C4 */
-    const uint8_t marmnt[2] = { 0xC4, 0x01 };
-
-    /* IMAGE_FILE_MACHINE_UNKNOWN */
-    const uint8_t munknown[2] = { 0x00, 0x00 };
-
     char *cwd, *p;
     struct cfg conf = {0};
 
@@ -363,7 +373,7 @@ int main(int argc, char **argv)
 #define SAVE_FILE(INPUT, SYMBOL) \
     conf.infile = INPUT; \
     conf.outfile = "templ_" INPUT ".obj"; \
-    conf.symbol = MANGLE SYMBOL; \
+    conf.symbol = SYMBOL; \
     save_to_coff(&conf)
 
     SAVE_FILE("filename_macros.h", "filename_macros_data");
