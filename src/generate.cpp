@@ -41,13 +41,22 @@
 
 #include "gendlopen.hpp"
 
-#define INCBIN_PREFIX /* no symbol name prefix */
-#define INCBIN_STYLE INCBIN_STYLE_SNAKE /* "snake_case" */
-#include "incbin.h"
 
 #ifdef USE_TEMPLATE_H
 # include "template.h"
+#elif defined(_MSC_VER) && !defined(__clang__)
+/* include from external resources */
+# include "inc_bin_msvc.h"
+# define INCTXT(a,b) \
+    INC_BIN(a##_raw); \
+    const char *a##_data = GETINC_TEXT(a##_raw)
+#else
+/* use inline asm directives to directly include text data */
+# define INCBIN_PREFIX  /**/
+# define INCBIN_STYLE   INCBIN_STYLE_SNAKE
+# include "incbin.h"
 #endif
+
 #ifndef SRCPATH
 # define SRCPATH ""
 #endif
@@ -59,16 +68,15 @@ namespace /* anonymous */
 {
 
 #if !defined(_TEMPLATE_H_)
-/* use inline asm directives to directly include text data */
-INCTXT(filename_macros, SRCPATH "templates/filename_macros.h");
-INCTXT(license,         SRCPATH "templates/license.h");
-INCTXT(common_header,   SRCPATH "templates/common.h");
-INCTXT(c_header,        SRCPATH "templates/c.h");
-INCTXT(c_body,          SRCPATH "templates/c.c");
-INCTXT(cxx_header,      SRCPATH "templates/cxx.hpp");
-INCTXT(cxx_body,        SRCPATH "templates/cxx.cpp");
-INCTXT(min_c_header,    SRCPATH "templates/minimal.h");
-INCTXT(min_cxx_header,  SRCPATH "templates/minimal_cxxeh.hpp");
+    INCTXT(filename_macros, SRCPATH "templates/filename_macros.h");
+    INCTXT(license,         SRCPATH "templates/license.h");
+    INCTXT(common_header,   SRCPATH "templates/common.h");
+    INCTXT(c_header,        SRCPATH "templates/c.h");
+    INCTXT(c_body,          SRCPATH "templates/c.c");
+    INCTXT(cxx_header,      SRCPATH "templates/cxx.hpp");
+    INCTXT(cxx_body,        SRCPATH "templates/cxx.cpp");
+    INCTXT(min_c_header,    SRCPATH "templates/minimal.h");
+    INCTXT(min_cxx_header,  SRCPATH "templates/minimal_cxxeh.hpp");
 #endif
 
 const char * const extern_c_begin =
@@ -126,12 +134,6 @@ std::wstring convert_filename(const std::string &str)
     return ws;
 }
 
-#define CONV_STR(x)  convert_filename(x)
-
-#else
-
-#define CONV_STR(x)  x
-
 #endif // __MINGW32__
 
 
@@ -156,17 +158,17 @@ std::string get_common_prefix(const vproto_t &proto, const vproto_t &obj)
 
     /* get shortest symbol length */
     size_t len = v.at(0).size();
-    auto it = v.begin() + 1;
 
-    for ( ; it != v.end(); it++) {
-        len = std::min(len, (*it).size());
+    for (auto it = v.begin() + 1; it != v.end(); it++) {
+        /* https://stackoverflow.com/a/30924806/5687704 */
+        len = std::min<size_t>(len, (*it).size());
     }
 
     /* compare symbol names */
     for (size_t i = 0; i < len; i++) {
         const char c = v.at(0)[i];
 
-        for (it = v.begin() + 1; it != v.end(); it++) {
+        for (auto it = v.begin() + 1; it != v.end(); it++) {
             if ((*it)[i] != c) {
                 return pfx;
             }
@@ -460,7 +462,11 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     const bool use_stdout = (ofile == "-");
 
     if (!use_stdout) {
-        ofbody = ofhdr = CONV_STR(ofile);
+#ifdef __MINGW32__
+        ofbody = ofhdr = convert_filename(ofile);
+#else
+        ofbody = ofhdr = ofile;
+#endif
     }
 
     /* DISABLE separate files on stdout or minimal output */

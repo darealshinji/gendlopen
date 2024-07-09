@@ -57,6 +57,17 @@ cleanfiles_check = \
 	libhelloworld-0.* \
 	libhelloworld_dl.*
 
+templ_objs = \
+	templ_filename_macros.h.obj \
+	templ_license.h.obj \
+	templ_common.h.obj \
+	templ_c.h.obj \
+	templ_c.c.obj \
+	templ_cxx.hpp.obj \
+	templ_cxx.cpp.obj \
+	templ_minimal.h.obj \
+	templ_minimal_cxxeh.hpp.obj
+
 sources = \
 	$(s)\src\getopt\getopt.c \
 	$(s)\src\cio_ifstream.cpp \
@@ -94,15 +105,15 @@ $(test_bins): gendlopen.exe libhelloworld-0.dll
 
 ## main program ##
 
-template.lib: gen_template_lib.exe
-	$** -I:$(s)\src\templates
+$(templ_objs): file_to_obj.exe
+	$**
 
-gen_template_lib.exe: $(s)\src\gen_template_lib.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
+file_to_obj.exe: $(s)\src\file_to_obj.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -DCUSTOM_MAIN $** -Fe$@ -link $(LFLAGS)
 
-gendlopen.exe: $(sources) template.lib
+gendlopen.exe: $(sources) $(templ_objs)
 	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\getopt $(sources) -Fe$@ \
-	  -link $(LFLAGS) template.lib
+	  -link $(LFLAGS) $(templ_objs)
 
 
 ## dll ##

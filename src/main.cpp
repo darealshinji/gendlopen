@@ -67,8 +67,7 @@ namespace
     };
 
 
-    template<typename T=char>
-    bool is_path_separator(T c)
+    inline bool is_path_separator(const char &c)
     {
 #ifdef _WIN32
         return (c == '\\' || c == '/');
@@ -229,16 +228,10 @@ namespace
 #elif defined(HAVE_GETPROGNAME)
         prog = getprogname();
 #else
-        const char *substr = NULL;
-
         for (auto p = prog; *p != 0; p++) {
             if (is_path_separator(*p) && *(p+1) != 0) {
-                substr = p + 1;
+                prog = p + 1;
             }
-        }
-
-        if (substr) {
-            prog = substr;
         }
 #endif
 
