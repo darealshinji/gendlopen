@@ -18,7 +18,7 @@ ld=":"
 opt=":"
 
 check_std="yes"
-gen_template="asm"
+gen_template="gen"
 gen_template_bin=""
 template_h=""
 
@@ -317,10 +317,10 @@ set gendlopen tool used for cross-compiling tests:
     gdo=..
 
 how to embed template files:
-    gen-template=[asm|gen|xxd]
-    asm: use inline assembly (default)
-    gen: compile and use custom code generator
+    gen-template=[gen|xxd|asm]
+    gen: compile and use custom code generator (default)
     xxd: use xxd to create code
+    asm: use inline assembly
 
 don't check for -std.. flags:
     -no-std-checks
