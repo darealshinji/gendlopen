@@ -108,8 +108,8 @@ $(test_bins): gendlopen.exe libhelloworld-0.dll
 $(templ_objs): file_to_obj.exe
 	$**
 
-file_to_obj.exe: $(s)\src\file_to_obj.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -DCUSTOM_MAIN $** -Fe$@ -link $(LFLAGS)
+file_to_obj.exe: $(s)\src\file_to_obj.c $(s)\src\file_to_obj_main.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
 
 gendlopen.exe: $(sources) $(templ_objs)
 	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\getopt $(sources) -Fe$@ \

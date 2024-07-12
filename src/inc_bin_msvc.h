@@ -1,70 +1,52 @@
-#pragma comment(lib, "ws2_32")
+/**
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2024 Carsten Janssen
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE
+ */
 
-#include <limits.h>
+#if defined(_M_X64) || defined(_M_AMD64) || defined(_M_IX86)
+# define INCBIN_LITTLE_ENDIAN
+#else
+# include <winsock2.h>
+# pragma comment(lib, "ws2_32")  /* ntohl() */
+#endif
+
+#include <stddef.h>
 #include <stdint.h>
-#include <winsock2.h>
 
 #ifdef __cplusplus
-# define INC_BIN_EXTERN  extern "C"
+# define INCBIN_EXTERN  extern "C"
 #else
-# define INC_BIN_EXTERN  extern
+# define INCBIN_EXTERN  extern
 #endif
-
-
-/**
- * @Dale Weiler
- * https://github.com/graphitemaster/incbin/blob/main/incbin.h
- */
-#if   defined(__AVX512BW__) || \
-      defined(__AVX512CD__) || \
-      defined(__AVX512DQ__) || \
-      defined(__AVX512ER__) || \
-      defined(__AVX512PF__) || \
-      defined(__AVX512VL__) || \
-      defined(__AVX512F__)
-# define INC_BIN_ALIGN 64
-#elif defined(__AVX__)      || \
-      defined(__AVX2__)
-# define INC_BIN_ALIGN 32
-#elif defined(__SSE__)      || \
-      defined(__SSE2__)     || \
-      defined(__SSE3__)     || \
-      defined(__SSSE3__)    || \
-      defined(__SSE4_1__)   || \
-      defined(__SSE4_2__)   || \
-      defined(__neon__)     || \
-      defined(__ARM_NEON)   || \
-      defined(__ALTIVEC__)
-# define INC_BIN_ALIGN 16
-#elif ULONG_MAX != 0xffffffffu
-# define INC_BIN_ALIGN 8
-#else
-# define INC_BIN_ALIGN 4
-#endif
-
 
 /* reference the data */
-#define INC_BIN(PTR)      INC_BIN_EXTERN const __declspec( align(INC_BIN_ALIGN) ) uint8_t PTR[]
+#define INCBIN(SYMBOL) \
+    INCBIN_EXTERN const uint8_t SYMBOL[]; \
+    INCBIN_EXTERN const uint32_t SYMBOL##_size_BE; \
+    INCBIN_EXTERN const uint32_t SYMBOL##_size_LE
 
-/* pointer to data (4 bytes offset) */
-#define GETINC_BIN(PTR)   ( ((const uint8_t *)PTR) + 4 )
-#define GETINC_TEXT(PTR)  ( ((const char *)PTR)    + 4 )
-
-/* receive data size (saved as uint32_t Big Endian) */
-#define GETINC_SIZE(PTR)  ntohl(*((const uint32_t *)PTR))
-
-
-#if 0
-
-/* reference external symbol "data_txt"
- * created from file "data.txt" */
-INC_BIN(data_txt);
-
-/* create pointers to data */
-const uint8_t *ptr = GETINC_BIN(data_txt);
-const char *text = GETINC_TEXT(data_txt);
-
-/* print data size */
-printf("size: %d\n", GETINC_SIZE(data_txt));
-
+/* receive data size */
+#ifdef INCBIN_LITTLE_ENDIAN
+# define GETINC_SIZE(SYMBOL)  SYMBOL##_size_LE  /* Little Endian only */
+#else
+# define GETINC_SIZE(SYMBOL)  ntohl(SYMBOL##_size_BE)  /* any system */
 #endif

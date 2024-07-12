@@ -124,11 +124,11 @@ For more information, please refer to <http://unlicense.org/>
 #  define INCBIN_MACRO ".incbin"
 #endif
 
-#ifndef INCBIN_MSCL /* PR #65 */
-#  define INCBIN_ALIGN \
-    __attribute__((aligned(INCBIN_ALIGNMENT)))
+#ifdef INCBIN_MSCL /* PR #65 */
+/* External linkage, no inline assembly */
+#  define INCBIN_ALIGN /* __declspec(align(INCBIN_ALIGNMENT)) */
 #else
-#  define INCBIN_ALIGN __declspec(align(INCBIN_ALIGNMENT))
+#  define INCBIN_ALIGN __attribute__((aligned(INCBIN_ALIGNMENT)))
 #endif
 
 #if defined(__arm__) || /* GNU C and RealView */ \

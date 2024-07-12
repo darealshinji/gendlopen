@@ -48,8 +48,8 @@
 /* include from external resources */
 # include "inc_bin_msvc.h"
 # define INCTXT(a,b) \
-    INC_BIN(a##_raw); \
-    const char *a##_data = GETINC_TEXT(a##_raw)
+    INCBIN(a##_raw); \
+    const char *a##_data = reinterpret_cast<const char *>(a##_raw)
 #else
 /* use inline asm directives to directly include text data */
 # define INCBIN_PREFIX  /**/
