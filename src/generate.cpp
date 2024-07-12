@@ -46,7 +46,7 @@
 # include "template.h"
 #elif defined(_MSC_VER) && !defined(__clang__)
 /* include from external resources */
-# include "inc_bin_msvc.h"
+# include "incbin_msvc.h"
 # define INCTXT(a,b) \
     INCBIN(a##_raw); \
     const char *a##_data = reinterpret_cast<const char *>(a##_raw)

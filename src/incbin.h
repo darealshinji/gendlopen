@@ -7,11 +7,6 @@
  * making use from them externally in other translation units.
  */
 
-/**
- * Website: https://github.com/graphitemaster/incbin
- * (including patches from open pull requests)
- */
-
 /***
 This is free and unencumbered software released into the public domain.
 
@@ -41,6 +36,16 @@ For more information, please refer to <http://unlicense.org/>
 
 #ifndef INCBIN_HDR
 #define INCBIN_HDR
+
+#if !defined(_MSC_VER) || defined(__clang__)
+#  include <stdint.h>
+#  if defined(UINTPTR_MAX) && defined(UINT64_MAX) && !defined(__LP64__)
+#    if UINTPTR_MAX == UINT64_MAX
+#      define __LP64__ 1
+#    endif
+#  endif
+#endif
+
 #include <limits.h>
 #if   defined(__AVX512BW__) || \
       defined(__AVX512CD__) || \
@@ -63,9 +68,11 @@ For more information, please refer to <http://unlicense.org/>
       defined(__ARM_NEON)   || \
       defined(__ALTIVEC__)
 # define INCBIN_ALIGNMENT_INDEX 4
-#elif ULONG_MAX != 0xffffffffu
+#elif defined(__LP64__)     || \
+      defined(_LP64)        || \
+      defined(_WIN64)
 # define INCBIN_ALIGNMENT_INDEX 3
-# else
+#else
 # define INCBIN_ALIGNMENT_INDEX 2
 #endif
 
@@ -103,7 +110,6 @@ For more information, please refer to <http://unlicense.org/>
 #define INCBIN_VA_ARG_COUNTER(_1, _2, _3, N, ...) N
 #define INCBIN_VA_ARGC(...) INCBIN_VA_ARG_COUNTER(__VA_ARGS__, 3, 2, 1, 0)
 
-/* PR #65 */
 #if defined(_MSC_VER)
 #  if defined(__clang__)
 #     define INCBIN_CLANGCL 1
@@ -124,8 +130,8 @@ For more information, please refer to <http://unlicense.org/>
 #  define INCBIN_MACRO ".incbin"
 #endif
 
-#ifdef INCBIN_MSCL /* PR #65 */
-/* External linkage, no inline assembly */
+#ifdef INCBIN_MSCL
+/* On cl.exe we don't use inline assembly, so there's no reason to set an alignment */
 #  define INCBIN_ALIGN /* __declspec(align(INCBIN_ALIGNMENT)) */
 #else
 #  define INCBIN_ALIGN __attribute__((aligned(INCBIN_ALIGNMENT)))
@@ -216,7 +222,7 @@ For more information, please refer to <http://unlicense.org/>
 #  define INCBIN_TYPE(...)
 #else
 #  define INCBIN_SECTION         ".section " INCBIN_OUTPUT_SECTION "\n"
-#  define INCBIN_GLOBAL(NAME)    ".global " INCBIN_MANGLE /* PR #56 #65 */ INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME "\n"
+#  define INCBIN_GLOBAL(NAME)    ".global " INCBIN_MANGLE INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME "\n"
 #  if defined(__ghs__)
 #    define INCBIN_INT           ".word "
 #  else
@@ -230,8 +236,9 @@ For more information, please refer to <http://unlicense.org/>
 #  if defined(INCBIN_ARM)
 /* On arm assemblers, `@' is used as a line comment token */
 #    define INCBIN_TYPE(NAME)    ".type " INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME ", %object\n"
-#  elif defined(__MINGW32__) || defined(__CYGWIN__) /* PR #63 */ || defined(INCBIN_CLANGCL) /* PR #65 */
-#    define INCBIN_TYPE(NAME)
+#  elif defined(__MINGW32__) || defined(_MSC_VER) || defined(__CYGWIN__)
+/* Directive is not supported */
+#    define INCBIN_TYPE(...)
 #  else
 /* It's safe to use `@' on other architectures */
 #    define INCBIN_TYPE(NAME)    ".type " INCBIN_STRINGIZE(INCBIN_PREFIX) #NAME ", @object\n"
@@ -437,7 +444,7 @@ For more information, please refer to <http://unlicense.org/>
  * To externally reference the data included by this in another translation unit
  * please @see INCBIN_EXTERN.
  */
-#ifdef INCBIN_MSCL /* PR #65 */
+#ifdef INCBIN_MSCL
 #  define INCBIN(NAME, FILENAME) \
       INCBIN_EXTERN(NAME)
 #else
@@ -506,7 +513,7 @@ For more information, please refer to <http://unlicense.org/>
  * To externally reference the data included by this in another translation unit
  * please @see INCBIN_EXTERN.
  */
-#if defined(INCBIN_MSCL) /* PR #65 */
+#if defined(INCBIN_MSCL)
 #  define INCTXT(NAME, FILENAME) \
      INCBIN_EXTERN_2(char, NAME)
 #else
