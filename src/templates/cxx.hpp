@@ -897,6 +897,9 @@ public:
 #elif defined(_AIX)
         (UNUSED_REF) api;
         return "lib" + (name + ".a");
+#elif defined(__ANDROID__)
+        (UNUSED_REF) api;
+        return "lib" + (name + ".so");
 #else
         return "lib" + (name + (".so." + std::to_string(api)));
 #endif

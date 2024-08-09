@@ -23,7 +23,24 @@
 #endif
 
 
-/* library name with API number */
+/**
+ * library name with API number
+ *
+ * Examples using LIBNAME(foo, 1.2) macro:
+ *
+ * Windows: libfoo-1.2.dll
+ * De-facto standard when libraries are ported to Windows.
+ *
+ * macOS: libfoo.1.2.dylib
+ *
+ * AIX: libfoo.a
+ * AIX uses archive files without API number.
+ *
+ * Android: libfoo.so
+ * ELF format but without API number.
+ *
+ * ELF: libfoo.so.1.2
+ */
 #ifdef LIBNAME
 #undef LIBNAME
 #endif
@@ -42,7 +59,10 @@
 #elif defined(_AIX)
 # define LIBNAMEA(NAME, API)    "lib" #NAME ".a"
 # define LIBNAMEW(NAME, API)   L"lib" #NAME ".a"
-#else /* ELF */
+#elif defined(__ANDROID__)
+# define LIBNAMEA(NAME, API)    "lib" #NAME ".so"
+# define LIBNAMEW(NAME, API)   L"lib" #NAME ".so"
+#else /* default ELF filename */
 # define LIBNAMEA(NAME, API)    "lib" #NAME ".so." #API
 # define LIBNAMEW(NAME, API)   L"lib" #NAME ".so." #API
 #endif
