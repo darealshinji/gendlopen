@@ -142,10 +142,10 @@ static void write_header(FILE *fpOut, const uint8_t *machine, long hSizeOfRawDat
 {
     uint8_t coff_header[20] = {
         0, 0,           /* Machine */
-        0x03, 0,        /* NumberOfSections (2) */
+        0x03, 0,        /* NumberOfSections */
         0, 0, 0, 0,     /* TimeDateStamp */
         0, 0, 0, 0,     /* PointerToSymbolTable */
-        0x03, 0, 0, 0,  /* NumberOfSymbols (2) */
+        0x03, 0, 0, 0,  /* NumberOfSymbols */
         0, 0,           /* SizeOfOptionalHeader */
         0x01, 0x02      /* Characteristics
                           (IMAGE_FILE_RELOCS_STRIPPED |
@@ -197,7 +197,7 @@ static void write_header(FILE *fpOut, const uint8_t *machine, long hSizeOfRawDat
 static void save_data_to_coff(FILE *fpIn, FILE *fpOut, uint32_t raw_data_size)
 {
     const uint8_t nullbytes[NUM_NULLBYTES] = {0};
-    uint8_t buffer[512] = {0};
+    uint8_t buffer[1024] = {0};
     size_t nread;
     uint32_t uSizeOfRawData;
 
@@ -231,26 +231,29 @@ static void save_symtab_to_coff(FILE *fpOut, const char *symbol, uint8_t mangle)
     };
 
     const uint8_t off_SectionNumber = 12;
+    const char * const suffix_be = "_size_BE";
+    const char * const suffix_le = "_size_LE";
+
     uint32_t symbol_len, leSizeOfStringTable, hSizeOfStringTable;
 
     symbol_len = (uint32_t)strlen(symbol);
     hSizeOfStringTable = sizeof(uint32_t); /* string table size */
 
-    /* symbol table #1 (_<symbol>\0) */
+    /* symbol table #1 (data) */
     WRITE_BUF(symbol_table, fpOut);
-    hSizeOfStringTable += mangle + symbol_len + 1; /* _<symbol>\0 */
+    hSizeOfStringTable += mangle + symbol_len + 1;
 
-    /* symbol table #2 */
+    /* symbol table #2 (size BE) */
     set_le_uint32((uint8_t *)&symbol_table, 4, hSizeOfStringTable);
     symbol_table[off_SectionNumber] = 0x02;
     WRITE_BUF(symbol_table, fpOut);
-    hSizeOfStringTable += mangle + symbol_len + 9; /* _<symbol>_size_BE\0 */
+    hSizeOfStringTable += mangle + symbol_len + sizeof(suffix_be);
 
-    /* symbol table #3 */
+    /* symbol table #3 (size LE) */
     set_le_uint32((uint8_t *)&symbol_table, 4, hSizeOfStringTable);
     symbol_table[off_SectionNumber] = 0x03;
     WRITE_BUF(symbol_table, fpOut);
-    hSizeOfStringTable += mangle + symbol_len + 9; /* _<symbol>_size_LE\0 */
+    hSizeOfStringTable += mangle + symbol_len + sizeof(suffix_le);
 
     /* string table size */
     leSizeOfStringTable = htole32(hSizeOfStringTable);
@@ -263,12 +266,12 @@ static void save_symtab_to_coff(FILE *fpOut, const char *symbol, uint8_t mangle)
     /* _<symbol>_size_BE */
     if (mangle) { fputc('_', fpOut); }
     write_data(symbol, symbol_len, fpOut);
-    WRITE_BUF("_size_BE", fpOut);
+    WRITE_BUF(suffix_be, fpOut);
 
     /* _<symbol>_size_LE */
     if (mangle) { fputc('_', fpOut); }
     write_data(symbol, symbol_len, fpOut);
-    WRITE_BUF("_size_LE", fpOut);
+    WRITE_BUF(suffix_le, fpOut);
 }
 
 /**
