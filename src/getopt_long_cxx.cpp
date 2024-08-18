@@ -159,7 +159,7 @@ void getopt_long_cxx::init()
         }
 
         if (opt.val_short == 0) {
-            throw error("val_short == 0");
+            throw error("val_short == NUL");
         }
 
         if (opt.val_short == '@') {
