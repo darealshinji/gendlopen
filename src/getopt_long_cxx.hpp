@@ -39,7 +39,8 @@
  * - print formatted help output
  * - provide "help" switch
  * - check given option list for empty strings
- * - treat trailing non-option arguments as error (we want that)
+ * - provide vector with trailing non-option arguments
+ * - read command line options from @file argument
  */
 class getopt_long_cxx
 {
@@ -73,7 +74,7 @@ private:
 
     bool m_have_atfile = false;
     std::vector<std::string> m_argv_strs;
-    std::vector<char *> m_argv_ptrs;
+    std::vector<char *> m_argv_ptrs, m_extra_args;
 
     std::vector<struct option> m_longopts;
     std::string m_optstring;
@@ -105,6 +106,9 @@ public:
 
     /* return optarg */
     const char *arg() const;
+
+    /* vector with trailing non-option arguments */
+    std::vector<char *> extra_args() const;
 
     void print_help();
     void print_full_help();

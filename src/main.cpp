@@ -516,6 +516,10 @@ namespace
 
 int main(int argc, char **argv)
 {
+    auto try_help = [&argv] () {
+        std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
+    };
+
     /* default settings */
     const char *input = NULL;
     const char *output = "-";
@@ -617,13 +621,25 @@ int main(int argc, char **argv)
             break;
 
         case '?':
-            std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
+            try_help();
             return 1;
 
         default:
             fprintf(stderr, "error: getopt_long() returned character code 0x%x\n", ret);
             return 1;
         }
+    }
+
+    /* handle unknown extra arguments */
+    auto list = opt.extra_args();
+
+    if (!list.empty()) {
+        for (const auto &e : list) {
+            std::cerr << "error: non-option element: " << e << std::endl;
+        }
+
+        try_help();
+        return 1;
     }
 
     /* print help */

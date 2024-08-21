@@ -209,18 +209,8 @@ bool getopt_long_cxx::getopt(int &c)
     }
 
     /* extra elements */
-    if (optind < m_argc) {
-        std::cerr << m_argv[0] << ": non-option elements:";
-
-        while (optind < m_argc) {
-            std::cerr << ' ' << m_argv[optind++];
-        }
-        std::cerr << std::endl;
-
-        /* treat extra elements as an error */
-        c = '?';
-
-        return true;
+    while (optind < m_argc) {
+        m_extra_args.push_back(m_argv[optind++]);
     }
 
     /* finished */
@@ -231,6 +221,12 @@ bool getopt_long_cxx::getopt(int &c)
 /* return optarg */
 const char *getopt_long_cxx::arg() const {
     return optarg;
+}
+
+
+/* vector with trailing non-option arguments */
+std::vector<char *> getopt_long_cxx::extra_args() const {
+    return m_extra_args;
 }
 
 
