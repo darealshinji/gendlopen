@@ -655,7 +655,7 @@ int main(int argc, char **argv)
 
     /* input is required */
     if (!input) {
-        std::cerr << argv[0] << ": option '--input' is required" << std::endl;
+        std::cerr << argv[0] << ": option `--input' is required" << std::endl;
         return 1;
     }
 

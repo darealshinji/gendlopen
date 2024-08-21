@@ -54,12 +54,6 @@ getopt_long_cxx::getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t>
 }
 
 
-/* d'tor */
-getopt_long_cxx::~getopt_long_cxx()
-{
-}
-
-
 /* check for @file argument */
 void getopt_long_cxx::check_atfile_arg(const char *arg)
 {

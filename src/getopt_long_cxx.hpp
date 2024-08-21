@@ -94,7 +94,7 @@ public:
     getopt_long_cxx(int &argc, char **&argv, const std::list<arg_t> &args, const arg_t &atfile = {});
 
     /* d'tor */
-    ~getopt_long_cxx();
+    virtual ~getopt_long_cxx() {}
 
     /* initialize options for parsing;
      * will also be called by getopt() but manually calling it might
