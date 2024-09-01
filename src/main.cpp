@@ -40,33 +40,21 @@
 #include <stdlib.h>
 
 #include "gendlopen.hpp"
-#include "getopt_long_cxx.hpp"
+
+
+struct parse_args
+{
+    int argc;
+    char **argv;
+    int it;
+    const char *cur;
+    const char *opt;
+};
 
 
 /* anonymous */
 namespace
 {
-    /* short option values */
-    enum {
-        ARG_AST_ALL_SYM = 1,
-        ARG_DEFINE      = 'D',
-        ARG_FORCE       = 'f',
-        ARG_FORMAT      = 'F',
-        ARG_FULL_HELP   = 2,
-        ARG_HELP        = 'h',
-        ARG_INLCUDE     = 'I',
-        ARG_INPUT       = 'i',
-        ARG_LIBRARY     = 'l',
-        ARG_NAME        = 'n',
-        ARG_OUTPUT      = 'o',
-        ARG_PREFIX      = 'P',
-        ARG_SEPARATE    = 's',
-        ARG_SKIP_PARAM  = 3,
-        ARG_SYMBOL      = 'S',
-        ARG_TEMPLATE    = 4
-    };
-
-
     inline bool is_path_separator(const char &c)
     {
 #ifdef _WIN32
@@ -77,13 +65,21 @@ namespace
     }
 
 
+    inline bool is_arg_prefix(const char &c)
+    {
+#ifdef _WIN32
+        return (c == '-' || c == '/');
+#else
+        return (c == '-');
+#endif
+    }
+
+
     /* create "#define" lines */
     std::string format_def(std::string def)
     {
         std::string name, value;
-        std::stringstream out;
-
-        size_t pos = def.find('=');
+        const size_t pos = def.find('=');
 
         if (pos == std::string::npos) {
             name = def;
@@ -95,10 +91,11 @@ namespace
         utils::strip_spaces(name);
 
         if (name.empty()) {
-            std::cerr << "error: flag 'define' cannot be just white-spaces" << std::endl;
-            std::exit(1);
+            /* empty string will be "appended" to code */
+            return {};
         }
 
+        std::stringstream out;
         out << "#ifndef " << name << '\n';
         out << "#define " << name << value << '\n';
         out << "#endif\n";
@@ -143,25 +140,42 @@ namespace
         const char *libext = iswide ? " LIBEXTW" : " LIBEXTA";
         const char *libname = iswide ? "LIBNAMEW(" : "LIBNAMEA(";
 
-        if (utils::prefixed_case(str, "nq:")) {
+        switch(str.at(0))
+        {
+        case 'N':
+        case 'n':
             /* no quotes */
-            return str.substr(3);
-        }
-        else if (utils::prefixed_case(str, "ext:")) {
-            /* quotes + extension macro */
-            return quote_lib(str.substr(4), iswide) + libext;
-        }
-        else if (utils::prefixed_case(str, "api:")) {
-            /* no quotes, API libname macro */
-            const std::regex reg("(.*?):(.*)");
-            std::smatch m;
-            auto sub = str.substr(4);
-
-            if (std::regex_match(sub, m, reg) && m.size() == 3) {
-                std::stringstream out;
-                out << libname << m[2] << ',' << m[1] << ')';
-                return out.str();
+            if (utils::prefixed_case(str, "nq:")) {
+                return str.substr(3);
             }
+            break;
+
+        case 'E':
+        case 'e':
+            /* quotes + file extension macro */
+            if (utils::prefixed_case(str, "ext:")) {
+                return quote_lib(str.substr(4), iswide) + libext;
+            }
+            break;
+
+        case 'A':
+        case 'a':
+            /* no quotes, API libname macro */
+            if (utils::prefixed_case(str, "api:")) {
+                const std::regex reg("(.*?):(.*)");
+                std::smatch m;
+                auto sub = str.substr(4);
+
+                if (std::regex_match(sub, m, reg) && m.size() == 3) {
+                    std::stringstream out;
+                    out << libname << m[2] << ',' << m[1] << ')';
+                    return out.str();
+                }
+            }
+            break;
+
+        default:
+            break;
         }
 
         /* quote string */
@@ -190,7 +204,7 @@ namespace
 
 
     /* format */
-    void str_to_format_enum(const char *in, output::format &out)
+    void str_to_format_enum(const std::string &in, output::format &out)
     {
         std::string s = utils::convert_to_lower(in, false);
 
@@ -203,12 +217,12 @@ namespace
                 return;
             }
         } else if (s.starts_with("minimal")) {
-            if (s == "minimal" || s == "minimal-c") {
+            s.erase(0, 7);
+
+            if (s.empty() || s == "-c") {
                 out = output::minimal;
                 return;
-            } else if (s == "minimal-cxx" || s == "minimal-c++" ||
-                s == "minimal-cpp")
-            {
+            } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
                 out = output::minimal_cxx;
                 return;
             }
@@ -219,8 +233,7 @@ namespace
     }
 
 
-    /* usage: <PROG> ... */
-    void print_usage(const char *prog)
+    const char *get_prog_name(const char *prog)
     {
         /* get program name without full path */
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
@@ -235,281 +248,306 @@ namespace
         }
 #endif
 
-        printf(
-            "usage: %s [OPTIONS..]\n"
-            "       %s help <option>\n"
-            "\n"
-            "switches:\n"
-            "\n"
-            "  help <option>          print information about <option>\n"
-            "\n"
-            "\n"
-            "options:\n"
-            "\n",
-            prog, prog
-        );
+        return prog;
     }
 
 
-    const std::list<getopt_long_cxx::arg_t> args_list =
+    void print_help(const char *prog)
     {
-        { "help", ARG_HELP, NULL,
+        std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
+            "\n"
+#ifdef _WIN32
+            "options may be prefixed with `-' or `/'\n"
+            "\n"
+#endif
+            "  <file>            input file, use `-' to read from stdin\n"
+            "\n"
+            "options:\n"
+            "  -help             display this information\n"
+            "  -full-help        show more detailed information\n"
+            "  -o<file>          save to file instead of stdout\n"
+            "  -name=<string>    use <string> in names of functions, macros and C++ namespaces (default: gdo)\n"
+            "  -format=<string>  set output format: c (default), c++, minimal, minimal-c++\n"
+            "  -template=<file>  use a custom template (`-format' will be ignored)\n"
+            "  -library=[<mode>:]<lib>    set a default library name to load; if <mode> is 'nq' no quotes are\n"
+            "                    added, 'ext' will append a file extension to the library name and 'api:#'\n"
+            "                    will create a library filename with API number\n"
+            "  -include=[nq:]<file>    include a header file *;\n"
+            "                    nq:<file> - no quotes are added, the string will be used as is\n"
+            "  -D<string>        define a preprocessor macro *\n"
+            "  -P<string>        look for symbols prefixed with <string> *\n"
+            "  -S<string>        look for symbol name <string> *\n"
+            "  -separate         save output into separate body and header files\n"
+            "  -force            always overwrite existing output files\n"
+            "  -skip-param       don't look for parameter names in function prototypes\n"
+            "  -ast-all-symbols  use all symbols from a Clang AST\n"
+            "\n"
+            "  * option may be passed multiple times" << std::endl;
+    }
 
-    /* help */
-    "display this information",
 
-    /* more help */
-    "Show a brief description of all command line arguments."
-        },
+    void print_full_help(const char *prog)
+    {
+        std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
+            "\n"
+#ifdef _WIN32
+            "options may be prefixed with `-' or `/'\n"
+            "\n"
+#endif
 
-        { "full-help", ARG_FULL_HELP, NULL,
+            "  <file>\n"
+            "    Specify an input file. Use `-' to read data from stdin.\n"
+            "\n"
+            "    The input text must contain all symbols that should be loaded.\n"
+            "    They must be listed as modern C-style prototypes, ending on semi-colon (;).\n"
+            "    Comments are ignored, line-breaks are treated as spaces.\n"
+            "    Any other code will throw an error.\n"
+            "\n"
+            "    Alternatively the input may be an Abstract Syntax Tree (AST) generated by Clang.\n"
+            "    To dump the AST created from `foo.h' you can run the following command:\n"
+            "    clang -Xclang -ast-dump foo.h > ast.txt\n"
+            "\n"
 
-    /* help */
-    "show more detailed information",
 
-    /* more help */
-    "Show more detailed information."
-        },
+            "Options:\n"
+            "\n"
 
-        { "input", ARG_INPUT, "<file>",
+            "  -help\n"
+            "    Show a brief description of all command line arguments.\n"
+            "\n"
 
-    /* help */
-    "input file, use `-' to read from STDIN",
+            "  -full-help\n"
+            "    Show more detailed information.\n"
+            "\n"
 
-    /* more help */
-    "Specify an input file. Use `-' to read data from STDIN.\n"
-    "This flag is required unless `--help' was passed.\n"
-    "\n"
-    "The input text must contain all symbols that should be loaded. "
-    "They must be listed as modern C-style prototypes, ending on semi-colon (;). "
-    "Comments are ignored, line-breaks are treated as spaces. "
-    "Any other code will throw an error.\n"
-    "\n"
-    "Alternatively the input may be an Abstract Syntax Tree (AST) generated by Clang. "
-    "To dump the AST created from `foo.h' you can run the following command:\n"
-    "clang -Xclang -ast-dump foo.h > ast.txt"
-        },
 
-        { "output", ARG_OUTPUT, "<file>",
+            "  -o<file>\n"
+            "    Specify an output file.\n"
+            "    If this flag isn't set or if <file> is `-' output will be printed to stdout.\n"
+            "\n"
 
-    /* help */
-    "output file (defaults to STDOUT if not set)",
 
-    /* more help */
-    "Specify an output file. "
-    "If this flag isn't set or if FILE is `-' output will be printed to STDOUT."
-        },
+            "  -name=<string>\n"
+            "    Use <string> as a prefix in names of functions and macros or as C++\n"
+            "    namespace when generating output to avoid symbol clashes.\n"
+            "    The default string is `gdo'.\n"
+            "    Upper/lower case and underscores will be set accordingly.\n"
+            "\n"
 
-        { "name", ARG_NAME, "<string>",
 
-    /* help */
-    "use <string> in names of functions, macros and C++ namespaces (default: gdo)",
+            "  -format=<string>\n"
+            "    Use one of the following output formats:\n"
+            "    C            -  many features, this is the default\n"
+            "    C++          -  many features but no exception handling (due to the design)\n"
+            "    minimal      -  small C header\n"
+            "    minimal-C++  -  small C++ header with exception handling\n"
+            "\n"
+            "    More information can be found in the comments of the header files.\n"
+            "\n"
 
-    /* more help */
-    "Use <string> as a prefix in names of functions and macros or as C++ "
-    "namespace when generating output to avoid symbol clashes. "
-    "The default string is `gdo'. "
-    "Upper/lower case and underscores will be set accordingly."
-        },
 
-        { "format", ARG_FORMAT, "<fmt>",
+            "  -template=<file>\n"
+            "    Use a custom template file to generate output from.\n"
+            "    The flag `-format' will be ignored in this case.\n"
+            "\n"
+            "    Text substitution in the template file is done as following:\n"
+            "\n"
+            "    If a prefix was set with `-name' then any instances of `GDO_' and `gdo_'\n"
+            "    will be substituted with it, converted to uppercase and lowercase.\n"
+            "\n"
+            "    Any lines containing one or more of the following will be replaced multiple\n"
+            "    times with code from the input (used to generate typedefs, prototyes, etc.):\n"
+            "\n"
+            "    %%type%%: function return type\n"
+            "    %%func_symbol%%: function symbol name\n"
+            "    %%args%%: function arguments\n"
+            "    %%notype_args%%: function argument names without type\n"
+            "    %%return%%: empty if function doesn't return anything (void), else `return'\n"
+            "\n"
+            "    %%obj_type%%: object type\n"
+            "    %%obj_symbol%%: object symbol name\n"
+            "\n"
+            "    %%sym_type%%: function or object symbol type\n"
+            "    %%symbol%: function or object symbol name\n"
+            "\n"
+            "    If a line ends on `@' it will be processed together with the next line as if\n"
+            "    there was no line break, but the line break will still appear in the output.\n"
+            "\n"
+            "    All lines between a line `%SKIP_PARAM_UNUSED_BEGIN%' and a line `%SKIP_PARAM_UNUSED_END%'\n"
+            "    will be commented out if `-skip-param' was passed.\n"
+            "    This will skip code that would otherwise require parameter names.\n"
+            "\n"
+            "    Any line that contains `%DNL%' (\"Do Not Lex\") will be skipped entirely.\n"
+            "    This can be used for meta comments. This is done AFTER glueing lines that end on `@'.\n"
+            "\n"
 
-    /* help */
-    "output format: c (default), c++, minimal, minimal-c++",
 
-    /* more help */
-    "Use one of the following output formats:\n"
-    "C            -  many features, this is the default\n"
-    "C++          -  many features but no exception handling (due to the design)\n"
-    "minimal      -  small C header\n"
-    "minimal-C++  -  small C++ header with exception handling\n"
-    "\n"
-    "More information can be found in the comments of the header files."
-        },
+            "  -library=[<mode>:]<lib>\n"
+            "    Set a default library name to load.\n"
+            "    If no mode was set quotation marks are put around the filename as needed.\n"
+            "\n"
+            "    Available modes:\n"
+            "    nq    - no quotes are added, the string will be used as is\n"
+            "    ext   - filename extension will be added automatically through a macro\n"
+            "    api:# - library filename with API number will be created through a macro\n"
+            "\n"
+            "    -library=foo        ==>  \"foo\"\n"
+            "    -library=nq:foo     ==>  foo\n"
+            "    -library=ext:foo    ==>  \"foo\" LIBEXTA    ==>  i.e. \"foo.dll\"\n"
+            "    -library=api:2:foo  ==>  LIBNAMEA(foo,2)  ==>  i.e. \"libfoo.so.2\"\n"
+            "\n"
 
-        { "template", ARG_TEMPLATE, "<file>",
 
-    /* help */
-    "use a custom template (`--format' will be ignored)",
+            "  -include=[nq:]<file>\n"
+            "    Set a header file name to be included at the top of the output code.\n"
+            "    Quotation marks are put around the filename if it's not enclosed in\n"
+            "    brackets or quotation marks or if it's not prefixed with \"nq:\".\n"
+            "\n"
+            "    -include=foo.h      ==>  #include \"foo.h\"\n"
+            "    -include='\"foo.h\"'  ==>  #include \"foo.h\"\n"
+            "    -include=<foo.h>    ==>  #include <foo.h>\n"
+            "    -include=nq:foo     ==>  #include foo\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
 
-    /* more help */
-    "Use a custom template file to generate output from. "
-    "The flag `--format' will be ignored in this case.\n"
-    "\n"
-    "Text substitution in the template file is done as following:\n"
-    "\n"
-    "If a prefix was set with `--name' then any instances of `GDO_' and `gdo_' "
-    "will be substituted with it, converted to uppercase and lowercase.\n"
-    "\n"
-    "Any lines containing one or more of the following will be replaced multiple "
-    "times with code from the input (used to generate typedefs, prototyes, etc.):\n"
-    "\n"
-    "%%type%%: function return type\n"
-    "%%func_symbol%%: function symbol name\n"
-    "%%args%%: function arguments\n"
-    "%%notype_args%%: function argument names without type\n"
-    "%%return%%: empty if function doesn't return anything (void), else `return'\n"
-    "\n"
-    "%%obj_type%%: object type\n"
-    "%%obj_symbol%%: object symbol name\n"
-    "\n"
-    "%%sym_type%%: function or object symbol type\n"
-    "%%symbol%: function or object symbol name\n"
-    "\n"
-    "If a line ends on `@' it will be processed together with the next line as if "
-    "there was no line break, but the line break will still appear in the output.\n"
-    "\n"
-    "All lines between a line `%SKIP_PARAM_UNUSED_BEGIN%' and a line `%SKIP_PARAM_UNUSED_END%' "
-    "will be commented out if `--skip-param' was passed. "
-    "This will skip code that would otherwise require parameter names.\n"
-    "\n"
-    "Any line that contains `%DNL%' (\"Do Not Lex\") will be skipped entirely. "
-    "This can be used for meta comments. "
-    "This is done AFTER glueing lines that end on `@'."
-        },
 
-        { "library", ARG_LIBRARY, "[<mode>:]<lib>",
+            "  -D<string>\n"
+            "    Set a preprocessor definition macro to be added at the top of the output code.\n"
+            "    This macro may include a value in the form of `FOO=1'.\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
 
-    /* help */
-    "set a default library name to load; "
-    "if <mode> is 'nq' no quotes are added, "
-    "'ext' will append a file extension to the library name and "
-    "'api:#' will create a library filename with API number",
 
-    /* more help */
-    "Set a default library name to load. "
-    "If no mode was set quotation marks are put around the filename as needed.\n"
-    "\n"
-    "Available modes:\n"
-    "nq    - no quotes are added, the string will be used as is\n"
-    "ext   - filename extension will be added automatically through a macro\n"
-    "api:# - library filename with API number will be created through a macro\n"
-    "\n"
-    "--library=foo        ==>  \"foo\"\n"
-    "--library=nq:foo     ==>  foo\n"
-    "--library=ext:foo    ==>  \"foo\" LIBEXTA    ==>  i.e. \"foo.dll\"\n"
-    "--library=api:2:foo  ==>  LIBNAMEA(foo,2)  ==>  i.e. \"libfoo.so.2\""
-        },
+            "  -P<string>\n"
+            "    Look for symbols that begin with <string> when parsing the input.\n"
+            "    This is most useful if the input is a Clang AST to ignore unwanted\n"
+            "    declarations coming from i.e. standard C headers.\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
 
-        { "include", ARG_INLCUDE, "[nq:]<file>",
 
-    /* help */
-    "include a header file (this flag may be passed multiple times); "
-    "nq:<file> - no quotes are added, the string will be used as is",
+            "  -S<string>\n"
+            "    Look for the symbol name <string> when parsing the input.\n"
+            "    This is most useful if the input is a Clang AST,\n"
+            "    to ignore unwanted declarations coming from i.e. standard C headers.\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
 
-    /* more help */
-    "Set a header file name to be included at the top of the output code. "
-    "Quotation marks are put around the filename if it's not enclosed in "
-    "brackets or quotation marks or if it's not prefixed with \"nq:\".\n"
-    "\n"
-    "--include=foo.h      ==>  #include \"foo.h\"\n"
-    "--include='\"foo.h\"'  ==>  #include \"foo.h\"\n"
-    "--include=<foo.h>    ==>  #include <foo.h>\n"
-    "--include=nq:foo     ==>  #include foo\n"
-    "\n"
-    "This flag may be passed multiple times."
-        },
 
-        { "define", ARG_DEFINE, "<string>",
+            "  -separate\n"
+            "    Save output into separate body and header files.\n"
+            "    The filename extensions will be set to .c/.h or .cpp/.hpp accordingly.\n"
+            "    This flag is ignored if the output is printed to stdout or if the\n"
+            "    output format is \"minimal-C\" or \"minimal-C++\".\n"
+            "\n"
 
-    /* help */
-    "define a preprocessor macro to be used (this flag may be passed multiple times)",
 
-    /* more help */
-    "Set a preprocessor definition macro to be added at the top of the output code. "
-    "This macro may include a value in the form of `FOO=1'.\n"
-    "\n"
-    "This flag may be passed multiple times."
-        },
+            "  -force\n"
+            "    Always overwrite existing output files. Use with care.\n"
+            "\n"
 
-        { "separate", ARG_SEPARATE, NULL,
 
-    /* help */
-    "save output into separate body and header files",
+            "  -skip-param\n"
+            "    Don't try to look for parameter names in function prototypes when\n"
+            "    the input is being processed.\n"
+            "    This will disable any kind of wrapped functions in the output (if\n"
+            "    the selected output format makes use of them).\n"
+            "\n"
 
-    /* more help */
-    "Save output into separate body and header files. "
-    "The filename extensions will be set to .c/.h or .cpp/.hpp accordingly. "
-    "This flag is ignored if the output is printed to STDOUT or if the "
-    "output format is not \"C\" or \"C++\"."
-        },
 
-        { "force", ARG_FORCE, NULL,
+            "  -ast-all-symbols\n"
+            "    Pass this flag if you really want to use all symbols found in a Clang AST.\n"
+            "    Be careful as this might include unwanted prototypes from other headers.\n"
+            "    It's recommended to use `-P' and/or `-S' instead.\n"
+            "    This flag cannot be combined with `-P' or `-S'.\n"
+            "\n"
+            "    This flag is ignored if the input is not a Clang AST.\n"
 
-    /* help */
-    "always overwrite existing output files",
+            << std::endl;
+    }
 
-    /* more help */
-    "Always overwrite existing output files. Use with care."
-        },
 
-        { "skip-param", ARG_SKIP_PARAM, NULL,
+    /* get argument from an option string */
+    bool get_argx(struct parse_args &args, const char *opt, size_t optlen)
+    {
+        auto err_noarg = [&] () {
+            std::cerr << get_prog_name(args.argv[0]) << ": option requires an argument: "
+                << args.argv[args.it] << std::endl;
+            std::exit(1);
+        };
 
-    /* help */
-    "don't look for parameter names in function prototypes",
+        args.opt = NULL;
 
-    /* more help */
-    "Don't try to look for parameter names in function prototypes when "
-    "the input is being processed. "
-    "This will disable any kind of wrapped functions in the output (if "
-    "the selected output format makes use of them)."
-        },
-
-        { "prefix", ARG_PREFIX, "<string>",
-
-    /* help */
-    "look for symbols prefixed with <string>",
-
-    /* more help */
-    "Look for symbols that begin with <string> when parsing the input. "
-    "This is most useful if the input is a Clang AST to ignore unwanted "
-    "declarations coming from i.e. standard C headers."
-        },
-
-        { "symbol", ARG_SYMBOL, "<string>",
-
-    /* help */
-    "look for symbol name <string> (this flag may be passed multiple times)",
-
-    /* more help */
-    "Look for the symbol name <string> when parsing the input. "
-    "This is most useful if the input is a Clang AST, "
-    "to ignore unwanted declarations coming from i.e. standard C headers.\n"
-    "\n"
-    "This flag may be passed multiple times."
-        },
-
-        { "ast-all-symbols", ARG_AST_ALL_SYM, NULL,
-
-    /* help */
-    "use all symbols from a Clang AST",
-
-    /* more help */
-    "Pass this flag if you really want to use all symbols found in a Clang AST. "
-    "Be careful as this might include unwanted prototypes from other headers. "
-    "It's recommended to use `--prefix' and/or `--symbol' instead. "
-    "This flag cannot be combined with `--prefix' or `--symbol'.\n"
-    "\n"
-    "This flag is ignored if the input isn't a Clang AST."
+        if (strncmp(args.cur, opt, optlen) != 0) {
+            /* not the argument we're looking for */
+            return false;
         }
-    };
 
+        /* "-foo bar" --> get next item */
+        if (strcmp(args.cur, opt) == 0) {
+            if ((args.it + 1) >= args.argc) {
+                err_noarg();
+            }
 
-    /* @file */
-    const getopt_long_cxx::arg_t atfile =
+            args.opt = args.argv[++args.it];
+
+            return true;
+        }
+
+        /* -foo=bar, -Dfoo --> get substring */
+        if (strlen(args.cur) > optlen) {
+            if (optlen == 1) {
+                /* -Dfoo */
+                args.opt = args.cur + 1;
+            } else if (args.cur[optlen] == '=') {
+                /* -foo=bar */
+                args.opt = args.cur + optlen + 1;
+            }
+
+            if (!args.opt || *args.opt == 0) {
+                err_noarg();
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    template<size_t N>
+    constexpr bool get_arg(struct parse_args &args, char const (&opt)[N])
     {
-        NULL, 0, "<file>",
+        return get_argx(args, opt, N-1);
+    }
 
-        /* help */
-        "read command-line options from <file>",
 
-        /* more help */
-        "Read command-line options from <file>. The options read are inserted in place of the original @<file> option. "
-        "If <file> does not exist, or cannot be read, then the option will be treated literally, and not removed.\n"
-        "\n"
-        "Options in <file> are separated by newline. "
-        "The file may itself contain additional @<file> options; any such options will be processed recursively."
-    };
+    /* option without argument */
+    bool get_noargx(struct parse_args &args, const char *opt, size_t optlen)
+    {
+        /* -foo */
+        if (strcmp(args.cur, opt) == 0) {
+            return true;
+        }
+
+        /* -foo=bar */
+        if (strncmp(args.cur, opt, optlen) == 0 && args.cur[optlen] == '=') {
+            std::cerr << get_prog_name(args.argv[0]) << ": option does not take an argument: "
+                << *args.argv[args.it] << opt << std::endl;
+            std::exit(1);
+        }
+
+        return false;
+    }
+
+    template<size_t N>
+    constexpr bool get_noarg(struct parse_args &args, char const (&opt)[N])
+    {
+        return get_noargx(args, opt, N-1);
+    }
 
 } /* anonymous namespace */
 
@@ -517,145 +555,93 @@ namespace
 int main(int argc, char **argv)
 {
     auto try_help = [&argv] () {
-        std::cerr << "Try '" << argv[0] << " --help' for more information." << std::endl;
+        std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
     };
 
+    auto prog = [&argv] () -> const char* {
+        return get_prog_name(argv[0]);
+    };
+
+    struct parse_args args;
+    std::string input;
+
     /* default settings */
-    const char *input = NULL;
-    const char *output = "-";
-    const char *name = "gdo";
+    std::string output = "-";
+    std::string name = "gdo";
     output::format fmt = output::c;
-
-    /* initialize command line options */
-    getopt_long_cxx opt(argc, argv, args_list, atfile);
-
-    try {
-        opt.init();
-
-        if (opt.parse_help_switch()) {
-            /* "help <opt>" switch was invoked and
-             * didn't throw an exception */
-            return 0;
-        }
-    }
-    catch (const getopt_long_cxx::error &e) {
-        std::cerr << argv[0] << ": error: " << e.what() << std::endl;
-        return 1;
-    }
 
     /* initialize class */
     gendlopen gdo(argc, argv);
 
-    int ret, help = 0;
+    args.argc = argc;
+    args.argv = argv;
 
-    while (opt.getopt(ret))
-    {
-        switch (ret)
-        {
-        case ARG_HELP:
-            help = ARG_HELP;
-            break;
+    /* parse arguments */
+    for (args.it = 1; args.it < argc; args.it++) {
+        args.cur = argv[args.it];
 
-        case ARG_FULL_HELP:
-            help = ARG_FULL_HELP;
-            break;
+        /* non-option argument --> input */
+        if (!is_arg_prefix(args.cur[0]) || strcmp(args.cur, "-") == 0) {
+            if (input.empty()) {
+                input = args.cur;
+            } else {
+                std::cerr << "warning: non-option argument ignored: " << args.cur << std::endl;
+            }
+            continue;
+        }
 
-        case ARG_INPUT:
-            input = opt.arg();
-            break;
+        auto cur = args.cur;
 
-        case ARG_OUTPUT:
-            output = opt.arg();
-            break;
+        /* skip prefix */
+        args.cur++;
 
-        case ARG_NAME:
-            name = opt.arg();
-            break;
-
-        case ARG_FORMAT:
-            str_to_format_enum(opt.arg(), fmt);
+        if ( get_noarg(args, "help") || get_noarg(args, "?") ) {
+            print_help(prog());
+            return 0;
+        } else if ( get_noarg(args, "full-help") ) {
+            print_full_help(prog());
+            return 0;
+        } else if ( get_arg(args, "o") ) {
+            output = args.opt;
+        } else if ( get_arg(args, "name") ) {
+            name = args.opt;
+        } else if ( get_arg(args, "format") ) {
+            str_to_format_enum(args.opt, fmt);
             gdo.format(fmt);
-            break;
-
-        case ARG_TEMPLATE:
-            gdo.custom_template(opt.arg());
-            break;
-
-        case ARG_LIBRARY:
+        } else if ( get_arg(args, "template") ) {
+            gdo.custom_template(args.opt);
+        } else if ( get_arg(args, "library") ) {
             gdo.default_lib(
-                format_libname(opt.arg(), false),
-                format_libname(opt.arg(), true)
+                format_libname(args.opt, false),
+                format_libname(args.opt, true)
             );
-            break;
-
-        case ARG_INLCUDE:
-            gdo.add_inc(format_inc(opt.arg()));
-            break;
-
-        case ARG_DEFINE:
-            gdo.add_def(format_def(opt.arg()));
-            break;
-
-        case ARG_PREFIX:
-            gdo.add_pfx(opt.arg());
-            break;
-
-        case ARG_SYMBOL:
-            gdo.add_sym(opt.arg());
-            break;
-
-        case ARG_SEPARATE:
+        } else if ( get_arg(args, "include") ) {
+            gdo.add_inc(format_inc(args.opt));
+        } else if ( get_arg(args, "D") ) {
+            gdo.add_def(format_def(args.opt));
+        } else if ( get_arg(args, "P") ) {
+            gdo.add_pfx(args.opt);
+        } else if ( get_arg(args, "S") ) {
+            gdo.add_sym(args.opt);
+        } else if ( get_noarg(args, "separate") ) {
             gdo.separate(true);
-            break;
-
-        case ARG_FORCE:
+        } else if ( get_noarg(args, "force") ) {
             gdo.force(true);
-            break;
-
-        case ARG_SKIP_PARAM:
+        } else if ( get_noarg(args, "skip-param") ) {
             gdo.skip_parameter_names(true);
-            break;
-
-        case ARG_AST_ALL_SYM:
+        } else if ( get_noarg(args, "ast-all-symbols") ) {
             gdo.ast_all_symbols(true);
-            break;
-
-        case '?':
+        } else {
+            std::cerr << prog() << ": unknown option: " << cur << std::endl;
             try_help();
             return 1;
-
-        default:
-            fprintf(stderr, "error: getopt_long() returned character code 0x%x\n", ret);
-            return 1;
         }
-    }
-
-    /* handle unknown extra arguments */
-    auto list = opt.extra_args();
-
-    if (!list.empty()) {
-        for (const auto &e : list) {
-            std::cerr << "error: non-option element: " << e << std::endl;
-        }
-
-        try_help();
-        return 1;
-    }
-
-    /* print help */
-    if (help == ARG_HELP) {
-        print_usage(argv[0]);
-        opt.print_help();
-        return 0;
-    } else if (help == ARG_FULL_HELP) {
-        print_usage(argv[0]);
-        opt.print_full_help();
-        return 0;
     }
 
     /* input is required */
-    if (!input) {
-        std::cerr << argv[0] << ": option `--input' is required" << std::endl;
+    if (input.empty()) {
+        std::cerr << prog() << ": input file required" << std::endl;
+        try_help();
         return 1;
     }
 
@@ -664,7 +650,7 @@ int main(int argc, char **argv)
         gdo.generate(input, output, name);
     }
     catch (const gendlopen::error &e) {
-        std::cerr << argv[0] << ": " << e.what() << std::endl;
+        std::cerr << prog() << ": " << e.what() << std::endl;
         return 1;
     }
 

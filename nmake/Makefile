@@ -69,19 +69,17 @@ templ_objs = \
 	templ_minimal_cxxeh.hpp.obj
 
 sources = \
-	$(s)\src\getopt\getopt.c \
 	$(s)\src\cio_ifstream.cpp \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
 	$(s)\src\generate.cpp \
-	$(s)\src\getopt_long_cxx.cpp \
 	$(s)\src\main.cpp \
 	$(s)\src\parse.cpp \
 	$(s)\src\tokenize.cpp \
 	$(s)\src\utils.cpp
 
 
-gen_hdr  = gendlopen.exe -i $(s)\test\helloworld.txt -f -o
+gen_hdr  = gendlopen.exe $(s)\test\helloworld.txt -force -o
 cc_test  = $(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\test $(s)\test\$*.c -Fe$@ -link $(LFLAGS)
 cxx_test = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\test $(s)\test\$*.cpp -Fe$@ -link $(LFLAGS)
 
@@ -128,20 +126,20 @@ c_test.exe:
 	$(gen_hdr) $*.h -DGDO_WRAP_FUNCTIONS && $(cc_test)
 
 c_auto_free.exe:
-	$(gen_hdr) $*.h --skip-param && $(cc_test)
+	$(gen_hdr) $*.h -skip-param && $(cc_test)
 
 c_autoload.exe:
 	$(gen_hdr) $*.h && $(cc_test)
 
 c_minimal.exe:
-	$(gen_hdr) $*.h --format=minimal && $(cc_test)
+	$(gen_hdr) $*.h -format=minimal && $(cc_test)
 
 c_win32_wide.exe:
 	$(gen_hdr) $*.h && $(CC) $(CFLAGS) $(CPPFLAGS) -D_UNICODE -DUNICODE \
 	  -I$(s)\test $(s)\test\$*.c -Fe$@ -link $(LFLAGS)
 
 c_multi.exe:
-	$(gen_hdr) $*.h --separate --library=API:0:helloworld --include=helloworld.h \
+	$(gen_hdr) $*.h -separate -library=API:0:helloworld -include=helloworld.h \
 	  -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC && \
 	$(CC) $(CFLAGS) $(CPPFLAGS) -D_UNICODE -DUNICODE -I$(s)\test \
 	  $*.c $(s)\test\c_multi_part1.c $(s)\test\c_multi_part2.c -Fe$@ -link $(LFLAGS)
@@ -150,25 +148,25 @@ c_multi.exe:
 ## C++ tests ##
 
 cxx_test.exe:
-	$(gen_hdr) $*.hpp --format=C++ --skip-param && \
+	$(gen_hdr) $*.hpp -format=C++ -skip-param && \
 	  $(cxx_test)
 
 cxx_autoload.exe:
-	$(gen_hdr) $*.hpp --format=C++ --library=API:0:helloworld && \
+	$(gen_hdr) $*.hpp -format=C++ -library=API:0:helloworld && \
 	  $(cxx_test)
 
 cxx_minimal.exe:
-	$(gen_hdr) $*.hpp --format=minimal-C++ && \
+	$(gen_hdr) $*.hpp -format=minimal-C++ && \
 	  $(cxx_test)
 
 cxx_win32_wide.exe:
-	$(gen_hdr) $*.hpp --format=C++ && \
+	$(gen_hdr) $*.hpp -format=C++ && \
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -D_UNICODE -DUNICODE -I$(s)\test \
 	  $(s)\test\$*.cpp -Fe$@ -link $(LFLAGS)
 
 cxx_multi.exe:
-	$(gen_hdr) $*.hpp --format=C++ --separate --library=API:0:helloworld \
-	  --include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC && \
+	$(gen_hdr) $*.hpp -format=C++ -separate -library=API:0:helloworld \
+	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC && \
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -D_UNICODE -DUNICODE -I$(s)\test \
 	  $*.cpp $(s)\test\cxx_multi_part1.cpp $(s)\test\cxx_multi_part2.cpp -Fe$@ -link $(LFLAGS)
 
@@ -176,7 +174,7 @@ cxx_multi.exe:
 # static fake library test
 
 libhelloworld_dl.obj:
-	$(gen_hdr) $*.h --separate --library=API:0:helloworld --include=helloworld.h \
+	$(gen_hdr) $*.h -separate -library=API:0:helloworld -include=helloworld.h \
 	  -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD && \
 	$(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\test -c $*.c -Fe$@
 
@@ -193,7 +191,7 @@ helloworld_example_dl.exe: libhelloworld_dl.lib
 
 uuid_win.exe:
 	$(CLANG) -Xclang -ast-dump $(s)\examples\uuid_win.h | \
-	  gendlopen.exe -i- -f -o uuid_win_dl.h --library rpcrt4.dll \
+	  gendlopen.exe -i- -force -o uuid_win_dl.h -library rpcrt4.dll \
 	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA && \
 	$(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\examples $(s)\examples\$*.c -Fe$@ -link $(LFLAGS)
 

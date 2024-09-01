@@ -41,7 +41,7 @@ _GEN_SOURCES_WIN32 = c_win32_wide.h cxx_win32_wide.hpp
 
 GEN_SOURCES = $(GEN_SOURCES_ANY) $(GEN_SOURCES_WIN32)
 
-GENHDR = $(GENDLOPEN) -i helloworld.txt -f -o
+GENHDR = $(GENDLOPEN) helloworld.txt -force -o
 
 
 
@@ -161,14 +161,14 @@ $(GEN_SOURCES): helloworld.txt
 libhelloworld_dl.h: libhelloworld_dl.c
 
 libhelloworld_dl.c:
-	$(gen_v)$(GENHDR) $@ --separate --library=API:0:helloworld \
-	  --include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
+	$(gen_v)$(GENHDR) $@ -separate -library=API:0:helloworld \
+	  -include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
 
 c_test.h:
 	$(gen_v)$(GENHDR) $@ -DGDO_WRAP_FUNCTIONS
 
 c_auto_free.h:
-	$(gen_v)$(GENHDR) $@ --skip-param
+	$(gen_v)$(GENHDR) $@ -skip-param
 
 c_autoload.h:
 	$(gen_v)$(GENHDR) $@
@@ -177,33 +177,33 @@ c_load_symbol.h:
 	$(gen_v)$(GENHDR) $@
 
 c_minimal.h:
-	$(gen_v)$(GENHDR) $@ --format=minimal
+	$(gen_v)$(GENHDR) $@ -format=minimal
 
 @W32@c_win32_wide.h:
 @W32@	$(gen_v)$(GENHDR) $@
 
 c_multi.h:
-	$(gen_v)$(GENHDR) $@ --separate --library=API:0:helloworld \
-	  --include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
+	$(gen_v)$(GENHDR) $@ -separate -library=API:0:helloworld \
+	  -include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 
 cxx_test.hpp:
-	$(gen_v)$(GENHDR) $@ --format=C++ --skip-param
+	$(gen_v)$(GENHDR) $@ -format=C++ -skip-param
 
 cxx_autoload.hpp:
-	$(gen_v)$(GENHDR) $@ --format=C++ --library=API:0:helloworld
+	$(gen_v)$(GENHDR) $@ -format=C++ -library=API:0:helloworld
 
 cxx_list.hpp:
-	$(gen_v)$(GENHDR) $@ --format=C++
+	$(gen_v)$(GENHDR) $@ -format=C++
 
 cxx_load_symbol.hpp:
-	$(gen_v)$(GENHDR) $@ --format=C++
+	$(gen_v)$(GENHDR) $@ -format=C++
 
 cxx_minimal.hpp:
-	$(gen_v)$(GENHDR) $@ --format=minimal-C++
+	$(gen_v)$(GENHDR) $@ -format=minimal-C++
 
 @W32@cxx_win32_wide.hpp:
-@W32@	$(gen_v)$(GENHDR) $@ --format=C++
+@W32@	$(gen_v)$(GENHDR) $@ -format=C++
 
-#--format=C++ --separate --library=API:0:helloworld --include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 cxx_multi.hpp:
-	$(gen_v)$(GENHDR) $@ @cxx_multi.txt
+	$(gen_v)$(GENHDR) $@ -format=C++ -separate -library=API:0:helloworld \
+	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC

@@ -26,13 +26,13 @@ run_examples: $(BINS)
 # appindicator
 
 @APPIND@example_appindicator.h: appindicator.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) -i appindicator.txt -f -o $@ -n xappindicator -l libappindicator.so.1 --skip-param
+@APPIND@	$(gen_v)$(GENDLOPEN) appindicator.txt -force -o $@ -name xappindicator -library libappindicator.so.1 -skip-param
 
 @APPIND@example_appindicator_gtk.h: appindicator_gtk.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) -i appindicator_gtk.txt -f -o $@ -n xgtk -l libgtk-x11-2.0.so.0
+@APPIND@	$(gen_v)$(GENDLOPEN) appindicator_gtk.txt -force -o $@ -name xgtk -library libgtk-x11-2.0.so.0
 
 @APPIND@example_appindicator_gobject.h: appindicator_gobject.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) -i appindicator_gobject.txt -f -o $@ -n xgobject -l libgobject-2.0.so.0
+@APPIND@	$(gen_v)$(GENDLOPEN) appindicator_gobject.txt -force -o $@ -name xgobject -library libgobject-2.0.so.0
 
 @APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h appindicator.c
 @APPIND@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
@@ -41,10 +41,10 @@ run_examples: $(BINS)
 # libnotify
 
 @NOTIFY@example_notify.h: notify.txt
-@NOTIFY@	$(gen_v)$(GENDLOPEN) -i notify.txt -f -o $@ -n xnotify -lapi:4:notify
+@NOTIFY@	$(gen_v)$(GENDLOPEN) notify.txt -force -o $@ -name xnotify -library api:4:notify
 
 @NOTIFY@example_notify_gobject.h: notify_gobject.txt
-@NOTIFY@	$(gen_v)$(GENDLOPEN) -i notify_gobject.txt -f -o $@ -n xgobject -lapi:0:gobject-2.0
+@NOTIFY@	$(gen_v)$(GENDLOPEN) notify_gobject.txt -force -o $@ -name xgobject -library api:0:gobject-2.0
 
 @NOTIFY@notify: example_notify.h example_notify_gobject.h notify.c
 @NOTIFY@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
@@ -56,7 +56,7 @@ run_examples: $(BINS)
 
 @CLANG@@NIX@uuid_nix_dl.h: uuid_nix.h
 @CLANG@@NIX@	$(gen_v)$(DUMP_AST) -Ithirdparty/uuid uuid_nix.h | \
-@CLANG@@NIX@	  $(GENDLOPEN) -i- -f -o $@ --library libuuid.so.1 \
+@CLANG@@NIX@	  $(GENDLOPEN) - -force -o $@ -library libuuid.so.1 \
 @CLANG@@NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 
 @CLANG@@NIX@uuid_nix: uuid_nix_dl.h uuid_nix.c
@@ -64,7 +64,7 @@ run_examples: $(BINS)
 
 @CLANG@@W32@uuid_win_dl.h: uuid_win.h
 @CLANG@@W32@	$(gen_v)$(DUMP_AST) uuid_win.h | \
-@CLANG@@W32@	  $(GENDLOPEN) -i- -f -o $@ --library rpcrt4.dll \
+@CLANG@@W32@	  $(GENDLOPEN) - -force -o $@ -library rpcrt4.dll \
 @CLANG@@W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 
 @CLANG@@W32@uuid_win$(EXEEXT): uuid_win_dl.h uuid_win.c

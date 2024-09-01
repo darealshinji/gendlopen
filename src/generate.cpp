@@ -380,13 +380,13 @@ void gendlopen::tokenize_input()
     if (peek.starts_with("TranslationUnitDecl 0x")) {
         /* flags/settings that exclude each other */
         if (m_ast_all_symbols && (!m_symbols.empty() || !m_prefix.empty())) {
-            throw error("cannot combine `--ast-all-symbols' with `--symbol' or `--prefix'");
+            throw error("cannot combine `-ast-all-symbols' with `-S' or `-P'");
         }
 
         /* no symbols provided */
         if (!m_ast_all_symbols && m_symbols.empty() && m_prefix.empty()) {
             throw error("Clang AST: no symbols provided to look for\n"
-                        "use `--symbol', `--prefix' or `--ast-all-symbols'");
+                        "use `-S', `-P' or `-ast-all-symbols'");
         }
 
         ifs.ignore_line();
@@ -452,7 +452,7 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
     /* tokenize */
     tokenize_input();
 
-    /* read and parse custom template (`--format' will be ignored) */
+    /* read and parse custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
         parse_custom_template(ofile);
         return;

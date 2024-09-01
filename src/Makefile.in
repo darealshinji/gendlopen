@@ -1,12 +1,9 @@
-@MSVC@GETOPT_O = getopt/getopt.o
-
 OBJS = \
 	$(GETOPT_O) \
 	cio_ifstream.o \
 	cio_ofstream.o \
 	clang-ast.o \
 	generate.o \
-	getopt_long_cxx.o \
 	main.o \
 	parse.o \
 	tokenize.o \
@@ -18,7 +15,6 @@ HDRS = \
 	cio_ofstream.hpp \
 	gendlopen_class.hpp \
 	gendlopen.hpp \
-	getopt_long_cxx.hpp \
 	types.hpp \
 	utils.hpp \
 	$(NULL)
@@ -46,9 +42,6 @@ $(OBJS): $(HDRS)
 generate.o: $(TEMPLATE_H)
 
 
-@MSVC@getopt/getopt.o: getopt/getopt.c getopt/getopt.h
-@MSVC@	$(cc_v)$(CC) $(CFLAGS) -c getopt/getopt.c -o $@
-
 cio_ifstream.o: cio_ifstream.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ifstream.cpp -o $@
 
@@ -60,9 +53,6 @@ clang-ast.o: clang-ast.cpp
 
 generate.o: generate.cpp
 	$(cxx_v)$(CXX) $(GEN_CXXFLAGS) $(CXXFLAGS) -c generate.cpp -o $@
-
-getopt_long_cxx.o: getopt_long_cxx.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c getopt_long_cxx.cpp -o $@
 
 main.o: main.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
