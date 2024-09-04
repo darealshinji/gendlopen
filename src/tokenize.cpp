@@ -293,9 +293,13 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
     utils::strip_spaces(proto.args);
     utils::delete_prefix(proto.type, "extern ");
 
+    if (proto.type.empty() || proto.symbol.empty()) {
+        return false;
+    }
+
     if (skip_parameter_names) {
         /* just in case */
-        proto.notype_args = "/* disabled !! */";
+        proto.notype_args = "/* disabled with -skip-param !! */";
     } else if (!get_parameter_names(proto)) {
         return false;
     }
@@ -327,6 +331,10 @@ bool tokenize_object(const std::string &s, vproto_t &objects)
 
     utils::strip_spaces(obj.type);
     utils::delete_prefix(obj.type, "extern ");
+
+    if (obj.type.empty() || obj.symbol.empty()) {
+        return false;
+    }
 
     objects.push_back(obj);
 
