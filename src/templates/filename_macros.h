@@ -1,12 +1,12 @@
 /* default library filename extension */
 #ifdef LIBEXT
-#undef LIBEXT
+# undef LIBEXT
 #endif
 #ifdef LIBEXTA
-#undef LIBEXTA
+# undef LIBEXTA
 #endif
 #ifdef LIBEXTW
-#undef LIBEXTW
+# undef LIBEXTW
 #endif
 #ifdef _WIN32
 # define LIBEXTA    ".dll"
@@ -42,13 +42,13 @@
  * ELF: libfoo.so.1.2
  */
 #ifdef LIBNAME
-#undef LIBNAME
+# undef LIBNAME
 #endif
 #ifdef LIBNAMEA
-#undef LIBNAMEA
+# undef LIBNAMEA
 #endif
 #ifdef LIBNAMEW
-#undef LIBNAMEW
+# undef LIBNAMEW
 #endif
 #ifdef _WIN32
 # define LIBNAMEA(NAME, API)    "lib" #NAME "-" #API ".dll"

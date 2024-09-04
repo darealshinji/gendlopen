@@ -97,7 +97,7 @@ namespace
 
         std::stringstream out;
         out << "#ifndef " << name << '\n';
-        out << "#define " << name << value << '\n';
+        out << "# define " << name << value << '\n';
         out << "#endif\n";
 
         return out.str();

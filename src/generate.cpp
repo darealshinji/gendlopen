@@ -210,7 +210,7 @@ std::string create_note(int &argc, char **&argv)
 
     for (int i=1; i < argc; i++) {
         /* split long lines */
-        if ((line.size() + std::strlen(argv[i]) + 3) >= 80) {
+        if ((line.size() + 1 + std::strlen(argv[i])) > 80) {
             out << line << '\n';
             line = "//";
         }
@@ -234,10 +234,10 @@ void print_default_libname(
     if (!lib_a.empty() && !lib_w.empty()) {
         out << "/* default library */\n";
         out << "#ifndef " << pfx << "_DEFAULT_LIBA\n";
-        out << "#define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n";
+        out << "# define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n";
         out << "#endif\n";
         out << "#ifndef " << pfx << "_DEFAULT_LIBW\n";
-        out << "#define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n";
+        out << "# define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n";
         out << "#endif\n\n";
     }
 }
