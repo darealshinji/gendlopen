@@ -31,11 +31,13 @@ Here's how the input text format must be:
  * line-breaks are treated as spaces
  * any other code will throw an error
 
-Alternatively the input text can be a Clang AST file.
-You can create one with a command like this:<br>
+You can create such a file with GCC: `gcc -c foobar.h -aux-info foo.txt`
+
+Alternatively the input text can be a Clang AST file:
 `clang -Xclang -ast-dump foobar.h > foo.txt`
 
-It's recommended to use the options `--symbol` or `--prefix` if you want to parse a Clang AST file.
+It's recommended to use the options `-S` or `-P` if you want to parse a Clang AST file or
+GCC generated prototype list.
 
 
 Example
