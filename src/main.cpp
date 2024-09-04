@@ -595,47 +595,113 @@ int main(int argc, char **argv)
         /* skip prefix */
         args.cur++;
 
-        if ( get_noarg(args, "help") || get_noarg(args, "?") ) {
-            print_help(prog());
-            return 0;
-        } else if ( get_noarg(args, "full-help") ) {
-            print_full_help(prog());
-            return 0;
-        } else if ( get_arg(args, "o") ) {
-            output = args.opt;
-        } else if ( get_arg(args, "name") ) {
-            name = args.opt;
-        } else if ( get_arg(args, "format") ) {
-            str_to_format_enum(args.opt, fmt);
-            gdo.format(fmt);
-        } else if ( get_arg(args, "template") ) {
-            gdo.custom_template(args.opt);
-        } else if ( get_arg(args, "library") ) {
-            gdo.default_lib(
-                format_libname(args.opt, false),
-                format_libname(args.opt, true)
-            );
-        } else if ( get_arg(args, "include") ) {
-            gdo.add_inc(format_inc(args.opt));
-        } else if ( get_arg(args, "D") ) {
-            gdo.add_def(format_def(args.opt));
-        } else if ( get_arg(args, "P") ) {
-            gdo.add_pfx(args.opt);
-        } else if ( get_arg(args, "S") ) {
-            gdo.add_sym(args.opt);
-        } else if ( get_noarg(args, "separate") ) {
-            gdo.separate(true);
-        } else if ( get_noarg(args, "force") ) {
-            gdo.force(true);
-        } else if ( get_noarg(args, "skip-param") ) {
-            gdo.skip_parameter_names(true);
-        } else if ( get_noarg(args, "ast-all-symbols") ) {
-            gdo.ast_all_symbols(true);
-        } else {
-            std::cerr << prog() << ": unknown option: " << cur << std::endl;
-            try_help();
-            return 1;
+        switch(*args.cur)
+        {
+        case '?':
+        case 'h':
+            if ( get_noarg(args, "help") || get_noarg(args, "?") ) {
+                print_help(prog());
+                return 0;
+            }
+            break;
+
+        case 'f':
+            if ( get_arg(args, "format") ) {
+                str_to_format_enum(args.opt, fmt);
+                gdo.format(fmt);
+                continue;
+            } else if ( get_noarg(args, "force") ) {
+                gdo.force(true);
+                continue;
+            } else if ( get_noarg(args, "full-help") ) {
+                print_full_help(prog());
+                return 0;
+            }
+            break;
+
+        case 'o':
+            if ( get_arg(args, "o") ) {
+                output = args.opt;
+                continue;
+            }
+            break;
+
+        case 'n':
+            if ( get_arg(args, "name") ) {
+                name = args.opt;
+                continue;
+            }
+            break;
+
+        case 't':
+            if ( get_arg(args, "template") ) {
+                gdo.custom_template(args.opt);
+                continue;
+            }
+            break;
+
+        case 'l':
+            if ( get_arg(args, "library") ) {
+                gdo.default_lib(
+                    format_libname(args.opt, false),
+                    format_libname(args.opt, true)
+                );
+                continue;
+            }
+            break;
+
+        case 'i':
+            if ( get_arg(args, "include") ) {
+                gdo.add_inc(format_inc(args.opt));
+                continue;
+            }
+            break;
+
+        case 'D':
+            if ( get_arg(args, "D") ) {
+                gdo.add_def(format_def(args.opt));
+                continue;
+            }
+            break;
+
+        case 'P':
+            if ( get_arg(args, "P") ) {
+                gdo.add_pfx(args.opt);
+                continue;
+            }
+            break;
+
+        case 'S':
+            if ( get_arg(args, "S") ) {
+                gdo.add_sym(args.opt);
+                continue;
+            }
+            break;
+
+        case 's':
+            if ( get_noarg(args, "separate") ) {
+                gdo.separate(true);
+                continue;
+            } else if ( get_noarg(args, "skip-param") ) {
+                gdo.skip_parameter_names(true);
+                continue;
+            }
+            break;
+
+        case 'a':
+            if ( get_noarg(args, "ast-all-symbols") ) {
+                gdo.ast_all_symbols(true);
+                continue;
+            }
+            break;
+
+        default:
+            break;
         }
+
+        std::cerr << prog() << ": unknown option: " << cur << std::endl;
+        try_help();
+        return 1;
     }
 
     /* input is required */
