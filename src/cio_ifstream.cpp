@@ -27,29 +27,32 @@
 #include "gendlopen.hpp"
 
 
+static const std::ios_base::openmode def_mode = std::ios_base::in | std::ios_base::binary;
+
+
 namespace cio
 {
 
 bool ifstream::open(const std::filesystem::path &path)
 {
     close();
-    m_ifs.open(path, std::ios_base::in | std::ios_base::binary);
+    m_ifs.open(path, def_mode);
 
     return m_ifs.is_open();
 }
 
 bool ifstream::open(const std::string &file)
 {
-    if (file != "-") {
-        close();
-        m_ifs.open(file, std::ios_base::in | std::ios_base::binary);
-        return m_ifs.is_open();
-    }
-
-    /* STDIN */
     close();
 
-    return true;
+    /* STDIN */
+    if (file == "-") {
+        return true;
+    }
+
+    m_ifs.open(file, def_mode);
+
+    return m_ifs.is_open();
 }
 
 void ifstream::close()
