@@ -274,8 +274,8 @@ void create_template_data(
 {
     switch (format)
     {
-    default:
-        /* FALLTHROUGH */
+    [[unlikely]] default:
+        [[fallthrough]];
 
     case output::c:
         {
@@ -469,14 +469,36 @@ void gendlopen::generate(const std::string ifile, const std::string ofile, const
 #endif
     }
 
-    /* DISABLE separate files on stdout or minimal output */
-    if (use_stdout || m_format == output::minimal || m_format == output::minimal_cxx) {
+    bool output_is_c = true;
+
+    switch (m_format)
+    {
+    case output::c:
+        break;
+
+    case output::cxx:
+        output_is_c = false;
+        break;
+
+    case output::minimal:
+        m_separate = false;
+        break;
+
+    case output::minimal_cxx:
+        output_is_c = false;
+        m_separate = false;
+        break;
+
+    [[unlikely]] case output::error:
+        throw error("output::format == output::error");
+    }
+
+    /* disable separate files on stdout */
+    if (use_stdout) {
         m_separate = false;
     }
 
     /* rename file extensions only if we save into separate files */
-    const bool output_is_c = (m_format != output::cxx && m_format != output::minimal_cxx);
-
     if (m_separate) {
         if (output_is_c) {
             ofhdr.replace_extension(".h");

@@ -47,6 +47,7 @@ using vstring_t = std::vector<std::string>;
 namespace output
 {
     typedef enum {
+        error,
         c,
         cxx,
         minimal,

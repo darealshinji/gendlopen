@@ -135,18 +135,16 @@ namespace
      * ext:foo    ==>  "foo" LIBEXTA
      * api:2:foo  ==>  LIBNAMEA(foo,2)
      */
-    std::string format_libname(const std::string &str, bool iswide)
+    void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w)
     {
-        const char *libext = iswide ? " LIBEXTW" : " LIBEXTA";
-        const char *libname = iswide ? "LIBNAMEW(" : "LIBNAMEA(";
-
         switch(str.at(0))
         {
         case 'N':
         case 'n':
             /* no quotes */
             if (utils::prefixed_case(str, "nq:")) {
-                return str.substr(3);
+                lib_a = lib_w = str.substr(3);
+                return;
             }
             break;
 
@@ -154,7 +152,10 @@ namespace
         case 'e':
             /* quotes + file extension macro */
             if (utils::prefixed_case(str, "ext:")) {
-                return quote_lib(str.substr(4), iswide) + libext;
+                auto sub = str.substr(4);
+                lib_a = quote_lib(sub, false) + " LIBEXTA";
+                lib_w = quote_lib(sub, true) + " LIBEXTW";
+                return;
             }
             break;
 
@@ -168,8 +169,10 @@ namespace
 
                 if (std::regex_match(sub, m, reg) && m.size() == 3) {
                     std::stringstream out;
-                    out << libname << m[2] << ',' << m[1] << ')';
-                    return out.str();
+                    out << m[2] << ',' << m[1] << ')';
+                    lib_a = "LIBNAMEA(" + out.str();
+                    lib_w = "LIBNAMEW(" + out.str();
+                    return;
                 }
             }
             break;
@@ -179,7 +182,8 @@ namespace
         }
 
         /* quote string */
-        return quote_lib(str, iswide);
+        lib_a = quote_lib(str, false);
+        lib_w = quote_lib(str, true);
     }
 
 
@@ -204,32 +208,33 @@ namespace
 
 
     /* format */
-    void str_to_format_enum(const std::string &in, output::format &out)
+    output::format format_enum(const std::string &in)
     {
         std::string s = utils::convert_to_lower(in, false);
+        output::format out = output::error;
 
         if (s.front() == 'c') {
             if (s == "c") {
                 out = output::c;
-                return;
             } else if (s == "cxx" || s == "c++" || s == "cpp") {
                 out = output::cxx;
-                return;
             }
         } else if (s.starts_with("minimal")) {
             s.erase(0, 7);
 
             if (s.empty() || s == "-c") {
                 out = output::minimal;
-                return;
             } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
                 out = output::minimal_cxx;
-                return;
             }
         }
 
-        std::cerr << "error: unknown output format given: " << in << std::endl;
-        std::exit(1);
+        if (out == output::error) {
+            std::cerr << "error: unknown output format given: " << in << std::endl;
+            std::exit(1);
+        }
+
+        return out;
     }
 
 
@@ -568,7 +573,6 @@ int main(int argc, char **argv)
     /* default settings */
     std::string output = "-";
     std::string name = "gdo";
-    output::format fmt = output::c;
 
     /* initialize class */
     gendlopen gdo(argc, argv);
@@ -607,8 +611,7 @@ int main(int argc, char **argv)
 
         case 'f':
             if ( get_arg(args, "format") ) {
-                str_to_format_enum(args.opt, fmt);
-                gdo.format(fmt);
+                gdo.format(format_enum(args.opt));
                 continue;
             } else if ( get_noarg(args, "force") ) {
                 gdo.force(true);
@@ -642,10 +645,9 @@ int main(int argc, char **argv)
 
         case 'l':
             if ( get_arg(args, "library") ) {
-                gdo.default_lib(
-                    format_libname(args.opt, false),
-                    format_libname(args.opt, true)
-                );
+                std::string lib_a, lib_w;
+                format_libname(args.opt, lib_a, lib_w);
+                gdo.default_lib(lib_a, lib_w);
                 continue;
             }
             break;
