@@ -50,10 +50,10 @@ private:
     std::string m_deflib_a, m_deflib_w;
 
     output::format m_format = output::c;
+    param::names m_parameter_names = param::param_default;
 
     bool m_force = false;
     bool m_separate = false;
-    bool m_skip_parameter_names = false;
     bool m_ast_all_symbols = false;
 
     /* clang-ast.cpp */
@@ -84,10 +84,10 @@ public:
 
     /* set options */
     void format(output::format val) { m_format = val; }
+    void parameter_names(param::names val) { m_parameter_names = val; }
     void custom_template(const std::string &s) { m_custom_template = s; }
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
-    void skip_parameter_names(bool b) { m_skip_parameter_names = b; }
     void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
 
     void default_lib(const std::string &lib_a, const std::string &lib_w) {
@@ -103,7 +103,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    void generate(const std::string ifile, const std::string ofile, const std::string name);
+    void generate(const std::string &ifile, const std::string &ofile, const std::string &name);
 
 };
 

@@ -73,6 +73,7 @@ sources = \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
 	$(s)\src\generate.cpp \
+	$(s)\src\help.cpp \
 	$(s)\src\main.cpp \
 	$(s)\src\parse.cpp \
 	$(s)\src\tokenize.cpp \

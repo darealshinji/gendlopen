@@ -4,6 +4,7 @@ OBJS = \
 	cio_ofstream.o \
 	clang-ast.o \
 	generate.o \
+	help.o \
 	main.o \
 	parse.o \
 	tokenize.o \
@@ -53,6 +54,9 @@ clang-ast.o: clang-ast.cpp
 
 generate.o: generate.cpp
 	$(cxx_v)$(CXX) $(GEN_CXXFLAGS) $(CXXFLAGS) -c generate.cpp -o $@
+
+help.o: help.cpp
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c help.cpp -o $@
 
 main.o: main.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@

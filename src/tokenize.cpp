@@ -69,7 +69,7 @@ bool keyword_or_type(const std::string &s)
 }
 
 /* extract argument names from args list */
-bool get_parameter_names(proto_t &proto)
+bool get_parameter_names(proto_t &proto, param::names parameter_names)
 {
     typedef enum {
         E_DEFAULT,
@@ -78,9 +78,14 @@ bool get_parameter_names(proto_t &proto)
     } e_type_t;
 
     e_type_t search = E_DEFAULT;
-    int scope = 0;
-    std::string out, token;
+    int scope = 0, arg_it = 0;
+    std::string out, token, args_new, name;
     vstring_t arg;
+
+    if (parameter_names == param::skip) {
+        proto.notype_args = "/* disabled with -param=skip !! */";
+        return true;
+    }
 
     /* nothing to do if "void" or empty*/
     if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
@@ -89,6 +94,9 @@ bool get_parameter_names(proto_t &proto)
 
     /* trailing comma is needed for parsing */
     std::istringstream iss(proto.args + " ,");
+
+    /* whether we create new parameter names or not */
+    const bool create = (parameter_names == param::create);
 
     /* tokenize argument list */
     while (iss >> token) {
@@ -106,10 +114,18 @@ bool get_parameter_names(proto_t &proto)
         case E_FUNC_PTR_NAME:
             if (token == ")") {
                 /* end of name sequence */
+                if (create) {
+                    args_new += ')';
+                }
                 search = E_FUNC_PTR_PARAM_LIST;
             } else {
                 /* add name */
-                arg.push_back(token);
+                if (create) {
+                    name = " arg" + std::to_string(arg_it++);
+                    args_new += token + name;
+                } else {
+                    arg.push_back(token);
+                }
             }
             break;
 
@@ -118,34 +134,74 @@ bool get_parameter_names(proto_t &proto)
             if (scope == 0) {
                 search = E_DEFAULT;
             }
+
+            if (create) {
+                args_new += ' ';
+                args_new += token;
+            }
             break;
 
         case E_DEFAULT:
             if (token == "(") {
                 /* begin of a function pointer name */
+                if (create) {
+                    args_new += " (";
+                }
                 search = E_FUNC_PTR_NAME;
             } else if (token == ",") {
                 /* argument list separator */
-                if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
-                    arg.back().back() == '*' ||  /* pointer type without parameter name */
-                    keyword_or_type(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
-                {
-                    std::cerr << "error: a parameter name is missing:" << std::endl;
-                    std::cerr << proto.type << ' ' << proto.symbol << '(' << proto.args << ");" << std::endl;
-                    std::cerr << "hint: try again with `-skip-param'" << std::endl;
-                    return false;
-                }
+                if (create) {
+                    out += ',';
 
-                out += ", ";
-                out += arg.back();
-                arg.clear();
+                    if (name.empty()) {
+                        /* create new argument name */
+                        std::string s = " arg" + std::to_string(arg_it++);
+                        args_new += s;
+                        out += s;
+                    } else {
+                        out += name;
+                        name.clear();
+                    }
+                    args_new += ',';
+                } else {
+                    /* append existing argument name */
+                    if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
+                        arg.back().back() == '*' ||  /* pointer type without parameter name */
+                        keyword_or_type(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
+                    {
+                        std::cerr << "error: a parameter name is missing:" << std::endl;
+                        std::cerr << proto.type << ' ' << proto.symbol << '(' << proto.args << ");" << std::endl;
+                        std::cerr << "hint: try again with `-param=skip' or `-param=create'" << std::endl;
+                        return false;
+                    }
+
+                    out += ", " + arg.back();
+                    arg.clear();
+                }
             } else {
-                arg.push_back(token);
+                /* append token */
+                if (create) {
+                    args_new += ' ';
+                    args_new += token;
+                } else {
+                    arg.push_back(token);
+                }
             }
             break;
         }
     }
 
+    /* .args */
+    if (create) {
+        if (args_new.ends_with(',')) {
+            args_new.pop_back();
+        }
+
+        utils::strip_spaces(args_new);
+        proto.args = args_new;
+    }
+
+    /* .notype_args */
     if (out.starts_with(',')) {
         out.erase(0, 1);
     }
@@ -273,7 +329,7 @@ void read_input(cio::ifstream &ifs, vstring_t &vec)
 }
 
 /* assume a function prototype and tokenize */
-bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_parameter_names)
+bool tokenize_function(const std::string &s, vproto_t &prototypes, param::names parameter_names)
 {
     const std::regex reg(
         R"((.*?[\*|\s]))"  /* type */
@@ -316,11 +372,7 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
         return false;
     }
 
-    /* set proto.notype_args */
-    if (skip_parameter_names) {
-        /* just in case */
-        proto.notype_args = "/* disabled with -skip-param !! */";
-    } else if (!get_parameter_names(proto)) {
+    if (!get_parameter_names(proto, parameter_names)) {
         return false;
     }
 
@@ -401,11 +453,13 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
         m_prototypes = tmp_proto;
         m_objects = tmp_objs;
     } else {
+        /* copy prefixed symbols */
         if (!m_prefix.empty()) {
             copy_if_prefixed(tmp_proto, m_prototypes);
             copy_if_prefixed(tmp_objs, m_objects);
         }
 
+        /* copy whitelisted symbols */
         if (!m_symbols.empty()) {
             copy_if_whitelisted(tmp_proto, m_prototypes);
             copy_if_whitelisted(tmp_objs, m_objects);
@@ -425,7 +479,7 @@ void gendlopen::tokenize(cio::ifstream &ifs)
 
     /* process prototypes */
     for (const auto &str : vec) {
-        if (!tokenize_function(str, tmp_proto, m_skip_parameter_names) &&
+        if (!tokenize_function(str, tmp_proto, m_parameter_names) &&
             !tokenize_object(str, tmp_objs))
         {
             std::string msg = "malformed prototype:\n";
@@ -454,10 +508,8 @@ void gendlopen::tokenize(cio::ifstream &ifs)
     auto it = std::ranges::adjacent_find(duplist);
 
     if (it != duplist.end()) {
-        std::string msg = "multiple definitions of symbol `";
-        msg += *it;
-        msg += "' found in file: ";
-        msg += m_ifile;
+        std::string msg = "multiple definitions of symbol `" + *it;
+        msg += "' found in file: " + m_ifile;
         throw error(msg);
     }
 
@@ -466,16 +518,20 @@ void gendlopen::tokenize(cio::ifstream &ifs)
 
     /* format args */
     for (auto &p : m_prototypes) {
-        utils::replace("* ", "*", p.args);
-        utils::replace(" ,", ",", p.args);
+        auto rep = [&p] (const std::string &from, const std::string &to) {
+            utils::replace(from, to, p.args);
+        };
 
-        utils::replace("( ", "(", p.args);
-        utils::replace(" )", ")", p.args);
-        utils::replace(") (", ")(", p.args);
+        rep("* ", "*");
+        rep(" ,", ",");
 
-        utils::replace("[ ", "[", p.args);
-        utils::replace("] ", "]", p.args);
-        utils::replace(" [", "[", p.args);
-        utils::replace(" ]", "]", p.args);
+        rep("( ", "(");
+        rep(" )", ")");
+        rep(") (", ")(");
+
+        rep("[ ", "[");
+        rep("] ", "]");
+        rep(" [", "[");
+        rep(" ]", "]");
     }
 }

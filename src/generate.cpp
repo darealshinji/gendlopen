@@ -438,7 +438,7 @@ void gendlopen::parse_custom_template(const std::string &ofile)
 }
 
 /* generate output */
-void gendlopen::generate(const std::string ifile, const std::string ofile, const std::string name)
+void gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name)
 {
     fs::path ofhdr, ofbody;
     std::string header_data, body_data, header_name;

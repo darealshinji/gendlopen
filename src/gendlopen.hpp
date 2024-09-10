@@ -17,4 +17,10 @@
 #include "cio_ofstream.hpp"
 #include "gendlopen_class.hpp"
 
+/* help.cpp */
+namespace help {
+    void print(const char *prog);
+    void print_full(const char *prog);
+}
+
 #endif //_GENDLOPEN_HPP_

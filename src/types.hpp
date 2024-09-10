@@ -43,7 +43,6 @@ using vstring_t = std::vector<std::string>;
 
 
 /* enum for outout format */
-
 namespace output
 {
     typedef enum {
@@ -53,6 +52,17 @@ namespace output
         minimal,
         minimal_cxx
     } format;
+}
+
+
+/* enum for parameter names */
+namespace param
+{
+    typedef enum {
+        param_default,
+        create,
+        skip
+    } names;
 }
 
 #endif /* GDO_TYPES_HPP */

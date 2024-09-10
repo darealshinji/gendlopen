@@ -26,7 +26,8 @@ run_examples: $(BINS)
 # appindicator
 
 @APPIND@example_appindicator.h: appindicator.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) appindicator.txt -force -o $@ -name xappindicator -library libappindicator.so.1 -skip-param
+@APPIND@	$(gen_v)$(GENDLOPEN) appindicator.txt -force -o $@ -name xappindicator -library libappindicator.so.1 -param=create
+#-param=skip
 
 @APPIND@example_appindicator_gtk.h: appindicator_gtk.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) appindicator_gtk.txt -force -o $@ -name xgtk -library libgtk-x11-2.0.so.0
