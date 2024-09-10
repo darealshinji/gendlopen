@@ -92,6 +92,14 @@ bool get_parameter_names(proto_t &proto)
 
     /* tokenize argument list */
     while (iss >> token) {
+        /* note: a full check for mismatching
+         * parenthesis was already done */
+        if (token == "(") {
+            scope++;
+        } else if (token == ")") {
+            scope--;
+        }
+
         switch (search)
         {
         /* function pointer name */
@@ -105,16 +113,9 @@ bool get_parameter_names(proto_t &proto)
             }
             break;
 
-        /* parameter list */
+        /* parameter list of a function pointer */
         case E_FUNC_PTR_PARAM_LIST:
-            if (token == "(") {
-                scope++;
-            } else if (token == ")") {
-                scope--;
-            }
-
-            if (scope < 1) {
-                scope = 0;
+            if (scope == 0) {
                 search = E_DEFAULT;
             }
             break;
@@ -129,8 +130,8 @@ bool get_parameter_names(proto_t &proto)
                     arg.back().back() == '*' ||  /* pointer type without parameter name */
                     keyword_or_type(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
                 {
-                    std::cerr << "error: a parameter name is missing: "
-                        << proto.symbol << '(' << proto.args << ");" << std::endl;
+                    std::cerr << "error: a parameter name is missing:" << std::endl;
+                    std::cerr << proto.type << ' ' << proto.symbol << '(' << proto.args << ");" << std::endl;
                     std::cerr << "hint: try again with `-skip-param'" << std::endl;
                     return false;
                 }
@@ -297,6 +298,25 @@ bool tokenize_function(const std::string &s, vproto_t &prototypes, bool skip_par
         return false;
     }
 
+    /* check for mismatching parentheses */
+    int scope = 0;
+
+    for (const char &c : proto.args) {
+        if (c == '(') {
+            scope++;
+        } else if (c == ')') {
+            if (--scope < 0) {
+                break;
+            }
+        }
+    }
+
+    if (scope != 0) {
+        std::cerr << "error: mismatching parentheses in parameter list" << std::endl;
+        return false;
+    }
+
+    /* set proto.notype_args */
     if (skip_parameter_names) {
         /* just in case */
         proto.notype_args = "/* disabled with -skip-param !! */";
