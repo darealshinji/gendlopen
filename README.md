@@ -15,7 +15,6 @@ Features:
 
 Limitations:
  * it's not a code analysis tool, so make sure the input is correct
- * parameter names must be included if you want to generate wrapper functions
  * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
  * C++11 is the minimum requirement for the generated C++ files
  * C++20 is the minimum requirement to compile the tool
@@ -52,7 +51,7 @@ void foobar_bar(bar_t b);
 ```
 
 Create a header file `load_foo.h` from the input:
-`gendlopen --input=foo.txt --prefix=foobar_ --output=load_foo.h`
+`gendlopen foo.txt -Pfoobar_ -oload_foo.h`
 
 Include `load_foo.h` it in your source file and use the provided functions to load the symbols:
 ``` C
@@ -73,6 +72,8 @@ Include `load_foo.h` it in your source file and use the provided functions to lo
 ```
 
 Or in C++ using the `gdo::dl` class:
+`gendlopen foo.txt -Pfoobar_ -format=c++ -oload_foo.hpp`
+
 ``` C++
     /* load library; resources are freed by the class d'tor */
     gdo::dl loader("foo.so");
