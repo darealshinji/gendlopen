@@ -22,9 +22,7 @@
  * THE SOFTWARE
  */
 
-#include <iostream>
-#include <string>
-#include "gendlopen.hpp"
+#include "cio_ofstream.hpp"
 
 
 static const std::ios_base::openmode def_mode = std::ios_base::out | std::ios_base::binary;

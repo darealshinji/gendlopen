@@ -25,6 +25,11 @@
 #ifndef GDO_CIO_OFSTREAM_HPP
 #define GDO_CIO_OFSTREAM_HPP
 
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+
 
 namespace cio
 {
