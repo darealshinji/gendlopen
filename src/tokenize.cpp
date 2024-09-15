@@ -32,7 +32,6 @@
 #include <fstream>
 #include <list>
 #include <ranges>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -43,8 +42,8 @@
 namespace /* anonymous */
 {
 
-/* compare s with a list of very basic types and keywords
- * to guess if it could be a parameter name */
+/* compare s with a list of very basic types and keywords that
+ * may appear in parameter list to guess if it could be a name */
 bool keyword_or_type(const std::string &s)
 {
     const std::list<const char *> keywords =
@@ -52,12 +51,17 @@ bool keyword_or_type(const std::string &s)
         "char",
         "int", "long", "short",
         "float", "double",
+        "void",
         "signed", "unsigned",
         "const", "volatile",
         "struct", "union", "enum",
-        "restrict",
-        "void"
+        "restrict", "register"
     };
+
+    /* i.e. "size_t" */
+    if (s.size() > 2 && (s.ends_with("_t") || s.ends_with("_T"))) {
+        return true;
+    }
 
     for (const auto &e : keywords) {
         if (utils::eq_str_case(s, e)) {
@@ -68,27 +72,222 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
+void skip_comment_asterisk(cio::ifstream &ifs)
+{
+    char c;
+
+    while (ifs.get(c) && ifs.good()) {
+        if (c == '*' && ifs.peek() == '/') {
+            ifs.ignore();
+            return;
+        }
+    }
+}
+
+void skip_comment_newline(cio::ifstream &ifs)
+{
+    char c;
+
+    while (ifs.get(c) && ifs.good() && c != '\n')
+    {}
+}
+
+void pb_token(std::string &token, vstring_t &line)
+{
+    if (token.empty()) {
+        return;
+    }
+
+    /* skip "extern" keyword */
+    if (!utils::eq_str_case(token, "extern")) {
+        line.push_back(token);
+    }
+
+    token.clear();
+}
+
+void pb_line(vstring_t &line, std::vector<vstring_t> &vec)
+{
+    if (!line.empty()) {
+        vec.push_back(line);
+        line.clear();
+    }
+}
+
+/* read and tokenize input */
+void read_input(cio::ifstream &ifs, vproto_t &vproto)
+{
+    char c;
+    int next;
+    std::string token;
+    vstring_t line;
+    std::vector<vstring_t> vec;
+
+    /* tokenize */
+    while (ifs.get(c) && ifs.good())
+    {
+        switch (c)
+        {
+        /* possible comment */
+        case '/':
+            if ((next = ifs.peek()) == '*') {
+                skip_comment_asterisk(ifs);
+            } else if (next == '/') {
+                skip_comment_newline(ifs);
+            } else {
+                /* old token */
+                pb_token(token, line);
+                /* new token */
+                line.push_back("/");
+            }
+            break;
+
+        /* space */
+        case ' ':
+        case '\t':
+        case '\v':
+        case '\f':
+        case '\r':
+        case '\n':
+            pb_token(token, line);
+            break;
+
+        /* sequence end */
+        case ';':
+            pb_token(token, line);
+            pb_line(line, vec);
+            break;
+
+        /* var, type, etc. */
+#ifndef _MSC_VER
+        case 'A' ... 'Z':
+        case 'a' ... 'z':
+        case '0' ... '9':
+#endif
+        case '_':
+            token += c;
+            break;
+
+        /* other */
+        default:
+#ifdef _MSC_VER
+            if (utils::range(c, 'A', 'Z') ||
+                utils::range(c, 'a', 'z') ||
+                utils::range(c, '0', '9'))
+            {
+                token += c;
+                break;
+            }
+#endif
+            /* old token */
+            pb_token(token, line);
+            /* new token */
+            token = c;
+            pb_token(token, line);
+            break;
+        }
+    }
+
+    pb_token(token, line);
+    pb_line(line, vec);
+
+    /* save tokens into prototypes */
+    for (auto &l : vec) {
+        proto_t proto;
+
+        if (std::find(l.begin(), l.end(), "(") != l.end()) {
+            /* function */
+            bool param = false;
+
+            for (auto it = l.begin(); it != l.end(); it++) {
+                if (!param) {
+                    if (it+1 != l.end() && *(it+1) == "(") {
+                        proto.symbol = *it;
+                        it++;
+                        param = true;
+                    } else {
+                        proto.type += *it;
+                        proto.type += ' ';
+                    }
+                } else if (!(*it == ")" && it+1 == l.end())) {
+                    proto.args += *it;
+                    proto.args += ' ';
+                }
+            }
+
+            if (proto.args.empty()) {
+                proto.args = "void";
+            }
+        } else {
+            /* object */
+            for (auto it = l.begin(); it != l.end(); it++) {
+                if (it+1 == l.end()) {
+                    proto.symbol = *it;
+                } else {
+                    proto.type += *it;
+                    proto.type += ' ';
+                }
+            }
+        }
+
+        utils::strip_spaces(proto.type);
+        utils::strip_spaces(proto.args);
+
+        if (!proto.type.empty() && !proto.symbol.empty()) {
+            vproto.push_back(proto);
+        }
+    }
+}
+
+/* check for mismatching parentheses in arguments list */
+bool check_mismatching_parentheses(const std::string &param)
+{
+    int scope = 0;
+
+    for (const char &c : param) {
+        if (c == '(') {
+            scope++;
+        } else if (c == ')') {
+            if (--scope < 0) {
+                break;
+            }
+        }
+    }
+
+    if (scope != 0) {
+        std::cerr << "error: mismatching parentheses in parameter list" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 /* extract argument names from args list */
 bool get_parameter_names(proto_t &proto, param::names parameter_names)
 {
-    typedef enum {
+    enum {
         E_DEFAULT,
         E_FUNC_PTR_NAME,
         E_FUNC_PTR_PARAM_LIST
-    } e_type_t;
+    };
 
-    e_type_t search = E_DEFAULT;
-    int scope = 0, arg_it = 0;
+    int search = E_DEFAULT;
+    int scope = 0;
+    int arg_it = 0;
     std::string out, token, args_new, name;
     vstring_t arg;
 
-    if (parameter_names == param::skip) {
-        proto.notype_args = "/* disabled with -param=skip !! */";
+    /* nothing to do if empty (= object) or "void" */
+    if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
         return true;
     }
 
-    /* nothing to do if "void" or empty*/
-    if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
+    if (!check_mismatching_parentheses(proto.args)) {
+        return false;
+    }
+
+    if (parameter_names == param::skip) {
+        proto.notype_args = "/* disabled with -param=skip !! */";
         return true;
     }
 
@@ -100,18 +299,14 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
 
     /* tokenize argument list */
     while (iss >> token) {
-        /* note: a full check for mismatching
-         * parenthesis was already done */
         if (token == "(") {
             scope++;
         } else if (token == ")") {
             scope--;
         }
 
-        switch (search)
-        {
-        /* function pointer name */
-        case E_FUNC_PTR_NAME:
+        if (search == E_FUNC_PTR_NAME) {
+            /* function pointer name */
             if (token == ")") {
                 /* end of name sequence */
                 if (create) {
@@ -127,10 +322,8 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
                     arg.push_back(token);
                 }
             }
-            break;
-
-        /* parameter list of a function pointer */
-        case E_FUNC_PTR_PARAM_LIST:
+        } else if (search == E_FUNC_PTR_PARAM_LIST) {
+            /* parameter list of a function pointer */
             if (scope == 0) {
                 search = E_DEFAULT;
             }
@@ -139,9 +332,7 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
                 args_new += ' ';
                 args_new += token;
             }
-            break;
-
-        case E_DEFAULT:
+        } else { /* search == E_DEFAULT */
             if (token == "(") {
                 /* begin of a function pointer name */
                 if (create) {
@@ -187,7 +378,6 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
                     arg.push_back(token);
                 }
             }
-            break;
         }
     }
 
@@ -212,257 +402,41 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
     return true;
 }
 
-/* decide what to do with the current character */
-bool handle_character(cio::ifstream &ifs, std::string &line, char &c, char &comment)
-{
-    auto add_element = [] (std::string &line, char &c) {
-        if (!line.empty() && line.back() != ' ') {
-            line += ' ';
-        }
-        line += c;
-        line += ' ';
-    };
-
-    switch (c)
-    {
-    /* end of sequence -> save line buffer */
-    case ';':
-        return true;
-
-    case '/':
-        if (ifs.peek() == '*') {
-            /* asterisk commentary begin */
-            ifs.ignore();
-            comment = '*';
-        } else if (ifs.peek() == '/') {
-            /* double forward slash commentary begin */
-            ifs.ignore();
-            comment = '\n';
-        } else {
-            add_element(line, c);
-        }
-        break;
-
-    case '*':
-        if (comment == '*' && ifs.peek() == '/') {
-            /* asterisk commentary end */
-            ifs.ignore();
-            comment = 0;
-        } else if (comment == 0) {
-            add_element(line, c);
-        }
-        break;
-
-    case '\n':
-        if (comment == '\n') {
-            /* double forward slash commentary end */
-            comment = 0;
-        }
-        /* treat newline as space */
-        [[fallthrough]];
-
-    /* space */
-    case ' ':
-    case '\t':
-    case '\r':
-    case '\v':
-    case '\f':
-        if (!line.empty() && line.back() != ' ') {
-            line += ' ';
-        }
-        break;
-
-    case '_':
-        line += c;
-        break;
-
-    /* add character */
-    default:
-        /* function name, argument, etc. */
-        if (utils::range(c, 'a','z') ||
-            utils::range(c, 'A','Z') ||
-            utils::range(c, '0','9'))
-        {
-            line += c;
-        } else {
-            add_element(line, c);
-        }
-        break;
-    }
-
-    return false;
-}
-
-/* read input and strip comments */
-void read_input(cio::ifstream &ifs, vstring_t &vec)
-{
-    std::string line;
-    char c, comment = 0;
-
-    /* read input into vector */
-    while (ifs.get(c) && ifs.good())
-    {
-        /* we're skipping through a comment section */
-        if (comment != 0 && comment != c) {
-            continue;
-        }
-
-        if (handle_character(ifs, line, c, comment)) {
-            /* the end of a sequence was reached */
-            utils::strip_spaces(line);
-
-            if (!line.empty()) {
-                vec.push_back(line);
-                line.clear();
-            }
-        }
-    }
-
-    /* append line in case the last prototype
-     * didn't end on semicolon */
-
-    utils::strip_spaces(line);
-
-    if (!line.empty()) {
-        vec.push_back(line);
-    }
-}
-
-/* assume a function prototype and tokenize */
-bool tokenize_function(const std::string &s, vproto_t &prototypes, param::names parameter_names)
-{
-    const std::regex reg(
-        R"((.*?[\*|\s]))"  /* type */
-         "([A-Za-z0-9_]*)" /* symbol */
-        R"([?|\s]*\()"
-        R"((.*?)\))"       /* args */
-    );
-
-    std::smatch m;
-
-    if (!std::regex_match(s, m, reg) || m.size() != 4) {
-        return false;
-    }
-
-    proto_t proto = { m[1], m[2], m[3], "" };
-
-    utils::strip_spaces(proto.type);
-    utils::strip_spaces(proto.args);
-    utils::delete_prefix(proto.type, "extern ");
-
-    if (proto.type.empty() || proto.symbol.empty()) {
-        return false;
-    }
-
-    /* check for mismatching parentheses */
-    int scope = 0;
-
-    for (const char &c : proto.args) {
-        if (c == '(') {
-            scope++;
-        } else if (c == ')') {
-            if (--scope < 0) {
-                break;
-            }
-        }
-    }
-
-    if (scope != 0) {
-        std::cerr << "error: mismatching parentheses in parameter list" << std::endl;
-        return false;
-    }
-
-    if (!get_parameter_names(proto, parameter_names)) {
-        return false;
-    }
-
-    if (proto.args.empty()) {
-        proto.args = "void";
-    }
-
-    prototypes.push_back(proto);
-
-    return true;
-}
-
-/* assume an object prototype and tokenize */
-bool tokenize_object(const std::string &s, vproto_t &objects)
-{
-    const std::regex reg(
-        R"((.*?[\*|\s]))"  /* type */
-         "([A-Za-z0-9_]*)" /* symbol */
-    );
-
-    std::smatch m;
-
-    if (!std::regex_match(s, m, reg) || m.size() != 3) {
-        return false;
-    }
-
-    proto_t obj = { m[1], m[2], {}, {} };
-
-    utils::strip_spaces(obj.type);
-    utils::delete_prefix(obj.type, "extern ");
-
-    if (obj.type.empty() || obj.symbol.empty()) {
-        return false;
-    }
-
-    objects.push_back(obj);
-
-    return true;
-}
-
-/* add to vector only if the symbol wasn't already saved */
-void push_back_if_unique(vproto_t &vec, const proto_t &proto)
-{
-    for (const auto &e : vec) {
-        if (e.symbol == proto.symbol) {
-            return;
-        }
-    }
-
-    vec.push_back(proto);
-}
-
 } /* end anonymous namespace */
 
 
-void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
+void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 {
-    /* copy symbols beginning with prefix */
-    auto copy_if_prefixed = [this] (const vproto_t &from, vproto_t &to) {
-        for (const auto &e : from) {
-            if (utils::is_prefixed(e.symbol, m_prefix)) {
-                push_back_if_unique(to, e);
-            }
-        }
-    };
-
-    /* copy symbols whose names are on the symbols vector list */
-    auto copy_if_whitelisted = [this] (const vproto_t &from, vproto_t &to) {
-        for (const auto &e : from) {
-            if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
-                push_back_if_unique(to, e);
-            }
+    auto pb_symbol = [this] (const proto_t &p) {
+        if (p.args.empty()) {
+            m_objects.push_back(p);
+        } else {
+            m_prototypes.push_back(p);
         }
     };
 
     if (m_prefix.empty() && m_symbols.empty()) {
         /* copy all symbols */
-        m_prototypes = tmp_proto;
-        m_objects = tmp_objs;
+        for (const auto &e : vproto) {
+            pb_symbol(e);
+        }
     } else {
         /* copy prefixed symbols */
         if (!m_prefix.empty()) {
-            copy_if_prefixed(tmp_proto, m_prototypes);
-            copy_if_prefixed(tmp_objs, m_objects);
+            for (const auto &e : vproto) {
+                if (utils::is_prefixed(e.symbol, m_prefix)) {
+                    pb_symbol(e);
+                }
+            }
         }
 
         /* copy whitelisted symbols */
         if (!m_symbols.empty()) {
-            copy_if_whitelisted(tmp_proto, m_prototypes);
-            copy_if_whitelisted(tmp_objs, m_objects);
+            for (const auto &e : vproto) {
+                if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
+                    pb_symbol(e);
+                }
+            }
         }
     }
 }
@@ -470,42 +444,27 @@ void gendlopen::filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs)
 /* read input and tokenize */
 void gendlopen::tokenize(cio::ifstream &ifs)
 {
-    vstring_t vec, duplist;
-    vproto_t tmp_proto, tmp_objs;
+    vproto_t vproto;
+    vstring_t duplist;
 
     /* read and tokenize input */
-    read_input(ifs, vec);
+    read_input(ifs, vproto);
     ifs.close();
 
-    /* process prototypes */
-    for (const auto &str : vec) {
-        if (!tokenize_function(str, tmp_proto, m_parameter_names) &&
-            !tokenize_object(str, tmp_objs))
-        {
-            std::string msg = "malformed prototype:\n";
-            msg += str;
-            throw error(msg);
-        }
-    }
-
     /* nothing found? */
-    if (tmp_proto.empty() && tmp_objs.empty()) {
+    if (vproto.empty()) {
         std::string msg = "no function or object prototypes found in file: ";
         msg += m_ifile;
         throw error(msg);
     }
 
     /* check for duplicates */
-    for (const auto &s : tmp_proto) {
-        duplist.push_back(s.symbol);
-    }
-
-    for (const auto &s : tmp_objs) {
-        duplist.push_back(s.symbol);
+    for (const auto &e : vproto) {
+        duplist.push_back(e.symbol);
     }
 
     std::sort(duplist.begin(), duplist.end());
-    auto it = std::ranges::adjacent_find(duplist);
+    const auto it = std::ranges::adjacent_find(duplist);
 
     if (it != duplist.end()) {
         std::string msg = "multiple definitions of symbol `" + *it;
@@ -513,8 +472,14 @@ void gendlopen::tokenize(cio::ifstream &ifs)
         throw error(msg);
     }
 
+    for (auto &e : vproto) {
+        if (!get_parameter_names(e, m_parameter_names)) {
+            throw error("error reading function parameter list");
+        }
+    }
+
     /* copy */
-    filter_and_copy_symbols(tmp_proto, tmp_objs);
+    filter_and_copy_symbols(vproto);
 
     /* format args */
     for (auto &p : m_prototypes) {

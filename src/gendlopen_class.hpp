@@ -62,7 +62,7 @@ private:
 
     /* tokenize.cpp */
     void tokenize(cio::ifstream &ifs);
-    void filter_and_copy_symbols(vproto_t &tmp_proto, vproto_t &tmp_objs);
+    void filter_and_copy_symbols(vproto_t &proto);
 
     /* generate.cpp */
     void open_ofstream(cio::ofstream &ofs, const std::filesystem::path &opath, bool force);
