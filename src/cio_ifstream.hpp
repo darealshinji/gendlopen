@@ -42,6 +42,7 @@ private:
 
     std::string m_buf;
     std::ifstream m_ifs;
+    bool m_is_stdin = false;
 
 public:
 
@@ -58,8 +59,7 @@ public:
     int  peek();
     bool good() const;
 
-    void ignore();
-    void ignore(size_t n);
+    void ignore(size_t n = 1);
     void ignore_line();
 
     bool getline(std::string &out);

@@ -45,6 +45,7 @@ bool ifstream::open(const std::string &file)
 
     /* STDIN */
     if (file == "-") {
+        m_is_stdin = true;
         return true;
     }
 
@@ -53,8 +54,14 @@ bool ifstream::open(const std::string &file)
     return m_ifs.is_open();
 }
 
+bool ifstream::is_open() const
+{
+    return m_is_stdin ? true : m_ifs.is_open();
+}
+
 void ifstream::close()
 {
+    m_is_stdin = false;
     m_buf.clear();
 
     if (m_ifs.is_open()) {
@@ -69,13 +76,15 @@ bool ifstream::get(char &c)
         c = m_buf.front();
         m_buf.erase(0, 1);
         return true;
+    } else if (m_is_stdin) {
+        /* STDIN */
+        return std::cin.get(c) ? true : false;
     } else if (m_ifs.is_open()) {
         /* file */
         return m_ifs.get(c) ? true : false;
     }
 
-    /* STDIN */
-    return std::cin.get(c) ? true : false;
+    return false;
 }
 
 int ifstream::peek()
@@ -84,7 +93,7 @@ int ifstream::peek()
         return m_buf.front();
     }
 
-    return m_ifs.is_open() ? m_ifs.peek() : std::cin.peek();
+    return m_is_stdin ? std::cin.peek() : m_ifs.peek();
 }
 
 bool ifstream::good() const
@@ -93,34 +102,41 @@ bool ifstream::good() const
         return true;
     }
 
-    return m_ifs.is_open() ? m_ifs.good() : std::cin.good();
-}
-
-void ifstream::ignore()
-{
-    if (!m_buf.empty()) {
-        /* buffer */
-        m_buf.erase(0, 1);
-    } else if (m_ifs.is_open()) {
-        /* file */
-        m_ifs.ignore();
-    } else {
-        /* STDIN */
-        std::cin.ignore();
-    }
+    return m_is_stdin ? std::cin.good() : m_ifs.good();
 }
 
 void ifstream::ignore(size_t n)
 {
-    for (size_t i = 0; i < n; i++) {
-        ignore();
+    if (!m_buf.empty()) {
+        /* buffer */
+        if (m_buf.size() >= n) {
+            m_buf.clear();
+        } else {
+            m_buf.erase(0, n);
+        }
+    } else if (m_is_stdin) {
+        /* STDIN */
+        std::cin.ignore(n);
+    } else if (m_ifs.is_open()) {
+        /* file */
+        m_ifs.ignore(n);
     }
 }
 
 void ifstream::ignore_line()
 {
-    std::string line;
-    getline(line);
+    constexpr auto max_size = std::numeric_limits<std::streamsize>::max();
+
+    if (!m_buf.empty()) {
+        /* buffer */
+        m_buf.clear();
+    } else if (m_is_stdin) {
+        /* STDIN */
+        std::cin.ignore(max_size, '\n');
+    } else if (m_ifs.is_open()) {
+        /* file */
+        m_ifs.ignore(max_size, '\n');
+    }
 }
 
 bool ifstream::getline(std::string &out)
@@ -134,13 +150,15 @@ bool ifstream::getline(std::string &out)
             out.pop_back();
         }
         return true;
+    } else if (m_is_stdin) {
+        /* STDIN */
+        return std::getline(std::cin, out) ? true : false;
     } else if (m_ifs.is_open()) {
         /* file */
         return std::getline(m_ifs, out) ? true : false;
     }
 
-    /* STDIN */
-    return std::getline(std::cin, out) ? true : false;
+    return false;
 }
 
 /* get a preview of the next line */

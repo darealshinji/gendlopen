@@ -41,6 +41,7 @@ class ofstream
 private:
 
     std::ofstream m_ofs;
+    bool m_is_stdout = false;
 
 public:
 
@@ -56,10 +57,10 @@ public:
     template<class T>
     std::ostream& operator<<(const T &obj)
     {
-        if (m_ofs.is_open()) {
-            return m_ofs << obj;
+        if (m_is_stdout) {
+            return std::cout << obj;
         }
-        return std::cout << obj;
+        return m_ofs << obj;
     }
 };
 
