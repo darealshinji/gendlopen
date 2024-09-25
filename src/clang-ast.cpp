@@ -216,13 +216,16 @@ void gendlopen::clang_ast(cio::ifstream &ifs)
 {
     std::string line;
     int mode = M_ALL;
+    bool list = false;
 
     if (!m_prefix.empty() && !m_symbols.empty()) {
         mode = M_PFX_LIST;
+        list = true;
     } else if (!m_prefix.empty()) {
         mode = M_PREFIX;
     } else if (!m_symbols.empty()) {
         mode = M_LIST;
+        list = true;
     }
 
     /* read lines */
@@ -233,7 +236,7 @@ void gendlopen::clang_ast(cio::ifstream &ifs)
 
         /* get_declarations() deletes found symbols,
          * so stop if the vector is empty */
-        if (mode == M_LIST && m_symbols.empty()) {
+        if (list && m_symbols.empty()) {
             break;
         }
     }

@@ -43,18 +43,24 @@
 
 
 #ifdef USE_TEMPLATE_H
+
 # include "template.h"
+
 #elif defined(_MSC_VER) && !defined(__clang__)
+
 /* include from external resources */
 # include "incbin_msvc.h"
-# define INCTXT(a,b) \
-    INCBIN(a##_raw); \
-    const char *a##_data = reinterpret_cast<const char *>(a##_raw)
+# define INCTXT(x,UNUSED) \
+    INCBIN(x##_raw); \
+    const char *x##_data = reinterpret_cast<const char *>(x##_raw)
+
 #else
+
 /* use inline asm directives to directly include text data */
 # define INCBIN_PREFIX  /**/
 # define INCBIN_STYLE   INCBIN_STYLE_SNAKE
 # include "incbin.h"
+
 #endif
 
 #ifndef SRCPATH
@@ -67,7 +73,7 @@ namespace fs = std::filesystem;
 namespace /* anonymous */
 {
 
-#if !defined(_TEMPLATE_H_)
+#if !defined(USE_TEMPLATE_H)
     INCTXT(filename_macros, SRCPATH "templates/filename_macros.h");
     INCTXT(license,         SRCPATH "templates/license.h");
     INCTXT(common_header,   SRCPATH "templates/common.h");

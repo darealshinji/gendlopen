@@ -77,7 +77,7 @@ inline void delete_suffix(std::string &str, const std::string &suffix)
 /* strip ANSI white-space characters from front and back */
 inline void strip_spaces(std::string &s)
 {
-    const char *list = " \t\n\r\v\f";
+    const char * const list = " \t\n\r\v\f";
 
     /* remove from back */
     while (!s.empty() && std::strchr(list, s.back())) {

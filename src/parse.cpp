@@ -96,7 +96,7 @@ namespace /* anonymous */
             }
 
             if (e.type.ends_with("*")) {
-                /* append space */
+                /* »char * x«  -->  »char *x« */
                 utils::replace("%%type%% ", e.type, copy);
             }
             utils::replace("%%type%%", e.type, copy);
@@ -112,20 +112,22 @@ namespace /* anonymous */
     {
         std::string copy, type;
 
+        /* function pointer */
         for (const auto &e : proto) {
             copy = line;
 
-            /* (%%sym_type%%) == (%%type%% (*)(%%args%%)) */
+            /* %%sym_type%% --> »%%type%% (*)(%%args%%)« */
             type = e.type + " (*)(" + e.args + ")";
             utils::replace("%%sym_type%%", type, copy);
             utils::replace("%%symbol%%", e.symbol, copy);
             buffer += copy;
         }
 
+        /* object pointer */
         for (const auto &e : obj) {
             copy = line;
 
-            /* (%%sym_type%%) == (%%obj_type%% *) */
+            /* %%sym_type%% --> »%%obj_type%% *« */
             type = e.type + " *";
             utils::replace("%%sym_type%%", type, copy);
             utils::replace("%%symbol%%", e.symbol, copy);
@@ -181,16 +183,13 @@ std::string gendlopen::parse(std::string &data)
     }
 
     /* lambda function to replace prefixes in lines */
-    auto replace_prefixes = [&] (const std::string &in) -> std::string
+    auto replace_prefixes = [&] (std::string &s)
     {
         if (custom_prefix) {
-            std::string s;
-            s = std::regex_replace(in, reg_upper, fmt_upper);
+            s = std::regex_replace(s, reg_upper, fmt_upper);
             s = std::regex_replace(s, reg_lower, fmt_lower);
             s = std::regex_replace(s, reg_nmspc, fmt_namespace);
-            return s;
         }
-        return in;
     };
 
     /* Change all line endings from \r\n to \n.
@@ -232,7 +231,7 @@ std::string gendlopen::parse(std::string &data)
         }
 
         /* check if we have to comment out lines
-         * between "%SKIP_BEGIN%" and "%SKIP_END%" */
+         * between "%SKIP_PARAM_UNUSED_BEGIN%" and "%SKIP_PARAM_UNUSED_END%" */
 
         int skip = check_skip_keyword(line);
 
@@ -249,7 +248,8 @@ std::string gendlopen::parse(std::string &data)
         }
 
         if (comment_out) {
-            buf += "//" + replace_prefixes(line);
+            replace_prefixes(line);
+            buf += "//" + line;
             line.clear();
             continue;
         }
@@ -272,7 +272,7 @@ std::string gendlopen::parse(std::string &data)
                 continue;
             }
 
-            line = replace_prefixes(line);
+            replace_prefixes(line);
             replace_function_prototypes(m_prototypes, line, buf);
         } else if (has_obj == 1) {
             /* object prototypes */
@@ -282,7 +282,7 @@ std::string gendlopen::parse(std::string &data)
                 continue;
             }
 
-            line = replace_prefixes(line);
+            replace_prefixes(line);
 
             for (const auto &e : m_objects) {
                 std::string copy = line;
@@ -292,11 +292,12 @@ std::string gendlopen::parse(std::string &data)
             }
         } else if (has_sym == 1) {
             /* any symbol */
-            line = replace_prefixes(line);
+            replace_prefixes(line);
             replace_symbol_names(m_prototypes, m_objects, line, buf);
         } else {
             /* nothing to loop, just append */
-            buf += replace_prefixes(line);
+            replace_prefixes(line);
+            buf += line;
         }
 
         line.clear();
