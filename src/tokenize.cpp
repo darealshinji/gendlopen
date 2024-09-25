@@ -42,6 +42,12 @@
 namespace /* anonymous */
 {
 
+template<class C, typename T>
+bool find_in_list(C list, T item)
+{
+    return std::find(list.begin(), list.end(), item) != list.end();
+}
+
 /* compare s with a list of very basic types and keywords that
  * may appear in parameter list to guess if it could be a name */
 bool keyword_or_type(const std::string &s)
@@ -98,7 +104,7 @@ void pb_token(std::string &token, vstring_t &line)
         return;
     }
 
-    /* skip "extern" keyword */
+    /* skip reserved "extern" keyword */
     if (!utils::eq_str_case(token, "extern")) {
         line.push_back(token);
     }
@@ -188,6 +194,7 @@ void read_input(cio::ifstream &ifs, vproto_t &vproto)
         }
     }
 
+    /* just in case */
     pb_token(token, line);
     pb_line(line, vec);
 
@@ -195,21 +202,26 @@ void read_input(cio::ifstream &ifs, vproto_t &vproto)
     for (auto &l : vec) {
         proto_t proto;
 
-        if (std::find(l.begin(), l.end(), "(") != l.end()) {
+        if (find_in_list(l, "(")) {
             /* function */
             bool param = false;
 
             for (auto it = l.begin(); it != l.end(); it++) {
                 if (!param) {
                     if (it+1 != l.end() && *(it+1) == "(") {
+                        /* next iterator is left parenthesis,
+                         * marking begin of parameter list */
                         proto.symbol = *it;
                         it++;
                         param = true;
                     } else {
+                        /* function return type */
                         proto.type += *it;
                         proto.type += ' ';
                     }
                 } else if (!(*it == ")" && it+1 == l.end())) {
+                    /* add to args list while we havent reached
+                     * the parameter list's right parenthesis */
                     proto.args += *it;
                     proto.args += ' ';
                 }
@@ -387,6 +399,7 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
             args_new.pop_back();
         }
 
+        /* overwrite old args */
         utils::strip_spaces(args_new);
         proto.args = args_new;
     }
@@ -433,7 +446,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         /* copy whitelisted symbols */
         if (!m_symbols.empty()) {
             for (const auto &e : vproto) {
-                if (std::find(m_symbols.begin(), m_symbols.end(), e.symbol) != m_symbols.end()) {
+                if (find_in_list(m_symbols, e.symbol)) {
                     pb_symbol(e);
                 }
             }
@@ -481,7 +494,7 @@ void gendlopen::tokenize(cio::ifstream &ifs)
     /* copy */
     filter_and_copy_symbols(vproto);
 
-    /* format args */
+    /* format args (cosmetics) */
     for (auto &p : m_prototypes) {
         auto rep = [&p] (const std::string &from, const std::string &to) {
             utils::replace(from, to, p.args);
