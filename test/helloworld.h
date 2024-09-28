@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+
 #ifdef TEST_UNDEFINED_SYMBOL
     #define HELLOWORLD_INIT helloworld_init_foobar
 #else
@@ -43,6 +45,9 @@ DLL_PUBLIC void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const ch
 
 /* free resources */
 DLL_PUBLIC void helloworld_release(helloworld *hw);
+
+/* like fprintf() */
+DLL_PUBLIC int helloworld_fprintf(FILE *stream, const char *format, ...);
 
 #ifdef __cplusplus
 }

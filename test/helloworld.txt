@@ -7,7 +7,7 @@ extern helloworld_cb_t helloworld_callback;
 void helloworld_hello(helloworld *hw);
 void helloworld_hello2(helloworld *hw,
     void ( * helloworld_cb )
-        (const char*)
+        (const char*)  /* testing non-typedef'd function pointer */
 );
 
 /* release */
@@ -15,3 +15,6 @@ void helloworld_release
   (/* //comment inside comment */ helloworld * hw)
   ;
 
+/* fprintf */
+int helloworld_fprintf(FILE *stream, const char *format,
+  ...); /* testing variable arguments */

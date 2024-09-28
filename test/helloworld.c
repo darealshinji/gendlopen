@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,7 +33,7 @@ void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
         memcpy(hw->str, "hello world\0", 12);
         helloworld_cb(hw->str);
     } else {
-        fprintf(stderr, "helloworld_cb == NULL\n");
+        helloworld_fprintf(stderr, "%s\n", "helloworld_cb == NULL");
     }
 }
 
@@ -40,5 +41,18 @@ void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
 void helloworld_release(helloworld *hw)
 {
     if (hw) free(hw);
+}
+
+/* fprintf implementation */
+int helloworld_fprintf(FILE *stream, const char *format, ...)
+{
+    int n;
+    va_list ap;
+
+    va_start(ap, format);
+    n = vfprintf(stream, format, ap);
+    va_end(ap);
+
+    return n;
 }
 

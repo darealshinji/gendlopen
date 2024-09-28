@@ -7,7 +7,7 @@
 
 void cb(const char *msg)
 {
-    puts(msg);
+    helloworld_fprintf(stdout, "%s: %s\n", "callback", msg);
 }
 
 int main()

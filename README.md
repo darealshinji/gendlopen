@@ -15,10 +15,14 @@ Features:
 
 Limitations:
  * it's not a code analysis tool, so make sure the input is correct
- * auto-loading only works on functions (I recommend using get/set wrapper functions to auto-load objects)
+ * auto-loading only works on functions ¹
+ * auto-loading does not work on functions with variable arguments ²
  * C++11 is the minimum requirement for the generated C++ files
  * C++20 is the minimum requirement to compile the tool
 
+¹ I recommend using your own get/set wrapper functions to auto-load objects<br>
+² You can however replace a prototype such as `int myprintf(const char *format, ...)`
+  with one that has a fixed number of arguments: `int myprintf(const char *format, int arg1, const char *arg2, float arg3)`
 
 Input format
 ------------

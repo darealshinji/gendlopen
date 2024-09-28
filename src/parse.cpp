@@ -78,13 +78,48 @@ namespace /* anonymous */
         return -1;
     }
 
+    /* comment out lines in code */
+    void comment_out_code(std::string &buffer, const std::string &code)
+    {
+        std::string line;
+
+        auto append_to_buffer = [&buffer] (const std::string &str) {
+            /* don't comment out if line has only ASCII spaces */
+            if (str.find_first_not_of(" \t\n\r\v\f") != std::string::npos) {
+                buffer += "//";
+            }
+            buffer += str;
+        };
+
+        for (const char &c : code) {
+            line += c;
+
+            if (c != '\n') {
+                continue;
+            }
+
+            append_to_buffer(line);
+            line.clear();
+        }
+
+        if (!line.empty()) {
+            append_to_buffer(line);
+        }
+    }
+
     /* loop and replace function prototypes, append to buffer */
     void replace_function_prototypes(vproto_t &vec, const std::string &line, std::string &buffer)
     {
         std::string copy;
 
         for (const auto &e : vec) {
+            bool comment_out = false;
             copy = line;
+
+            /* we can't handle variable argument lists in wrapper functions */
+            if (e.args.ends_with("...") && copy.find("%%return%%") != std::string::npos) {
+                comment_out = true;
+            }
 
             /* don't "return" on "void" functions */
             if (utils::eq_str_case(e.type, "void")) {
@@ -104,7 +139,11 @@ namespace /* anonymous */
             utils::replace("%%args%%", e.args, copy);
             utils::replace("%%notype_args%%", e.notype_args, copy);
 
-            buffer += copy;
+            if (comment_out) {
+                comment_out_code(buffer, copy);
+            } else {
+                buffer += copy;
+            }
         }
     }
 

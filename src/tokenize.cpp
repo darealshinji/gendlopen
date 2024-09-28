@@ -166,19 +166,20 @@ void read_input(cio::ifstream &ifs, vproto_t &vproto)
 
         /* var, type, etc. */
 #ifndef _MSC_VER
-        case 'A' ... 'Z':
         case 'a' ... 'z':
+        case 'A' ... 'Z':
         case '0' ... '9':
 #endif
         case '_':
+        case '.':
             token += c;
             break;
 
         /* other */
         default:
 #ifdef _MSC_VER
-            if (utils::range(c, 'A', 'Z') ||
-                utils::range(c, 'a', 'z') ||
+            if (utils::range(c, 'a', 'z') ||
+                utils::range(c, 'A', 'Z') ||
                 utils::range(c, '0', '9'))
             {
                 token += c;
@@ -353,7 +354,15 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
                 search = E_FUNC_PTR_NAME;
             } else if (token == ",") {
                 /* argument list separator */
-                if (create) {
+                if (arg.size() == 1 && arg.back() == "...") {
+                    /* handle variable arguments token */
+                    if (create) {
+                        args_new += " ...";
+                    }
+                    out += ", ...";
+                    arg.clear();
+                    //break;
+                } else if (create) {
                     out += ',';
 
                     if (name.empty()) {

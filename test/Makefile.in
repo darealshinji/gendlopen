@@ -42,6 +42,7 @@ _GEN_SOURCES_WIN32 = c_win32_wide.h cxx_win32_wide.hpp
 GEN_SOURCES = $(GEN_SOURCES_ANY) $(GEN_SOURCES_WIN32)
 
 GENHDR = $(GENDLOPEN) helloworld.txt -force -o
+GENHDR2 = $(GENDLOPEN) helloworld2.txt -force -o
 
 
 
@@ -190,7 +191,7 @@ cxx_test.hpp:
 	$(gen_v)$(GENHDR) $@ -format=C++ -param=skip
 
 cxx_autoload.hpp:
-	$(gen_v)$(GENHDR) $@ -format=C++ -library=API:0:helloworld
+	$(gen_v)$(GENHDR2) $@ -format=C++ -library=API:0:helloworld
 
 cxx_list.hpp:
 	$(gen_v)$(GENHDR) $@ -format=C++

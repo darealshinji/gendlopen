@@ -31,7 +31,10 @@ int main()
     gdo::dl::message_callback(print_error);
 
     auto cb = [] (const char *msg) {
-        std::cout << "Custom callback >>> " << msg << std::endl;
+        /* the original prototype of helloworld_fprintf() was replaced with
+         * one that has a fixed number of arguments, so we can actually
+         * autoload it with a wrapper function */
+        helloworld_fprintf(stdout, "%s >>> %s\n", "Custom callback", msg);
     };
 
     helloworld *hw = helloworld_init();
