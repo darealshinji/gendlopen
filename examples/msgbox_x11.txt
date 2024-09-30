@@ -1,0 +1,98 @@
+// from <X11/Xlib.h>
+
+extern Display *XOpenDisplay(
+    _Xconst char*	/* display_name */
+);
+
+extern Window XCreateWindow(
+    Display*		/* display */,
+    Window		/* parent */,
+    int			/* x */,
+    int			/* y */,
+    unsigned int	/* width */,
+    unsigned int	/* height */,
+    unsigned int	/* border_width */,
+    int			/* depth */,
+    unsigned int	/* class */,
+    Visual*		/* visual */,
+    unsigned long	/* valuemask */,
+    XSetWindowAttributes*	/* attributes */
+);
+
+extern int XStoreName(
+    Display*		/* display */,
+    Window		/* w */,
+    _Xconst char*	/* window_name */
+);
+
+extern GC XCreateGC(
+    Display*		/* display */,
+    Drawable		/* d */,
+    unsigned long	/* valuemask */,
+    XGCValues*		/* values */
+);
+
+extern int XSetForeground(
+    Display*		/* display */,
+    GC			/* gc */,
+    unsigned long	/* foreground */
+);
+
+extern Atom XInternAtom(
+    Display*		/* display */,
+    _Xconst char*	/* atom_name */,
+    Bool		/* only_if_exists */
+);
+
+extern Status XSetWMProtocols(
+    Display*		/* display */,
+    Window		/* w */,
+    Atom*		/* protocols */,
+    int			/* count */
+);
+
+extern int XMapWindow(
+    Display*		/* display */,
+    Window		/* w */
+);
+
+extern int XMoveWindow(
+    Display*		/* display */,
+    Window		/* w */,
+    int			/* x */,
+    int			/* y */
+);
+
+extern int XNextEvent(
+    Display*		/* display */,
+    XEvent*		/* event_return */
+);
+
+extern int XDrawText(
+    Display*		/* display */,
+    Drawable		/* d */,
+    GC			/* gc */,
+    int			/* x */,
+    int			/* y */,
+    XTextItem*		/* items */,
+    int			/* nitems */
+);
+
+extern int XFreeGC(
+    Display*		/* display */,
+    GC			/* gc */
+);
+
+extern int XUnmapWindow(
+    Display*		/* display */,
+    Window		/* w */
+);
+
+extern int XDestroyWindow(
+    Display*		/* display */,
+    Window		/* w */
+);
+
+extern int XCloseDisplay(
+    Display*		/* display */
+);

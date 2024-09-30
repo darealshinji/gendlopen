@@ -27,6 +27,7 @@ msvc="no"
 nix="yes"
 with_notify="no"
 with_appind="no"
+with_msgbox="no"
 
 
 
@@ -40,6 +41,7 @@ create_makefile()
 {
     if [ "x$with_appind" != "xyes" ]; then xappind="#"; fi
     if [ "x$with_notify" != "xyes" ]; then xnotify="#"; fi
+    if [ "x$with_msgbox" != "xyes" ]; then xmsgbox="#"; fi
     if [ "x$win32"       != "xyes" ]; then xwin32="#"; fi
     if [ "x$msvc"        != "xyes" ]; then xmsvc="#"; fi
     if [ "x$nix"         != "xyes" ]; then xnix="#"; fi
@@ -51,6 +53,7 @@ create_makefile()
     cat settings.mk rules.mk "${1}Makefile.in" | \
     sed -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
+        -e "s,@MSGBOX@,$xmsgbox,g" \
         -e "s,@CLANG@,$xclang,g" \
         -e "s,@AR@,$xar,g" \
         -e "s,@W32@,$xwin32,g" \
@@ -353,6 +356,7 @@ EOL
     opt=*)          opt="${i#*=}";;
     gtk-cflags=*)   gtk_cflags="${i#*=}";;
     glib-cflags=*)  glib_cflags="${i#*=}";;
+    x11-cflags=*)   x11_cflags="${i#*=}";;
     gen-template=*) gen_template="${i#*=}";;
 
     -no-std-checks)
@@ -701,11 +705,37 @@ else
         have_gtk_headers="yes"
     fi
 
+    # X11
+    if [ "x$x11_cflags" = "x:" ]; then
+        if [ "x$pkgconfig" = "x" ]; then
+            x11_cflags=""
+        else
+            x11_cflags="$("$pkgconfig" --cflags x11 2>/dev/null)"
+        fi
+    fi
+
+    CFLAGS="$x11_cflags"
+    check_header "X11/Xlib.h"
+
+    if [ "x$header" != "x" ]; then
+        check_header "X11/Xatom.h"
+
+        if [ "x$header" != "x" ]; then
+            have_x11_headers="yes"
+        fi
+    fi
+
+    # set conditionals for Makefile
     if [ "x$have_glib_headers" = "xyes" ]; then
         with_notify="yes"
     fi
+
     if [ "x$have_gtk_headers" = "xyes" ]; then
         with_appind="yes"
+
+        if [ "x$have_x11_headers" = "xyes" ]; then
+            with_msgbox="yes"
+        fi
     fi
 fi
 
@@ -775,6 +805,8 @@ LIBDL         = $libdl
 GLIB_CFLAGS   = $glib_cflags
 
 GTK_CFLAGS    = $gtk_cflags
+
+X11_CFLAGS    = $x11_cflags
 
 EOF
 

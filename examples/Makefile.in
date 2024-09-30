@@ -1,11 +1,12 @@
 
 @APPIND@BIN_APPIND = appindicator$(EXEEXT)
 @NOTIFY@BIN_NOTIFY = notify$(EXEEXT)
+@MSGBOX@BIN_MSGBOX = msgbox$(EXEEXT)
 
 @CLANG@@NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
 @CLANG@@W32@BIN_UUIDWIN = uuid_win$(EXEEXT)
 
-BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
+BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
 
 .PHONY: all clean
@@ -13,7 +14,7 @@ BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 all: $(BINS)
 
 clean:
-	$(_v)-rm -f notify appindicator uuid_nix
+	$(_v)-rm -f appindicator notify msgbox uuid_nix
 	$(_v)-rm -f *.exe *.o *.obj example_*.h uuid_nix_dl.h uuid_win_dl.h
 
 run_examples: $(BINS)
@@ -27,7 +28,6 @@ run_examples: $(BINS)
 
 @APPIND@example_appindicator.h: appindicator.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) appindicator.txt -force -o $@ -name xappindicator -library libappindicator.so.1 -param=create
-#-param=skip
 
 @APPIND@example_appindicator_gtk.h: appindicator_gtk.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) appindicator_gtk.txt -force -o $@ -name xgtk -library libgtk-x11-2.0.so.0
@@ -49,6 +49,20 @@ run_examples: $(BINS)
 
 @NOTIFY@notify: example_notify.h example_notify_gobject.h notify.c
 @NOTIFY@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
+
+# msgbox
+@MSGBOX@example_msgbox_gtk.h: msgbox_gtk.txt
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_gtk.txt -force -o $@ -name dl_gtk
+
+@MSGBOX@example_msgbox_sdl.h: msgbox_sdl.txt
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_sdl.txt -force -o $@ -name dl_sdl
+
+@MSGBOX@example_msgbox_x11.h: msgbox_x11.txt
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_x11.txt -force -o $@ -name dl_x11 -param=skip
+
+@MSGBOX@msgbox: example_msgbox_gtk.h example_msgbox_sdl.h example_msgbox_x11.h msgbox.c
+@MSGBOX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty -Ithirdparty/sdl $(GTK_CFLAGS) $(X11_CFLAGS) msgbox.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
 # UUID
