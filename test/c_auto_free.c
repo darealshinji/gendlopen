@@ -26,7 +26,7 @@ int main()
     /* no explicit call to gdo_free_lib() */
 
     if (!gdo_load_lib_args(LIBNAME(helloworld,0), GDO_DEFAULT_FLAGS, new_namespace) ||
-        !gdo_load_symbols(false))
+        !gdo_load_all_symbols(false))
     {
         fprintf(stderr, "%s\n", gdo_last_error());
         return 1;

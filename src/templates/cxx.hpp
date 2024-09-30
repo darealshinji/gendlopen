@@ -67,7 +67,7 @@ public:
      * If ignore_errors is set true the function won't stop on the first
      * symbol that can't be loaded but instead tries to load them all.
      * If one or more symbols weren't loaded the function returns false. */
-    bool load_symbols(bool ignore_errors=false);
+    bool load_all_symbols(bool ignore_errors=false);
 
 
     /* load a specific symbol */
@@ -185,6 +185,12 @@ GDO_VISIBILITY
 
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names. Use with care.
+
+GDO_DISABLE_DLINFO
+    Always disable usage of `dlinfo(3)'.
+
+GDO_DISABLE_DLMOPEN
+    Always disable usage of `dlmopen(3)'.
 
 ***/
 
@@ -698,7 +704,7 @@ public:
     /* load library and symbols */
     bool load_lib_and_symbols()
     {
-        return (load() && load_symbols());
+        return (load() && load_all_symbols());
     }
 
 
@@ -717,7 +723,7 @@ public:
 
 
     /* load all symbols */
-    bool load_symbols(bool ignore_errors=false)
+    bool load_all_symbols(bool ignore_errors=false)
     {
         clear_error();
 
@@ -795,15 +801,10 @@ public:
         const size_t len = 0;
 #endif
 
-        /* increment string */
-        auto incr = [&] (const char *str) -> const char* {
-            return str + len;
-        };
-
         /* get symbol address */
         const char *ptr = symbol.c_str() + len;
 @
-        if (strcmp(incr("%%symbol%%"), ptr) == 0) {@
+        if (strcmp(static_cast<const char *>("%%symbol%%") + len, ptr) == 0) {@
             m_ptr_%%symbol%% =@
                 sym<%%sym_type%%>@
                     ("%%symbol%%");@

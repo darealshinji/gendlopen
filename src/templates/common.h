@@ -28,13 +28,14 @@
 
 /* whether to use dlinfo(3);
  * n/a on Windows (both APIs), OpenBSD, Haiku */
-#if !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__)
+#if !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__) && \
+    !defined(GDO_DISABLE_DLINFO)
 # define GDO_HAVE_DLINFO
 #endif
 
 /* whether to use dlmopen(3);
  * only available on Glibc and Solaris/IllumOS */
-#if defined(__GLIBC__) || defined(__sun)
+#if (defined(__GLIBC__) || defined(__sun)) && !defined(GDO_DISABLE_DLMOPEN)
 # define GDO_HAVE_DLMOPEN
 #endif
 

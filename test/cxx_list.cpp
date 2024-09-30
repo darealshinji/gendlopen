@@ -25,7 +25,7 @@ int main()
     };
 #endif
 
-    if (!loader.load_from_list(list) || !loader.load_symbols()) {
+    if (!loader.load_from_list(list) || !loader.load_all_symbols()) {
         std::cerr << loader.error() << std::endl;
         return 1;
     }

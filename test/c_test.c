@@ -30,7 +30,7 @@ int main()
 
     /* load library and symbols */
     if (!gdo_load_lib_args(filename, flags, new_namespace) ||
-        !gdo_load_symbols(false))
+        !gdo_load_all_symbols(false))
     {
         /* print the last saved error */
         fprintf(stderr, "%s\n", gdo_last_error());

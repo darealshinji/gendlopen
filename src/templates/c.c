@@ -223,7 +223,7 @@ GDO_LINKAGE bool gdo_load_lib(void)
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
 {
     return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&
-        gdo_load_symbols(false));
+        gdo_load_all_symbols(false));
 }
 #endif
 /*****************************************************************************/
@@ -236,6 +236,17 @@ GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
 GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)
 {
     return gdo_load_lib_args(filename, GDO_DEFAULT_FLAGS, false);
+}
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+/*     load library by filename with default flags and load the symbols      */
+/*****************************************************************************/
+GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename)
+{
+    return (gdo_load_lib_name(filename) && gdo_load_all_symbols(false));
 }
 /*****************************************************************************/
 
@@ -458,7 +469,7 @@ GDO_LINKAGE bool gdo_any_symbol_loaded(void)
 /*****************************************************************************/
 /*          load all symbols; can safely be called multiple times            */
 /*****************************************************************************/
-GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors)
+GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
 {
     gdo_clear_errbuf();
 

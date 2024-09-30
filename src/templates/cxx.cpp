@@ -71,7 +71,7 @@ namespace /* anonymous */
 #ifdef GDO_DELAYLOAD
         if (!al.load_symbol(symbol))
 #else
-        if (!al.load_symbols())
+        if (!al.load_all_symbols())
 #endif
         {
             error_exit4("error in auto-loading wrapper function "

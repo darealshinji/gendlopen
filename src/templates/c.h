@@ -18,20 +18,25 @@ Otherwise `gdo_char_t` will become `char`.
 bool               gdo_load_lib ();
 bool               gdo_load_lib_and_symbols ();
 bool               gdo_load_lib_name (const gdo_char_t *filename);
+bool               gdo_load_lib_name_and_symbols (const gdo_char_t *filename);
 bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
 
-bool               gdo_load_symbols (bool ignore_errors);
-bool               gdo_load_symbol (const char *symbol);
-
+bool               gdo_lib_is_loaded ();
 bool               gdo_free_lib ();
 
-bool               gdo_lib_is_loaded ();
+bool               gdo_all_symbols_loaded ();
+bool               gdo_no_symbols_loaded ();
+bool               gdo_any_symbol_loaded ();
+bool               gdo_load_all_symbols (bool ignore_errors);
+bool               gdo_load_symbol (const char *symbol);
+
 bool               gdo_all_symbols_loaded ();
 bool               gdo_no_symbols_loaded ();
 bool               gdo_any_symbol_loaded ();
 
 const gdo_char_t * gdo_last_error ();
 gdo_char_t *       gdo_lib_origin ();
+
 
 
 bool gdo_load_lib ();
@@ -50,6 +55,11 @@ bool gdo_load_lib_name (const gdo_char_t *filename);
     Load the library specified by `filename' using default flags.
 
 
+bool gdo_load_lib_name_and_symbols (const gdo_char_t *filename);
+
+    Calls gdo_load_lib_name() and gdo_load_symbols().
+
+
 bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
 
     Load the library; `filename' and `flags' are passed to the underlying library
@@ -58,6 +68,16 @@ bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespac
     If `new_namespace' is true the library will be loaded into a new namespace.
     This is done using dlmopen() with the LM_ID_NEWLM argument.
     This argument is only used on Glibc and if _GNU_SOURCE was defined.
+
+
+bool gdo_lib_is_loaded ();
+
+    Returns true if the library was successfully loaded.
+
+
+bool gdo_free_lib ();
+
+    Free/release library handle.
 
 
 bool gdo_load_symbols (bool ignore_errors);
@@ -71,16 +91,6 @@ bool gdo_load_symbols (bool ignore_errors);
 bool gdo_load_symbol (const char *symbol);
 
     Load a specific symbol.
-
-
-bool gdo_free_lib ();
-
-    Free/release library handle.
-
-
-bool gdo_lib_is_loaded ();
-
-    Returns true if the library was successfully loaded.
 
 
 bool gdo_all_symbols_loaded ();
@@ -163,6 +173,12 @@ GDO_USE_MESSAGE_BOX
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names. Use with care.
 
+GDO_DISABLE_DLINFO
+    Always disable usage of `dlinfo(3)'.
+
+GDO_DISABLE_DLMOPEN
+    Always disable usage of `dlmopen(3)'.
+
 
 
 *****************
@@ -173,11 +189,15 @@ GDO_DEFAULT_FLAGS
     Default flags for `dlopen()' or `LoadLibraryEx()'
 
 LIBNAME(NAME, API)
+LIBNAMEA(NAME, API)
+LIBNAMEW(NAME, API)
     Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
     including double quote marks.
     LIBNAME(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
 
 LIBEXT
+LIBEXTA
+LIBEXTW
     Shared library file extension without dot ("dll", "dylib" or "so").
     Useful i.e. on plugins.
 
@@ -227,11 +247,19 @@ extern GDO_LINKAGE gdo_handle_t gdo_hndl;
 GDO_LINKAGE bool gdo_load_lib(void);
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void);
 #endif
+GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename);
+GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
 GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
-GDO_LINKAGE bool gdo_load_symbols(bool ignore_errors);
-GDO_LINKAGE bool gdo_load_symbol(const char *symbol);
-GDO_LINKAGE bool gdo_free_lib(void);
+
 GDO_LINKAGE bool gdo_lib_is_loaded(void);
+GDO_LINKAGE bool gdo_free_lib(void);
+
+GDO_LINKAGE bool gdo_all_symbols_loaded(void);
+GDO_LINKAGE bool gdo_no_symbols_loaded(void);
+GDO_LINKAGE bool gdo_any_symbol_loaded(void);
+GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors);
+GDO_LINKAGE bool gdo_load_symbol(const char *symbol);
+
 GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
