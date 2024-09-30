@@ -48,6 +48,7 @@ private:
     std::string m_name_upper, m_name_lower;
     std::string m_ifile, m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;
+    std::string m_common_prefix;
 
     output::format m_format = output::c;
     param::names m_parameter_names = param::param_default;

@@ -37,27 +37,12 @@
 namespace /* anonymous */
 {
     enum {
+        SKIP_NOTHING = -1,
         SKIP_BEGIN = 0,
         SKIP_END = 1
     };
 
     using list_t = std::list<const char *>;
-
-    /* check for keywords from a list */
-    int find_keyword(const std::string &line, const list_t &list)
-    {
-        if (line.find("%%") == std::string::npos) {
-            return 0;
-        }
-
-        for (const auto &e : list) {
-            if (line.find(e) != std::string::npos) {
-                return 1;
-            }
-        }
-
-        return 0;
-    }
 
     /* check for a "%SKIP_PARAM_UNUSED_BEGIN%" or "%SKIP_PARAM_UNUSED_END%" line and
      * return either SKIP_BEGIN, SKIP_END or -1 if nothing was found */
@@ -67,7 +52,7 @@ namespace /* anonymous */
         std::smatch m;
 
         if (!std::regex_match(line, m, reg) || m.size() != 2) {
-            return -1;
+            return SKIP_NOTHING;
         }
 
         if (m[1] == "BEGIN") {
@@ -75,7 +60,7 @@ namespace /* anonymous */
         } else if (m[1] == "END") {
             return SKIP_END;
         }
-        return -1;
+        return SKIP_NOTHING;
     }
 
     /* comment out lines in code */
@@ -208,28 +193,18 @@ std::string gendlopen::parse(std::string &data)
         throw error("no function or object prototypes");
     }
 
-    /* regex for prefixes: [_]GDO_* / [_]gdo_* / gdo:: */
-    const std::regex reg_upper("([^A-Za-z0-9_]?[_]?)(GDO_)([A-Za-z0-9_])");
-    const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)([A-Za-z0-9_])");
+    /* regex for prefixes: [_]GDO_ / [_]gdo_ / gdo:: */
+    const std::regex reg_upper("([^A-Za-z0-9_]?[_]?)(GDO_)");
+    const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)");
     const std::regex reg_nmspc("([^A-Za-z0-9_]?)(gdo::)");
 
     const bool custom_prefix = (m_name_upper != "GDO");
 
     if (custom_prefix) {
-        fmt_upper = "$1" + (m_name_upper + "_$3");
-        fmt_lower = "$1" + (m_name_lower + "_$3");
+        fmt_upper = "$1" + (m_name_upper + '_');
+        fmt_lower = "$1" + (m_name_lower + '_');
         fmt_namespace = "$1" + (m_name_lower + "::");
     }
-
-    /* lambda function to replace prefixes in lines */
-    auto replace_prefixes = [&] (std::string &s)
-    {
-        if (custom_prefix) {
-            s = std::regex_replace(s, reg_upper, fmt_upper);
-            s = std::regex_replace(s, reg_lower, fmt_lower);
-            s = std::regex_replace(s, reg_nmspc, fmt_namespace);
-        }
-    };
 
     /* Change all line endings from \r\n to \n.
      * This is a "radical" solution but it makes parsing the code
@@ -248,7 +223,8 @@ std::string gendlopen::parse(std::string &data)
             p++;
 
             if (comment_out) {
-                /* keep trailing @ symbol in commented out section */
+                /* keep trailing `@' symbol in commented out section
+                 * and continue to parse the line */
                 line += '@';
             } else {
                 line += '\n';
@@ -263,40 +239,83 @@ std::string gendlopen::parse(std::string &data)
             continue;
         }
 
-        /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
-        if (line.find("%DNL%") != std::string::npos) {
-            line.clear();
-            continue;
+        /* optimize search for potential keywords */
+        bool maybe_keyword = (line.find('%') != std::string::npos);
+
+        if (maybe_keyword) {
+            /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
+            if (line.find("%DNL%") != std::string::npos) {
+                line.clear();
+                continue;
+            }
+
+            /* check if we have to comment out lines between
+             * "%SKIP_PARAM_UNUSED_BEGIN%" and "%SKIP_PARAM_UNUSED_END%" */
+            switch (check_skip_keyword(line))
+            {
+            case SKIP_BEGIN:
+                /* set as "true" if "-param=skip" was given,
+                 * otherwise set as false and nothing is commented out */
+                comment_out = (m_parameter_names == param::skip);
+                line.clear();
+                continue;
+            case SKIP_END:
+                comment_out = false;
+                line.clear();
+                continue;
+            default:
+                break;
+            }
         }
 
-        /* check if we have to comment out lines
-         * between "%SKIP_PARAM_UNUSED_BEGIN%" and "%SKIP_PARAM_UNUSED_END%" */
-
-        int skip = check_skip_keyword(line);
-
-        if (skip == SKIP_BEGIN) {
-            /* set as "true" if "-param=skip" was given,
-             * otherwise set as false and nothing is commented out */
-            comment_out = (m_parameter_names == param::skip);
-            line.clear();
-            continue;
-        } else if (skip == SKIP_END) {
-            comment_out = false;
-            line.clear();
-            continue;
+        /* replace prefixes */
+        if (custom_prefix) {
+            line = std::regex_replace(line, reg_upper, fmt_upper);
+            line = std::regex_replace(line, reg_lower, fmt_lower);
+            line = std::regex_replace(line, reg_nmspc, fmt_namespace);
         }
 
         if (comment_out) {
-            replace_prefixes(line);
             buf += "//" + line;
             line.clear();
             continue;
         }
 
+        if (maybe_keyword) {
+            /* insert common symbol prefix string */
+            utils::replace("%COMMON_PREFIX%", m_common_prefix, line);
+
+            /* update value */
+            maybe_keyword = line.find('%') != std::string::npos;
+        }
+
+        /* nothing to loop, just append */
+        if (!maybe_keyword) {
+            buf += line;
+            line.clear();
+            continue;
+        }
+
         /* check if the line needs to be processed in a loop */
-        int has_func = find_keyword(line, function_keywords);
-        int has_obj = find_keyword(line, object_keywords);
-        int has_sym = find_keyword(line, symbol_keywords);
+        auto find_keyword = [&line] (const list_t &list) -> int
+        {
+            for (const auto &e : list) {
+                if (line.find(e) != std::string::npos) {
+                    return 1;
+                }
+            }
+            return 0;
+        };
+
+        int has_func, has_obj, has_sym;
+
+        if (line.find("%%") == std::string::npos) {
+            has_func = has_obj = has_sym = 0;
+        } else {
+            has_func = find_keyword(function_keywords);
+            has_obj = find_keyword(object_keywords);
+            has_sym = find_keyword(symbol_keywords);
+        }
 
         if ((has_func + has_obj + has_sym) > 1) {
             /* error */
@@ -311,7 +330,6 @@ std::string gendlopen::parse(std::string &data)
                 continue;
             }
 
-            replace_prefixes(line);
             replace_function_prototypes(m_prototypes, line, buf);
         } else if (has_obj == 1) {
             /* object prototypes */
@@ -321,8 +339,6 @@ std::string gendlopen::parse(std::string &data)
                 continue;
             }
 
-            replace_prefixes(line);
-
             for (const auto &e : m_objects) {
                 std::string copy = line;
                 utils::replace("%%obj_type%%", e.type, copy);
@@ -331,11 +347,9 @@ std::string gendlopen::parse(std::string &data)
             }
         } else if (has_sym == 1) {
             /* any symbol */
-            replace_prefixes(line);
             replace_symbol_names(m_prototypes, m_objects, line, buf);
         } else {
             /* nothing to loop, just append */
-            replace_prefixes(line);
             buf += line;
         }
 

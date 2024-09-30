@@ -785,21 +785,17 @@ public:
             return false;
         }
 
-#ifdef GDO_COMMON_PFX
         /* opt out if symbol doesn't begin with prefix */
-        const char * const pfx = GDO_COMMON_PFX;
-        const size_t len = sizeof(GDO_COMMON_PFX) - 1;
+        const char * const pfx = "%COMMON_PREFIX%";
+        const size_t len = sizeof(pfx) - 1;
 
-        if ((len == 1 && symbol[0] != pfx[0]) ||
+        if (len == 0 || (len == 1 && symbol[0] != pfx[0]) ||
             (len > 1 && strncmp(symbol.c_str(), pfx, len) != 0))
         {
             //%DNL%// std::cerr << "DEBUG: not a common symbol prefix" << std::endl;
             err_not_found();
             return false;
         }
-#else
-        const size_t len = 0;
-#endif
 
         /* get symbol address */
         const char *ptr = symbol.c_str() + len;

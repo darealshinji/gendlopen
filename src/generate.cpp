@@ -404,13 +404,7 @@ void gendlopen::tokenize_input()
     }
 
     /* look for a common symbol prefix */
-    std::string pfx = get_common_prefix(m_prototypes, m_objects);
-
-    if (pfx.size() > 0) {
-        std::stringstream out;
-        out << "#define " << m_name_upper << "_COMMON_PFX \"" << pfx << "\"\n";
-        add_def(out.str());
-    }
+    m_common_prefix = get_common_prefix(m_prototypes, m_objects);
 }
 
 /* read and parse custom template */

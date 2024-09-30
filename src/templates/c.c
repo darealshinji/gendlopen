@@ -572,20 +572,16 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
         return false;
     }
 
-#ifdef GDO_COMMON_PFX
     /* opt out if symbol doesn't begin with prefix */
-    const char * const pfx = GDO_COMMON_PFX;
-    const size_t len = sizeof(GDO_COMMON_PFX) - 1;
+    const char * const pfx = "%COMMON_PREFIX%";
+    const size_t len = sizeof(pfx) - 1;
 
-    if ((len == 1 && *symbol != *pfx) ||
+    if (len == 0 || (len == 1 && *symbol != *pfx) ||
         (len > 1 && strncmp(symbol, pfx, len) != 0))
     {
         //%DNL%// fprintf(stderr, "DEBUG: not a common symbol prefix\n");
         check_symbols = false;
     }
-#else
-    const size_t len = 0;
-#endif
 
     /* get symbol address */
     if (check_symbols) {
@@ -757,7 +753,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 /*                                wrap code                                  */
 /*****************************************************************************/
 %SKIP_PARAM_UNUSED_BEGIN%
-//%DNL%//  comment out this whole section if "-skip-param" was set
+//%DNL%//  comment out this whole section if "-param=skip" was set
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
