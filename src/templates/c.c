@@ -551,8 +551,6 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
 {
-    bool check_symbols = true;
-
     gdo_clear_errbuf();
 
     /* no library was loaded */
@@ -576,15 +574,9 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
     const char * const pfx = "%COMMON_PREFIX%";
     const size_t len = sizeof(pfx) - 1;
 
-    if (len == 0 || (len == 1 && *symbol != *pfx) ||
-        (len > 1 && strncmp(symbol, pfx, len) != 0))
+    if ((len == 1 && *symbol == *pfx) ||
+        (len > 1 && strncmp(symbol, pfx, len) == 0))
     {
-        //%DNL%// fprintf(stderr, "DEBUG: not a common symbol prefix\n");
-        check_symbols = false;
-    }
-
-    /* get symbol address */
-    if (check_symbols) {
         const char *ptr = symbol + len;
 @
         /* %%symbol%% */@
@@ -594,7 +586,6 @@ GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
                     gdo_sym("%%symbol%%", _T("%%symbol%%"));@
             return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
         }
-
     }
 
 #ifdef GDO_WINAPI
