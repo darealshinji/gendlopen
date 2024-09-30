@@ -150,25 +150,22 @@
 #endif
 
 
-%SKIP_PARAM_UNUSED_BEGIN%
-#define _GDO_USE_PARAM 1
-%SKIP_PARAM_UNUSED_END%
-
-#ifdef _GDO_USE_PARAM
-# if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
-#  error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
-# endif
-# if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
-#  error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
-# endif
-# if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-#  define GDO_HAS_MSG_CB
-# endif
-#else
-# if defined(GDO_WRAP_FUNCTIONS)
-#  error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "--skip-param"
-# endif
-# if defined(GDO_ENABLE_AUTOLOAD)
-#  error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "--skip-param"
-# endif
+%PARAM_SKIP_COMMENT_OUT_BEGIN%
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
+# error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
+#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
+# error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
+#endif
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+# define GDO_HAS_MSG_CB
+#endif
+%PARAM_SKIP_END%
+%PARAM_SKIP_USE_BEGIN%
+#if defined(GDO_WRAP_FUNCTIONS)
+# error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "-param=skip"
+#endif
+#if defined(GDO_ENABLE_AUTOLOAD)
+# error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "-param=skip"
+#endif
+%PARAM_SKIP_END%

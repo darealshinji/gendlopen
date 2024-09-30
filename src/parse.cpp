@@ -37,30 +37,33 @@
 namespace /* anonymous */
 {
     enum {
-        SKIP_NOTHING = -1,
-        SKIP_BEGIN = 0,
-        SKIP_END = 1
+        NO_PARAM_SKIP_FOUND,
+        PARAM_SKIP_COMMENT_OUT_BEGIN,
+        PARAM_SKIP_USE_BEGIN,
+        PARAM_SKIP_END
     };
 
     using list_t = std::list<const char *>;
 
-    /* check for a "%SKIP_PARAM_UNUSED_BEGIN%" or "%SKIP_PARAM_UNUSED_END%" line and
-     * return either SKIP_BEGIN, SKIP_END or -1 if nothing was found */
+    /* check for a "%PARAM_SKIP_*%" line */
     int check_skip_keyword(const std::string &line)
     {
-        const std::regex reg(R"(^\s*?%SKIP_PARAM_UNUSED_(BEGIN|END)%\s*?$)");
+        const std::regex reg(R"(^\s*?%PARAM_SKIP_(COMMENT_OUT_BEGIN|USE_BEGIN|END)%\s*?$)");
         std::smatch m;
 
         if (!std::regex_match(line, m, reg) || m.size() != 2) {
-            return SKIP_NOTHING;
+            return NO_PARAM_SKIP_FOUND;
         }
 
-        if (m[1] == "BEGIN") {
-            return SKIP_BEGIN;
+        if (m[1] == "COMMENT_OUT_BEGIN") {
+            return PARAM_SKIP_COMMENT_OUT_BEGIN;
+        } else if (m[1] == "USE_BEGIN") {
+            return PARAM_SKIP_USE_BEGIN;
         } else if (m[1] == "END") {
-            return SKIP_END;
+            return PARAM_SKIP_END;
         }
-        return SKIP_NOTHING;
+
+        return NO_PARAM_SKIP_FOUND;
     }
 
     /* comment out lines in code */
@@ -250,19 +253,24 @@ std::string gendlopen::parse(std::string &data)
             }
 
             /* check if we have to comment out lines between
-             * "%SKIP_PARAM_UNUSED_BEGIN%" and "%SKIP_PARAM_UNUSED_END%" */
+             * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
             switch (check_skip_keyword(line))
             {
-            case SKIP_BEGIN:
-                /* set as "true" if "-param=skip" was given,
-                 * otherwise set as false and nothing is commented out */
+            case PARAM_SKIP_COMMENT_OUT_BEGIN:
                 comment_out = (m_parameter_names == param::skip);
                 line.clear();
                 continue;
-            case SKIP_END:
+
+            case PARAM_SKIP_USE_BEGIN:
+                comment_out = (m_parameter_names != param::skip);
+                line.clear();
+                continue;
+
+            case PARAM_SKIP_END:
                 comment_out = false;
                 line.clear();
                 continue;
+
             default:
                 break;
             }
