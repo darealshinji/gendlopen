@@ -38,7 +38,7 @@ namespace /* anonymous */
 {
     enum {
         NO_PARAM_SKIP_FOUND,
-        PARAM_SKIP_COMMENT_OUT_BEGIN,
+        PARAM_SKIP_COMMENT_BEGIN,
         PARAM_SKIP_USE_BEGIN,
         PARAM_SKIP_END
     };
@@ -48,15 +48,15 @@ namespace /* anonymous */
     /* check for a "%PARAM_SKIP_*%" line */
     int check_skip_keyword(const std::string &line)
     {
-        const std::regex reg(R"(^\s*?%PARAM_SKIP_(COMMENT_OUT_BEGIN|USE_BEGIN|END)%\s*?$)");
+        const std::regex reg(R"(^\s*?%PARAM_SKIP_(COMMENT_BEGIN|USE_BEGIN|END)%\s*?$)");
         std::smatch m;
 
         if (!std::regex_match(line, m, reg) || m.size() != 2) {
             return NO_PARAM_SKIP_FOUND;
         }
 
-        if (m[1] == "COMMENT_OUT_BEGIN") {
-            return PARAM_SKIP_COMMENT_OUT_BEGIN;
+        if (m[1] == "COMMENT_BEGIN") {
+            return PARAM_SKIP_COMMENT_BEGIN;
         } else if (m[1] == "USE_BEGIN") {
             return PARAM_SKIP_USE_BEGIN;
         } else if (m[1] == "END") {
@@ -256,7 +256,7 @@ std::string gendlopen::parse(std::string &data)
              * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
             switch (check_skip_keyword(line))
             {
-            case PARAM_SKIP_COMMENT_OUT_BEGIN:
+            case PARAM_SKIP_COMMENT_BEGIN:
                 comment_out = (m_parameter_names == param::skip);
                 line.clear();
                 continue;

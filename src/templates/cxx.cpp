@@ -8,7 +8,7 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 
-%PARAM_SKIP_COMMENT_OUT_BEGIN%
+%PARAM_SKIP_COMMENT_BEGIN%
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 

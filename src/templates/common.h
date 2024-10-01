@@ -150,7 +150,7 @@
 #endif
 
 
-%PARAM_SKIP_COMMENT_OUT_BEGIN%
+%PARAM_SKIP_COMMENT_BEGIN%
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 # error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif
@@ -160,7 +160,6 @@
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 # define GDO_HAS_MSG_CB
 #endif
-%PARAM_SKIP_END%
 %PARAM_SKIP_USE_BEGIN%
 #if defined(GDO_WRAP_FUNCTIONS)
 # error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "-param=skip"

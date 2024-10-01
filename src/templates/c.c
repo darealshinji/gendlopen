@@ -743,7 +743,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-%PARAM_SKIP_COMMENT_OUT_BEGIN%
+%PARAM_SKIP_COMMENT_BEGIN%
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
