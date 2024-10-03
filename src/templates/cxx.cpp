@@ -9,12 +9,11 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 %PARAM_SKIP_COMMENT_BEGIN%
-#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-
-
-namespace /* anonymous */
+/* helpers used by function wrappers */
+namespace gdo::helper
 {
-    void error_exit(const char *msg)
+#ifdef GDO_HAS_MSG_CB
+    static void error_exit(const char *msg)
     {
         auto cb = gdo::dl::message_callback();
 
@@ -26,14 +25,18 @@ namespace /* anonymous */
 
         std::exit(1);
     }
-} /* anonymous namespace */
+#endif //GDO_HAS_MSG_CB
+}
+
+
+#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
 /* function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     if (!gdo::dl::m_ptr_%%func_symbol%%) {@
-        error_exit("error: symbol `%%func_symbol%%' was not loaded");@
+        gdo::helper::error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
     %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@
 }
@@ -42,29 +45,16 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-namespace /* anonymous */
+namespace gdo::helper
 {
-    auto al = gdo::dl(GDO_DEFAULT_LIBA);
-
-    void error_exit4(const char *s1, const char *s2, const char *s3, const std::string &s4)
-    {
-        auto cb = gdo::dl::message_callback();
-
-        if (cb) {
-            std::string msg = s1 + (s2 + (s3 + s4));
-            cb(msg.c_str());
-        } else {
-            std::cerr << s1 << s2 << s3 << s4 << std::endl;
-        }
-
-        std::exit(1);
-    }
+    static auto al = gdo::dl(GDO_DEFAULT_LIBA);
 
     /* used internally by wrapper functions, symbol is never NULL */
-    void quick_load(const char *symbol)
+    static void quick_load(const char *symbol)
     {
         if (!al.load()) {
-            error_exit4("error loading library `", GDO_DEFAULT_LIBA, "':\n", al.error());
+            std::string msg = "error loading library `" GDO_DEFAULT_LIBA "':\n" + al.error();
+            error_exit(msg.c_str());
         }
 
 #ifdef GDO_DELAYLOAD
@@ -73,8 +63,9 @@ namespace /* anonymous */
         if (!al.load_all_symbols())
 #endif
         {
-            error_exit4("error in auto-loading wrapper function "
-                "`gdo::autoload::", symbol, "': ", al.error());
+            std::string msg = "error in auto-loading wrapper function `gdo::autoload::";
+            msg += symbol + ("': " + al.error());
+            error_exit(msg.c_str());
         }
     }
 } /* anonymous namespace */
@@ -83,7 +74,7 @@ namespace /* anonymous */
 /* autoload function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    quick_load("%%func_symbol%%");@
+    gdo::helper::quick_load("%%func_symbol%%");@
     %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@
 }
 
