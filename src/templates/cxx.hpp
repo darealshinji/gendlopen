@@ -765,8 +765,7 @@ public:
 # ifdef GDO_WINAPI
             m_last_error = ERROR_NOT_FOUND;
 # endif
-            m_errmsg = "symbol not among lookup list: ";
-            m_errmsg += symbol;
+            m_errmsg = "symbol not among lookup list: " + symbol;
         };
 
         clear_error();

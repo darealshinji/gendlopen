@@ -36,7 +36,6 @@
 #include <iostream>
 #include <list>
 #include <regex>
-#include <sstream>
 #include <stdlib.h>
 
 #include "gendlopen.hpp"
@@ -78,14 +77,14 @@ namespace
     /* create "#define" lines */
     std::string format_def(std::string def)
     {
-        std::string name, value;
+        std::string name, value, out;
         const size_t pos = def.find('=');
 
         if (pos == std::string::npos) {
             name = def;
         } else {
             name = def.substr(0, pos);
-            value = " " + def.substr(pos + 1);
+            value = ' ' + def.substr(pos + 1);
         }
 
         utils::strip_spaces(name);
@@ -95,12 +94,11 @@ namespace
             return {};
         }
 
-        std::stringstream out;
-        out << "#ifndef " << name << '\n';
-        out << "# define " << name << value << '\n';
-        out << "#endif\n";
+        out  = "#ifndef "  + (name + '\n');
+        out += "# define " + (name + (value + '\n'));
+        out += "#endif\n";
 
-        return out.str();
+        return out;
     }
 
 
@@ -113,10 +111,10 @@ namespace
                 return lib;
             } else if (lib.front() == '"' && lib.back() == '"') {
                 /* prepend 'L' */
-                return "L" + lib;
+                return 'L' + lib;
             }
 
-            return "L\"" + (lib + "\"");
+            return "L\"" + (lib + '"');
         }
 
         if (lib.front() == '"' && lib.back() == '"') {
@@ -124,7 +122,7 @@ namespace
             return lib;
         }
 
-        return "\"" + (lib + "\"");
+        return '"' + (lib + '"');
     }
 
 
@@ -168,10 +166,9 @@ namespace
                 auto sub = str.substr(4);
 
                 if (std::regex_match(sub, m, reg) && m.size() == 3) {
-                    std::stringstream out;
-                    out << m[2] << ',' << m[1] << ')';
-                    lib_a = "LIBNAMEA(" + out.str();
-                    lib_w = "LIBNAMEW(" + out.str();
+                    /* LIBNAMEA(xxx,0) */
+                    lib_w = lib_a = "LIBNAMEA(" + (m[2].str() + (',' + (m[1].str() + ')')));
+                    lib_w[7] = 'W';
                     return;
                 }
             }
@@ -203,7 +200,7 @@ namespace
         }
 
         /* add quotes */
-        return "\"" + (inc + "\"");
+        return '"' + (inc + '"');
     }
 
 

@@ -93,9 +93,22 @@ inline void strip_spaces(std::string &s)
 /* replace string "from" with string "to" in string "s" */
 inline void replace(const std::string &from, const std::string &to, std::string &s)
 {
-    for (size_t pos = 0; (pos = s.find(from, pos)) != std::string::npos; pos += to.size())
-    {
-        s.replace(pos, from.size(), to);
+    size_t pos = 0;
+    const size_t len = from.size();
+
+    for (; (pos = s.find(from, pos)) != std::string::npos; pos += to.size()) {
+        s.replace(pos, len, to);
+    }
+}
+
+/* erase string "token" in string "s" */
+inline void erase(const std::string &token, std::string &s)
+{
+    size_t pos = 0;
+    const size_t len = token.size();
+
+    while ((pos = s.find(token, pos)) != std::string::npos) {
+        s.erase(pos, len);
     }
 }
 

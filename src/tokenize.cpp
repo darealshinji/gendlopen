@@ -217,14 +217,12 @@ void read_input(cio::ifstream &ifs, vproto_t &vproto)
                         param = true;
                     } else {
                         /* function return type */
-                        proto.type += *it;
-                        proto.type += ' ';
+                        proto.type += *it + ' ';
                     }
                 } else if (!(*it == ")" && it+1 == l.end())) {
                     /* add to args list while we havent reached
                      * the parameter list's right parenthesis */
-                    proto.args += *it;
-                    proto.args += ' ';
+                    proto.args += *it + ' ';
                 }
             }
 
@@ -237,8 +235,7 @@ void read_input(cio::ifstream &ifs, vproto_t &vproto)
                 if (it+1 == l.end()) {
                     proto.symbol = *it;
                 } else {
-                    proto.type += *it;
-                    proto.type += ' ';
+                    proto.type += *it + ' ';
                 }
             }
         }
@@ -342,8 +339,7 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
             }
 
             if (create) {
-                args_new += ' ';
-                args_new += token;
+                args_new += ' ' + token;
             }
         } else { /* search == E_DEFAULT */
             if (token == "(") {
@@ -381,9 +377,9 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
                         arg.back().back() == '*' ||  /* pointer type without parameter name */
                         keyword_or_type(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
                     {
-                        std::cerr << "error: a parameter name is missing:" << std::endl;
-                        std::cerr << proto.type << ' ' << proto.symbol << '(' << proto.args << ");" << std::endl;
-                        std::cerr << "hint: try again with `-param=skip' or `-param=create'" << std::endl;
+                        std::cerr << "error: a parameter name is missing:\n"
+                            << proto.type << ' ' << proto.symbol << '(' << proto.args << ");\n"
+                            "hint: try again with `-param=skip' or `-param=create'" << std::endl;
                         return false;
                     }
 
@@ -393,8 +389,7 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
             } else {
                 /* append token */
                 if (create) {
-                    args_new += ' ';
-                    args_new += token;
+                    args_new += ' ' + token;
                 } else {
                     arg.push_back(token);
                 }
@@ -429,7 +424,9 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
 
 void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 {
-    auto pb_symbol = [this] (const proto_t &p) {
+    auto pb_symbol = [this] (const proto_t &p)
+    {
+        /* no arguments means object, else function prototype */
         if (p.args.empty()) {
             m_objects.push_back(p);
         } else {
@@ -467,7 +464,6 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 void gendlopen::tokenize(cio::ifstream &ifs)
 {
     vproto_t vproto;
-    vstring_t duplist;
 
     /* read and tokenize input */
     read_input(ifs, vproto);
@@ -475,25 +471,20 @@ void gendlopen::tokenize(cio::ifstream &ifs)
 
     /* nothing found? */
     if (vproto.empty()) {
-        std::string msg = "no function or object prototypes found in file: ";
-        msg += m_ifile;
-        throw error(msg);
+        throw error("no function or object prototypes found in file: " + m_ifile);
     }
 
-    /* check for duplicates */
-    for (const auto &e : vproto) {
-        duplist.push_back(e.symbol);
+    /* check for duplicates (https://stackoverflow.com/a/72800146/5687704) */
+    for (auto i = vproto.begin(); i != vproto.end(); ++i) {
+        for (auto j = vproto.begin(); i != j; ++j) {
+            if ((*i).symbol == (*j).symbol) {
+                throw error("multiple definitions of symbol "
+                    "`" + (*i).symbol + "' found in file: " + m_ifile);
+            }
+        }
     }
 
-    std::sort(duplist.begin(), duplist.end());
-    const auto it = std::ranges::adjacent_find(duplist);
-
-    if (it != duplist.end()) {
-        std::string msg = "multiple definitions of symbol `" + *it;
-        msg += "' found in file: " + m_ifile;
-        throw error(msg);
-    }
-
+    /* get parameter names */
     for (auto &e : vproto) {
         if (!get_parameter_names(e, m_parameter_names)) {
             throw error("error reading function parameter list");

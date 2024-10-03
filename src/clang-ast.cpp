@@ -51,7 +51,6 @@ TranslationUnitDecl 0x5f2a1096a4b8 <<invalid sloc>> <invalid sloc>
 #include <iostream>
 #include <fstream>
 #include <regex>
-#include <sstream>
 #include <vector>
 #include <cstdio>
 #include <cstring>
@@ -165,8 +164,7 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        args += m[1].str() + ' ';
-        args += var + ", ";
+        args += m[1].str() + (' ' + (var + ", "));
     } else {
         /* function pointer */
         buf = m[1].str();

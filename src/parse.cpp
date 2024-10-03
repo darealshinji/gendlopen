@@ -112,8 +112,8 @@ namespace /* anonymous */
             /* don't "return" on "void" functions */
             if (utils::eq_str_case(e.type, "void")) {
                 /* keep the indentation pretty */
-                utils::replace("%%return%% ", "", copy);
-                utils::replace("%%return%%", "", copy);
+                utils::erase("%%return%% ", copy);
+                utils::erase("%%return%%", copy);
             } else {
                 utils::replace("%%return%%", "return", copy);
             }
