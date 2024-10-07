@@ -52,23 +52,24 @@ private:
 
     output::format m_format = output::c;
     param::names m_parameter_names = param::param_default;
+    cio::ifstream m_ifs;
 
     bool m_force = false;
     bool m_separate = false;
     bool m_ast_all_symbols = false;
 
     /* clang-ast.cpp */
-    bool clang_ast_line(cio::ifstream &ifs, std::string &line, int mode);
-    void clang_ast(cio::ifstream &ifs);
+    bool clang_ast_line(std::string &line, int mode);
+    void clang_ast();
 
     /* tokenize.cpp */
-    void tokenize(cio::ifstream &ifs);
+    void tokenize();
     void filter_and_copy_symbols(vproto_t &proto);
 
     /* generate.cpp */
     void open_ofstream(cio::ofstream &ofs, const std::filesystem::path &opath, bool force);
     void tokenize_input();
-    void parse_custom_template(const std::string &ofile);
+    void parse_custom_template(const char *ofile, bool use_stdout);
 
     /* parse.cpp */
     std::string parse(std::string &data);
@@ -104,7 +105,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    void generate(const std::string &ifile, const std::string &ofile, const std::string &name);
+    void generate(const char *ifile, const char *ofile, const char *name);
 
 };
 

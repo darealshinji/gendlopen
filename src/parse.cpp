@@ -215,7 +215,7 @@ std::string gendlopen::parse(std::string &data)
     utils::replace("\r\n", "\n", data);
 
     /* read data character by character */
-    for (const char *p = data.c_str(); *p != 0; p++)
+    for (auto p = data.c_str(); *p != 0; p++)
     {
         /* will be NUL if EOL is reached */
         const char next = *(p+1);

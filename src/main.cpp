@@ -91,7 +91,7 @@ namespace
 
         if (name.empty()) {
             /* empty string will be "appended" to code */
-            return {};
+            return "";
         }
 
         out  = "#ifndef "  + (name + '\n');
@@ -205,7 +205,7 @@ namespace
 
 
     /* format */
-    output::format format_enum(const std::string &in)
+    output::format format_enum(const char *in)
     {
         std::string s = utils::convert_to_lower(in, false);
         output::format out = output::error;
@@ -255,7 +255,7 @@ namespace
 
 
     /* get argument from an option string */
-    bool get_argx(struct parse_args &args, const char *opt, size_t optlen)
+    bool get_argx(struct parse_args &args, const char *opt, const size_t optlen)
     {
         auto err_noarg = [&] () {
             std::cerr << get_prog_name(args.argv[0]) << ": option requires an argument: "
@@ -309,7 +309,7 @@ namespace
 
 
     /* option without argument */
-    bool get_noargx(struct parse_args &args, const char *opt, size_t optlen)
+    bool get_noargx(struct parse_args &args, const char *opt, const size_t optlen)
     {
         /* -foo */
         if (strcmp(args.cur, opt) == 0) {
@@ -346,11 +346,11 @@ int main(int argc, char **argv)
     };
 
     struct parse_args args;
-    std::string input;
+    const char *input = NULL;
 
     /* default settings */
-    std::string output = "-";
-    std::string name = "gdo";
+    const char *output = "-";
+    const char *name = "gdo";
 
     /* initialize class */
     gendlopen gdo(argc, argv);
@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 
         /* non-option argument --> input */
         if (!is_arg_prefix(args.cur[0]) || strcmp(args.cur, "-") == 0) {
-            if (input.empty()) {
+            if (!input) {
                 input = args.cur;
             } else {
                 std::cerr << "warning: non-option argument ignored: " << args.cur << std::endl;
@@ -380,8 +380,14 @@ int main(int argc, char **argv)
         switch(*args.cur)
         {
         case '?':
+            if ( get_noarg(args, "?") ) {
+                help::print(prog());
+                return 0;
+            }
+            break;
+
         case 'h':
-            if ( get_noarg(args, "help") || get_noarg(args, "?") ) {
+            if ( get_noarg(args, "help") ) {
                 help::print(prog());
                 return 0;
             }
@@ -498,7 +504,7 @@ int main(int argc, char **argv)
     }
 
     /* input is required */
-    if (input.empty()) {
+    if (!input) {
         std::cerr << prog() << ": input file required" << std::endl;
         try_help();
         return 1;

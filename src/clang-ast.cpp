@@ -77,9 +77,8 @@ typedef struct decl {
 
 
 /* get function or variable declaration */
-decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
+bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
 {
-    decl_t decl;
     std::smatch m;
 
     const std::regex reg(
@@ -91,7 +90,7 @@ decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vs
     utils::strip_ansi_colors(line);
 
     if (!std::regex_match(line, m, reg) || m.size() != 4) {
-        return {};
+        return false;
     }
 
     decl.symbol = m[2];
@@ -100,17 +99,17 @@ decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vs
     {
     case M_PREFIX:
         if (!utils::is_prefixed(decl.symbol, prefix)) {
-            return {};
+            return false;
         }
         break;
     case M_LIST:
         if (std::erase(list, decl.symbol) == 0) {
-            return {};
+            return false;
         }
         break;
     case M_PFX_LIST:
         if (!utils::is_prefixed(decl.symbol, prefix) && std::erase(list, decl.symbol) == 0) {
-            return {};
+            return false;
         }
         break;
     default:
@@ -122,7 +121,7 @@ decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vs
         auto pos = m[3].str().find('(');
 
         if (pos == std::string::npos) {
-            return {};
+            return false;
         }
         decl.is_func = true;
         decl.type = m[3].str().substr(0, pos);
@@ -136,7 +135,7 @@ decl_t get_declarations(std::string &line, int mode, const vstring_t &prefix, vs
 
     utils::strip_spaces(decl.type);
 
-    return decl;
+    return true;
 }
 
 /* get function parameter declaration */
@@ -148,7 +147,6 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
     );
 
     std::smatch m;
-    std::string buf;
 
     utils::strip_ansi_colors(line);
 
@@ -167,9 +165,9 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
         args += m[1].str() + (' ' + (var + ", "));
     } else {
         /* function pointer */
-        buf = m[1].str();
-        buf.insert(pos + 2, var);
-        args += buf + ", ";
+        std::string s = m[1].str();
+        s.insert(pos + 2, var);
+        args += s + ", ";
     }
 
     return true;
@@ -179,9 +177,13 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
 
 
 /* returns true if a function declaration was found */
-bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
+bool gendlopen::clang_ast_line(std::string &line, int mode)
 {
-    decl_t decl = get_declarations(line, mode, m_prefix, m_symbols);
+    decl_t decl;
+
+    if (!get_declarations(decl, line, mode, m_prefix, m_symbols)) {
+        return false;
+    }
 
     if (decl.is_func) {
         /* function */
@@ -189,7 +191,7 @@ bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
         size_t count = 0;
 
         /* read next lines for parameters */
-        while (ifs.getline(line) && get_parameters(line, args, notype_args, count))
+        while (m_ifs.getline(line) && get_parameters(line, args, notype_args, count))
         {}
 
         utils::delete_suffix(args, ", ");
@@ -210,7 +212,7 @@ bool gendlopen::clang_ast_line(cio::ifstream &ifs, std::string &line, int mode)
 }
 
 /* read Clang AST */
-void gendlopen::clang_ast(cio::ifstream &ifs)
+void gendlopen::clang_ast()
 {
     std::string line;
     int mode = M_ALL;
@@ -227,9 +229,9 @@ void gendlopen::clang_ast(cio::ifstream &ifs)
     }
 
     /* read lines */
-    while (ifs.getline(line) && !line.empty()) {
+    while (m_ifs.getline(line) && !line.empty()) {
         /* inner loop to read parameters */
-        while (clang_ast_line(ifs, line, mode) && !line.empty())
+        while (clang_ast_line(line, mode) && !line.empty())
         {}
 
         /* get_declarations() deletes found symbols,

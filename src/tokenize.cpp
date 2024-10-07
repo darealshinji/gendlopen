@@ -461,13 +461,13 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 }
 
 /* read input and tokenize */
-void gendlopen::tokenize(cio::ifstream &ifs)
+void gendlopen::tokenize()
 {
     vproto_t vproto;
 
     /* read and tokenize input */
-    read_input(ifs, vproto);
-    ifs.close();
+    read_input(m_ifs, vproto);
+    m_ifs.close();
 
     /* nothing found? */
     if (vproto.empty()) {

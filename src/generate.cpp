@@ -85,17 +85,6 @@ namespace /* anonymous */
     INCTXT(min_cxx_header,  SRCPATH "templates/minimal_cxxeh.hpp");
 #endif
 
-const char * const extern_c_begin =
-    "#ifdef __cplusplus\n"
-    "extern \"C\" {\n"
-    "#endif\n\n";
-
-const char * const extern_c_end =
-    "\n"
-    "#ifdef __cplusplus\n"
-    "} /* extern \"C\" */\n"
-    "#endif\n";
-
 /**
  * convert from string to wstring;
  * this is required because on MinGW std::filesystem will throw an exception
@@ -124,9 +113,9 @@ wchar_t *char_to_wchar(const char *str)
     return buf;
 }
 
-std::wstring convert_filename(const std::string &str)
+std::wstring convert_filename(const char *str)
 {
-    wchar_t *buf = char_to_wchar(str.c_str());
+    wchar_t *buf = char_to_wchar(str);
 
     if (!buf) {
         std::cerr << "error: failed to convert string to wide characters: "
@@ -231,20 +220,20 @@ std::string create_note(int &argc, char **&argv)
 }
 
 /* define default library name */
-void print_default_libname(
+inline void print_default_libname(
     cio::ofstream &out,
     const std::string &pfx,
     const std::string &lib_a,
     const std::string &lib_w)
 {
     if (!lib_a.empty() && !lib_w.empty()) {
-        out << "/* default library */\n";
-        out << "#ifndef " << pfx << "_DEFAULT_LIBA\n";
-        out << "# define " << pfx << "_DEFAULT_LIBA " << lib_a << '\n';
-        out << "#endif\n";
-        out << "#ifndef " << pfx << "_DEFAULT_LIBW\n";
-        out << "# define " << pfx << "_DEFAULT_LIBW " << lib_w << '\n';
-        out << "#endif\n\n";
+        out << "/* default library */\n"
+            "#ifndef "  << pfx << "_DEFAULT_LIBA\n"
+            "# define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n"
+            "#endif\n"
+            "#ifndef "  << pfx << "_DEFAULT_LIBW\n"
+            "# define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n"
+            "#endif\n\n";
     }
 }
 
@@ -258,7 +247,7 @@ inline void print_extra_defines(cio::ofstream &out, const std::string &defs)
 }
 
 /* extra includes */
-void print_includes(cio::ofstream &out, const vstring_t &incs)
+inline void print_includes(cio::ofstream &out, const vstring_t &incs)
 {
     if (!incs.empty()) {
         out << "/* extra headers */\n";
@@ -331,16 +320,12 @@ void gendlopen::open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool fo
 
     /* check symlink and not its target */
     if (fs::exists(fs::symlink_status(opath))) {
-        std::string msg = "file already exists: ";
-        msg += opath.string();
-        throw error(msg);
+        throw error("file already exists: " + opath.string());
     }
 
     /* open file for writing */
     if (!ofs.open(opath)) {
-        std::string msg = "failed to open file for writing: ";
-        msg += opath.string();
-        throw error(msg);
+        throw error("failed to open file for writing: " + opath.string());
     }
 }
 
@@ -348,20 +333,15 @@ void gendlopen::open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool fo
 void gendlopen::tokenize_input()
 {
     std::string peek;
-    cio::ifstream ifs;
 
     /* open file for reading */
-    if (!ifs.open(m_ifile)) {
-        std::string msg = "failed to open file for reading: ";
-        msg += m_ifile;
-        throw error(msg);
+    if (!m_ifs.open(m_ifile)) {
+        throw error("failed to open file for reading: " + m_ifile);
     }
 
     /* check first line */
-    if (!ifs.peek_line(peek)) {
-        std::string msg = "failed to read first line from file: ";
-        msg += m_ifile;
-        throw error(msg);
+    if (!m_ifs.peek_line(peek)) {
+        throw error("failed to read first line from file: " + m_ifile);
     }
 
     /* sort vectors and remove duplicates */
@@ -376,30 +356,32 @@ void gendlopen::tokenize_input()
     /* skip UTF-8 Byte Order Mark */
     if (peek.starts_with("\xEF\xBB\xBF")) {
         peek.erase(0, 3);
-        ifs.ignore(3);
+        m_ifs.ignore(3);
     }
 
     utils::strip_ansi_colors(peek);
 
     /* Clang AST */
     if (peek.starts_with("TranslationUnitDecl 0x")) {
-        /* flags/settings that exclude each other */
-        if (m_ast_all_symbols && (!m_symbols.empty() || !m_prefix.empty())) {
-            throw error("cannot combine `-ast-all-symbols' with `-S' or `-P'");
+        if (m_ast_all_symbols) {
+            /* flags/settings that exclude each other */
+            if (!m_symbols.empty() || !m_prefix.empty()) {
+                throw error("cannot combine `-ast-all-symbols' with `-S' or `-P'");
+            }
+        } else {
+            /* no symbols provided */
+            if (m_symbols.empty() && m_prefix.empty()) {
+                throw error("Clang AST: no symbols provided to look for\n"
+                            "use `-S', `-P' or `-ast-all-symbols'");
+            }
         }
 
-        /* no symbols provided */
-        if (!m_ast_all_symbols && m_symbols.empty() && m_prefix.empty()) {
-            throw error("Clang AST: no symbols provided to look for\n"
-                        "use `-S', `-P' or `-ast-all-symbols'");
-        }
+        m_ifs.ignore_line();
 
-        ifs.ignore_line();
-
-        clang_ast(ifs);
+        clang_ast();
     } else {
         /* regular tokenizer */
-        tokenize(ifs);
+        tokenize();
     }
 
     /* look for a common symbol prefix */
@@ -407,28 +389,25 @@ void gendlopen::tokenize_input()
 }
 
 /* read and parse custom template */
-void gendlopen::parse_custom_template(const std::string &ofile)
+void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
 {
-    cio::ifstream ifs;
     cio::ofstream out;
     std::string data;
     char c;
 
     /* open file for reading */
-    if (!ifs.open(m_custom_template)) {
-        std::string msg = "failed to open file for reading: ";
-        msg += m_custom_template;
-        throw error(msg);
+    if (!m_ifs.open(m_custom_template)) {
+        throw error("failed to open file for reading: " + m_custom_template);
     }
 
     /* read data */
-    while (ifs.get(c) && ifs.good()) {
+    while (m_ifs.get(c) && m_ifs.good()) {
         data.push_back(c);
     }
 
-    ifs.close();
+    m_ifs.close();
 
-    if (ofile != "-") {
+    if (!use_stdout) {
         /* create output file */
         open_ofstream(out, ofile, m_force);
     }
@@ -437,7 +416,7 @@ void gendlopen::parse_custom_template(const std::string &ofile)
 }
 
 /* generate output */
-void gendlopen::generate(const std::string &ifile, const std::string &ofile, const std::string &name)
+void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
 {
     fs::path ofhdr, ofbody;
     std::string header_data, body_data, header_name;
@@ -451,14 +430,15 @@ void gendlopen::generate(const std::string &ifile, const std::string &ofile, con
     /* tokenize */
     tokenize_input();
 
+    const bool use_stdout = (strcmp(ofile, "-") == 0);
+
     /* read and parse custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
-        parse_custom_template(ofile);
+        parse_custom_template(ofile, use_stdout);
         return;
     }
 
     /* output filename */
-    const bool use_stdout = (ofile == "-");
 
     if (!use_stdout) {
 #ifdef __MINGW32__
@@ -516,7 +496,7 @@ void gendlopen::generate(const std::string &ifile, const std::string &ofile, con
         header_name = ofhdr.filename().string();
     }
 
-    std::string header_guard = utils::convert_to_upper(header_name);
+    const std::string header_guard = utils::convert_to_upper(header_name.c_str());
 
 
     /************** header begin ***************/
@@ -525,14 +505,16 @@ void gendlopen::generate(const std::string &ifile, const std::string &ofile, con
         open_ofstream(out, ofhdr, m_force);
     }
 
-    std::string note = create_note(m_argc, m_argv);
+    const std::string note = create_note(m_argc, m_argv);
 
     out << note;
     out << "#ifndef _" << header_guard << "_\n"
            "#define _" << header_guard << "_\n\n";
 
     if (output_is_c) {
-        out << extern_c_begin;
+        out << "#ifdef __cplusplus\n"
+            "extern \"C\" {\n"
+            "#endif\n\n";
     }
 
     /* insert filename macros BEFORE defines and headers */
@@ -546,11 +528,13 @@ void gendlopen::generate(const std::string &ifile, const std::string &ofile, con
     out << parse(header_data);
 
     if (output_is_c) {
-        out << extern_c_end;
+        out << "\n"
+            "#ifdef __cplusplus\n"
+            "} /* extern \"C\" */\n"
+            "#endif\n";
     }
 
     out << "\n#endif //_" << header_guard << "_\n";
-
     out.close();
 
     /************** body data ***************/
