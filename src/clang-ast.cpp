@@ -242,9 +242,7 @@ void gendlopen::clang_ast()
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {
-        std::string msg = "no function or object prototypes found in file: ";
-        msg += m_ifile;
-        throw error(msg);
+        throw error("no function or object prototypes found in file: " + m_ifile);
     }
 }
 

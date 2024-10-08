@@ -31,6 +31,10 @@ examples/example_appindicator_gobject.h
 examples/example_appindicator_gtk.h
 examples/example_notify.h
 examples/example_notify_gobject.h
+examples/example_msgbox_gtk.h
+examples/example_msgbox_sdl.h
+examples/example_msgbox_x11.h
+examples/msgbox
 examples/notify
 examples/uuid_nix
 examples/uuid_nix_dl.h

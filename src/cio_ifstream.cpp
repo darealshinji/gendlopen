@@ -27,16 +27,23 @@
 
 static const std::ios_base::openmode def_mode = std::ios_base::in | std::ios_base::binary;
 
+namespace fs = std::filesystem;
+
 
 namespace cio
 {
 
-bool ifstream::open(const std::filesystem::path &path)
+bool ifstream::open(const fs::path &path)
 {
     close();
     m_ifs.open(path, def_mode);
 
-    return m_ifs.is_open();
+    if (m_ifs.is_open()) {
+        m_fsize = fs::file_size(path);
+        return true;
+    }
+
+    return false;
 }
 
 bool ifstream::open(const std::string &file)
@@ -51,7 +58,13 @@ bool ifstream::open(const std::string &file)
 
     m_ifs.open(file, def_mode);
 
-    return m_ifs.is_open();
+    if (m_ifs.is_open()) {
+        fs::path path = file;
+        m_fsize = fs::file_size(path);
+        return true;
+    }
+
+    return false;
 }
 
 bool ifstream::is_open() const
@@ -62,6 +75,7 @@ bool ifstream::is_open() const
 void ifstream::close()
 {
     m_is_stdin = false;
+    m_fsize = 0;
     m_buf.clear();
 
     if (m_ifs.is_open()) {
@@ -103,6 +117,11 @@ bool ifstream::good() const
     }
 
     return m_is_stdin ? std::cin.good() : m_ifs.good();
+}
+
+size_t ifstream::file_size() const
+{
+    return m_fsize;
 }
 
 void ifstream::ignore(size_t n)

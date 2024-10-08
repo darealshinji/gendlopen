@@ -30,6 +30,7 @@
 #include <list>
 #include <random>
 #include <regex>
+#include <vector>
 #include <cstdlib>
 #include "gendlopen.hpp"
 
@@ -164,7 +165,7 @@ namespace /* anonymous */
 }
 
 /* parse the template data */
-std::string gendlopen::parse(std::string &data)
+std::string gendlopen::parse(cstrList_t &data)
 {
     std::string buf, line;
     std::string fmt_upper, fmt_lower, fmt_namespace;
@@ -188,7 +189,7 @@ std::string gendlopen::parse(std::string &data)
         "%%symbol%%"
     };
 
-    if (data.empty()) {
+    if (data.list.empty()) {
         return {};
     }
 
@@ -209,159 +210,167 @@ std::string gendlopen::parse(std::string &data)
         fmt_namespace = "$1" + (m_name_lower + "::");
     }
 
-    /* Change all line endings from \r\n to \n.
-     * This is a "radical" solution but it makes parsing the code
-     * a lot easier. */
-    utils::replace("\r\n", "\n", data);
+    line.reserve(1024);
+    buf.reserve(data.reserve);
 
     /* read data character by character */
-    for (auto p = data.c_str(); *p != 0; p++)
+    for (auto &e : data.list)
     {
-        /* will be NUL if EOL is reached */
-        const char next = *(p+1);
-
-        /* treat lines ending on '@' like single lines
-         * but keep the '\n' character */
-        if (*p == '@' && next == '\n') {
-            p++;
-
-            if (comment_out) {
-                /* keep trailing `@' symbol in commented out section
-                 * and continue to parse the line */
-                line += '@';
-            } else {
-                line += '\n';
-                continue;
-            }
-        }
-
-        line += *p;
-
-        /* end of line or data not yet reached */
-        if (*p != '\n' && next != 0) {
-            continue;
-        }
-
-        /* optimize search for potential keywords */
-        bool maybe_keyword = (line.find('%') != std::string::npos);
-
-        if (maybe_keyword) {
-            /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
-            if (line.find("%DNL%") != std::string::npos) {
-                line.clear();
-                continue;
-            }
-
-            /* check if we have to comment out lines between
-             * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-            switch (check_skip_keyword(line))
-            {
-            case PARAM_SKIP_COMMENT_BEGIN:
-                comment_out = (m_parameter_names == param::skip);
-                line.clear();
-                continue;
-
-            case PARAM_SKIP_USE_BEGIN:
-                comment_out = (m_parameter_names != param::skip);
-                line.clear();
-                continue;
-
-            case PARAM_SKIP_END:
-                comment_out = false;
-                line.clear();
-                continue;
-
-            default:
-                break;
-            }
-        }
-
-        /* replace prefixes */
-        if (custom_prefix) {
-            line = std::regex_replace(line, reg_upper, fmt_upper);
-            line = std::regex_replace(line, reg_lower, fmt_lower);
-            line = std::regex_replace(line, reg_nmspc, fmt_namespace);
-        }
-
-        if (comment_out) {
-            buf += "//" + line;
-            line.clear();
-            continue;
-        }
-
-        if (maybe_keyword) {
-            /* insert common symbol prefix string */
-            utils::replace("%COMMON_PREFIX%", m_common_prefix, line);
-
-            /* update value */
-            maybe_keyword = line.find('%') != std::string::npos;
-        }
-
-        /* nothing to loop, just append */
-        if (!maybe_keyword) {
-            buf += line;
-            line.clear();
-            continue;
-        }
-
-        /* check if the line needs to be processed in a loop */
-        auto find_keyword = [&line] (const list_t &list) -> int
+        for (const char *p = e; *p != 0; p++)
         {
-            for (const auto &e : list) {
-                if (line.find(e) != std::string::npos) {
-                    return 1;
+            line += *p;
+
+            if (*p == '\n' || *(p+1) == 0) {
+                /**
+                 * If a line ends on '@' + whitespace characters, remove the
+                 * '@' character and continue reading the next line into buffer.
+                 * Consecutive lines ending on '@' will be parsed like they were
+                 * a single line:
+                 *        "line1@\t\n"  +  "line2@\n"  +  "line3"
+                 *   -->  "line1@\t\nline2@\nline3"
+                 *   -->  "line1\t\nline2\nline3"
+                 *
+                 * If the line is going to be commented out keep the '@' symbol
+                 * and continue the loop.
+                 *   "line1@\t\n"  -->  "//line1@\t\n"
+                 *   "line2@\n"    -->  "//line2@\n"
+                 *   "line3"       -->  "line3"
+                 */
+                auto pos = line.find_last_not_of(utils::wspcs);
+
+                if (pos != std::string::npos && line.at(pos) == '@') {
+                    /* line ends on '@' + whitespaces */
+                    if (!comment_out) {
+                        line.erase(pos, 1);
+                        continue;
+                    }
+                }
+            } else {
+                /* end of line (\n) or data (\0) not yet reached */
+                continue;
+            }
+
+            /* optimize search for potential keywords */
+            bool maybe_keyword = (line.find('%') != std::string::npos);
+
+            if (maybe_keyword) {
+                /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
+                if (line.find("%DNL%") != std::string::npos) {
+                    line.clear();
+                    continue;
+                }
+
+                /* check if we have to comment out lines between
+                * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
+                switch (check_skip_keyword(line))
+                {
+                case PARAM_SKIP_COMMENT_BEGIN:
+                    comment_out = (m_parameter_names == param::skip);
+                    line.clear();
+                    continue;
+
+                case PARAM_SKIP_USE_BEGIN:
+                    comment_out = (m_parameter_names != param::skip);
+                    line.clear();
+                    continue;
+
+                case PARAM_SKIP_END:
+                    comment_out = false;
+                    line.clear();
+                    continue;
+
+                default:
+                    break;
                 }
             }
-            return 0;
-        };
 
-        int has_func, has_obj, has_sym;
+            /* replace prefixes */
+            if (custom_prefix) {
+                line = std::regex_replace(line, reg_upper, fmt_upper);
+                line = std::regex_replace(line, reg_lower, fmt_lower);
+                line = std::regex_replace(line, reg_nmspc, fmt_namespace);
+            }
 
-        if (line.find("%%") == std::string::npos) {
-            has_func = has_obj = has_sym = 0;
-        } else {
-            has_func = find_keyword(function_keywords);
-            has_obj = find_keyword(object_keywords);
-            has_sym = find_keyword(symbol_keywords);
-        }
-
-        if ((has_func + has_obj + has_sym) > 1) {
-            /* error */
-            std::string msg = "cannot mix function, object and regular symbol placeholders:\n";
-            msg += line;
-            throw error(msg);
-        } else if (has_func == 1) {
-            /* function prototypes */
-
-            if (m_prototypes.empty()) {
+            if (comment_out) {
+                buf += "//" + line;
                 line.clear();
                 continue;
             }
 
-            replace_function_prototypes(m_prototypes, line, buf);
-        } else if (has_obj == 1) {
-            /* object prototypes */
+            if (maybe_keyword) {
+                /* insert common symbol prefix string */
+                utils::replace("%COMMON_PREFIX%", m_common_prefix, line);
 
-            if (m_objects.empty()) {
-                line.clear();
-                continue;
+                /* update value */
+                maybe_keyword = line.find('%') != std::string::npos;
             }
 
-            for (const auto &e : m_objects) {
-                std::string copy = line;
-                utils::replace("%%obj_type%%", e.type, copy);
-                utils::replace("%%obj_symbol%%", e.symbol, copy);
-                buf += copy;
-            }
-        } else if (has_sym == 1) {
-            /* any symbol */
-            replace_symbol_names(m_prototypes, m_objects, line, buf);
-        } else {
             /* nothing to loop, just append */
-            buf += line;
-        }
+            if (!maybe_keyword) {
+                buf += line;
+                line.clear();
+                continue;
+            }
 
-        line.clear();
+            /* check if the line needs to be processed in a loop */
+            auto find_keyword = [&line] (const list_t &list) -> int
+            {
+                for (const auto &e : list) {
+                    if (line.find(e) != std::string::npos) {
+                        return 1;
+                    }
+                }
+                return 0;
+            };
+
+            int has_func, has_obj, has_sym;
+
+            if (line.find("%%") == std::string::npos) {
+                has_func = has_obj = has_sym = 0;
+            } else {
+                has_func = find_keyword(function_keywords);
+                has_obj = find_keyword(object_keywords);
+                has_sym = find_keyword(symbol_keywords);
+            }
+
+            if ((has_func + has_obj + has_sym) > 1) {
+                /* error */
+                std::string msg = "cannot mix function, object and regular symbol placeholders:\n";
+                msg += line;
+                throw error(msg);
+            } else if (has_func == 1) {
+                /* function prototypes */
+
+                if (m_prototypes.empty()) {
+                    line.clear();
+                    continue;
+                }
+
+                replace_function_prototypes(m_prototypes, line, buf);
+            } else if (has_obj == 1) {
+                /* object prototypes */
+
+                if (m_objects.empty()) {
+                    line.clear();
+                    continue;
+                }
+
+                for (const auto &e : m_objects) {
+                    std::string copy = line;
+                    utils::replace("%%obj_type%%", e.type, copy);
+                    utils::replace("%%obj_symbol%%", e.symbol, copy);
+                    buf += copy;
+                }
+            } else if (has_sym == 1) {
+                /* any symbol */
+                replace_symbol_names(m_prototypes, m_objects, line, buf);
+            } else {
+                /* nothing to loop, just append */
+                buf += line;
+            }
+
+            line.clear();
+        }
     }
 
     return buf;

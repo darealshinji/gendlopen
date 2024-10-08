@@ -38,6 +38,11 @@ typedef struct {
     std::string notype_args;
 } proto_t;
 
+typedef struct {
+    size_t reserve = 0;              /* estimated string length to reserve */
+    std::vector<const char *> list;  /* list of code template pieces */
+} cstrList_t;
+
 using vproto_t = std::vector<proto_t>;
 using vstring_t = std::vector<std::string>;
 

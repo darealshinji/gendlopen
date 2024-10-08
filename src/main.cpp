@@ -41,14 +41,14 @@
 #include "gendlopen.hpp"
 
 
-struct parse_args
-{
-    int argc;
-    char **argv;
-    int it;
-    const char *cur;
-    const char *opt;
-};
+/* hold infos to parse command line arguments */
+typedef struct {
+    int         argc = 0;     /* argument count */
+    char      **argv = NULL;  /* argument vector */
+    int         it   = 0;     /* current argc iterator */
+    const char *cur  = NULL;  /* current argv[] element */
+    const char *opt  = NULL;  /* current argument's option */
+} parse_args_t;
 
 
 /* anonymous */
@@ -255,7 +255,7 @@ namespace
 
 
     /* get argument from an option string */
-    bool get_argx(struct parse_args &args, const char *opt, const size_t optlen)
+    bool get_argx(parse_args_t &args, const char *opt, const size_t optlen)
     {
         auto err_noarg = [&] () {
             std::cerr << get_prog_name(args.argv[0]) << ": option requires an argument: "
@@ -302,14 +302,14 @@ namespace
     }
 
     template<size_t N>
-    constexpr bool get_arg(struct parse_args &args, char const (&opt)[N])
+    constexpr bool get_arg(parse_args_t &args, char const (&opt)[N])
     {
         return get_argx(args, opt, N-1);
     }
 
 
     /* option without argument */
-    bool get_noargx(struct parse_args &args, const char *opt, const size_t optlen)
+    bool get_noargx(parse_args_t &args, const char *opt, const size_t optlen)
     {
         /* -foo */
         if (strcmp(args.cur, opt) == 0) {
@@ -327,7 +327,7 @@ namespace
     }
 
     template<size_t N>
-    constexpr bool get_noarg(struct parse_args &args, char const (&opt)[N])
+    constexpr bool get_noarg(parse_args_t &args, char const (&opt)[N])
     {
         return get_noargx(args, opt, N-1);
     }
@@ -345,7 +345,7 @@ int main(int argc, char **argv)
         return get_prog_name(argv[0]);
     };
 
-    struct parse_args args;
+    parse_args_t args;
     const char *input = NULL;
 
     /* default settings */
@@ -515,7 +515,7 @@ int main(int argc, char **argv)
         gdo.generate(input, output, name);
     }
     catch (const gendlopen::error &e) {
-        std::cerr << prog() << ": " << e.what() << std::endl;
+        std::cerr << prog() << ": error: " << e.what() << std::endl;
         return 1;
     }
 

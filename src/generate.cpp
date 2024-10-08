@@ -138,9 +138,13 @@ std::string get_common_prefix(const vproto_t &proto, const vproto_t &obj)
     std::string pfx;
     std::vector<const char *> v;
 
-    if ((proto.size() + obj.size()) < 2) {
+    const size_t vlen = proto.size() + obj.size();
+
+    if (vlen < 2) {
         return "";
     }
+
+    v.reserve(vlen);
 
     /* add symbols to vector list */
     for (const auto &e : proto) {
@@ -177,7 +181,7 @@ std::string get_common_prefix(const vproto_t &proto, const vproto_t &obj)
 }
 
 /* create a note to put at the beginning of the output */
-std::string create_note(int &argc, char **&argv)
+std::string create_note(vstring_t &args)
 {
     std::string line = "//";
     std::stringstream out;
@@ -204,13 +208,13 @@ std::string create_note(int &argc, char **&argv)
 
     /* print used flags */
 
-    for (int i=1; i < argc; i++) {
+    for (auto &e : args) {
         /* split long lines */
-        if ((line.size() + 1 + std::strlen(argv[i])) > 80) {
+        if ((line.size() + 1 + e.size()) > 80) {
             out << line << '\n';
             line = "//";
         }
-        line += ' ' + argv[i];
+        line += ' ' + e;
     }
 
     out << line << "\n\n";
@@ -259,13 +263,28 @@ inline void print_includes(cio::ofstream &out, const vstring_t &incs)
     }
 }
 
+template<size_t N>
+constexpr void pb_text(cstrList_t &trgt, char const (&text)[N])
+{
+    static const char * const newline = "\n";
+
+    trgt.reserve += N;
+    trgt.list.push_back(text);
+
+    if (text[N-1] != '\n') {
+        trgt.list.push_back(newline);
+    }
+}
+
 /* create template data (concatenate) */
 void create_template_data(
-    std::string &header_data,
-    std::string &body_data,
+    cstrList_t &header_data,
+    cstrList_t &body_data,
     output::format format,
     bool separate)
 {
+    header_data.reserve = body_data.reserve = 0;
+
     switch (format)
     {
     [[unlikely]] default:
@@ -273,36 +292,36 @@ void create_template_data(
 
     case output::c:
         {
-            header_data += common_header_data;
-            header_data += c_header_data;
+            pb_text(header_data, common_header_data);
+            pb_text(header_data, c_header_data);
 
             if (separate) {
-                body_data = c_body_data;
+                pb_text(body_data, c_body_data);
             } else {
-                header_data += c_body_data;
+                pb_text(header_data, c_body_data);
             }
         }
         break;
 
     case output::cxx:
         {
-            header_data += common_header_data;
-            header_data += cxx_header_data;
+            pb_text(header_data, common_header_data);
+            pb_text(header_data, cxx_header_data);
 
             if (separate) {
-                body_data = cxx_body_data;
+                pb_text(body_data, cxx_body_data);
             } else {
-                header_data += cxx_body_data;
+                pb_text(header_data, cxx_body_data);
             }
         }
         break;
 
     case output::minimal:
-        header_data = min_c_header_data;
+        pb_text(header_data, min_c_header_data);
         break;
 
     case output::minimal_cxx:
-        header_data = min_cxx_header_data;
+        pb_text(header_data, min_cxx_header_data);
         break;
     }
 }
@@ -391,8 +410,9 @@ void gendlopen::tokenize_input()
 /* read and parse custom template */
 void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
 {
+    cstrList_t data;
     cio::ofstream out;
-    std::string data;
+    std::string buf;
     char c;
 
     /* open file for reading */
@@ -400,9 +420,15 @@ void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
         throw error("failed to open file for reading: " + m_custom_template);
     }
 
+    if (m_ifs.file_size() == 0) {
+        buf.reserve(4096);
+    } else {
+        buf.reserve(m_ifs.file_size());
+    }
+
     /* read data */
     while (m_ifs.get(c) && m_ifs.good()) {
-        data.push_back(c);
+        buf.push_back(c);
     }
 
     m_ifs.close();
@@ -412,6 +438,9 @@ void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
         open_ofstream(out, ofile, m_force);
     }
 
+    data.reserve = buf.size();
+    data.list.push_back(buf.c_str());
+
     out << parse(data);
 }
 
@@ -419,11 +448,17 @@ void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
 void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
 {
     fs::path ofhdr, ofbody;
-    std::string header_data, body_data, header_name;
+    std::string header_name;
     cio::ofstream out, out_body;
+    cstrList_t header_data, body_data;
 
     /* set member variables first */
     m_ifile = ifile;
+
+    if (m_ifile == "-" && m_custom_template == "-") {
+        throw error("cannot read input file and custom template both from STDIN");
+    }
+
     m_name_upper = utils::convert_to_upper(name);
     m_name_lower = utils::convert_to_lower(name);
 
@@ -505,7 +540,7 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
         open_ofstream(out, ofhdr, m_force);
     }
 
-    const std::string note = create_note(m_argc, m_argv);
+    const std::string note = create_note(m_args);
 
     out << note;
     out << "#ifndef _" << header_guard << "_\n"

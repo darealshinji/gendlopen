@@ -43,6 +43,7 @@ private:
     std::string m_buf;
     std::ifstream m_ifs;
     bool m_is_stdin = false;
+    size_t m_fsize = 0;
 
 public:
 
@@ -58,6 +59,8 @@ public:
     bool get(char &c);
     int  peek();
     bool good() const;
+
+    size_t file_size() const;
 
     void ignore(size_t n = 1);
     void ignore_line();

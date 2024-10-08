@@ -39,10 +39,7 @@ public:
 
 private:
 
-    int m_argc;
-    char **m_argv;
-
-    vstring_t m_includes, m_symbols, m_prefix;
+    vstring_t m_args, m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
 
     std::string m_name_upper, m_name_lower;
@@ -72,13 +69,20 @@ private:
     void parse_custom_template(const char *ofile, bool use_stdout);
 
     /* parse.cpp */
-    std::string parse(std::string &data);
+    std::string parse(cstrList_t &data);
 
 public:
 
     /* c'tor */
-    gendlopen(int &argc, char **&argv) : m_argc(argc), m_argv(argv)
-    {}
+    gendlopen(int argc, char **argv)
+    {
+        m_args.reserve(argc - 1);
+
+        /* copy arguments */
+        for (int i = 1; i < argc; i++) {
+            m_args.push_back(argv[i]);
+        }
+    }
 
     /* d'tor */
     virtual ~gendlopen()

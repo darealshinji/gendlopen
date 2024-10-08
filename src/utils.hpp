@@ -31,6 +31,8 @@
 namespace utils
 {
 
+const char * const wspcs = " \t\n\r\v\f";
+
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);
 
@@ -77,15 +79,13 @@ inline void delete_suffix(std::string &str, const std::string &suffix)
 /* strip ANSI white-space characters from front and back */
 inline void strip_spaces(std::string &s)
 {
-    const char * const list = " \t\n\r\v\f";
-
     /* remove from back */
-    while (!s.empty() && std::strchr(list, s.back())) {
+    while (!s.empty() && std::strchr(wspcs, s.back())) {
         s.pop_back();
     }
 
     /* remove from front */
-    while (!s.empty() && std::strchr(list, s.front())) {
+    while (!s.empty() && std::strchr(wspcs, s.front())) {
         s.erase(0, 1);
     }
 }
