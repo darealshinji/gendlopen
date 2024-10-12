@@ -34,7 +34,8 @@ Here's how the input text format must be:
  * line-breaks are treated as spaces
  * any other code will throw an error
 
-You can create such a file with GCC: `gcc -c foobar.h -aux-info foo.txt`
+You can create such a file with GCC:
+`echo '#include "foobar.h"' | gcc -xc -c - -o /dev/null -aux-info aux.txt`
 
 Alternatively the input text can be a Clang AST file:
 `clang -Xclang -ast-dump foobar.h > foo.txt`
