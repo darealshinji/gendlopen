@@ -54,6 +54,7 @@ private:
     bool m_force = false;
     bool m_separate = false;
     bool m_ast_all_symbols = false;
+    bool m_print_symbols = false;
 
     /* clang-ast.cpp */
     bool clang_ast_line(std::string &line, int mode);
@@ -95,6 +96,7 @@ public:
     void force(bool b) { m_force = b; }
     void separate(bool b) { m_separate = b; }
     void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
+    void print_symbols(bool b) { m_print_symbols = b; }
 
     void default_lib(const std::string &lib_a, const std::string &lib_w) {
         assert(!lib_a.empty() && !lib_w.empty());

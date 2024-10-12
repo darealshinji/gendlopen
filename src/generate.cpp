@@ -263,6 +263,20 @@ inline void print_includes(cio::ofstream &out, const vstring_t &incs)
     }
 }
 
+/* print all found symbols */
+inline void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions)
+{
+    for (const auto &e : objects) {
+        std::cout << e.type << ' ' << e.symbol << '\n';
+    }
+
+    for (const auto &e : functions) {
+        std::cout << e.type << ' ' << e.symbol << '(' << e.args << ");\n";
+    }
+
+    std::cout << "/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
+}
+
 template<size_t N>
 constexpr void pb_text(cstrList_t &trgt, char const (&text)[N])
 {
@@ -380,8 +394,8 @@ void gendlopen::tokenize_input()
 
     utils::strip_ansi_colors(peek);
 
-    /* Clang AST */
     if (peek.starts_with("TranslationUnitDecl 0x")) {
+        /* Clang AST */
         if (m_ast_all_symbols) {
             /* flags/settings that exclude each other */
             if (!m_symbols.empty() || !m_prefix.empty()) {
@@ -396,15 +410,11 @@ void gendlopen::tokenize_input()
         }
 
         m_ifs.ignore_line();
-
         clang_ast();
     } else {
         /* regular tokenizer */
         tokenize();
     }
-
-    /* look for a common symbol prefix */
-    m_common_prefix = get_common_prefix(m_prototypes, m_objects);
 }
 
 /* read and parse custom template */
@@ -464,6 +474,15 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
 
     /* tokenize */
     tokenize_input();
+
+    /* print symbols and exit */
+    if (m_print_symbols) {
+        print_symbols_to_stdout(m_objects, m_prototypes);
+        return;
+    }
+
+    /* look for a common symbol prefix */
+    m_common_prefix = get_common_prefix(m_prototypes, m_objects);
 
     const bool use_stdout = (strcmp(ofile, "-") == 0);
 

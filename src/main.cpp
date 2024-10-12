@@ -470,6 +470,9 @@ int main(int argc, char **argv)
                     return 1;
                 }
                 continue;
+            } else if ( get_noarg(args, "print-symbols") ) {
+                gdo.print_symbols(true);
+                continue;
             }
             break;
 

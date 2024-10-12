@@ -57,6 +57,7 @@ namespace help
             "  -param=skip       don't look for parameter names in function prototypes\n"
             "  -param=create     create parameter names for function prototypes\n"
             "  -ast-all-symbols  use all symbols from a Clang AST\n"
+            "  -print-symbols    print list of found symbols and exit\n"
             "\n"
             "  * option may be passed multiple times" << std::endl;
     }
@@ -248,6 +249,12 @@ namespace help
             "    This flag cannot be combined with `-P' or `-S'.\n"
             "\n"
             "    This flag is ignored if the input is not a Clang AST.\n"
+
+
+            "  -print-symbols\n"
+            "    Don't create any output, just print a list of found symbols and exit.\n"
+            "    This is useful for debugging.\n"
+            "\n"
 
             << std::endl;
     }
