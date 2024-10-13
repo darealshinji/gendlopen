@@ -797,7 +797,7 @@ public:
         }
 
         /* get symbol address */
-        const char *ptr = symbol.c_str() + len;
+        const char * const ptr = symbol.c_str() + len;
 @
         if (strcmp(static_cast<const char *>("%%symbol%%") + len, ptr) == 0) {@
             m_ptr_%%symbol%% =@
@@ -887,24 +887,24 @@ public:
     static std::string make_libname(const std::string &name, unsigned int api)
     {
 #ifdef _WIN32
-        return "lib" + (name + ('-' + (std::to_string(api) + ".dll")));
+        return "lib" + name + '-' + std::to_string(api) + ".dll";
 #elif defined(__APPLE__) && defined(__MACH__)
-        return "lib" + (name + ('.' + (std::to_string(api) + ".dylib")));
+        return "lib" + name + '.' + std::to_string(api) + ".dylib";
 #elif defined(_AIX)
         (UNUSED_REF) api;
-        return "lib" + (name + ".a");
+        return "lib" + name + ".a";
 #elif defined(__ANDROID__)
         (UNUSED_REF) api;
-        return "lib" + (name + ".so");
+        return "lib" + name + ".so";
 #else
-        return "lib" + (name + (".so." + std::to_string(api)));
+        return "lib" + name + ".so." + std::to_string(api);
 #endif
     }
 
 #ifdef GDO_WINAPI
     static std::wstring make_libname(const std::wstring &name, unsigned int api)
     {
-        return L"lib" + (name + (L'-' + (std::to_wstring(api) + L".dll")));
+        return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
     }
 #endif //GDO_WINAPI
 

@@ -162,7 +162,7 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        args += ((m[1].str() + ' ') + letter) + ", ";
+        args += m[1].str() + ' ' + letter + ", ";
     } else {
         /* function pointer */
         std::string s = m[1].str();

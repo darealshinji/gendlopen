@@ -74,7 +74,7 @@ namespace /* anonymous */
 
         auto append_to_buffer = [&buffer] (const std::string &str) {
             /* don't comment out if line has only ASCII spaces */
-            if (str.find_first_not_of(" \t\n\r\v\f") != std::string::npos) {
+            if (str.find_first_not_of(utils::wspcs) != std::string::npos) {
                 buffer += "//";
             }
             buffer += str;
@@ -205,9 +205,9 @@ std::string gendlopen::parse(cstrList_t &data)
     const bool custom_prefix = (m_name_upper != "GDO");
 
     if (custom_prefix) {
-        fmt_upper = "$1" + (m_name_upper + '_');
-        fmt_lower = "$1" + (m_name_lower + '_');
-        fmt_namespace = "$1" + (m_name_lower + "::");
+        fmt_upper = "$1" + m_name_upper + '_';
+        fmt_lower = "$1" + m_name_lower + '_';
+        fmt_namespace = "$1" + m_name_lower + "::";
     }
 
     line.reserve(1024);
@@ -335,9 +335,8 @@ std::string gendlopen::parse(cstrList_t &data)
 
             if ((has_func + has_obj + has_sym) > 1) {
                 /* error */
-                std::string msg = "cannot mix function, object and regular symbol placeholders:\n";
-                msg += line;
-                throw error(msg);
+                throw error("cannot mix function, object and regular symbol"
+                            " placeholders:\n" + line);
             } else if (has_func == 1) {
                 /* function prototypes */
 

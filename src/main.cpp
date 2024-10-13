@@ -94,8 +94,8 @@ namespace
             return "";
         }
 
-        out  = "#ifndef "  + (name + '\n');
-        out += "# define " + (name + (value + '\n'));
+        out  = "#ifndef "  + name + '\n';
+        out += "# define " + name + value + '\n';
         out += "#endif\n";
 
         return out;
@@ -114,7 +114,7 @@ namespace
                 return 'L' + lib;
             }
 
-            return "L\"" + (lib + '"');
+            return "L\"" + lib + '"';
         }
 
         if (lib.front() == '"' && lib.back() == '"') {
@@ -122,7 +122,7 @@ namespace
             return lib;
         }
 
-        return '"' + (lib + '"');
+        return '"' + lib + '"';
     }
 
 
@@ -167,7 +167,7 @@ namespace
 
                 if (std::regex_match(sub, m, reg) && m.size() == 3) {
                     /* LIBNAMEA(xxx,0) */
-                    lib_w = lib_a = "LIBNAMEA(" + (m[2].str() + (',' + (m[1].str() + ')')));
+                    lib_w = lib_a = "LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
                     lib_w[7] = 'W';
                     return;
                 }
@@ -200,7 +200,7 @@ namespace
         }
 
         /* add quotes */
-        return '"' + (inc + '"');
+        return '"' + inc + '"';
     }
 
 
