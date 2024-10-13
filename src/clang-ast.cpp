@@ -139,7 +139,7 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
 }
 
 /* get function parameter declaration */
-bool get_parameters(std::string &line, std::string &args, std::string &notype_args, size_t &count)
+bool get_parameters(std::string &line, std::string &args, std::string &notype_args, char letter)
 {
     const std::regex reg(
         "^.*?-ParmVarDecl 0x.*?"
@@ -154,19 +154,19 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
         return false;
     }
 
-    std::string var = "arg" + std::to_string(++count);
-    notype_args += var + ", ";
+    notype_args += letter;
+    notype_args += ", ";
 
     /* search for function pointer */
     auto pos = m[1].str().find("(*)");
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        args += m[1].str() + (' ' + (var + ", "));
+        args += ((m[1].str() + ' ') + letter) + ", ";
     } else {
         /* function pointer */
         std::string s = m[1].str();
-        s.insert(pos + 2, var);
+        s.insert(pos + 2, 1, letter);
         args += s + ", ";
     }
 
@@ -188,11 +188,12 @@ bool gendlopen::clang_ast_line(std::string &line, int mode)
     if (decl.is_func) {
         /* function */
         std::string args, notype_args;
-        size_t count = 0;
+        char letter = 'a';
 
         /* read next lines for parameters */
-        while (m_ifs.getline(line) && get_parameters(line, args, notype_args, count))
-        {}
+        while (m_ifs.getline(line) && get_parameters(line, args, notype_args, letter)) {
+            letter++;
+        }
 
         utils::delete_suffix(args, ", ");
         utils::delete_suffix(notype_args, ", ");

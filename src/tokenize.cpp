@@ -283,7 +283,7 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
 
     int search = E_DEFAULT;
     int scope = 0;
-    int arg_it = 0;
+    char letter[] = " a";
     std::string out, token, args_new, name;
     vstring_t arg;
 
@@ -326,7 +326,8 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
             } else {
                 /* add name */
                 if (create) {
-                    name = " arg" + std::to_string(arg_it++);
+                    name = letter;
+                    letter[1]++;
                     args_new += token + name;
                 } else {
                     arg.push_back(token);
@@ -363,9 +364,9 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
 
                     if (name.empty()) {
                         /* create new argument name */
-                        std::string s = " arg" + std::to_string(arg_it++);
-                        args_new += s;
-                        out += s;
+                        args_new += letter;
+                        out += letter;
+                        letter[1]++;
                     } else {
                         out += name;
                         name.clear();

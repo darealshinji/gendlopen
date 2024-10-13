@@ -1,4 +1,4 @@
-// testing "--skip-parameter-names"
+// testing "-param=create"
 AppIndicator *app_indicator_new        (const gchar*, const gchar*, AppIndicatorCategory);
 void          app_indicator_set_status (AppIndicator*, AppIndicatorStatus);
 void          app_indicator_set_menu   (AppIndicator*, GtkMenu*);
