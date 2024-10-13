@@ -273,7 +273,7 @@ bool check_mismatching_parentheses(const std::string &param)
 }
 
 /* extract argument names from args list */
-bool get_parameter_names(proto_t &proto, param::names parameter_names)
+std::string get_parameter_names(proto_t &proto, param::names parameter_names)
 {
     enum {
         E_DEFAULT,
@@ -284,21 +284,21 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
     int search = E_DEFAULT;
     int scope = 0;
     char letter[] = " a";
-    std::string out, token, args_new, name;
+    std::string ok, out, token, args_new, name;
     vstring_t arg;
 
     /* nothing to do if empty (= object) or "void" */
     if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
-        return true;
+        return ok;
     }
 
     if (!check_mismatching_parentheses(proto.args)) {
-        return false;
+        return proto.symbol + ": mismatching parentheses";
     }
 
     if (parameter_names == param::skip) {
         proto.notype_args = "/* disabled with -param=skip !! */";
-        return true;
+        return ok;
     }
 
     /* trailing comma is needed for parsing */
@@ -326,9 +326,12 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
             } else {
                 /* add name */
                 if (create) {
+                    if (letter[1] > 'z') {
+                        return proto.symbol + ": too many parameters";
+                    }
                     name = letter;
-                    letter[1]++;
                     args_new += token + name;
+                    letter[1]++;
                 } else {
                     arg.push_back(token);
                 }
@@ -364,6 +367,9 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
 
                     if (name.empty()) {
                         /* create new argument name */
+                        if (letter[1] > 'z') {
+                            return proto.symbol + ": too many parameters";
+                        }
                         args_new += letter;
                         out += letter;
                         letter[1]++;
@@ -376,12 +382,11 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
                     /* append existing argument name */
                     if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
                         arg.back().back() == '*' ||  /* pointer type without parameter name */
-                        keyword_or_type(arg.back()))  /* a reserved keyword or a very basic type (i.e. "int") */
+                        keyword_or_type(arg.back()))  /* reserved keyword or a very basic type (i.e. "int") */
                     {
-                        std::cerr << "error: a parameter name is missing:\n"
-                            << proto.type << ' ' << proto.symbol << '(' << proto.args << ");\n"
-                            "hint: try again with `-param=skip' or `-param=create'" << std::endl;
-                        return false;
+                        return "a parameter name is missing:\n" +
+                            proto.type + ' ' + proto.symbol + '(' + proto.args + ");\n"
+                            "hint: try again with `-param=skip' or `-param=create'";
                     }
 
                     out += ", " + arg.back();
@@ -417,7 +422,7 @@ bool get_parameter_names(proto_t &proto, param::names parameter_names)
     utils::strip_spaces(out);
     proto.notype_args = out;
 
-    return true;
+    return ok;
 }
 
 } /* end anonymous namespace */
@@ -487,8 +492,10 @@ void gendlopen::tokenize()
 
     /* get parameter names */
     for (auto &e : vproto) {
-        if (!get_parameter_names(e, m_parameter_names)) {
-            throw error("error reading function parameter list");
+        std::string msg = get_parameter_names(e, m_parameter_names);
+
+        if (!msg.empty()) {
+            throw error(msg);
         }
     }
 
