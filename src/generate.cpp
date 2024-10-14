@@ -42,49 +42,11 @@
 #include "gendlopen.hpp"
 
 
-#ifdef USE_TEMPLATE_H
-
-# include "template.h"
-
-#elif defined(_MSC_VER) && !defined(__clang__)
-
-/* include from external resources */
-# include "incbin_msvc.h"
-# define INCTXT(x,UNUSED) \
-    INCBIN(x##_raw); \
-    const char *x##_data = reinterpret_cast<const char *>(x##_raw)
-
-#else
-
-/* use inline asm directives to directly include text data */
-# define INCBIN_PREFIX  /**/
-# define INCBIN_STYLE   INCBIN_STYLE_SNAKE
-# include "incbin.h"
-
-#endif
-
-#ifndef SRCPATH
-# define SRCPATH ""
-#endif
-
 namespace fs = std::filesystem;
 
 
 namespace /* anonymous */
 {
-
-#if !defined(USE_TEMPLATE_H)
-    INCTXT(filename_macros, SRCPATH "templates/filename_macros.h");
-    INCTXT(license,         SRCPATH "templates/license.h");
-    INCTXT(common_header,   SRCPATH "templates/common.h");
-    INCTXT(c_header,        SRCPATH "templates/c.h");
-    INCTXT(c_body,          SRCPATH "templates/c.c");
-    INCTXT(cxx_header,      SRCPATH "templates/cxx.hpp");
-    INCTXT(cxx_body,        SRCPATH "templates/cxx.cpp");
-    INCTXT(min_c_header,    SRCPATH "templates/minimal.h");
-    INCTXT(min_cxx_header,  SRCPATH "templates/minimal_cxxeh.hpp");
-#endif
-
 /**
  * convert from string to wstring;
  * this is required because on MinGW std::filesystem will throw an exception
@@ -218,7 +180,7 @@ std::string create_note(vstring_t &args)
     }
 
     out << line << "\n\n";
-    out << license_data << '\n';
+    out << data::license() << '\n';
 
     return out.str();
 }
@@ -275,69 +237,6 @@ inline void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &fun
     }
 
     std::cout << "/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
-}
-
-template<size_t N>
-constexpr void pb_text(cstrList_t &trgt, char const (&text)[N])
-{
-    static const char * const newline = "\n";
-
-    trgt.reserve += N;
-    trgt.list.push_back(text);
-
-    if (text[N-1] != '\n') {
-        trgt.list.push_back(newline);
-    }
-}
-
-/* create template data (concatenate) */
-void create_template_data(
-    cstrList_t &header_data,
-    cstrList_t &body_data,
-    output::format format,
-    bool separate)
-{
-    header_data.reserve = body_data.reserve = 0;
-
-    switch (format)
-    {
-    [[unlikely]] default:
-        [[fallthrough]];
-
-    case output::c:
-        {
-            pb_text(header_data, common_header_data);
-            pb_text(header_data, c_header_data);
-
-            if (separate) {
-                pb_text(body_data, c_body_data);
-            } else {
-                pb_text(header_data, c_body_data);
-            }
-        }
-        break;
-
-    case output::cxx:
-        {
-            pb_text(header_data, common_header_data);
-            pb_text(header_data, cxx_header_data);
-
-            if (separate) {
-                pb_text(body_data, cxx_body_data);
-            } else {
-                pb_text(header_data, cxx_body_data);
-            }
-        }
-        break;
-
-    case output::minimal:
-        pb_text(header_data, min_c_header_data);
-        break;
-
-    case output::minimal_cxx:
-        pb_text(header_data, min_cxx_header_data);
-        break;
-    }
 }
 
 } /* end anonymous namespace */
@@ -572,13 +471,14 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
     }
 
     /* insert filename macros BEFORE defines and headers */
-    out << filename_macros_data << '\n';
+    out << data::filename_macros() << '\n';
 
     print_extra_defines(out, m_defines);
     print_default_libname(out, m_name_upper, m_deflib_a, m_deflib_w);
     print_includes(out, m_includes);
 
-    create_template_data(header_data, body_data, m_format, m_separate);
+    data::concat_templates(header_data, body_data, m_format, m_separate);
+
     out << parse(header_data);
 
     if (output_is_c) {

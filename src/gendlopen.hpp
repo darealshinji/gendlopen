@@ -23,4 +23,11 @@ namespace help {
     void print_full(const char *prog);
 }
 
+/* data.cpp */
+namespace data {
+    const char *filename_macros();
+    const char *license();
+    void concat_templates(cstrList_t&, cstrList_t&, output::format, bool);
+}
+
 #endif //_GENDLOPEN_HPP_

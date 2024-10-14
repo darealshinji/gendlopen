@@ -70,7 +70,7 @@ private:
     void parse_custom_template(const char *ofile, bool use_stdout);
 
     /* parse.cpp */
-    std::string parse(cstrList_t &data);
+    std::string parse(const cstrList_t &data);
 
 public:
 

@@ -165,7 +165,7 @@ namespace /* anonymous */
 }
 
 /* parse the template data */
-std::string gendlopen::parse(cstrList_t &data)
+std::string gendlopen::parse(const cstrList_t &data)
 {
     std::string buf, line;
     std::string fmt_upper, fmt_lower, fmt_namespace;

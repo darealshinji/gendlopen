@@ -18,8 +18,7 @@ ld=":"
 opt=":"
 
 check_std="yes"
-gen_template="gen"
-gen_template_bin=""
+use_xxd="no"
 template_h=""
 
 win32="no"
@@ -319,11 +318,8 @@ set pkg-config too:
 set gendlopen tool used for cross-compiling tests:
     gdo=..
 
-how to embed template files:
-    gen-template=[gen|xxd|asm]
-    gen: compile and use custom code generator (default)
-    xxd: use xxd to create code
-    asm: use inline assembly
+use xxd to create template files code:
+    -use-xxd
 
 don't check for -std.. flags:
     -no-std-checks
@@ -357,10 +353,12 @@ EOL
     gtk-cflags=*)   gtk_cflags="${i#*=}";;
     glib-cflags=*)  glib_cflags="${i#*=}";;
     x11-cflags=*)   x11_cflags="${i#*=}";;
-    gen-template=*) gen_template="${i#*=}";;
 
     -no-std-checks)
         check_std="no"
+        ;;
+    -use-xxd)
+        use_xxd="yes"
         ;;
 
     *)
@@ -497,25 +495,12 @@ if [ "x$ar" = "x" ]; then
 fi
 
 # template resources
-case "x$gen_template" in
-    xasm)
-        template_h=""
-        gen_template_bin=""
-        ;;
-    xgen)
-        template_h="template.h"
-        gen_template_bin="gen_template_h"
-        ;;
-    xxxd)
-        template_h="template.h"
-        gen_template_bin="gen_template_h.sh"
-        check_tool xxd exit
-        ;;
-    *)
-        echo "warning: ignoring unknown option for \`gen-template': \`$gen_template'"
-        gen_template="asm"
-        ;;
-esac
+if [ "x$use_xxd" = "xyes" ]; then
+    gen_template_bin="gen_template_h.sh"
+    check_tool xxd exit
+else
+    gen_template_bin="gen_template_h"
+fi
 
 
 
@@ -646,12 +631,6 @@ else
     fi
 fi
 
-if [ "x$template_h" != "x" ]; then
-    gen_cxxflags="-DUSE_TEMPLATE_H"
-else
-    gen_cxxflags="-DSRCPATH='\"$PWD/src/\"'"
-fi
-
 
 
 ###############################################################################
@@ -748,12 +727,13 @@ fi
 # examples
 echo ""
 
-printf "how to embed template resources: "
-case "x$gen_template" in
-    xasm) echo "inline ASM";;
-    xgen) echo "C header (custom code generator)";;
-    xxxd) echo "C header (xxd)";;
-esac
+printf "create template.h: "
+
+if [ "x$use_xxd" = "xyes" ]; then
+    echo "xxd"
+else
+    echo "custom code generator"
+fi
 
 echo "build appindicator example: $with_appind"
 echo "build notify example: $with_notify"
@@ -782,7 +762,6 @@ EXEEXT        = $exeext
 DEF_GENDLOPEN = $PWD/src/gendlopen\$(EXEEXT)
 GENDLOPEN     = $gendlopen
 GEN_TEMPL     = $gen_template_bin
-TEMPLATE_H    = $template_h
 
 CPPFLAGS      = $cppflags $xcppflags
 CFLAGS        = $cflags $xcflags \$(CPPFLAGS)

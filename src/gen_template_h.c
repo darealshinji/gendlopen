@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* strlen("0xff,")*16 == 80 */
 #define BUF_SIZE 16
 
 
@@ -61,18 +60,35 @@ static void hexdump(const char *in, const char *varName, FILE *fpOut)
             exit(1);
         }
 
-        fprintf(fpOut, "%c", '\n');
+        fprintf(fpOut, "%s", "\n  ");
 
         for (size_t i = 0; i < items; ++i) {
-            fprintf(fpOut, "0x%02x,", buf[i]);
+            switch (buf[i]) {
+            case '\t':
+                fprintf(fpOut, "'%s',", "\\t");
+                break;
+            case '\n':
+                fprintf(fpOut, "'%s',", "\\n");
+                break;
+            case '\'':
+                fprintf(fpOut, "'%s',", "\\'");
+                break;
+            case '\\':
+                fprintf(fpOut, "'%s',", "\\\\");
+                break;
+            default:
+                if (buf[i] < 0x20 || buf[i] > 0x7E) {
+                    fprintf(fpOut, "0x%02x,", buf[i]);
+                } else {
+                    fprintf(fpOut, "'%c',", buf[i]);
+                }
+                break;
+            }
         }
     }
 
-    fprintf(fpOut, "\n0x00\n};\n\n");
-
-    if (fp) {
-        fclose(fp);
-    }
+    fprintf(fpOut, "%s", "0x0\n};\n\n");
+    fclose(fp);
 }
 
 /* optional argument provided: path to source directory,
@@ -108,8 +124,6 @@ int main(int argc, char **argv)
     hexdump("minimal_cxxeh.hpp", "min_cxx_header_data",  fp);
 
     fprintf(fp, "%s\n", "#endif //_TEMPLATE_H_");
-
-    //printf("data written to `%s'\n", out);
     fclose(fp);
 
     return 0;

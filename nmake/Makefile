@@ -57,21 +57,11 @@ cleanfiles_check = \
 	libhelloworld-0.* \
 	libhelloworld_dl.*
 
-templ_objs = \
-	templ_filename_macros.h.obj \
-	templ_license.h.obj \
-	templ_common.h.obj \
-	templ_c.h.obj \
-	templ_c.c.obj \
-	templ_cxx.hpp.obj \
-	templ_cxx.cpp.obj \
-	templ_minimal.h.obj \
-	templ_minimal_cxxeh.hpp.obj
-
 sources = \
 	$(s)\src\cio_ifstream.cpp \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
+	$(s)\src\data.cpp \
 	$(s)\src\generate.cpp \
 	$(s)\src\help.cpp \
 	$(s)\src\main.cpp \
@@ -81,6 +71,7 @@ sources = \
 
 
 gen_hdr  = gendlopen.exe $(s)\test\helloworld.txt -force -o
+gen_hdr2 = gendlopen.exe $(s)\test\helloworld2.txt -force -o
 cc_test  = $(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\test $(s)\test\$*.c -Fe$@ -link $(LFLAGS)
 cxx_test = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\test $(s)\test\$*.cpp -Fe$@ -link $(LFLAGS)
 
@@ -92,7 +83,7 @@ clean-check:
 	-del /q $(cleanfiles_check) $(silence)
 
 clean: clean-check
-	-del /q *.exe *.obj *.lib $(silence)
+	-del /q template.h *.exe *.obj *.lib $(silence)
 
 check: $(test_bins)
 
@@ -104,15 +95,17 @@ $(test_bins): gendlopen.exe libhelloworld-0.dll
 
 ## main program ##
 
-$(templ_objs): file_to_obj.exe
-	$**
+$(s)\src\generate.cpp: template.h
 
-file_to_obj.exe: $(s)\src\file_to_obj.c $(s)\src\file_to_obj_main.c
+template.h: gen_template_h.exe
+	$** $(s)\src\templates
+
+gen_template_h.exe: $(s)\src\gen_template_h.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
 
-gendlopen.exe: $(sources) $(templ_objs)
-	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) -I$(s)\src\getopt $(sources) -Fe$@ \
-	  -link $(LFLAGS) $(templ_objs)
+gendlopen.exe: $(sources)
+	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) $(sources) -Fe$@ \
+	  -link $(LFLAGS)
 
 
 ## dll ##
@@ -127,7 +120,7 @@ c_test.exe:
 	$(gen_hdr) $*.h -DGDO_WRAP_FUNCTIONS && $(cc_test)
 
 c_auto_free.exe:
-	$(gen_hdr) $*.h -skip-param && $(cc_test)
+	$(gen_hdr) $*.h -param=skip && $(cc_test)
 
 c_autoload.exe:
 	$(gen_hdr) $*.h && $(cc_test)
@@ -149,11 +142,11 @@ c_multi.exe:
 ## C++ tests ##
 
 cxx_test.exe:
-	$(gen_hdr) $*.hpp -format=C++ -skip-param && \
+	$(gen_hdr) $*.hpp -format=C++ -param=skip && \
 	  $(cxx_test)
 
 cxx_autoload.exe:
-	$(gen_hdr) $*.hpp -format=C++ -library=API:0:helloworld && \
+	$(gen_hdr2) $*.hpp -format=C++ -library=API:0:helloworld && \
 	  $(cxx_test)
 
 cxx_minimal.exe:
@@ -192,7 +185,7 @@ helloworld_example_dl.exe: libhelloworld_dl.lib
 
 uuid_win.exe:
 	$(CLANG) -Xclang -ast-dump $(s)\examples\uuid_win.h | \
-	  gendlopen.exe -i- -force -o uuid_win_dl.h -library rpcrt4.dll \
+	  gendlopen.exe -force - -o uuid_win_dl.h -library rpcrt4.dll \
 	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA && \
 	$(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\examples $(s)\examples\$*.c -Fe$@ -link $(LFLAGS)
 

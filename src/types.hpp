@@ -31,15 +31,15 @@
 
 /* typedefs */
 
-typedef struct {
+typedef struct _proto {
     std::string type;
     std::string symbol;
     std::string args;
     std::string notype_args;
 } proto_t;
 
-typedef struct {
-    size_t reserve = 0;              /* estimated string length to reserve */
+typedef struct _cstrList {
+    size_t reserve;                  /* estimated string length to reserve */
     std::vector<const char *> list;  /* list of code template pieces */
 } cstrList_t;
 

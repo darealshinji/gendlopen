@@ -42,7 +42,7 @@
 
 
 /* hold infos to parse command line arguments */
-typedef struct {
+typedef struct _parse_args {
     int         argc = 0;     /* argument count */
     char      **argv = NULL;  /* argument vector */
     int         it   = 0;     /* current argc iterator */
@@ -54,26 +54,6 @@ typedef struct {
 /* anonymous */
 namespace
 {
-    inline bool is_path_separator(const char &c)
-    {
-#ifdef _WIN32
-        return (c == '\\' || c == '/');
-#else
-        return (c == '/');
-#endif
-    }
-
-
-    inline bool is_arg_prefix(const char &c)
-    {
-#ifdef _WIN32
-        return (c == '-' || c == '/');
-#else
-        return (c == '-');
-#endif
-    }
-
-
     /* create "#define" lines */
     std::string format_def(std::string def)
     {
@@ -243,6 +223,15 @@ namespace
 #elif defined(HAVE_GETPROGNAME)
         prog = getprogname();
 #else
+        auto is_path_separator = [] (const char &c) -> bool
+        {
+# ifdef _WIN32
+            return (c == '\\' || c == '/');
+# else
+            return (c == '/');
+# endif
+        };
+
         for (auto p = prog; *p != 0; p++) {
             if (is_path_separator(*p) && *(p+1) != 0) {
                 prog = p + 1;
@@ -343,6 +332,15 @@ int main(int argc, char **argv)
 
     auto prog = [&argv] () -> const char* {
         return get_prog_name(argv[0]);
+    };
+
+    auto is_arg_prefix = [] (const char &c) -> bool
+    {
+#ifdef _WIN32
+        return (c == '-' || c == '/');
+#else
+        return (c == '-');
+#endif
     };
 
     parse_args_t args;

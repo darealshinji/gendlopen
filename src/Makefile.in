@@ -3,6 +3,7 @@ OBJS = \
 	cio_ifstream.o \
 	cio_ofstream.o \
 	clang-ast.o \
+	data.o \
 	generate.o \
 	help.o \
 	main.o \
@@ -27,7 +28,7 @@ HDRS = \
 all: gendlopen$(EXEEXT)
 
 clean:
-	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o getopt/*.o
+	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o
 
 
 gen_template_h: gen_template_h.c
@@ -40,7 +41,6 @@ gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS): $(HDRS)
-generate.o: $(TEMPLATE_H)
 
 
 cio_ifstream.o: cio_ifstream.cpp
@@ -52,8 +52,11 @@ cio_ofstream.o: cio_ofstream.cpp
 clang-ast.o: clang-ast.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c clang-ast.cpp -o $@
 
+data.o: data.cpp template.h
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c data.cpp -o $@
+
 generate.o: generate.cpp
-	$(cxx_v)$(CXX) $(GEN_CXXFLAGS) $(CXXFLAGS) -c generate.cpp -o $@
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
 
 help.o: help.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c help.cpp -o $@
