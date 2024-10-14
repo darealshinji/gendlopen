@@ -10,22 +10,25 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 %PARAM_SKIP_COMMENT_BEGIN%
 /* helpers used by function wrappers */
-namespace gdo::helper
+namespace gdo
 {
-#ifdef GDO_HAS_MSG_CB
-    static void error_exit(const char *msg)
+    namespace helper
     {
-        auto cb = gdo::dl::message_callback();
+#ifdef GDO_HAS_MSG_CB
+        static void error_exit(const char *msg)
+        {
+            auto cb = gdo::dl::message_callback();
 
-        if (cb) {
-            cb(msg);
-        } else {
-            std::cerr << msg << std::endl;
+            if (cb) {
+                cb(msg);
+            } else {
+                std::cerr << msg << std::endl;
+            }
+
+            std::exit(1);
         }
-
-        std::exit(1);
-    }
 #endif //GDO_HAS_MSG_CB
+    }
 }
 
 
@@ -45,30 +48,33 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-namespace gdo::helper
+namespace gdo
 {
-    static auto al = gdo::dl(GDO_DEFAULT_LIBA);
-
-    /* used internally by wrapper functions, symbol is never NULL */
-    static void quick_load(const char *symbol)
+    namespace helper
     {
-        if (!al.load()) {
-            std::string msg = "error loading library `" GDO_DEFAULT_LIBA "':\n" + al.error();
-            error_exit(msg.c_str());
-        }
+        static auto al = gdo::dl(GDO_DEFAULT_LIBA);
+
+        /* used internally by wrapper functions, symbol is never NULL */
+        static void quick_load(const char *symbol)
+        {
+            if (!al.load()) {
+                std::string msg = "error loading library `" GDO_DEFAULT_LIBA "':\n" + al.error();
+                error_exit(msg.c_str());
+            }
 
 #ifdef GDO_DELAYLOAD
-        if (!al.load_symbol(symbol))
+            if (!al.load_symbol(symbol))
 #else
-        if (!al.load_all_symbols())
+            if (!al.load_all_symbols())
 #endif
-        {
-            std::string msg = "error in auto-loading wrapper function `gdo::autoload::";
-            msg += symbol + ("': " + al.error());
-            error_exit(msg.c_str());
+            {
+                std::string msg = "error in auto-loading wrapper function `gdo::autoload::";
+                msg += symbol + ("': " + al.error());
+                error_exit(msg.c_str());
+            }
         }
     }
-} /* anonymous namespace */
+}
 
 
 /* autoload function wrappers */
