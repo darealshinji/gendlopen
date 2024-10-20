@@ -314,6 +314,27 @@ void gendlopen::tokenize_input()
         /* regular tokenizer */
         tokenize();
     }
+
+    /* cosmetics */
+    auto format_args = [] (vproto_t &vec)
+    {
+        for (auto &p : vec) {
+            utils::replace("* ", "*", p.args);
+            utils::replace(" ,", ",", p.args);
+
+            utils::replace("( ", "(", p.args);
+            utils::replace(" )", ")", p.args);
+            utils::replace(") (", ")(", p.args);
+
+            utils::replace("[ ", "[", p.args);
+            utils::replace("] ", "]", p.args);
+            utils::replace(" [", "[", p.args);
+            utils::replace(" ]", "]", p.args);
+        }
+    };
+
+    format_args(m_prototypes);
+    format_args(m_objects);
 }
 
 /* read and parse custom template */

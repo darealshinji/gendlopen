@@ -284,7 +284,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
     int search = E_DEFAULT;
     int scope = 0;
     char letter[] = " a";
-    std::string ok, out, token, args_new, name;
+    std::string ok, args_notypes, token, args_new, name;
     vstring_t arg;
 
     /* nothing to do if empty (= object) or "void" */
@@ -323,6 +323,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                     args_new += ')';
                 }
                 search = E_FUNC_PTR_PARAM_LIST;
+                continue;
             } else {
                 /* add name */
                 if (create) {
@@ -335,6 +336,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                 } else {
                     arg.push_back(token);
                 }
+                continue;
             }
         } else if (search == E_FUNC_PTR_PARAM_LIST) {
             /* parameter list of a function pointer */
@@ -345,6 +347,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
             if (create) {
                 args_new += ' ' + token;
             }
+            continue;
         } else { /* search == E_DEFAULT */
             if (token == "(") {
                 /* begin of a function pointer name */
@@ -352,6 +355,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                     args_new += " (";
                 }
                 search = E_FUNC_PTR_NAME;
+                continue;
             } else if (token == ",") {
                 /* argument list separator */
                 if (arg.size() == 1 && arg.back() == "...") {
@@ -359,11 +363,11 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                     if (create) {
                         args_new += " ...";
                     }
-                    out += ", ...";
+                    args_notypes += ", ...";
                     arg.clear();
-                    //break;
+                    continue;
                 } else if (create) {
-                    out += ',';
+                    args_notypes += ',';
 
                     if (name.empty()) {
                         /* create new argument name */
@@ -371,13 +375,14 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                             return proto.symbol + ": too many parameters";
                         }
                         args_new += letter;
-                        out += letter;
+                        args_notypes += letter;
                         letter[1]++;
                     } else {
-                        out += name;
+                        args_notypes += name;
                         name.clear();
                     }
                     args_new += ',';
+                    continue;
                 } else {
                     /* append existing argument name */
                     if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
@@ -389,8 +394,9 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                             "hint: try again with `-param=skip' or `-param=create'";
                     }
 
-                    out += ", " + arg.back();
+                    args_notypes += ", " + arg.back();
                     arg.clear();
+                    continue;
                 }
             } else {
                 /* append token */
@@ -399,6 +405,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                 } else {
                     arg.push_back(token);
                 }
+                continue;
             }
         }
     }
@@ -415,12 +422,12 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
     }
 
     /* .notype_args */
-    if (out.starts_with(',')) {
-        out.erase(0, 1);
+    if (args_notypes.starts_with(',')) {
+        args_notypes.erase(0, 1);
     }
 
-    utils::strip_spaces(out);
-    proto.notype_args = out;
+    utils::strip_spaces(args_notypes);
+    proto.notype_args = args_notypes;
 
     return ok;
 }
@@ -501,23 +508,4 @@ void gendlopen::tokenize()
 
     /* copy */
     filter_and_copy_symbols(vproto);
-
-    /* format args (cosmetics) */
-    for (auto &p : m_prototypes) {
-        auto rep = [&p] (const std::string &from, const std::string &to) {
-            utils::replace(from, to, p.args);
-        };
-
-        rep("* ", "*");
-        rep(" ,", ",");
-
-        rep("( ", "(");
-        rep(" )", ")");
-        rep(") (", ")(");
-
-        rep("[ ", "[");
-        rep("] ", "]");
-        rep(" [", "[");
-        rep(" ]", "]");
-    }
 }

@@ -191,9 +191,13 @@ bool gendlopen::clang_ast_line(std::string &line, int mode)
         char letter = 'a';
 
         /* read next lines for parameters */
-        while (m_ifs.getline(line) && get_parameters(line, args, notype_args, letter)) {
+        while (m_ifs.getline(line)) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
+            }
+
+            if (!get_parameters(line, args, notype_args, letter)) {
+                break;
             }
             letter++;
         }
