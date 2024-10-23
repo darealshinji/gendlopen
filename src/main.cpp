@@ -545,6 +545,7 @@ namespace
         /* merge argv with extra commands */
         std::string token;
         vstring_t token_list;
+        std::vector<char*> argv_new;
 
         std::istringstream iss(extra_commands);
 
@@ -552,27 +553,26 @@ namespace
             token_list.push_back(token);
         }
 
-        int argc_new = argc + token_list.size();
-        char *argv_new[argc_new];
-        int i = 0;
+        const int argc_new = argc + token_list.size();
+        argv_new.reserve(argc_new);
 
-        for ( ; i < argc; i++) {
-            argv_new[i] = argv[i];
+        for (int i = 0; i < argc; i++) {
+            argv_new.push_back(argv[i]);
         }
 
         for (const auto &e : token_list) {
             //std::cerr << "DEBUG >> extra command >> " << e << std::endl;
-            argv_new[i++] = const_cast<char *>(e.c_str());
+            argv_new.push_back(const_cast<char *>(e.data()));
         }
 
         /* initialize class */
-        gendlopen gdo(argc_new, argv_new);
+        gendlopen gdo(argc_new, argv_new.data());
 
         /* disable reading extra commands */
         gdo.read_extra_cmds(false);
 
         /* parse command line */
-        switch (parse_arguments(gdo, argc_new, argv_new))
+        switch (parse_arguments(gdo, argc_new, argv_new.data()))
         {
         case E_CONTINUE:
             break;
