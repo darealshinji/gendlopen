@@ -427,6 +427,9 @@ namespace
                 if ( get_arg(args, "include") ) {
                     gdo.add_inc(format_inc(args.opt));
                     continue;
+                } else if ( get_noarg(args, "ignore-commands") ) {
+                    gdo.read_extra_cmds(false);
+                    continue;
                 }
                 break;
 
@@ -542,6 +545,7 @@ namespace
         /* merge argv with extra commands */
         std::string token;
         vstring_t token_list;
+
         std::istringstream iss(extra_commands);
 
         while (iss >> token) {
@@ -556,8 +560,9 @@ namespace
             argv_new[i] = argv[i];
         }
 
-        for (int j = 0; i < argc_new; i++, j++) {
-            argv_new[i] = const_cast<char *>(token_list.at(j).c_str());
+        for (const auto &e : token_list) {
+            //std::cerr << "DEBUG >> extra command >> " << e << std::endl;
+            argv_new[i++] = const_cast<char *>(e.c_str());
         }
 
         /* initialize class */

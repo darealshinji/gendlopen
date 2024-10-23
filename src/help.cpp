@@ -58,6 +58,7 @@ namespace help
             "  -param=create     create parameter names for function prototypes\n"
             "  -ast-all-symbols  use all symbols from a Clang AST\n"
             "  -print-symbols    print list of found symbols and exit\n"
+            "  -ignore-commands  ignore commands from input file\n"
             "\n"
             "  * option may be passed multiple times" << std::endl;
     }
@@ -254,6 +255,11 @@ namespace help
             "  -print-symbols\n"
             "    Don't create any output, just print a list of found symbols and exit.\n"
             "    This is useful for debugging.\n"
+            "\n"
+
+            "  -ignore-commands\n"
+            "    If the input file begins with a commands line (`//@CMD <..>') ignore this\n"
+            "    line and don't read any commands from it.\n"
             "\n"
 
             << std::endl;

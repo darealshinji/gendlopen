@@ -239,6 +239,20 @@ inline void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &fun
     std::cout << "/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
 }
 
+inline bool has_ignore_commands_set(const std::string &line)
+{
+    std::string token;
+    std::istringstream iss(line);
+
+    while (iss >> token) {
+        if (token == "-ignore-commands") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 } /* end anonymous namespace */
 
 
@@ -296,7 +310,7 @@ void gendlopen::tokenize_input()
         peek.erase(0, 6);
         utils::strip_spaces(peek);
 
-        if (!peek.empty()) {
+        if (!peek.empty() && !has_ignore_commands_set(peek)) {
             throw cmdline(peek);
         }
     }
