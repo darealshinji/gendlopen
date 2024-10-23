@@ -45,7 +45,6 @@ bool ofstream::open(const std::string &file)
 
     /* STDOUT */
     if (file == "-") {
-        m_is_stdout = true;
         return true;
     }
 
@@ -56,13 +55,11 @@ bool ofstream::open(const std::string &file)
 
 void ofstream::close()
 {
-    if (m_is_stdout) {
-        std::cout.flush();
-    }
-
     if (m_ofs.is_open()) {
         m_ofs.close();
     }
+
+    std::cout.flush();
 }
 
 } /* namespace cio */
