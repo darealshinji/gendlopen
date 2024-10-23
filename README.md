@@ -33,6 +33,8 @@ Here's how the input text format must be:
  * comments are ignored
  * line-breaks are treated as spaces
  * any other code will throw an error
+ * first line may contain extra command lines in the form `//@CMD <commands>`,
+ for example `//@CMD -format=c++ -name=mydl -library=libfoo.so`
 
 You can create such a file with GCC:
 `echo '#include "foobar.h"' | gcc -xc -c - -o /dev/null -aux-info aux.txt`

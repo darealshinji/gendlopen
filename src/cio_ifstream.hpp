@@ -54,6 +54,7 @@ public:
     bool open(const std::string &file);
 
     bool is_open() const;
+    bool is_stdin() const;
     void close();
 
     bool get(char &c);

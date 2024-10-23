@@ -27,13 +27,16 @@ run_examples: $(BINS)
 # appindicator
 
 @APPIND@example_appindicator.h: appindicator.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) appindicator.txt -force -o $@ -name xappindicator -library libappindicator.so.1 -param=create
+@APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator.txt > $@
+# -name xappindicator -library libappindicator.so.1 -param=create
 
 @APPIND@example_appindicator_gtk.h: appindicator_gtk.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) appindicator_gtk.txt -force -o $@ -name xgtk -library libgtk-x11-2.0.so.0
+@APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator_gtk.txt > $@
+# -name xgtk -library libgtk-x11-2.0.so.0
 
 @APPIND@example_appindicator_gobject.h: appindicator_gobject.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) appindicator_gobject.txt -force -o $@ -name xgobject -library libgobject-2.0.so.0
+@APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator_gobject.txt > $@
+# -name xgobject -library libgobject-2.0.so.0
 
 @APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h appindicator.c
 @APPIND@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(TEST_LDFLAGS) $(LIBDL)

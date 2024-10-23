@@ -41,19 +41,25 @@
 #include "gendlopen.hpp"
 
 
-/* hold infos to parse command line arguments */
-typedef struct _parse_args {
-    int         argc = 0;     /* argument count */
-    char      **argv = NULL;  /* argument vector */
-    int         it   = 0;     /* current argc iterator */
-    const char *cur  = NULL;  /* current argv[] element */
-    const char *opt  = NULL;  /* current argument's option */
-} parse_args_t;
-
-
 /* anonymous */
 namespace
 {
+    /* hold infos to parse command line arguments */
+    typedef struct _parse_args {
+        int         argc = 0;     /* argument count */
+        char      **argv = NULL;  /* argument vector */
+        int         it   = 0;     /* current argc iterator */
+        const char *cur  = NULL;  /* current argv[] element */
+        const char *opt  = NULL;  /* current argument's option */
+    } parse_args_t;
+
+    typedef enum _parser_retval {
+        E_CONTINUE,
+        E_EXIT_OK,
+        E_EXIT_ERROR
+    } parser_retval_t;
+
+
     /* create "#define" lines */
     std::string format_def(std::string def)
     {
@@ -321,204 +327,292 @@ namespace
         return get_noargx(args, opt, N-1);
     }
 
+
+    parser_retval_t parse_arguments(gendlopen &gdo, int argc, char **argv)
+    {
+        auto is_arg_prefix = [] (const char &c) -> bool
+        {
+#ifdef _WIN32
+            return (c == '-' || c == '/');
+#else
+            return (c == '-');
+#endif
+        };
+
+        parse_args_t args;
+        const char *input = NULL;
+
+        args.argc = argc;
+        args.argv = argv;
+
+        /* parse arguments */
+        for (args.it = 1; args.it < argc; args.it++) {
+            args.cur = argv[args.it];
+
+            /* non-option argument --> input */
+            if (!is_arg_prefix(args.cur[0]) || strcmp(args.cur, "-") == 0) {
+                if (!input) {
+                    input = args.cur;
+                } else {
+                    std::cerr << "warning: non-option argument ignored: " << args.cur << std::endl;
+                }
+                continue;
+            }
+
+            auto cur = args.cur;
+
+            /* skip prefix */
+            args.cur++;
+
+            switch(*args.cur)
+            {
+            case '?':
+                if ( get_noarg(args, "?") ) {
+                    help::print(get_prog_name(argv[0]));
+                    return E_EXIT_OK;
+                }
+                break;
+
+            case 'h':
+                if ( get_noarg(args, "help") ) {
+                    help::print(get_prog_name(argv[0]));
+                    return E_EXIT_OK;
+                }
+                break;
+
+            case 'f':
+                if ( get_arg(args, "format") ) {
+                    gdo.format(format_enum(args.opt));
+                    continue;
+                } else if ( get_noarg(args, "force") ) {
+                    gdo.force(true);
+                    continue;
+                } else if ( get_noarg(args, "full-help") ) {
+                    help::print_full(get_prog_name(argv[0]));
+                    return E_EXIT_OK;
+                }
+                break;
+
+            case 'o':
+                if ( get_arg(args, "o") ) {
+                    gdo.output(args.opt);
+                    continue;
+                }
+                break;
+
+            case 'n':
+                if ( get_arg(args, "name") ) {
+                    gdo.name(args.opt);
+                    continue;
+                }
+                break;
+
+            case 't':
+                if ( get_arg(args, "template") ) {
+                    gdo.custom_template(args.opt);
+                    continue;
+                }
+                break;
+
+            case 'l':
+                if ( get_arg(args, "library") ) {
+                    std::string lib_a, lib_w;
+                    format_libname(args.opt, lib_a, lib_w);
+                    gdo.default_lib(lib_a, lib_w);
+                    continue;
+                }
+                break;
+
+            case 'i':
+                if ( get_arg(args, "include") ) {
+                    gdo.add_inc(format_inc(args.opt));
+                    continue;
+                }
+                break;
+
+            case 'D':
+                if ( get_arg(args, "D") ) {
+                    gdo.add_def(format_def(args.opt));
+                    continue;
+                }
+                break;
+
+            case 'P':
+                if ( get_arg(args, "P") ) {
+                    gdo.add_pfx(args.opt);
+                    continue;
+                }
+                break;
+
+            case 'p':
+                if ( get_arg(args, "param") ) {
+                    if (utils::eq_str_case(args.opt, "skip")) {
+                        gdo.parameter_names(param::skip);
+                    } else if (utils::eq_str_case(args.opt, "create")) {
+                        gdo.parameter_names(param::create);
+                    } else {
+                        std::cerr << get_prog_name(argv[0]) << ": unknown argument for option '"
+                            << *cur << "param': " << args.opt << std::endl;
+                        return E_EXIT_ERROR;
+                    }
+                    continue;
+                } else if ( get_noarg(args, "print-symbols") ) {
+                    gdo.print_symbols(true);
+                    continue;
+                }
+                break;
+
+            case 'S':
+                if ( get_arg(args, "S") ) {
+                    gdo.add_sym(args.opt);
+                    continue;
+                }
+                break;
+
+            case 's':
+                if ( get_noarg(args, "separate") ) {
+                    gdo.separate(true);
+                    continue;
+                }
+                break;
+
+            case 'a':
+                if ( get_noarg(args, "ast-all-symbols") ) {
+                    gdo.ast_all_symbols(true);
+                    continue;
+                }
+                break;
+
+            default:
+                break;
+            }
+
+            std::cerr << get_prog_name(argv[0]) << ": unknown option: " << cur << std::endl;
+            return E_EXIT_ERROR;
+        }
+
+        /* input is required */
+        if (!input) {
+            std::cerr << get_prog_name(argv[0]) << ": input file required" << std::endl;
+            return E_EXIT_ERROR;
+        }
+
+        gdo.input(input);
+
+        return E_CONTINUE;
+    }
+
+
+    int main1(int argc, char **argv, std::string &extra_commands)
+    {
+        /* initialize class */
+        gendlopen gdo(argc, argv);
+
+        /* parse command line */
+        switch (parse_arguments(gdo, argc, argv))
+        {
+        case E_CONTINUE:
+            break;
+        case E_EXIT_OK:
+            return 0;
+        case E_EXIT_ERROR:
+            std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
+            return 1;
+        }
+
+        /* generate output */
+        try {
+            gdo.generate();
+        }
+        catch (const gendlopen::error &e) {
+            std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
+            return 1;
+        }
+        catch (const gendlopen::cmdline &e) {
+            extra_commands = e.what();
+            return -1;
+        }
+
+        return 0;
+    }
+
+
+    int main2(int argc, char **argv, const std::string &extra_commands)
+    {
+        /* merge argv with extra commands */
+        std::string token;
+        vstring_t token_list;
+        std::istringstream iss(extra_commands);
+
+        while (iss >> token) {
+            token_list.push_back(token);
+        }
+
+        int argc_new = argc + token_list.size();
+        char *argv_new[argc_new];
+        int i = 0;
+
+        for ( ; i < argc; i++) {
+            argv_new[i] = argv[i];
+        }
+
+        for (int j = 0; i < argc_new; i++, j++) {
+            argv_new[i] = const_cast<char *>(token_list.at(j).c_str());
+        }
+
+        /* initialize class */
+        gendlopen gdo(argc_new, argv_new);
+
+        /* disable reading extra commands */
+        gdo.read_extra_cmds(false);
+
+        /* parse command line */
+        switch (parse_arguments(gdo, argc_new, argv_new))
+        {
+        case E_CONTINUE:
+            break;
+        case E_EXIT_OK:
+            return 0;
+        case E_EXIT_ERROR:
+            std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
+            return 1;
+        }
+
+        /* generate output */
+        try {
+            gdo.generate();
+        }
+        catch (const gendlopen::error &e) {
+            std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
+            return 1;
+        }
+        catch (const gendlopen::cmdline &) {
+            std::cerr << get_prog_name(argv[0]) << ": error: reading extra commands a second time should not happen!" << std::endl;
+            return 1;
+        }
+
+        return 0;
+    }
+
 } /* anonymous namespace */
 
 
 int main(int argc, char **argv)
 {
-    auto try_help = [&argv] () {
-        std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
-    };
+    std::string extra_commands;
 
-    auto prog = [&argv] () -> const char* {
-        return get_prog_name(argv[0]);
-    };
-
-    auto is_arg_prefix = [] (const char &c) -> bool
-    {
-#ifdef _WIN32
-        return (c == '-' || c == '/');
-#else
-        return (c == '-');
-#endif
-    };
-
-    parse_args_t args;
-    const char *input = NULL;
-
-    /* default settings */
-    const char *output = "-";
-    const char *name = "gdo";
-
-    /* initialize class */
-    gendlopen gdo(argc, argv);
-
-    args.argc = argc;
-    args.argv = argv;
-
-    /* parse arguments */
-    for (args.it = 1; args.it < argc; args.it++) {
-        args.cur = argv[args.it];
-
-        /* non-option argument --> input */
-        if (!is_arg_prefix(args.cur[0]) || strcmp(args.cur, "-") == 0) {
-            if (!input) {
-                input = args.cur;
-            } else {
-                std::cerr << "warning: non-option argument ignored: " << args.cur << std::endl;
-            }
-            continue;
-        }
-
-        auto cur = args.cur;
-
-        /* skip prefix */
-        args.cur++;
-
-        switch(*args.cur)
-        {
-        case '?':
-            if ( get_noarg(args, "?") ) {
-                help::print(prog());
-                return 0;
-            }
-            break;
-
-        case 'h':
-            if ( get_noarg(args, "help") ) {
-                help::print(prog());
-                return 0;
-            }
-            break;
-
-        case 'f':
-            if ( get_arg(args, "format") ) {
-                gdo.format(format_enum(args.opt));
-                continue;
-            } else if ( get_noarg(args, "force") ) {
-                gdo.force(true);
-                continue;
-            } else if ( get_noarg(args, "full-help") ) {
-                help::print_full(prog());
-                return 0;
-            }
-            break;
-
-        case 'o':
-            if ( get_arg(args, "o") ) {
-                output = args.opt;
-                continue;
-            }
-            break;
-
-        case 'n':
-            if ( get_arg(args, "name") ) {
-                name = args.opt;
-                continue;
-            }
-            break;
-
-        case 't':
-            if ( get_arg(args, "template") ) {
-                gdo.custom_template(args.opt);
-                continue;
-            }
-            break;
-
-        case 'l':
-            if ( get_arg(args, "library") ) {
-                std::string lib_a, lib_w;
-                format_libname(args.opt, lib_a, lib_w);
-                gdo.default_lib(lib_a, lib_w);
-                continue;
-            }
-            break;
-
-        case 'i':
-            if ( get_arg(args, "include") ) {
-                gdo.add_inc(format_inc(args.opt));
-                continue;
-            }
-            break;
-
-        case 'D':
-            if ( get_arg(args, "D") ) {
-                gdo.add_def(format_def(args.opt));
-                continue;
-            }
-            break;
-
-        case 'P':
-            if ( get_arg(args, "P") ) {
-                gdo.add_pfx(args.opt);
-                continue;
-            }
-            break;
-
-        case 'p':
-            if ( get_arg(args, "param") ) {
-                if (utils::eq_str_case(args.opt, "skip")) {
-                    gdo.parameter_names(param::skip);
-                } else if (utils::eq_str_case(args.opt, "create")) {
-                    gdo.parameter_names(param::create);
-                } else {
-                    std::cerr << prog() << ": unknown argument for option '"
-                        << *cur << "param': " << args.opt << std::endl;
-                    try_help();
-                    return 1;
-                }
-                continue;
-            } else if ( get_noarg(args, "print-symbols") ) {
-                gdo.print_symbols(true);
-                continue;
-            }
-            break;
-
-        case 'S':
-            if ( get_arg(args, "S") ) {
-                gdo.add_sym(args.opt);
-                continue;
-            }
-            break;
-
-        case 's':
-            if ( get_noarg(args, "separate") ) {
-                gdo.separate(true);
-                continue;
-            }
-            break;
-
-        case 'a':
-            if ( get_noarg(args, "ast-all-symbols") ) {
-                gdo.ast_all_symbols(true);
-                continue;
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        std::cerr << prog() << ": unknown option: " << cur << std::endl;
-        try_help();
-        return 1;
+    if (argc == 2 && strcmp(argv[1], "--help") == 0) {
+        help::print(get_prog_name(argv[0]));
+        return 0;
     }
 
-    /* input is required */
-    if (!input) {
-        std::cerr << prog() << ": input file required" << std::endl;
-        try_help();
-        return 1;
+    int rv = main1(argc, argv, extra_commands);
+
+    if (rv == -1) {
+        /* main1() has read extra commands from input,
+         * which we are now using in main2() */
+        rv = main2(argc, argv, extra_commands);
     }
 
-    /* generate output */
-    try {
-        gdo.generate(input, output, name);
-    }
-    catch (const gendlopen::error &e) {
-        std::cerr << prog() << ": error: " << e.what() << std::endl;
-        return 1;
-    }
-
-    return 0;
+    return rv;
 }

@@ -1,3 +1,5 @@
+//@CMD -name xgtk -library libgtk-x11-2.0.so.0
+
 void
 gtk_main_quit
 (

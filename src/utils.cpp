@@ -57,15 +57,15 @@ bool utils::eq_str_case(const std::string &str1, const std::string &str2)
 }
 
 /* convert string to uppercase */
-std::string utils::convert_to_upper(const char *str, bool underscores)
+std::string utils::convert_to_upper(const std::string &str, bool underscores)
 {
     std::string out;
 
-    for (auto p = str; *p != 0; p++) {
-        if (range(*p, 'a','z')) {
-            out += *p - 32;
-        } else if (!underscores || range(*p, 'A','Z') || range(*p, '0','9')) {
-            out += *p;
+    for (const char &c : str) {
+        if (range(c, 'a','z')) {
+            out += c - 32;
+        } else if (!underscores || range(c, 'A','Z') || range(c, '0','9')) {
+            out += c;
         } else {
             out += '_';
         }
@@ -75,15 +75,15 @@ std::string utils::convert_to_upper(const char *str, bool underscores)
 }
 
 /* convert string to lowercase */
-std::string utils::convert_to_lower(const char *str, bool underscores)
+std::string utils::convert_to_lower(const std::string &str, bool underscores)
 {
     std::string out;
 
-    for (auto p = str; *p != 0; p++) {
-        if (range(*p, 'A','Z')) {
-            out += *p + 32;
-        } else if (!underscores || range(*p, 'a','z') || range(*p, '0','9')) {
-            out += *p;
+    for (const char &c : str) {
+        if (range(c, 'A','Z')) {
+            out += c + 32;
+        } else if (!underscores || range(c, 'a','z') || range(c, '0','9')) {
+            out += c;
         } else {
             out += '_';
         }

@@ -1,3 +1,5 @@
+//@CMD -name xappindicator -library libappindicator.so.1 -param=create
+
 // testing "-param=create"
 AppIndicator *app_indicator_new        (const gchar*, const gchar*, AppIndicatorCategory);
 void          app_indicator_set_status (AppIndicator*, AppIndicatorStatus);

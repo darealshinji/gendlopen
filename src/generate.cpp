@@ -243,7 +243,7 @@ inline void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &fun
 
 
 /* open file for writing */
-void gendlopen::open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool force)
+void gendlopen::open_ofstream(const fs::path &opath, bool force, bool body)
 {
     /* delete file to prevent writing data into symlink target */
     if (force) {
@@ -256,7 +256,7 @@ void gendlopen::open_ofstream(cio::ofstream &ofs, const fs::path &opath, bool fo
     }
 
     /* open file for writing */
-    if (!ofs.open(opath)) {
+    if ((body && !m_ofs_body.open(opath)) || (!body && !m_ofs.open(opath))) {
         throw error("failed to open file for writing: " + opath.string());
     }
 }
@@ -289,6 +289,16 @@ void gendlopen::tokenize_input()
     if (peek.starts_with("\xEF\xBB\xBF")) {
         peek.erase(0, 3);
         m_ifs.ignore(3);
+    }
+
+    /* read extra commands from file */
+    if (m_read_extra_cmds && peek.starts_with("//@CMD")) {
+        peek.erase(0, 6);
+        utils::strip_spaces(peek);
+
+        if (!peek.empty()) {
+            throw cmdline(peek);
+        }
     }
 
     utils::strip_ansi_colors(peek);
@@ -338,7 +348,7 @@ void gendlopen::tokenize_input()
 }
 
 /* read and parse custom template */
-void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
+void gendlopen::parse_custom_template(const std::string &ofile, bool use_stdout)
 {
     cstrList_t data;
     cio::ofstream out;
@@ -365,32 +375,32 @@ void gendlopen::parse_custom_template(const char *ofile, bool use_stdout)
 
     if (!use_stdout) {
         /* create output file */
-        open_ofstream(out, ofile, m_force);
+        open_ofstream(ofile, m_force, false);
     }
 
     data.reserve = buf.size();
     data.list.push_back(buf.c_str());
 
-    out << parse(data);
+    m_ofs << parse(data);
 }
 
 /* generate output */
-void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
+void gendlopen::generate()
 {
     fs::path ofhdr, ofbody;
     std::string header_name;
-    cio::ofstream out, out_body;
     cstrList_t header_data, body_data;
 
-    /* set member variables first */
-    m_ifile = ifile;
+    if (m_ifile.empty()) {
+        throw error("input file required");
+    }
 
     if (m_ifile == "-" && m_custom_template == "-") {
         throw error("cannot read input file and custom template both from STDIN");
     }
 
-    m_name_upper = utils::convert_to_upper(name);
-    m_name_lower = utils::convert_to_lower(name);
+    m_name_upper = utils::convert_to_upper(m_name);
+    m_name_lower = utils::convert_to_lower(m_name);
 
     /* tokenize */
     tokenize_input();
@@ -404,11 +414,11 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
     /* look for a common symbol prefix */
     m_common_prefix = get_common_prefix(m_prototypes, m_objects);
 
-    const bool use_stdout = (strcmp(ofile, "-") == 0);
+    const bool use_stdout = (m_ofile == "-");
 
     /* read and parse custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
-        parse_custom_template(ofile, use_stdout);
+        parse_custom_template(m_ofile, use_stdout);
         return;
     }
 
@@ -416,9 +426,9 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
 
     if (!use_stdout) {
 #ifdef __MINGW32__
-        ofbody = ofhdr = convert_filename(ofile);
+        ofbody = ofhdr = convert_filename(m_ofile);
 #else
-        ofbody = ofhdr = ofile;
+        ofbody = ofhdr = m_ofile;
 #endif
     }
 
@@ -464,7 +474,7 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
 
     /* create header filename and header guard */
     if (use_stdout) {
-        header_name = name;
+        header_name = m_name;
         header_name += output_is_c ? ".h" : ".hpp";
     } else {
         header_name = ofhdr.filename().string();
@@ -476,52 +486,52 @@ void gendlopen::generate(const char *ifile, const char *ofile, const char *name)
     /************** header begin ***************/
 
     if (!use_stdout) {
-        open_ofstream(out, ofhdr, m_force);
+        open_ofstream(ofhdr, m_force, false);
     }
 
     const std::string note = create_note(m_args);
 
-    out << note;
-    out << "#ifndef _" << header_guard << "_\n"
-           "#define _" << header_guard << "_\n\n";
+    m_ofs << note;
+    m_ofs << "#ifndef _" << header_guard << "_\n"
+             "#define _" << header_guard << "_\n\n";
 
     if (output_is_c) {
-        out << "#ifdef __cplusplus\n"
+        m_ofs << "#ifdef __cplusplus\n"
             "extern \"C\" {\n"
             "#endif\n\n";
     }
 
     /* insert filename macros BEFORE defines and headers */
-    out << data::filename_macros() << '\n';
+    m_ofs << data::filename_macros() << '\n';
 
-    print_extra_defines(out, m_defines);
-    print_default_libname(out, m_name_upper, m_deflib_a, m_deflib_w);
-    print_includes(out, m_includes);
+    print_extra_defines(m_ofs, m_defines);
+    print_default_libname(m_ofs, m_name_upper, m_deflib_a, m_deflib_w);
+    print_includes(m_ofs, m_includes);
 
     data::concat_templates(header_data, body_data, m_format, m_separate);
 
-    out << parse(header_data);
+    m_ofs << parse(header_data);
 
     if (output_is_c) {
-        out << "\n"
+        m_ofs << "\n"
             "#ifdef __cplusplus\n"
             "} /* extern \"C\" */\n"
             "#endif\n";
     }
 
-    out << "\n#endif //_" << header_guard << "_\n";
-    out.close();
+    m_ofs << "\n#endif //_" << header_guard << "_\n";
+    m_ofs.close();
 
     /************** body data ***************/
 
     if (m_separate) {
         if (!use_stdout) {
-            open_ofstream(out_body, ofbody, m_force);
+            open_ofstream(ofbody, m_force, true);
         }
 
-        out_body << note;
-        out_body << "#include \"" << header_name << "\"\n\n";
-        out_body << parse(body_data);
+        m_ofs_body << note;
+        m_ofs_body << "#include \"" << header_name << "\"\n\n";
+        m_ofs_body << parse(body_data);
     }
 }
 

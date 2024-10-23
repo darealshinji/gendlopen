@@ -72,6 +72,11 @@ bool ifstream::is_open() const
     return m_is_stdin ? true : m_ifs.is_open();
 }
 
+bool ifstream::is_stdin() const
+{
+    return m_is_stdin;
+}
+
 void ifstream::close()
 {
     m_is_stdin = false;

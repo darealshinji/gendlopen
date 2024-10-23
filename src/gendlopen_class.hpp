@@ -37,24 +37,38 @@ public:
             virtual ~error() {}
     };
 
+    class cmdline : public std::runtime_error
+    {
+        public:
+            cmdline(const std::string &message) : std::runtime_error(message) {}
+            virtual ~cmdline() {}
+    };
+
 private:
 
     vstring_t m_args, m_includes, m_symbols, m_prefix;
     vproto_t m_prototypes, m_objects;
 
+    std::string m_ifile;
+    std::string m_ofile = "-";
+    std::string m_name = "gdo";
+
     std::string m_name_upper, m_name_lower;
-    std::string m_ifile, m_defines, m_custom_template;
+    std::string m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;
     std::string m_common_prefix;
 
     output::format m_format = output::c;
     param::names m_parameter_names = param::param_default;
+
     cio::ifstream m_ifs;
+    cio::ofstream m_ofs, m_ofs_body;
 
     bool m_force = false;
     bool m_separate = false;
     bool m_ast_all_symbols = false;
     bool m_print_symbols = false;
+    bool m_read_extra_cmds = true;
 
     /* clang-ast.cpp */
     bool clang_ast_line(std::string &line, int mode);
@@ -65,9 +79,9 @@ private:
     void filter_and_copy_symbols(vproto_t &proto);
 
     /* generate.cpp */
-    void open_ofstream(cio::ofstream &ofs, const std::filesystem::path &opath, bool force);
+    void open_ofstream(const std::filesystem::path &opath, bool force, bool body);
     void tokenize_input();
-    void parse_custom_template(const char *ofile, bool use_stdout);
+    void parse_custom_template(const std::string &ofile, bool use_stdout);
 
     /* parse.cpp */
     std::string parse(const cstrList_t &data);
@@ -90,6 +104,9 @@ public:
     {}
 
     /* set options */
+    void input(const std::string &s) { m_ifile = s; }
+    void output(const std::string &s) { m_ofile = s; }
+    void name(const std::string &s) { m_name = s; }
     void format(output::format val) { m_format = val; }
     void parameter_names(param::names val) { m_parameter_names = val; }
     void custom_template(const std::string &s) { m_custom_template = s; }
@@ -97,6 +114,7 @@ public:
     void separate(bool b) { m_separate = b; }
     void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
     void print_symbols(bool b) { m_print_symbols = b; }
+    void read_extra_cmds(bool b) { m_read_extra_cmds = b; }
 
     void default_lib(const std::string &lib_a, const std::string &lib_w) {
         assert(!lib_a.empty() && !lib_w.empty());
@@ -111,7 +129,7 @@ public:
     void add_sym(const std::string &s) { m_symbols.push_back(s); }
 
     /* generate output */
-    void generate(const char *ifile, const char *ofile, const char *name);
+    void generate();
 
 };
 

@@ -46,8 +46,8 @@ inline bool prefixed_case(const std::string &str, const std::string &pfx)
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
  * underscores=false will preserve any character not matching [A-Za-z0-9] */
-std::string convert_to_upper(const char *s, bool underscores=true);
-std::string convert_to_lower(const char *s, bool underscores=true);
+std::string convert_to_upper(const std::string &s, bool underscores=true);
+std::string convert_to_lower(const std::string &s, bool underscores=true);
 
 /* returns true if s begins with a prefix found in list */
 inline bool is_prefixed(const std::string &s, const vstring_t &list)
