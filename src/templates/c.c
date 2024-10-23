@@ -615,7 +615,6 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 
     gdo_char_t *buf = NULL;
     gdo_char_t *msg = gdo_hndl.buf;
-    gdo_char_t *out = gdo_hndl.buf_formatted;
 
     /* format the message */
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -628,17 +627,17 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) <
             _countof(gdo_hndl.buf_formatted))
         {
-            GDO_SNPRINTF(out, GDO_XS _T(": ") GDO_XS, msg, buf);
+            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_XS _T(": ") GDO_XS, msg, buf);
         } else {
-            GDO_STRLCPY(out, buf);
+            GDO_STRLCPY(gdo_hndl.buf_formatted, buf);
         }
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, save the error code */
-        GDO_SNPRINTF(out, _T("Last saved error code: %lu"), gdo_hndl.last_errno);
+        GDO_SNPRINTF(gdo_hndl.buf_formatted, _T("Last saved error code: %lu"), gdo_hndl.last_errno);
     }
 
-    return out;
+    return gdo_hndl.buf_formatted;
 #else
     /* simply return the buffer */
     return gdo_hndl.buf;
