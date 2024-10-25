@@ -42,13 +42,13 @@ private:
 
     std::string m_buf;
     std::ifstream m_ifs;
-    bool m_is_stdin = false;
+    std::istream *m_iptr = NULL;
     size_t m_fsize = 0;
 
 public:
 
-    ifstream() {}
-    virtual ~ifstream() {}
+    ifstream();
+    ~ifstream();
 
     bool open(const std::filesystem::path &path);
     bool open(const std::string &file);

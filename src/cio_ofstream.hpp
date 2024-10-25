@@ -41,11 +41,12 @@ class ofstream
 private:
 
     std::ofstream m_ofs;
+    std::ostream *m_optr = &std::cout;
 
 public:
 
-    ofstream() {}
-    virtual ~ofstream() {}
+    ofstream();
+    ~ofstream();
 
     bool open(const std::filesystem::path &path);
     bool open(const std::string &file);
@@ -54,12 +55,8 @@ public:
 
     /* overloading "<<" operator */
     template<class T>
-    std::ostream& operator<<(const T &obj)
-    {
-        if (m_ofs.is_open()) {
-            return m_ofs << obj;
-        }
-        return std::cout << obj;
+    std::ostream& operator<<(const T &obj) {
+        return *m_optr << obj;
     }
 };
 

@@ -25,21 +25,27 @@
 #include "cio_ifstream.hpp"
 
 
-static const std::ios_base::openmode def_mode = std::ios_base::in | std::ios_base::binary;
-
 namespace fs = std::filesystem;
-
 
 namespace cio
 {
 
+ifstream::ifstream()
+{}
+
+ifstream::~ifstream()
+{
+    close();
+}
+
 bool ifstream::open(const fs::path &path)
 {
     close();
-    m_ifs.open(path, def_mode);
+    m_ifs.open(path, std::ios_base::in | std::ios_base::binary);
 
     if (m_ifs.is_open()) {
         m_fsize = fs::file_size(path);
+        m_iptr = &m_ifs;
         return true;
     }
 
@@ -48,40 +54,31 @@ bool ifstream::open(const fs::path &path)
 
 bool ifstream::open(const std::string &file)
 {
-    close();
-
     /* STDIN */
     if (file == "-") {
-        m_is_stdin = true;
+        close();
+        m_iptr = &std::cin;
         return true;
     }
 
-    m_ifs.open(file, def_mode);
-
-    if (m_ifs.is_open()) {
-        fs::path path = file;
-        m_fsize = fs::file_size(path);
-        return true;
-    }
-
-    return false;
-}
-
-bool ifstream::is_open() const
-{
-    return m_is_stdin ? true : m_ifs.is_open();
+    return open(fs::path(file));
 }
 
 bool ifstream::is_stdin() const
 {
-    return m_is_stdin;
+    return (m_iptr && m_iptr == &std::cin);
+}
+
+bool ifstream::is_open() const
+{
+    return is_stdin() ? true : m_ifs.is_open();
 }
 
 void ifstream::close()
 {
-    m_is_stdin = false;
     m_fsize = 0;
     m_buf.clear();
+    m_iptr = NULL;
 
     if (m_ifs.is_open()) {
         m_ifs.close();
@@ -95,12 +92,8 @@ bool ifstream::get(char &c)
         c = m_buf.front();
         m_buf.erase(0, 1);
         return true;
-    } else if (m_is_stdin) {
-        /* STDIN */
-        return std::cin.get(c) ? true : false;
-    } else if (m_ifs.is_open()) {
-        /* file */
-        return m_ifs.get(c) ? true : false;
+    } else if (m_iptr && m_iptr->get(c)) {
+        return true;
     }
 
     return false;
@@ -112,7 +105,11 @@ int ifstream::peek()
         return m_buf.front();
     }
 
-    return m_is_stdin ? std::cin.peek() : m_ifs.peek();
+    if (m_iptr) {
+        return m_iptr->peek();
+    }
+
+    return std::char_traits<char>::eof();
 }
 
 bool ifstream::good() const
@@ -121,7 +118,11 @@ bool ifstream::good() const
         return true;
     }
 
-    return m_is_stdin ? std::cin.good() : m_ifs.good();
+    if (m_iptr) {
+        return m_iptr->good();
+    }
+
+    return false;
 }
 
 size_t ifstream::file_size() const
@@ -138,12 +139,8 @@ void ifstream::ignore(size_t n)
         } else {
             m_buf.erase(0, n);
         }
-    } else if (m_is_stdin) {
-        /* STDIN */
-        std::cin.ignore(n);
-    } else if (m_ifs.is_open()) {
-        /* file */
-        m_ifs.ignore(n);
+    } else if (m_iptr) {
+        m_iptr->ignore(n);
     }
 }
 
@@ -154,12 +151,8 @@ void ifstream::ignore_line()
     if (!m_buf.empty()) {
         /* buffer */
         m_buf.clear();
-    } else if (m_is_stdin) {
-        /* STDIN */
-        std::cin.ignore(max_size, '\n');
-    } else if (m_ifs.is_open()) {
-        /* file */
-        m_ifs.ignore(max_size, '\n');
+    } else if (m_iptr) {
+        m_iptr->ignore(max_size, '\n');
     }
 }
 
@@ -174,12 +167,8 @@ bool ifstream::getline(std::string &out)
             out.pop_back();
         }
         return true;
-    } else if (m_is_stdin) {
-        /* STDIN */
-        return std::getline(std::cin, out) ? true : false;
-    } else if (m_ifs.is_open()) {
-        /* file */
-        return std::getline(m_ifs, out) ? true : false;
+    } else if (m_iptr && std::getline(*m_iptr, out)) {
+        return true;
     }
 
     return false;

@@ -25,41 +25,51 @@
 #include "cio_ofstream.hpp"
 
 
-static const std::ios_base::openmode def_mode = std::ios_base::out | std::ios_base::binary;
-
+namespace fs = std::filesystem;
 
 namespace cio
 {
 
-bool ofstream::open(const std::filesystem::path &path)
+ofstream::ofstream()
+{}
+
+ofstream::~ofstream()
 {
     close();
-    m_ofs.open(path, def_mode);
+}
 
-    return m_ofs.is_open();
+bool ofstream::open(const fs::path &path)
+{
+    close();
+    m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
+
+    if (m_ofs.is_open()) {
+        m_optr = &m_ofs;
+        return true;
+    }
+
+    return false;
 }
 
 bool ofstream::open(const std::string &file)
 {
-    close();
-
     /* STDOUT */
     if (file == "-") {
+        close();
         return true;
     }
 
-    m_ofs.open(file, def_mode);
-
-    return m_ofs.is_open();
+    return open(fs::path(file));
 }
 
 void ofstream::close()
 {
+    m_optr = &std::cout;
+    std::cout.flush();
+
     if (m_ofs.is_open()) {
         m_ofs.close();
     }
-
-    std::cout.flush();
 }
 
 } /* namespace cio */
