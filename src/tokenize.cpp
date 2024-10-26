@@ -121,7 +121,7 @@ void pb_line(vstring_t &line, std::vector<vstring_t> &vec)
 }
 
 /* read and tokenize input */
-void read_input(cio::ifstream &ifs, vproto_t &vproto)
+std::string read_input(cio::ifstream &ifs, vproto_t &vproto)
 {
     char c;
     int next;
@@ -243,10 +243,16 @@ void read_input(cio::ifstream &ifs, vproto_t &vproto)
         utils::strip_spaces(proto.type);
         utils::strip_spaces(proto.args);
 
-        if (!proto.type.empty() && !proto.symbol.empty()) {
-            vproto.push_back(proto);
+        if (proto.type.empty() || proto.symbol.empty()) {
+            std::string s = proto.type + ' ' + proto.symbol + " (" + proto.args + ')';
+            utils::strip_spaces(s);
+            return s;
         }
+
+        vproto.push_back(proto);
     }
+
+    return {};
 }
 
 /* check for mismatching parentheses in arguments list */
@@ -479,8 +485,14 @@ void gendlopen::tokenize()
     vproto_t vproto;
 
     /* read and tokenize input */
-    read_input(m_ifs, vproto);
+    std::string msg = read_input(m_ifs, vproto);
     m_ifs.close();
+
+    /* error? */
+    if (!msg.empty()) {
+        throw error("cannot read protoype \"" + msg + "\" from file: " + m_ifile + "\n"
+                    "Maybe use typedef?");
+    }
 
     /* nothing found? */
     if (vproto.empty()) {

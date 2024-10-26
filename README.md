@@ -14,26 +14,30 @@ Features:
  * option to automatically load library and symbols
 
 Limitations:
- * it's not a code analysis tool, so make sure the input is correct
- * auto-loading only works on functions ¹
- * auto-loading does not work on functions with variable arguments ²
+ * it's not a code analysis tool, so make sure the input is correct and simple ¹
+ * auto-loading only works on functions ²
+ * auto-loading does not work on functions with variable arguments ³
  * C++11 is the minimum requirement for the generated C++ files
  * C++20 is the minimum requirement to compile the tool
 
-¹ I recommend using your own get/set wrapper functions to auto-load objects<br>
-² You can however replace a prototype such as `int myprintf(const char *format, ...)`
+¹ macros are not expanded, extra parentheses i.e. around function names cannot be handled<br>
+² I recommend using your own get/set wrapper functions to auto-load objects<br>
+³ You can however replace a prototype such as `int myprintf(const char *format, ...)`
   with one that has a fixed number of arguments: `int myprintf(const char *format, int arg1, const char *arg2, float arg3)`
+
 
 Input format
 ------------
 
 Here's how the input text format must be:
 
- * all symbols that should be loaded must be listed as modern C-style prototypes, ending on semi-colon (;)
+ * all symbols that should be loaded must be listed as C-style prototypes, ending on semi-colon (;)
+ * old K&R syntax is not allowed
+ * function pointers (`int (*foo)()`) must be typedef'd, but function pointers in parameter lists are accepted (`int foo(int (*bar)())`)
  * comments are ignored
  * line-breaks are treated as spaces
  * any other code will throw an error
- * first line may contain extra command lines in the form `//@CMD <commands>`,
+ * first line may contain extra command line arguments in the form `//@CMD <commands>`,
  for example `//@CMD -format=c++ -name=mydl -library=libfoo.so`
 
 You can create such a file with GCC:

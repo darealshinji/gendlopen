@@ -1,6 +1,6 @@
 helloworld *helloworld_init(  ); /* init */
 
-/* function pointer */
+/* function pointer (typedef'd) */
 extern helloworld_cb_t helloworld_callback;
 
 /* say hello */
