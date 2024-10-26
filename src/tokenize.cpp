@@ -48,8 +48,17 @@ bool find_in_list(C list, T item)
     return std::find(list.begin(), list.end(), item) != list.end();
 }
 
-/* compare s with a list of very basic types and keywords that
- * may appear in parameter list to guess if it could be a name */
+inline std::string concat_function_prototype(const proto_t &proto)
+{
+    if (proto.type.ends_with(" *")) {
+        return proto.type + proto.symbol + '(' + proto.args + ')';
+    }
+
+    return proto.type + ' ' + proto.symbol + '(' + proto.args + ')';
+}
+
+/* compare s against a list of very basic types and keywords that
+ * may appear in parameter lists to guess if it could be a name */
 bool keyword_or_type(const std::string &s)
 {
     const std::list<const char *> keywords =
@@ -120,8 +129,8 @@ void pb_line(vstring_t &line, std::vector<vstring_t> &vec)
     }
 }
 
-/* read and tokenize input */
-std::string read_input(cio::ifstream &ifs, vproto_t &vproto)
+/* tokenize stream */
+std::vector<vstring_t> tokenize_stream(cio::ifstream &ifs)
 {
     char c;
     int next;
@@ -129,7 +138,6 @@ std::string read_input(cio::ifstream &ifs, vproto_t &vproto)
     vstring_t line;
     std::vector<vstring_t> vec;
 
-    /* tokenize */
     while (ifs.get(c) && ifs.good())
     {
         switch (c)
@@ -199,83 +207,106 @@ std::string read_input(cio::ifstream &ifs, vproto_t &vproto)
     pb_token(token, line);
     pb_line(line, vec);
 
-    /* save tokens into prototypes */
-    for (auto &l : vec) {
-        proto_t proto;
-
-        if (find_in_list(l, "(")) {
-            /* function */
-            bool param = false;
-
-            for (auto it = l.begin(); it != l.end(); it++) {
-                if (!param) {
-                    if (it+1 != l.end() && *(it+1) == "(") {
-                        /* next iterator is left parenthesis,
-                         * marking begin of parameter list */
-                        proto.symbol = *it;
-                        it++;
-                        param = true;
-                    } else {
-                        /* function return type */
-                        proto.type += *it + ' ';
-                    }
-                } else if (!(*it == ")" && it+1 == l.end())) {
-                    /* add to args list while we havent reached
-                     * the parameter list's right parenthesis */
-                    proto.args += *it + ' ';
-                }
-            }
-
-            if (proto.args.empty()) {
-                proto.args = "void";
-            }
-        } else {
-            /* object */
-            for (auto it = l.begin(); it != l.end(); it++) {
-                if (it+1 == l.end()) {
-                    proto.symbol = *it;
-                } else {
-                    proto.type += *it + ' ';
-                }
-            }
-        }
-
-        utils::strip_spaces(proto.type);
-        utils::strip_spaces(proto.args);
-
-        if (proto.type.empty() || proto.symbol.empty()) {
-            std::string s = proto.type + ' ' + proto.symbol + " (" + proto.args + ')';
-            utils::strip_spaces(s);
-            return s;
-        }
-
-        vproto.push_back(proto);
-    }
-
-    return {};
+    return vec;
 }
 
-/* check for mismatching parentheses in arguments list */
-bool check_mismatching_parentheses(const std::string &param)
+/* check for mismatching parentheses */
+bool has_mismatching_parentheses(const vstring_t &tokens)
 {
     int scope = 0;
 
-    for (const char &c : param) {
-        if (c == '(') {
+    for (const auto &e : tokens) {
+        if (e == "(") {
             scope++;
-        } else if (c == ')') {
+        } else if (e == ")") {
             if (--scope < 0) {
                 break;
             }
         }
     }
 
-    if (scope != 0) {
-        std::cerr << "error: mismatching parentheses in parameter list" << std::endl;
-        return false;
+    return (scope != 0);
+}
+
+/* save tokens into prototypes */
+std::string get_prototypes(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
+{
+    for (auto &l : vec_tokens) {
+        proto_t proto;
+
+        if (has_mismatching_parentheses(l)) {
+            std::string s = "mismatching parentheses:";
+
+            for (const auto &e : l) {
+                s += ' ' + e;
+            }
+            return s;
+        }
+
+        if (l.back() == ")") {
+            /* function */
+            vstring_t vec_type;
+            l.pop_back();
+
+            auto it = l.begin();
+
+            /* look for the first opening parentheses */
+            for ( ; it != l.end(); it++) {
+                if (*it == "(") {
+                    it++;
+                    break;
+                }
+                vec_type.push_back(*it);
+            }
+
+            /* symbol */
+            proto.symbol = vec_type.back();
+            vec_type.pop_back();
+
+            /* type */
+            for (const auto &e : vec_type) {
+                proto.type += e + ' ';
+            }
+
+            /* args */
+            for ( ; it != l.end(); it++) {
+                proto.args += *it + ' ';
+            }
+
+            if (proto.args.empty()) {
+                proto.args = "void";
+            }
+
+            utils::strip_spaces(proto.type);
+            utils::strip_spaces(proto.args);
+
+            if (proto.type.empty() || proto.symbol.empty()) {
+                std::string s = concat_function_prototype(proto);
+                utils::strip_spaces(s);
+                return "failed to read prototype: " + s;
+            }
+        } else {
+            /* object */
+            proto.symbol = l.back();
+            l.pop_back();
+
+            for (const auto &e : l) {
+                proto.type += e + ' ';
+            }
+
+            utils::strip_spaces(proto.type);
+
+            if (proto.type.empty() || proto.symbol.empty()) {
+                std::string s = proto.type + ' ' + proto.symbol;
+                utils::strip_spaces(s);
+                return "failed to read prototype: " + s;
+            }
+        }
+
+        vproto.push_back(proto);
     }
 
-    return true;
+    return {};
 }
 
 /* extract argument names from args list */
@@ -293,13 +324,9 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
     std::string ok, args_notypes, token, args_new, name;
     vstring_t arg;
 
-    /* nothing to do if empty (= object) or "void" */
+    /* nothing to do if empty (== object) or "void" */
     if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
         return ok;
-    }
-
-    if (!check_mismatching_parentheses(proto.args)) {
-        return proto.symbol + ": mismatching parentheses";
     }
 
     if (parameter_names == param::skip) {
@@ -395,8 +422,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
                         arg.back().back() == '*' ||  /* pointer type without parameter name */
                         keyword_or_type(arg.back()))  /* reserved keyword or a very basic type (i.e. "int") */
                     {
-                        return "a parameter name is missing:\n" +
-                            proto.type + ' ' + proto.symbol + '(' + proto.args + ");\n"
+                        return "a parameter name is missing: " + concat_function_prototype(proto) + ";\n"
                             "hint: try again with `-param=skip' or `-param=create'";
                     }
 
@@ -485,13 +511,21 @@ void gendlopen::tokenize()
     vproto_t vproto;
 
     /* read and tokenize input */
-    std::string msg = read_input(m_ifs, vproto);
+    std::vector<vstring_t> vec_tokens = tokenize_stream(m_ifs);
+
+    /* get prototypes from tokens */
+    std::string msg_proto = get_prototypes(vec_tokens, vproto);
     m_ifs.close();
 
     /* error? */
-    if (!msg.empty()) {
-        throw error("cannot read protoype \"" + msg + "\" from file: " + m_ifile + "\n"
-                    "Maybe use typedef?");
+    if (!msg_proto.empty()) {
+        if (msg_proto.find("(*") != std::string::npos ||
+            msg_proto.find("( *") != std::string::npos)
+        {
+            msg_proto += "\nhint: use typedefs for function pointers!";
+        }
+
+        throw error("file: " + m_ifile + '\n' + msg_proto);
     }
 
     /* nothing found? */
@@ -511,10 +545,10 @@ void gendlopen::tokenize()
 
     /* get parameter names */
     for (auto &e : vproto) {
-        std::string msg = get_parameter_names(e, m_parameter_names);
+        std::string msg_param = get_parameter_names(e, m_parameter_names);
 
-        if (!msg.empty()) {
-            throw error(msg);
+        if (!msg_param.empty()) {
+            throw error(msg_param);
         }
     }
 

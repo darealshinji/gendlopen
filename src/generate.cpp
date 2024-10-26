@@ -226,14 +226,24 @@ inline void print_includes(cio::ofstream &out, const vstring_t &incs)
 }
 
 /* print all found symbols */
-inline void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions)
+void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions)
 {
     for (const auto &e : objects) {
-        std::cout << e.type << ' ' << e.symbol << '\n';
+        std::cout << e.type;
+
+        if (!e.type.ends_with(" *")) {
+            std::cout << ' ';
+        }
+        std::cout << e.symbol << '\n';
     }
 
     for (const auto &e : functions) {
-        std::cout << e.type << ' ' << e.symbol << '(' << e.args << ");\n";
+        std::cout << e.type;
+
+        if (!e.type.ends_with(" *")) {
+            std::cout << ' ';
+        }
+        std::cout << e.symbol << '(' << e.args << ");\n";
     }
 
     std::cout << "/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
