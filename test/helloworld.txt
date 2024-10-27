@@ -17,6 +17,8 @@ void helloworld_release
   (/* //comment inside comment */ helloworld * hw)
   ;
 
+/* ignored */;
+
 /* fprintf */
 int helloworld_fprintf(FILE *stream, const char *format,
-  ...); /* testing variable arguments */
+  ...) /* testing variable arguments */

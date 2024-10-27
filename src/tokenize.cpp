@@ -42,8 +42,17 @@
 namespace /* anonymous */
 {
 
+template<class T1, class T2>
+void save_to_vec(T1 &item, T2 &vec)
+{
+    if (!item.empty()) {
+        vec.push_back(item);
+        item.clear();
+    }
+}
+
 template<class C, typename T>
-bool find_in_list(C list, T item)
+bool find_in_list(C &list, T &item)
 {
     return std::find(list.begin(), list.end(), item) != list.end();
 }
@@ -87,28 +96,6 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
-void save_token(std::string &token, vstring_t &line)
-{
-    if (token.empty()) {
-        return;
-    }
-
-    /* skip reserved "extern" keyword */
-    if (!utils::eq_str_case(token, "extern")) {
-        line.push_back(token);
-    }
-
-    token.clear();
-}
-
-inline void save_line(vstring_t &line, std::vector<vstring_t> &vec)
-{
-    if (!line.empty()) {
-        vec.push_back(line);
-        line.clear();
-    }
-}
-
 void remove_comment(const std::string &beg, const std::string &end, std::string &s)
 {
     size_t pos_beg = 0;
@@ -126,9 +113,9 @@ void remove_comment(const std::string &beg, const std::string &end, std::string 
     }
 }
 
-std::string illegal_char(const char &c, int &lineno)
+const char *illegal_char(const char &c, int &lineno)
 {
-    char buf[128];
+    static char buf[128];
     const char *fmt = "illegal character `%c' at line %d";
 
     if (!isprint(c)) {
@@ -148,7 +135,7 @@ std::string tokenize_stream(cio::ifstream &ifs, std::vector<vstring_t> &vec, boo
     vstring_t line;
     int lineno = 1;
 
-    /* bump initial line number is input is stdin and we
+    /* bump initial line number if input is stdin and we
      * had already read the first line */
     if (first_line_read && ifs.is_stdin()) {
         lineno++;
@@ -163,15 +150,21 @@ std::string tokenize_stream(cio::ifstream &ifs, std::vector<vstring_t> &vec, boo
     while (ifs.get(ch) && ifs.good()) {
         text += ch;
     }
-    text += '\n';
+
+    /* newline in case of »//« comment,
+     * semicolon in case it's missing */
+    text += "\n;";
+
     ifs.close();
 
     /* strip commentary */
     remove_comment("/*", "*/", text);
     remove_comment("//", "\n", text);
 
-    for (const char &c : text)
+    for (size_t i = 0; i < text.size(); i++)
     {
+        char &c = text[i];
+
         switch (c)
         {
         /* newline */
@@ -185,7 +178,7 @@ std::string tokenize_stream(cio::ifstream &ifs, std::vector<vstring_t> &vec, boo
         case '\v':
         case '\f':
         case '\r':
-            save_token(token, line);
+            save_to_vec(token, line);
             break;
 
         /* var, type, etc. */
@@ -198,30 +191,30 @@ std::string tokenize_stream(cio::ifstream &ifs, std::vector<vstring_t> &vec, boo
             token += c;
             break;
 
+        /* »...« */
+        case '.':
+            if (strncmp(text.c_str() + i, "...", 3) != 0) {
+                return illegal_char(c, lineno);
+            }
+            save_to_vec(token, line);
+            line.push_back("...");
+            i += 2;
+            break;
+
         /* other legal characters */
         case '*':
         case ',':
         case '(': case ')':
         case '[': case ']':
-            /* old token */
-            save_token(token, line);
-            /* new token */
+            save_to_vec(token, line);
             token = c;
-            save_token(token, line);
-            break;
-
-        case '.':
-            if (token.empty() || token == "." || token == "..") {
-                token += c;
-            } else {
-                return illegal_char(c, lineno);
-            }
+            save_to_vec(token, line);
             break;
 
         /* sequence end */
         case ';':
-            save_token(token, line);
-            save_line(line, vec);
+            save_to_vec(token, line);
+            save_to_vec(line, vec);
             break;
 
         /* other */
@@ -328,11 +321,19 @@ std::string get_prototypes(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
 
             utils::strip_spaces(proto.type);
 
-            if (proto.type.empty() || proto.symbol.empty()) {
+            if (proto.type.empty() || proto.symbol.empty() ||
+                proto.type.find_first_of("()") != std::string::npos ||
+                proto.symbol.find_first_of("()") != std::string::npos)
+            {
                 std::string s = proto.type + ' ' + proto.symbol;
                 utils::strip_spaces(s);
                 return "failed to read prototype: " + s;
             }
+        }
+
+        /* remove reserved "extern" keyword */
+        if (proto.type.starts_with("extern ")) {
+            proto.type.erase(0, 7);
         }
 
         vproto.push_back(proto);
