@@ -234,7 +234,7 @@ void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions)
         if (!e.type.ends_with(" *")) {
             std::cout << ' ';
         }
-        std::cout << e.symbol << '\n';
+        std::cout << e.symbol << ";\n";
     }
 
     for (const auto &e : functions) {

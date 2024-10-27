@@ -69,6 +69,7 @@ private:
     bool m_ast_all_symbols = false;
     bool m_print_symbols = false;
     bool m_read_extra_cmds = true;
+    bool m_second_attempt = false;
 
     /* clang-ast.cpp */
     bool clang_ast_line(std::string &line, int mode);
@@ -89,13 +90,18 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int argc, char **argv)
+    gendlopen(int argc, char **argv, bool second_attempt = false)
     {
         m_args.reserve(argc - 1);
 
         /* copy arguments */
         for (int i = 1; i < argc; i++) {
             m_args.push_back(argv[i]);
+        }
+
+        if (second_attempt) {
+            m_read_extra_cmds = false;
+            m_second_attempt = true;
         }
     }
 

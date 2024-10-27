@@ -116,7 +116,7 @@ inline void erase(const std::string &token, std::string &s)
 inline void strip_ansi_colors(std::string &s)
 {
     const std::regex reg(R"(\x1B\[[0-9;]*m)");
-    std::regex_replace(s.begin(), s.begin(), s.end(), reg, "");
+    s = std::regex_replace(s, reg, "");
 }
 
 /* whether "c" is within the range of "beg" and "end" */

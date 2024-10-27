@@ -1,9 +1,11 @@
-helloworld *helloworld_init(  ); /* init */
+helloworld *helloworld_init(  ); // init
 
 /* function pointer (typedef'd) */
 extern helloworld_cb_t helloworld_callback;
 
-/* say hello */
+/*
+ * say hello
+ */
 void helloworld_hello(helloworld *hw);
 void helloworld_hello2(helloworld *hw,
     void ( * helloworld_cb )

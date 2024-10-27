@@ -566,10 +566,7 @@ namespace
         }
 
         /* initialize class */
-        gendlopen gdo(argc_new, argv_new.data());
-
-        /* disable reading extra commands */
-        gdo.read_extra_cmds(false);
+        gendlopen gdo(argc_new, argv_new.data(), true);
 
         /* parse command line */
         switch (parse_arguments(gdo, argc_new, argv_new.data()))

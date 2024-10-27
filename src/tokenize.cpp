@@ -87,27 +87,7 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
-void skip_comment_asterisk(cio::ifstream &ifs)
-{
-    char c;
-
-    while (ifs.get(c) && ifs.good()) {
-        if (c == '*' && ifs.peek() == '/') {
-            ifs.ignore();
-            return;
-        }
-    }
-}
-
-void skip_comment_newline(cio::ifstream &ifs)
-{
-    char c;
-
-    while (ifs.get(c) && ifs.good() && c != '\n')
-    {}
-}
-
-void pb_token(std::string &token, vstring_t &line)
+void save_token(std::string &token, vstring_t &line)
 {
     if (token.empty()) {
         return;
@@ -121,7 +101,7 @@ void pb_token(std::string &token, vstring_t &line)
     token.clear();
 }
 
-void pb_line(vstring_t &line, std::vector<vstring_t> &vec)
+inline void save_line(vstring_t &line, std::vector<vstring_t> &vec)
 {
     if (!line.empty()) {
         vec.push_back(line);
@@ -129,32 +109,75 @@ void pb_line(vstring_t &line, std::vector<vstring_t> &vec)
     }
 }
 
-/* tokenize stream */
-std::vector<vstring_t> tokenize_stream(cio::ifstream &ifs)
+void remove_comment(const std::string &beg, const std::string &end, std::string &s)
 {
-    char c;
-    int next;
-    std::string token;
-    vstring_t line;
-    std::vector<vstring_t> vec;
+    size_t pos_beg = 0;
+    size_t pos_end = 0;
 
-    while (ifs.get(c) && ifs.good())
+    while ((pos_beg = s.find(beg, pos_beg)) != std::string::npos) {
+        if ((pos_end = s.find(end, pos_beg)) != std::string::npos) {
+            /* replace with spaces, keep newlines */
+            for (size_t i = pos_beg; i < pos_end + end.size(); i++) {
+                if (s[i] != '\n') {
+                    s[i] = ' ';
+                }
+            }
+        }
+    }
+}
+
+std::string illegal_char(const char &c, int &lineno)
+{
+    char buf[128];
+    const char *fmt = "illegal character `%c' at line %d";
+
+    if (!isprint(c)) {
+        fmt = "illegal character `\\%03u' at line %d";
+    }
+
+    sprintf(buf, fmt, c, lineno);
+
+    return buf;
+}
+
+/* tokenize stream */
+std::string tokenize_stream(cio::ifstream &ifs, std::vector<vstring_t> &vec, bool first_line_read)
+{
+    char ch;
+    std::string token, text;
+    vstring_t line;
+    int lineno = 1;
+
+    /* bump initial line number is input is stdin and we
+     * had already read the first line */
+    if (first_line_read && ifs.is_stdin()) {
+        lineno++;
+    }
+
+    /* save file content to std::string first
+     * which makes it much easier to parse */
+    if (ifs.file_size() > 0) {
+        text.reserve(ifs.file_size());
+    }
+
+    while (ifs.get(ch) && ifs.good()) {
+        text += ch;
+    }
+    text += '\n';
+    ifs.close();
+
+    /* strip commentary */
+    remove_comment("/*", "*/", text);
+    remove_comment("//", "\n", text);
+
+    for (const char &c : text)
     {
         switch (c)
         {
-        /* possible comment */
-        case '/':
-            if ((next = ifs.peek()) == '*') {
-                skip_comment_asterisk(ifs);
-            } else if (next == '/') {
-                skip_comment_newline(ifs);
-            } else {
-                /* old token */
-                pb_token(token, line);
-                /* new token */
-                line.push_back("/");
-            }
-            break;
+        /* newline */
+        case '\n':
+            lineno++;
+            /* FALLTHROUGH */
 
         /* space */
         case ' ':
@@ -162,14 +185,7 @@ std::vector<vstring_t> tokenize_stream(cio::ifstream &ifs)
         case '\v':
         case '\f':
         case '\r':
-        case '\n':
-            pb_token(token, line);
-            break;
-
-        /* sequence end */
-        case ';':
-            pb_token(token, line);
-            pb_line(line, vec);
+            save_token(token, line);
             break;
 
         /* var, type, etc. */
@@ -179,8 +195,33 @@ std::vector<vstring_t> tokenize_stream(cio::ifstream &ifs)
         case '0' ... '9':
 #endif
         case '_':
-        case '.':
             token += c;
+            break;
+
+        /* other legal characters */
+        case '*':
+        case ',':
+        case '(': case ')':
+        case '[': case ']':
+            /* old token */
+            save_token(token, line);
+            /* new token */
+            token = c;
+            save_token(token, line);
+            break;
+
+        case '.':
+            if (token.empty() || token == "." || token == "..") {
+                token += c;
+            } else {
+                return illegal_char(c, lineno);
+            }
+            break;
+
+        /* sequence end */
+        case ';':
+            save_token(token, line);
+            save_line(line, vec);
             break;
 
         /* other */
@@ -194,20 +235,11 @@ std::vector<vstring_t> tokenize_stream(cio::ifstream &ifs)
                 break;
             }
 #endif
-            /* old token */
-            pb_token(token, line);
-            /* new token */
-            token = c;
-            pb_token(token, line);
-            break;
+            return illegal_char(c, lineno);
         }
     }
 
-    /* just in case */
-    pb_token(token, line);
-    pb_line(line, vec);
-
-    return vec;
+    return {};
 }
 
 /* check for mismatching parentheses */
@@ -469,7 +501,7 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
 
 void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 {
-    auto pb_symbol = [this] (const proto_t &p)
+    auto save_symbol = [this] (const proto_t &p)
     {
         /* no arguments means object, else function prototype */
         if (p.args.empty()) {
@@ -482,14 +514,14 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
     if (m_prefix.empty() && m_symbols.empty()) {
         /* copy all symbols */
         for (const auto &e : vproto) {
-            pb_symbol(e);
+            save_symbol(e);
         }
     } else {
         /* copy prefixed symbols */
         if (!m_prefix.empty()) {
             for (const auto &e : vproto) {
                 if (utils::is_prefixed(e.symbol, m_prefix)) {
-                    pb_symbol(e);
+                    save_symbol(e);
                 }
             }
         }
@@ -498,7 +530,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         if (!m_symbols.empty()) {
             for (const auto &e : vproto) {
                 if (find_in_list(m_symbols, e.symbol)) {
-                    pb_symbol(e);
+                    save_symbol(e);
                 }
             }
         }
@@ -508,29 +540,35 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 /* read input and tokenize */
 void gendlopen::tokenize()
 {
+    std::string msg;
+    std::vector<vstring_t> vec_tokens;
     vproto_t vproto;
 
+    std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>" : "file: " + m_ifile;
+
     /* read and tokenize input */
-    std::vector<vstring_t> vec_tokens = tokenize_stream(m_ifs);
+    msg = tokenize_stream(m_ifs, vec_tokens, m_second_attempt);
+
+    if (!msg.empty()) {
+        throw error(file_or_stdin + '\n' + msg);
+    }
 
     /* get prototypes from tokens */
-    std::string msg_proto = get_prototypes(vec_tokens, vproto);
-    m_ifs.close();
+    msg = get_prototypes(vec_tokens, vproto);
 
-    /* error? */
-    if (!msg_proto.empty()) {
-        if (msg_proto.find("(*") != std::string::npos ||
-            msg_proto.find("( *") != std::string::npos)
+    if (!msg.empty()) {
+        if (msg.find("(*") != std::string::npos ||
+            msg.find("( *") != std::string::npos)
         {
-            msg_proto += "\nhint: use typedefs for function pointers!";
+            msg += "\nhint: use typedefs for function pointers!";
         }
 
-        throw error("file: " + m_ifile + '\n' + msg_proto);
+        throw error(file_or_stdin + '\n' + msg);
     }
 
     /* nothing found? */
     if (vproto.empty()) {
-        throw error("no function or object prototypes found in file: " + m_ifile);
+        throw error("no function or object prototypes found in " + file_or_stdin);
     }
 
     /* check for duplicates (https://stackoverflow.com/a/72800146/5687704) */
@@ -538,17 +576,17 @@ void gendlopen::tokenize()
         for (auto j = vproto.begin(); i != j; ++j) {
             if ((*i).symbol == (*j).symbol) {
                 throw error("multiple definitions of symbol "
-                    "`" + (*i).symbol + "' found in file: " + m_ifile);
+                    "`" + (*i).symbol + "' found in " + file_or_stdin);
             }
         }
     }
 
     /* get parameter names */
     for (auto &e : vproto) {
-        std::string msg_param = get_parameter_names(e, m_parameter_names);
+        msg = get_parameter_names(e, m_parameter_names);
 
-        if (!msg_param.empty()) {
-            throw error(msg_param);
+        if (!msg.empty()) {
+            throw error(msg);
         }
     }
 
