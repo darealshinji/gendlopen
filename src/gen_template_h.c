@@ -33,13 +33,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUF_SIZE 16
 
-
-static void hexdump(const char *in, const char *varName, FILE *fpOut)
+static void textdump(const char *in, const char *varName, FILE *fpOut)
 {
     FILE *fp = NULL;
-    unsigned char buf[BUF_SIZE];
+    unsigned int len = 0;
+    int c;
 
     if ((fp = fopen(in, "rb")) == NULL) {
         perror("fopen()");
@@ -48,46 +47,43 @@ static void hexdump(const char *in, const char *varName, FILE *fpOut)
     }
 
     fprintf(fpOut, "/* %s */\n", in);
-    fprintf(fpOut, "static const char %s[] =\n{", varName);
+    fprintf(fpOut, "static const char *%s =\n  \"", varName);
 
-    while (feof(fp) == 0)
+    while ((c = fgetc(fp)) != EOF)
     {
-        size_t items = fread(buf, 1, BUF_SIZE, fp);
+        len++;
 
-        if (ferror(fp) != 0) {
-            perror("fread()");
-            fprintf(stderr, "(%s)\n", in);
-            exit(1);
-        }
-
-        fprintf(fpOut, "%s", "\n  ");
-
-        for (size_t i = 0; i < items; ++i) {
-            switch (buf[i]) {
-            case '\t':
-                fprintf(fpOut, "'%s',", "\\t");
-                break;
-            case '\n':
-                fprintf(fpOut, "'%s',", "\\n");
-                break;
-            case '\'':
-                fprintf(fpOut, "'%s',", "\\'");
-                break;
-            case '\\':
-                fprintf(fpOut, "'%s',", "\\\\");
-                break;
-            default:
-                if (buf[i] < 0x20 || buf[i] > 0x7E) {
-                    fprintf(fpOut, "0x%02x,", buf[i]);
-                } else {
-                    fprintf(fpOut, "'%c',", buf[i]);
-                }
-                break;
+        switch (c) {
+        case '\t':
+            fprintf(fpOut, "%s", "\\t");
+            break;
+        case '\n':
+            fprintf(fpOut, "%s", "\\n\"\n  \"");
+            break;
+        case '"':
+            fprintf(fpOut, "%s", "\\\"");
+            break;
+        case '\\':
+            fprintf(fpOut, "%s", "\\\\");
+            break;
+        default:
+            if (c < ' ' || c > '~') {
+                fprintf(fpOut, "\\x%02X", (unsigned char)c);
+            } else {
+                fprintf(fpOut, "%c", (char)c);
             }
+            break;
         }
     }
 
-    fprintf(fpOut, "%s", "0x0\n};\n\n");
+    if (c != '\n') {
+        len++;
+        fprintf(fpOut, "%s", "\\n\"\n  \"");
+    }
+
+    fprintf(fpOut, "%s", "\";\n\n");
+    fprintf(fpOut, "#define %s_LENGTH %u\n\n\n", varName, len);
+
     fclose(fp);
 }
 
@@ -113,15 +109,15 @@ int main(int argc, char **argv)
     fprintf(fp, "%s\n", "#ifndef _TEMPLATE_H_");
     fprintf(fp, "%s\n", "#define _TEMPLATE_H_\n");
 
-    hexdump("filename_macros.h", "filename_macros_data", fp);
-    hexdump("license.h",         "license_data",         fp);
-    hexdump("common.h",          "common_header_data",   fp);
-    hexdump("c.h",               "c_header_data",        fp);
-    hexdump("c.c",               "c_body_data",          fp);
-    hexdump("cxx.hpp",           "cxx_header_data",      fp);
-    hexdump("cxx.cpp",           "cxx_body_data",        fp);
-    hexdump("minimal.h",         "min_c_header_data",    fp);
-    hexdump("minimal_cxxeh.hpp", "min_cxx_header_data",  fp);
+    textdump("filename_macros.h", "filename_macros", fp);
+    textdump("license.h",         "license",         fp);
+    textdump("common.h",          "common_header",   fp);
+    textdump("c.h",               "c_header",        fp);
+    textdump("c.c",               "c_body",          fp);
+    textdump("cxx.hpp",           "cxx_header",      fp);
+    textdump("cxx.cpp",           "cxx_body",        fp);
+    textdump("minimal.h",         "min_c_header",    fp);
+    textdump("minimal_cxxeh.hpp", "min_cxx_header",  fp);
 
     fprintf(fp, "%s\n", "#endif //_TEMPLATE_H_");
     fclose(fp);

@@ -28,10 +28,11 @@
 #include "template.h"
 
 
-namespace /* anonymous */
+/*
+namespace
 {
     template<size_t N>
-    constexpr void pb(cstrList_t &trgt, char const (&text)[N])
+    constexpr void save(cstrList_t &trgt, char const (&text)[N])
     {
         trgt.reserve += N;
         trgt.list.push_back(text);
@@ -41,25 +42,28 @@ namespace /* anonymous */
         }
     }
 }
+*/
 
 namespace data
 {
-    const char *filename_macros() {
-        return filename_macros_data;
+    const char *filename_macros_data() {
+        return filename_macros;
     }
 
-    const char *license() {
-        return license_data;
+    const char *license_data() {
+        return license;
     }
 
     /* create template data */
-    void concat_templates(
-        cstrList_t &header_data,
-        cstrList_t &body_data,
-        output::format format,
-        bool separate)
+    void concat_templates(cstrList_t &header, cstrList_t &body, output::format format, bool separate)
     {
-        header_data.reserve = body_data.reserve = 0;
+        auto save = [] (cstrList_t &trgt, const char *text, const size_t len) {
+            trgt.reserve += len;
+            trgt.list.push_back(text);
+        };
+
+        header.reserve = 0;
+        body.reserve = 0;
 
         switch (format)
         {
@@ -68,36 +72,36 @@ namespace data
 
         case output::c:
             {
-                pb(header_data, common_header_data);
-                pb(header_data, c_header_data);
+                save(header, common_header, common_header_LENGTH);
+                save(header, c_header, c_header_LENGTH);
 
                 if (separate) {
-                    pb(body_data, c_body_data);
+                    save(body, c_body, c_body_LENGTH);
                 } else {
-                    pb(header_data, c_body_data);
+                    save(header, c_body, c_body_LENGTH);
                 }
             }
             break;
 
         case output::cxx:
             {
-                pb(header_data, common_header_data);
-                pb(header_data, cxx_header_data);
+                save(header, common_header, common_header_LENGTH);
+                save(header, cxx_header, cxx_header_LENGTH);
 
                 if (separate) {
-                    pb(body_data, cxx_body_data);
+                    save(body, cxx_body, cxx_body_LENGTH);
                 } else {
-                    pb(header_data, cxx_body_data);
+                    save(header, cxx_body, cxx_body_LENGTH);
                 }
             }
             break;
 
         case output::minimal:
-            pb(header_data, min_c_header_data);
+            save(header, min_c_header, min_c_header_LENGTH);
             break;
 
         case output::minimal_cxx:
-            pb(header_data, min_cxx_header_data);
+            save(header, min_cxx_header, min_cxx_header_LENGTH);
             break;
         }
     }

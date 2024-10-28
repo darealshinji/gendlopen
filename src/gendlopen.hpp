@@ -25,8 +25,8 @@ namespace help {
 
 /* data.cpp */
 namespace data {
-    const char *filename_macros();
-    const char *license();
+    const char *filename_macros_data();
+    const char *license_data();
     void concat_templates(cstrList_t&, cstrList_t&, output::format, bool);
 }
 

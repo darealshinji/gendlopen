@@ -180,7 +180,7 @@ std::string create_note(vstring_t &args)
     }
 
     out << line << "\n\n";
-    out << data::license() << '\n';
+    out << data::license_data() << '\n';
 
     return out.str();
 }
@@ -526,7 +526,7 @@ void gendlopen::generate()
     }
 
     /* insert filename macros BEFORE defines and headers */
-    m_ofs << data::filename_macros() << '\n';
+    m_ofs << data::filename_macros_data() << '\n';
 
     print_extra_defines(m_ofs, m_defines);
     print_default_libname(m_ofs, m_name_upper, m_deflib_a, m_deflib_w);
