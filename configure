@@ -18,9 +18,6 @@ ld=":"
 opt=":"
 
 check_std="yes"
-use_xxd="no"
-template_h=""
-
 win32="no"
 msvc="no"
 nix="yes"
@@ -318,9 +315,6 @@ set pkg-config too:
 set gendlopen tool used for cross-compiling tests:
     gdo=..
 
-use xxd to create template files code:
-    -use-xxd
-
 don't check for -std.. flags:
     -no-std-checks
 
@@ -356,9 +350,6 @@ EOL
 
     -no-std-checks)
         check_std="no"
-        ;;
-    -use-xxd)
-        use_xxd="yes"
         ;;
 
     *)
@@ -492,14 +483,6 @@ fi
 if [ "x$ar" = "x" ]; then
     check_host_tool ar
     ar="$tool"
-fi
-
-# template resources
-if [ "x$use_xxd" = "xyes" ]; then
-    gen_template_bin="gen_template_h.sh"
-    check_tool xxd exit
-else
-    gen_template_bin="gen_template_h"
 fi
 
 
@@ -726,15 +709,6 @@ fi
 
 # examples
 echo ""
-
-printf "create template.h: "
-
-if [ "x$use_xxd" = "xyes" ]; then
-    echo "xxd"
-else
-    echo "custom code generator"
-fi
-
 echo "build appindicator example: $with_appind"
 echo "build notify example: $with_notify"
 printf "build UUID example: "
@@ -761,7 +735,6 @@ CLANG_TARGET  = $clang_ast_target
 EXEEXT        = $exeext
 DEF_GENDLOPEN = $PWD/src/gendlopen\$(EXEEXT)
 GENDLOPEN     = $gendlopen
-GEN_TEMPL     = $gen_template_bin
 
 CPPFLAGS      = $cppflags $xcppflags
 CFLAGS        = $cflags $xcflags \$(CPPFLAGS)

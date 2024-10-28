@@ -83,7 +83,7 @@ clean-check:
 	-del /q $(cleanfiles_check) $(silence)
 
 clean: clean-check
-	-del /q template.h *.exe *.obj *.lib $(silence)
+	-del /q *.exe *.obj *.lib $(silence)
 
 check: $(test_bins)
 
@@ -95,13 +95,11 @@ $(test_bins): gendlopen.exe libhelloworld-0.dll
 
 ## main program ##
 
-$(s)\src\generate.cpp: template.h
+#template.h: gen_template_h.exe
+#	$** $(s)\src\templates
 
-template.h: gen_template_h.exe
-	$** $(s)\src\templates
-
-gen_template_h.exe: $(s)\src\gen_template_h.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
+#gen_template_h.exe: $(s)\src\gen_template_h.c
+#	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
 
 gendlopen.exe: $(sources)
 	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) $(sources) -Fe$@ \

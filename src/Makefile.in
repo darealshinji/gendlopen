@@ -21,6 +21,18 @@ HDRS = \
 	utils.hpp \
 	$(NULL)
 
+TEMPLATES = \
+	templates/c.c \
+	templates/c.h \
+	templates/common.h \
+	templates/cxx.cpp \
+	templates/cxx.hpp \
+	templates/filename_macros.h \
+	templates/license.h \
+	templates/minimal_cxxeh.hpp \
+	templates/minimal.h \
+	$(NULL)
+
 
 
 .PHONY: all clean
@@ -28,14 +40,10 @@ HDRS = \
 all: gendlopen$(EXEEXT)
 
 clean:
-	$(_v)-rm -f gendlopen gen_template_h template.h *.exe *.o
+	$(_v)-rm -f gendlopen gen_template_h *.exe *.o
 
-
-gen_template_h: gen_template_h.c
-	$(cc_v)$(CCBUILD) gen_template_h.c -o $@
-
-template.h: $(GEN_TEMPL)
-	$(gen_v)./$(GEN_TEMPL) templates
+template.h: $(TEMPLATES) gen_template_h.c
+	$(gen_v)$(CCBUILD) gen_template_h.c -o gen_template_h && ./gen_template_h templates
 
 gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
