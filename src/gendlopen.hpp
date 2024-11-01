@@ -25,9 +25,9 @@ namespace help {
 
 /* data.cpp */
 namespace data {
-    const char *filename_macros_data();
-    const char *license_data();
-    void concat_templates(cstrList_t&, cstrList_t&, output::format, bool);
+    void save_filename_macros_data(cio::ofstream &ofs);
+    void save_license_data(cio::ofstream &ofs);
+    void concat_templates(cstrList_t &header, cstrList_t &body, output::format format, bool separate);
 }
 
 #endif //_GENDLOPEN_HPP_

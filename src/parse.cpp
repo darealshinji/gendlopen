@@ -47,12 +47,17 @@ namespace /* anonymous */
     using list_t = std::list<const char *>;
 
     /* check for a "%PARAM_SKIP_*%" line */
-    int check_skip_keyword(const std::string &line)
+    int check_skip_keyword(const char *line)
     {
+        if (strstr(line, "PARAM_SKIP_") == NULL) {
+            return NO_PARAM_SKIP_FOUND;
+        }
+
         const std::regex reg(R"(^\s*?%PARAM_SKIP_(COMMENT_BEGIN|USE_BEGIN|END)%\s*?$)");
         std::smatch m;
+        std::string s = line;
 
-        if (!std::regex_match(line, m, reg) || m.size() != 2) {
+        if (!std::regex_match(s, m, reg) || m.size() != 2) {
             return NO_PARAM_SKIP_FOUND;
         }
 
@@ -68,36 +73,20 @@ namespace /* anonymous */
     }
 
     /* comment out lines in code */
-    void comment_out_code(std::string &buffer, const std::string &code)
+    void comment_out_code(cio::ofstream &ofs, std::string &code, bool always_comment_line)
     {
-        std::string line;
+        utils::replace("\n", "\n//", code);
 
-        auto append_to_buffer = [&buffer] (const std::string &str) {
-            /* don't comment out if line has only ASCII spaces */
-            if (str.find_first_not_of(utils::wspcs) != std::string::npos) {
-                buffer += "//";
-            }
-            buffer += str;
-        };
-
-        for (const char &c : code) {
-            line += c;
-
-            if (c != '\n') {
-                continue;
-            }
-
-            append_to_buffer(line);
-            line.clear();
+        /* optionally don't comment an empty first line, which looks better in the output */
+        if (code.front() != '\n' || always_comment_line) {
+            ofs << "//";
         }
 
-        if (!line.empty()) {
-            append_to_buffer(line);
-        }
+        ofs << code << '\n';
     }
 
     /* loop and replace function prototypes, append to buffer */
-    void replace_function_prototypes(vproto_t &vec, const std::string &line, std::string &buffer)
+    void replace_function_prototypes(vproto_t &vec, const std::string &line, cio::ofstream &ofs)
     {
         std::string copy;
 
@@ -129,14 +118,14 @@ namespace /* anonymous */
             utils::replace("%%notype_args%%", e.notype_args, copy);
 
             if (comment_out) {
-                comment_out_code(buffer, copy);
+                comment_out_code(ofs, copy, false);
             } else {
-                buffer += copy;
+                ofs << copy << '\n';
             }
         }
     }
 
-    void replace_symbol_names(vproto_t &proto, vproto_t &obj, const std::string &line, std::string &buffer)
+    void replace_symbol_names(vproto_t &proto, vproto_t &obj, const std::string &line, cio::ofstream &ofs)
     {
         std::string copy, type;
 
@@ -148,7 +137,7 @@ namespace /* anonymous */
             type = e.type + " (*)(" + e.args + ")";
             utils::replace("%%sym_type%%", type, copy);
             utils::replace("%%symbol%%", e.symbol, copy);
-            buffer += copy;
+            ofs << copy << '\n';
         }
 
         /* object pointer */
@@ -159,15 +148,14 @@ namespace /* anonymous */
             type = e.type + " *";
             utils::replace("%%sym_type%%", type, copy);
             utils::replace("%%symbol%%", e.symbol, copy);
-            buffer += copy;
+            ofs << copy << '\n';
         }
     }
 }
 
 /* parse the template data */
-std::string gendlopen::parse(const cstrList_t &data)
+void gendlopen::parse(const cstrList_t &data, cio::ofstream &ofs)
 {
-    std::string buf, line;
     std::string fmt_upper, fmt_lower, fmt_namespace;
     bool comment_out = false;
 
@@ -189,8 +177,8 @@ std::string gendlopen::parse(const cstrList_t &data)
         "%%symbol%%"
     };
 
-    if (data.list.empty()) {
-        return {};
+    if (data.empty()) {
+        return;
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {
@@ -210,53 +198,24 @@ std::string gendlopen::parse(const cstrList_t &data)
         fmt_namespace = "$1" + m_name_lower + "::";
     }
 
-    line.reserve(1024);
-    buf.reserve(data.reserve);
-
-    /* read data character by character */
-    for (auto &e : data.list)
+    for (auto &e : data)
     {
-        for (const char *p = e; *p != 0; p++)
+        const char *line = e[0];
+
+        for (int i = 0; line != NULL; i++, line = e[i])
         {
-            line += *p;
-
-            if (*p == '\n' || *(p+1) == 0) {
-                /**
-                 * If a line ends on '@' + whitespace characters, remove the
-                 * '@' character and continue reading the next line into buffer.
-                 * Consecutive lines ending on '@' will be parsed like they were
-                 * a single line:
-                 *        "line1@\t\n"  +  "line2@\n"  +  "line3"
-                 *   -->  "line1@\t\nline2@\nline3"
-                 *   -->  "line1\t\nline2\nline3"
-                 *
-                 * If the line is going to be commented out keep the '@' symbol
-                 * and continue the loop.
-                 *   "line1@\t\n"  -->  "//line1@\t\n"
-                 *   "line2@\n"    -->  "//line2@\n"
-                 *   "line3"       -->  "line3"
-                 */
-                auto pos = line.find_last_not_of(utils::wspcs);
-
-                if (pos != std::string::npos && line.at(pos) == '@') {
-                    /* line ends on '@' + whitespaces */
-                    if (!comment_out) {
-                        line.erase(pos, 1);
-                        continue;
-                    }
-                }
-            } else {
-                /* end of line (\n) or data (\0) not yet reached */
+            /* empty line */
+            if (line[0] == 0) {
+                ofs << '\n';
                 continue;
             }
 
             /* optimize search for potential keywords */
-            bool maybe_keyword = (line.find('%') != std::string::npos);
+            bool maybe_keyword = (strchr(line, '%') != NULL);
 
             if (maybe_keyword) {
                 /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
-                if (line.find("%DNL%") != std::string::npos) {
-                    line.clear();
+                if (strstr(line, "%DNL%") != NULL) {
                     continue;
                 }
 
@@ -266,57 +225,51 @@ std::string gendlopen::parse(const cstrList_t &data)
                 {
                 case PARAM_SKIP_COMMENT_BEGIN:
                     comment_out = (m_parameter_names == param::skip);
-                    line.clear();
                     continue;
-
                 case PARAM_SKIP_USE_BEGIN:
                     comment_out = (m_parameter_names != param::skip);
-                    line.clear();
                     continue;
-
                 case PARAM_SKIP_END:
                     comment_out = false;
-                    line.clear();
                     continue;
-
                 default:
                     break;
                 }
             }
 
+            std::string buf = line;
+
             /* replace prefixes */
             if (custom_prefix) {
-                line = std::regex_replace(line, reg_upper, fmt_upper);
-                line = std::regex_replace(line, reg_lower, fmt_lower);
-                line = std::regex_replace(line, reg_nmspc, fmt_namespace);
+                buf = std::regex_replace(buf, reg_upper, fmt_upper);
+                buf = std::regex_replace(buf, reg_lower, fmt_lower);
+                buf = std::regex_replace(buf, reg_nmspc, fmt_namespace);
             }
 
             if (comment_out) {
-                buf += "//" + line;
-                line.clear();
+                comment_out_code(ofs, buf, true);
                 continue;
             }
 
             if (maybe_keyword) {
                 /* insert common symbol prefix string */
-                utils::replace("%COMMON_PREFIX%", m_common_prefix, line);
+                utils::replace("%COMMON_PREFIX%", m_common_prefix, buf);
 
                 /* update value */
-                maybe_keyword = line.find('%') != std::string::npos;
+                maybe_keyword = (buf.find('%') != std::string::npos);
             }
 
             /* nothing to loop, just append */
             if (!maybe_keyword) {
-                buf += line;
-                line.clear();
+                ofs << buf << '\n';
                 continue;
             }
 
             /* check if the line needs to be processed in a loop */
-            auto find_keyword = [&line] (const list_t &list) -> int
+            auto find_keyword = [&buf] (const list_t &list) -> int
             {
                 for (const auto &e : list) {
-                    if (line.find(e) != std::string::npos) {
+                    if (buf.find(e) != std::string::npos) {
                         return 1;
                     }
                 }
@@ -325,7 +278,7 @@ std::string gendlopen::parse(const cstrList_t &data)
 
             int has_func, has_obj, has_sym;
 
-            if (line.find("%%") == std::string::npos) {
+            if (buf.find("%%") == std::string::npos) {
                 has_func = has_obj = has_sym = 0;
             } else {
                 has_func = find_keyword(function_keywords);
@@ -336,41 +289,32 @@ std::string gendlopen::parse(const cstrList_t &data)
             if ((has_func + has_obj + has_sym) > 1) {
                 /* error */
                 throw error("cannot mix function, object and regular symbol"
-                            " placeholders:\n" + line);
+                            " placeholders:\n" + std::string{line});
             } else if (has_func == 1) {
                 /* function prototypes */
-
                 if (m_prototypes.empty()) {
-                    line.clear();
                     continue;
                 }
-
-                replace_function_prototypes(m_prototypes, line, buf);
+                replace_function_prototypes(m_prototypes, buf, ofs);
             } else if (has_obj == 1) {
                 /* object prototypes */
-
                 if (m_objects.empty()) {
-                    line.clear();
                     continue;
                 }
 
                 for (const auto &e : m_objects) {
-                    std::string copy = line;
+                    std::string copy = buf;
                     utils::replace("%%obj_type%%", e.type, copy);
                     utils::replace("%%obj_symbol%%", e.symbol, copy);
-                    buf += copy;
+                    ofs << copy << '\n';
                 }
             } else if (has_sym == 1) {
                 /* any symbol */
-                replace_symbol_names(m_prototypes, m_objects, line, buf);
+                replace_symbol_names(m_prototypes, m_objects, buf, ofs);
             } else {
                 /* nothing to loop, just append */
-                buf += line;
+                ofs << buf << '\n';
             }
-
-            line.clear();
         }
     }
-
-    return buf;
 }

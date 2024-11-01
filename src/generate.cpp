@@ -180,7 +180,6 @@ std::string create_note(vstring_t &args)
     }
 
     out << line << "\n\n";
-    out << data::license_data() << '\n';
 
     return out.str();
 }
@@ -376,36 +375,37 @@ void gendlopen::parse_custom_template(const std::string &ofile, bool use_stdout)
 {
     cstrList_t data;
     cio::ofstream out;
-    std::string buf;
-    char c;
+    std::string buf, line;
+    cstrList_t list;
+    const char *twolines[2] = { NULL, "" };
 
     /* open file for reading */
     if (!m_ifs.open(m_custom_template)) {
         throw error("failed to open file for reading: " + m_custom_template);
     }
 
-    if (m_ifs.file_size() == 0) {
-        buf.reserve(4096);
-    } else {
-        buf.reserve(m_ifs.file_size());
-    }
-
-    /* read data */
-    while (m_ifs.get(c) && m_ifs.good()) {
-        buf.push_back(c);
-    }
-
-    m_ifs.close();
-
     if (!use_stdout) {
         /* create output file */
         open_ofstream(ofile, m_force, false);
     }
 
-    data.reserve = buf.size();
-    data.list.push_back(buf.c_str());
+    while (m_ifs.getline(buf)) {
+        /* concat lines ending on '@' */
+        if (buf.back() == '@') {
+            buf.pop_back();
+            line += buf + '\n';
+            continue;
+        }
 
-    m_ofs << parse(data);
+        line += buf;
+
+        twolines[0] = line.c_str();
+        list.push_back(twolines);
+        parse(list, m_ofs);
+
+        list.clear();
+        line.clear();
+    }
 }
 
 /* generate output */
@@ -516,6 +516,7 @@ void gendlopen::generate()
     const std::string note = create_note(m_args);
 
     m_ofs << note;
+    data::save_license_data(m_ofs);
     m_ofs << "#ifndef _" << header_guard << "_\n"
              "#define _" << header_guard << "_\n\n";
 
@@ -526,15 +527,15 @@ void gendlopen::generate()
     }
 
     /* insert filename macros BEFORE defines and headers */
-    m_ofs << data::filename_macros_data() << '\n';
+    data::save_filename_macros_data(m_ofs);
+    m_ofs << '\n';
 
     print_extra_defines(m_ofs, m_defines);
     print_default_libname(m_ofs, m_name_upper, m_deflib_a, m_deflib_w);
     print_includes(m_ofs, m_includes);
 
     data::concat_templates(header_data, body_data, m_format, m_separate);
-
-    m_ofs << parse(header_data);
+    parse(header_data, m_ofs);
 
     if (output_is_c) {
         m_ofs << "\n"
@@ -554,8 +555,9 @@ void gendlopen::generate()
         }
 
         m_ofs_body << note;
+        data::save_license_data(m_ofs_body);
         m_ofs_body << "#include \"" << header_name << "\"\n\n";
-        m_ofs_body << parse(body_data);
+        parse(body_data, m_ofs_body);
     }
 }
 

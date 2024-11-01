@@ -38,13 +38,9 @@ typedef struct _proto {
     std::string notype_args;
 } proto_t;
 
-typedef struct _cstrList {
-    size_t reserve;                  /* estimated string length to reserve */
-    std::vector<const char *> list;  /* list of code template pieces */
-} cstrList_t;
-
 using vproto_t = std::vector<proto_t>;
 using vstring_t = std::vector<std::string>;
+using cstrList_t = std::vector<const char **>;
 
 
 /* enum for outout format */

@@ -1,2873 +1,2848 @@
+/* this file was automatically generated; do not edit! */
+
 #ifndef _TEMPLATE_H_
 #define _TEMPLATE_H_
 
 /* filename_macros.h */
-static const char *filename_macros =
-  "/* default library filename extension */\n"
-  "#ifdef LIBEXT\n"
-  "# undef LIBEXT\n"
-  "#endif\n"
-  "#ifdef LIBEXTA\n"
-  "# undef LIBEXTA\n"
-  "#endif\n"
-  "#ifdef LIBEXTW\n"
-  "# undef LIBEXTW\n"
-  "#endif\n"
-  "#ifdef _WIN32\n"
-  "# define LIBEXTA    \".dll\"\n"
-  "# define LIBEXTW   L\".dll\"\n"
-  "#elif defined(__APPLE__) && defined(__MACH__)\n"
-  "# define LIBEXTA    \".dylib\"\n"
-  "# define LIBEXTW   L\".dylib\"\n"
-  "#elif defined(_AIX)\n"
-  "# define LIBEXTA    \".a\"\n"
-  "# define LIBEXTW   L\".a\"\n"
-  "#else /* ELF */\n"
-  "# define LIBEXTA    \".so\"\n"
-  "# define LIBEXTW   L\".so\"\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "/**\n"
-  " * library name with API number\n"
-  " *\n"
-  " * Examples using LIBNAME(foo, 1.2) macro:\n"
-  " *\n"
-  " * Windows: libfoo-1.2.dll\n"
-  " * De-facto standard when libraries are ported to Windows.\n"
-  " *\n"
-  " * macOS: libfoo.1.2.dylib\n"
-  " *\n"
-  " * AIX: libfoo.a\n"
-  " * AIX uses archive files without API number.\n"
-  " *\n"
-  " * Android: libfoo.so\n"
-  " * ELF format but without API number.\n"
-  " *\n"
-  " * ELF: libfoo.so.1.2\n"
-  " */\n"
-  "#ifdef LIBNAME\n"
-  "# undef LIBNAME\n"
-  "#endif\n"
-  "#ifdef LIBNAMEA\n"
-  "# undef LIBNAMEA\n"
-  "#endif\n"
-  "#ifdef LIBNAMEW\n"
-  "# undef LIBNAMEW\n"
-  "#endif\n"
-  "#ifdef _WIN32\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \"-\" #API \".dll\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \"-\" #API \".dll\"\n"
-  "#elif defined(__APPLE__) && defined(__MACH__)\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".\" #API \".dylib\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".\" #API \".dylib\"\n"
-  "#elif defined(_AIX)\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".a\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".a\"\n"
-  "#elif defined(__ANDROID__)\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so\"\n"
-  "#else /* default ELF filename */\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so.\" #API\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so.\" #API\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "/* Unicode/ANSI default macros */\n"
-  "#if defined(_WIN32) && defined(_UNICODE)\n"
-  "# define LIBEXT              LIBEXTW\n"
-  "# define LIBNAME(NAME, API)  LIBNAMEW(NAME, API)\n"
-  "#else\n"
-  "# define LIBEXT              LIBEXTA\n"
-  "# define LIBNAME(NAME, API)  LIBNAMEA(NAME, API)\n"
-  "#endif\n"
-  "\n"
-  "";
-
-#define filename_macros_LENGTH 1913
-
+static const char *filename_macros[] = {
+  "/* default library filename extension */",
+  "#ifdef LIBEXT",
+  "# undef LIBEXT",
+  "#endif",
+  "#ifdef LIBEXTA",
+  "# undef LIBEXTA",
+  "#endif",
+  "#ifdef LIBEXTW",
+  "# undef LIBEXTW",
+  "#endif",
+  "#ifdef _WIN32",
+  "# define LIBEXTA    \".dll\"",
+  "# define LIBEXTW   L\".dll\"",
+  "#elif defined(__APPLE__) && defined(__MACH__)",
+  "# define LIBEXTA    \".dylib\"",
+  "# define LIBEXTW   L\".dylib\"",
+  "#elif defined(_AIX)",
+  "# define LIBEXTA    \".a\"",
+  "# define LIBEXTW   L\".a\"",
+  "#else /* ELF */",
+  "# define LIBEXTA    \".so\"",
+  "# define LIBEXTW   L\".so\"",
+  "#endif",
+  "",
+  "",
+  "/**",
+  " * library name with API number",
+  " *",
+  " * Examples using LIBNAME(foo, 1.2) macro:",
+  " *",
+  " * Windows: libfoo-1.2.dll",
+  " * De-facto standard when libraries are ported to Windows.",
+  " *",
+  " * macOS: libfoo.1.2.dylib",
+  " *",
+  " * AIX: libfoo.a",
+  " * AIX uses archive files without API number.",
+  " *",
+  " * Android: libfoo.so",
+  " * ELF format but without API number.",
+  " *",
+  " * ELF: libfoo.so.1.2",
+  " */",
+  "#ifdef LIBNAME",
+  "# undef LIBNAME",
+  "#endif",
+  "#ifdef LIBNAMEA",
+  "# undef LIBNAMEA",
+  "#endif",
+  "#ifdef LIBNAMEW",
+  "# undef LIBNAMEW",
+  "#endif",
+  "#ifdef _WIN32",
+  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \"-\" #API \".dll\"",
+  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \"-\" #API \".dll\"",
+  "#elif defined(__APPLE__) && defined(__MACH__)",
+  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".\" #API \".dylib\"",
+  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".\" #API \".dylib\"",
+  "#elif defined(_AIX)",
+  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".a\"",
+  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".a\"",
+  "#elif defined(__ANDROID__)",
+  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so\"",
+  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so\"",
+  "#else /* default ELF filename */",
+  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so.\" #API",
+  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so.\" #API",
+  "#endif",
+  "",
+  "",
+  "/* Unicode/ANSI default macros */",
+  "#if defined(_WIN32) && defined(_UNICODE)",
+  "# define LIBEXT              LIBEXTW",
+  "# define LIBNAME(NAME, API)  LIBNAMEW(NAME, API)",
+  "#else",
+  "# define LIBEXT              LIBEXTA",
+  "# define LIBNAME(NAME, API)  LIBNAMEA(NAME, API)",
+  "#endif",
+  NULL
+};
 
 /* license.h */
-static const char *license =
-  "/**\n"
-  " Licensed under the MIT License <http://opensource.org/licenses/MIT>.\n"
-  " SPDX-License-Identifier: MIT\n"
-  " Copyright (c) 2023-2024 Carsten Janssen\n"
-  "\n"
-  " Permission is hereby  granted, free of charge, to any  person obtaining a copy\n"
-  " of this software and associated  documentation files (the \"Software\"), to deal\n"
-  " in the Software  without restriction, including without  limitation the rights\n"
-  " to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell\n"
-  " copies  of  the Software,  and  to  permit persons  to  whom  the Software  is\n"
-  " furnished to do so, subject to the following conditions:\n"
-  "\n"
-  " The above copyright notice and this permission notice shall be included in all\n"
-  " copies or substantial portions of the Software.\n"
-  "\n"
-  " THE SOFTWARE  IS PROVIDED \"AS  IS\", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR\n"
-  " IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,\n"
-  " FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE\n"
-  " AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER\n"
-  " LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
-  " OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE\n"
-  " SOFTWARE.\n"
-  "**/\n"
-  "\n"
-  "";
-
-#define license_LENGTH 1231
-
+static const char *license[] = {
+  "/**",
+  " Licensed under the MIT License <http://opensource.org/licenses/MIT>.",
+  " SPDX-License-Identifier: MIT",
+  " Copyright (c) 2023-2024 Carsten Janssen",
+  "",
+  " Permission is hereby  granted, free of charge, to any  person obtaining a copy",
+  " of this software and associated  documentation files (the \"Software\"), to deal",
+  " in the Software  without restriction, including without  limitation the rights",
+  " to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell",
+  " copies  of  the Software,  and  to  permit persons  to  whom  the Software  is",
+  " furnished to do so, subject to the following conditions:",
+  "",
+  " The above copyright notice and this permission notice shall be included in all",
+  " copies or substantial portions of the Software.",
+  "",
+  " THE SOFTWARE  IS PROVIDED \"AS  IS\", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR",
+  " IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,",
+  " FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE",
+  " AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER",
+  " LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,",
+  " OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE",
+  " SOFTWARE.",
+  "**/",
+  NULL
+};
 
 /* common.h */
-static const char *common_header =
-  "//%DNL%// common macros and includes\n"
-  "\n"
-  "/* whether to use WinAPI or dlfcn */\n"
-  "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)\n"
-  "# define GDO_WINAPI\n"
-  "#endif\n"
-  "\n"
-  "/* default headers to include */\n"
-  "#ifdef GDO_WINAPI\n"
-  "# include <windows.h>\n"
-  "#else\n"
-  "# include <sys/types.h>\n"
-  "# include <link.h>\n"
-  "# include <dlfcn.h>\n"
-  "#endif\n"
-  "#ifndef __cplusplus\n"
-  "# include <stdbool.h>\n"
-  "#endif\n"
-  "\n"
-  "/* default library name */\n"
-  "#ifndef GDO_DEFAULT_LIB\n"
-  "# if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)\n"
-  "#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW\n"
-  "# elif defined(GDO_DEFAULT_LIBA)\n"
-  "#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBA\n"
-  "# endif\n"
-  "#endif\n"
-  "\n"
-  "/* whether to use dlinfo(3);\n"
-  " * n/a on Windows (both APIs), OpenBSD, Haiku */\n"
-  "#if !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__) && \\\n"
-  "    !defined(GDO_DISABLE_DLINFO)\n"
-  "# define GDO_HAVE_DLINFO\n"
-  "#endif\n"
-  "\n"
-  "/* whether to use dlmopen(3);\n"
-  " * only available on Glibc and Solaris/IllumOS */\n"
-  "#if (defined(__GLIBC__) || defined(__sun)) && !defined(GDO_DISABLE_DLMOPEN)\n"
-  "# define GDO_HAVE_DLMOPEN\n"
-  "#endif\n"
-  "\n"
-  "/* dlopen(3) flags for compatibility with LoadLibrary() */\n"
-  "/* taken from different implementations of dlfcn.h */\n"
-  "#ifndef RTLD_LAZY\n"
-  "#define RTLD_LAZY 0\n"
-  "#endif\n"
-  "#ifndef RTLD_NOW\n"
-  "#define RTLD_NOW 0\n"
-  "#endif\n"
-  "#ifndef RTLD_MODEMASK\n"
-  "#define RTLD_MODEMASK 0  /* FreeBSD, DragonFlyBSD */\n"
-  "#endif\n"
-  "#ifndef RTLD_BINDING_MASK\n"
-  "#define RTLD_BINDING_MASK 0  /* glibc */\n"
-  "#endif\n"
-  "#ifndef RTLD_GLOBAL\n"
-  "#define RTLD_GLOBAL 0\n"
-  "#endif\n"
-  "#ifndef RTLD_LOCAL\n"
-  "#define RTLD_LOCAL 0\n"
-  "#endif\n"
-  "#ifndef RTLD_NODELETE\n"
-  "#define RTLD_NODELETE 0\n"
-  "#endif\n"
-  "#ifndef RTLD_NOLOAD\n"
-  "#define RTLD_NOLOAD 0\n"
-  "#endif\n"
-  "#ifndef RTLD_DEEPBIND\n"
-  "#define RTLD_DEEPBIND 0  /* glibc, FreeBSD */\n"
-  "#endif\n"
-  "#ifndef RTLD_TRACE\n"
-  "#define RTLD_TRACE 0  /* FreeBSD, OpenBSD, DragonFlyBSD */\n"
-  "#endif\n"
-  "#ifndef RTLD_GROUP\n"
-  "#define RTLD_GROUP 0  /* Solaris */\n"
-  "#endif\n"
-  "#ifndef RTLD_PARENT\n"
-  "#define RTLD_PARENT 0  /* Solaris */\n"
-  "#endif\n"
-  "#ifndef RTLD_WORLD\n"
-  "#define RTLD_WORLD 0  /* Solaris */\n"
-  "#endif\n"
-  "#ifndef RTLD_FIRST\n"
-  "#define RTLD_FIRST 0  /* macOS, Solaris */\n"
-  "#endif\n"
-  "#ifndef RTLD_MEMBER\n"
-  "#define RTLD_MEMBER 0  /* AIX */\n"
-  "#endif\n"
-  "#ifndef RTLD_NOAUTODEFER\n"
-  "#define RTLD_NOAUTODEFER 0  /* AIX */\n"
-  "#endif\n"
-  "#ifndef DL_LAZY\n"
-  "#define DL_LAZY RTLD_LAZY  /* NetBSD, OpenBSD */\n"
-  "#endif\n"
-  "\n"
-  "/* LoadLibrary() flags for compatibility with dlopen() */\n"
-  "/* https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */\n"
-  "#ifndef DONT_RESOLVE_DLL_REFERENCES\n"
-  "#define DONT_RESOLVE_DLL_REFERENCES 0\n"
-  "#endif\n"
-  "#ifndef LOAD_IGNORE_CODE_AUTHZ_LEVEL\n"
-  "#define LOAD_IGNORE_CODE_AUTHZ_LEVEL 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_AS_DATAFILE\n"
-  "#define LOAD_LIBRARY_AS_DATAFILE 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE\n"
-  "#define LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_AS_IMAGE_RESOURCE\n"
-  "#define LOAD_LIBRARY_AS_IMAGE_RESOURCE 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_SEARCH_APPLICATION_DIR\n"
-  "#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_SEARCH_DEFAULT_DIRS\n"
-  "#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR\n"
-  "#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32\n"
-  "#define LOAD_LIBRARY_SEARCH_SYSTEM32 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_SEARCH_USER_DIRS\n"
-  "#define LOAD_LIBRARY_SEARCH_USER_DIRS 0\n"
-  "#endif\n"
-  "#ifndef LOAD_WITH_ALTERED_SEARCH_PATH\n"
-  "#define LOAD_WITH_ALTERED_SEARCH_PATH 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_REQUIRE_SIGNED_TARGET\n"
-  "#define LOAD_LIBRARY_REQUIRE_SIGNED_TARGET 0\n"
-  "#endif\n"
-  "#ifndef LOAD_LIBRARY_SAFE_CURRENT_DIRS\n"
-  "#define LOAD_LIBRARY_SAFE_CURRENT_DIRS 0\n"
-  "#endif\n"
-  "\n"
-  "/* symbol visibility */\n"
-  "#ifndef GDO_VISIBILITY\n"
-  "# define GDO_VISIBILITY\n"
-  "#endif\n"
-  "\n"
-  "/* default flags */\n"
-  "#ifndef GDO_DEFAULT_FLAGS\n"
-  "# ifdef GDO_WINAPI\n"
-  "#  define GDO_DEFAULT_FLAGS 0\n"
-  "# else\n"
-  "#  define GDO_DEFAULT_FLAGS (RTLD_LAZY | RTLD_MEMBER)\n"
-  "# endif\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "%PARAM_SKIP_COMMENT_BEGIN%\n"
-  "#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)\n"
-  "# error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD\n"
-  "#endif\n"
-  "#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)\n"
-  "# error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD\n"
-  "#endif\n"
-  "#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)\n"
-  "# define GDO_HAS_MSG_CB\n"
-  "#endif\n"
-  "%PARAM_SKIP_USE_BEGIN%\n"
-  "#if defined(GDO_WRAP_FUNCTIONS)\n"
-  "# error \"GDO_WRAP_FUNCTIONS\" defined but wrapped functions were disabled with \"-param=skip\"\n"
-  "#endif\n"
-  "#if defined(GDO_ENABLE_AUTOLOAD)\n"
-  "# error \"GDO_ENABLE_AUTOLOAD\" defined but wrapped functions were disabled with \"-param=skip\"\n"
-  "#endif\n"
-  "%PARAM_SKIP_END%\n"
-  "\n"
-  "";
-
-#define common_header_LENGTH 4485
-
+static const char *common_header[] = {
+  "//%DNL%// common macros and includes",
+  "",
+  "/* whether to use WinAPI or dlfcn */",
+  "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)",
+  "# define GDO_WINAPI",
+  "#endif",
+  "",
+  "/* default headers to include */",
+  "#ifdef GDO_WINAPI",
+  "# include <windows.h>",
+  "#else",
+  "# include <sys/types.h>",
+  "# include <link.h>",
+  "# include <dlfcn.h>",
+  "#endif",
+  "#ifndef __cplusplus",
+  "# include <stdbool.h>",
+  "#endif",
+  "",
+  "/* default library name */",
+  "#ifndef GDO_DEFAULT_LIB",
+  "# if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)",
+  "#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW",
+  "# elif defined(GDO_DEFAULT_LIBA)",
+  "#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBA",
+  "# endif",
+  "#endif",
+  "",
+  "/* whether to use dlinfo(3);",
+  " * n/a on Windows (both APIs), OpenBSD, Haiku */",
+  "#if !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__) && \\",
+  "    !defined(GDO_DISABLE_DLINFO)",
+  "# define GDO_HAVE_DLINFO",
+  "#endif",
+  "",
+  "/* whether to use dlmopen(3);",
+  " * only available on Glibc and Solaris/IllumOS */",
+  "#if (defined(__GLIBC__) || defined(__sun)) && !defined(GDO_DISABLE_DLMOPEN)",
+  "# define GDO_HAVE_DLMOPEN",
+  "#endif",
+  "",
+  "/* dlopen(3) flags for compatibility with LoadLibrary() */",
+  "/* taken from different implementations of dlfcn.h */",
+  "#ifndef RTLD_LAZY",
+  "#define RTLD_LAZY 0",
+  "#endif",
+  "#ifndef RTLD_NOW",
+  "#define RTLD_NOW 0",
+  "#endif",
+  "#ifndef RTLD_MODEMASK",
+  "#define RTLD_MODEMASK 0  /* FreeBSD, DragonFlyBSD */",
+  "#endif",
+  "#ifndef RTLD_BINDING_MASK",
+  "#define RTLD_BINDING_MASK 0  /* glibc */",
+  "#endif",
+  "#ifndef RTLD_GLOBAL",
+  "#define RTLD_GLOBAL 0",
+  "#endif",
+  "#ifndef RTLD_LOCAL",
+  "#define RTLD_LOCAL 0",
+  "#endif",
+  "#ifndef RTLD_NODELETE",
+  "#define RTLD_NODELETE 0",
+  "#endif",
+  "#ifndef RTLD_NOLOAD",
+  "#define RTLD_NOLOAD 0",
+  "#endif",
+  "#ifndef RTLD_DEEPBIND",
+  "#define RTLD_DEEPBIND 0  /* glibc, FreeBSD */",
+  "#endif",
+  "#ifndef RTLD_TRACE",
+  "#define RTLD_TRACE 0  /* FreeBSD, OpenBSD, DragonFlyBSD */",
+  "#endif",
+  "#ifndef RTLD_GROUP",
+  "#define RTLD_GROUP 0  /* Solaris */",
+  "#endif",
+  "#ifndef RTLD_PARENT",
+  "#define RTLD_PARENT 0  /* Solaris */",
+  "#endif",
+  "#ifndef RTLD_WORLD",
+  "#define RTLD_WORLD 0  /* Solaris */",
+  "#endif",
+  "#ifndef RTLD_FIRST",
+  "#define RTLD_FIRST 0  /* macOS, Solaris */",
+  "#endif",
+  "#ifndef RTLD_MEMBER",
+  "#define RTLD_MEMBER 0  /* AIX */",
+  "#endif",
+  "#ifndef RTLD_NOAUTODEFER",
+  "#define RTLD_NOAUTODEFER 0  /* AIX */",
+  "#endif",
+  "#ifndef DL_LAZY",
+  "#define DL_LAZY RTLD_LAZY  /* NetBSD, OpenBSD */",
+  "#endif",
+  "",
+  "/* LoadLibrary() flags for compatibility with dlopen() */",
+  "/* https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */",
+  "#ifndef DONT_RESOLVE_DLL_REFERENCES",
+  "#define DONT_RESOLVE_DLL_REFERENCES 0",
+  "#endif",
+  "#ifndef LOAD_IGNORE_CODE_AUTHZ_LEVEL",
+  "#define LOAD_IGNORE_CODE_AUTHZ_LEVEL 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_AS_DATAFILE",
+  "#define LOAD_LIBRARY_AS_DATAFILE 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE",
+  "#define LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_AS_IMAGE_RESOURCE",
+  "#define LOAD_LIBRARY_AS_IMAGE_RESOURCE 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_SEARCH_APPLICATION_DIR",
+  "#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_SEARCH_DEFAULT_DIRS",
+  "#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR",
+  "#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32",
+  "#define LOAD_LIBRARY_SEARCH_SYSTEM32 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_SEARCH_USER_DIRS",
+  "#define LOAD_LIBRARY_SEARCH_USER_DIRS 0",
+  "#endif",
+  "#ifndef LOAD_WITH_ALTERED_SEARCH_PATH",
+  "#define LOAD_WITH_ALTERED_SEARCH_PATH 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_REQUIRE_SIGNED_TARGET",
+  "#define LOAD_LIBRARY_REQUIRE_SIGNED_TARGET 0",
+  "#endif",
+  "#ifndef LOAD_LIBRARY_SAFE_CURRENT_DIRS",
+  "#define LOAD_LIBRARY_SAFE_CURRENT_DIRS 0",
+  "#endif",
+  "",
+  "/* symbol visibility */",
+  "#ifndef GDO_VISIBILITY",
+  "# define GDO_VISIBILITY",
+  "#endif",
+  "",
+  "/* default flags */",
+  "#ifndef GDO_DEFAULT_FLAGS",
+  "# ifdef GDO_WINAPI",
+  "#  define GDO_DEFAULT_FLAGS 0",
+  "# else",
+  "#  define GDO_DEFAULT_FLAGS (RTLD_LAZY | RTLD_MEMBER)",
+  "# endif",
+  "#endif",
+  "",
+  "",
+  "%PARAM_SKIP_COMMENT_BEGIN%",
+  "#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)",
+  "# error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD",
+  "#endif",
+  "#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)",
+  "# error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD",
+  "#endif",
+  "#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)",
+  "# define GDO_HAS_MSG_CB",
+  "#endif",
+  "%PARAM_SKIP_USE_BEGIN%",
+  "#if defined(GDO_WRAP_FUNCTIONS)",
+  "# error \"GDO_WRAP_FUNCTIONS\" defined but wrapped functions were disabled with \"-param=skip\"",
+  "#endif",
+  "#if defined(GDO_ENABLE_AUTOLOAD)",
+  "# error \"GDO_ENABLE_AUTOLOAD\" defined but wrapped functions were disabled with \"-param=skip\"",
+  "#endif",
+  "%PARAM_SKIP_END%",
+  NULL
+};
 
 /* c.h */
-static const char *c_header =
-  "\n"
-  "/***\n"
-  "\n"
-  "******************\n"
-  "*   gdo_char_t   *\n"
-  "******************\n"
-  "\n"
-  "If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT defined\n"
-  "`gdo_char_t` will become `wchar_t`.\n"
-  "\n"
-  "Otherwise `gdo_char_t` will become `char`.\n"
-  "\n"
-  "\n"
-  "**************************\n"
-  "*   Functions provided   *\n"
-  "**************************\n"
-  "\n"
-  "bool               gdo_load_lib ();\n"
-  "bool               gdo_load_lib_and_symbols ();\n"
-  "bool               gdo_load_lib_name (const gdo_char_t *filename);\n"
-  "bool               gdo_load_lib_name_and_symbols (const gdo_char_t *filename);\n"
-  "bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);\n"
-  "\n"
-  "bool               gdo_lib_is_loaded ();\n"
-  "bool               gdo_free_lib ();\n"
-  "\n"
-  "bool               gdo_all_symbols_loaded ();\n"
-  "bool               gdo_no_symbols_loaded ();\n"
-  "bool               gdo_any_symbol_loaded ();\n"
-  "bool               gdo_load_all_symbols (bool ignore_errors);\n"
-  "bool               gdo_load_symbol (const char *symbol);\n"
-  "\n"
-  "bool               gdo_all_symbols_loaded ();\n"
-  "bool               gdo_no_symbols_loaded ();\n"
-  "bool               gdo_any_symbol_loaded ();\n"
-  "\n"
-  "const gdo_char_t * gdo_last_error ();\n"
-  "gdo_char_t *       gdo_lib_origin ();\n"
-  "\n"
-  "\n"
-  "\n"
-  "bool gdo_load_lib ();\n"
-  "\n"
-  "    Load the library specified by the macro GDO_DEFAULT_LIB using default flags.\n"
-  "    This function is not available if GDO_DEFAULT_LIB was not defined.\n"
-  "\n"
-  "\n"
-  "bool gdo_load_lib_and_symbols ();\n"
-  "\n"
-  "    Calls gdo_load_lib() and gdo_load_symbols().\n"
-  "\n"
-  "\n"
-  "bool gdo_load_lib_name (const gdo_char_t *filename);\n"
-  "\n"
-  "    Load the library specified by `filename' using default flags.\n"
-  "\n"
-  "\n"
-  "bool gdo_load_lib_name_and_symbols (const gdo_char_t *filename);\n"
-  "\n"
-  "    Calls gdo_load_lib_name() and gdo_load_symbols().\n"
-  "\n"
-  "\n"
-  "bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);\n"
-  "\n"
-  "    Load the library; `filename' and `flags' are passed to the underlying library\n"
-  "    loading functions.\n"
-  "\n"
-  "    If `new_namespace' is true the library will be loaded into a new namespace.\n"
-  "    This is done using dlmopen() with the LM_ID_NEWLM argument.\n"
-  "    This argument is only used on Glibc and if _GNU_SOURCE was defined.\n"
-  "\n"
-  "\n"
-  "bool gdo_lib_is_loaded ();\n"
-  "\n"
-  "    Returns true if the library was successfully loaded.\n"
-  "\n"
-  "\n"
-  "bool gdo_free_lib ();\n"
-  "\n"
-  "    Free/release library handle.\n"
-  "\n"
-  "\n"
-  "bool gdo_load_symbols (bool ignore_errors);\n"
-  "\n"
-  "    Load the symbols. This function can safely be called multiple times.\n"
-  "    If ignore_errors is set true the function won't stop on the first\n"
-  "    symbol that can't be loaded but instead tries to load them all.\n"
-  "    If one or more symbols weren't loaded the function returns false.\n"
-  "\n"
-  "\n"
-  "bool gdo_load_symbol (const char *symbol);\n"
-  "\n"
-  "    Load a specific symbol.\n"
-  "\n"
-  "\n"
-  "bool gdo_all_symbols_loaded ();\n"
-  "\n"
-  "    Returns true if ALL symbols were successfully loaded.\n"
-  "\n"
-  "\n"
-  "bool gdo_no_symbols_loaded ();\n"
-  "\n"
-  "    Returns true if NO symbols were loaded at all.\n"
-  "\n"
-  "\n"
-  "bool gdo_any_symbol_loaded ();\n"
-  "\n"
-  "    Returns true if 1 or more symbols were successfully loaded.\n"
-  "\n"
-  "\n"
-  "const gdo_char_t *gdo_last_error ();\n"
-  "\n"
-  "    Returns a pointer to the error message buffer with the last saved error string.\n"
-  "    This buffer can be empty and is in fact cleared when no error occured in a function.\n"
-  "    This function doesn't return a null pointer.\n"
-  "\n"
-  "\n"
-  "gdo_char_t *gdo_lib_origin ();\n"
-  "\n"
-  "    Return the full library path. The returned string must be deallocated with free().\n"
-  "    On error or if no library was loaded NULL is returned.\n"
-  "\n"
-  "\n"
-  "\n"
-  "****************************************************\n"
-  "* The following options may be set through macros: *\n"
-  "****************************************************\n"
-  "\n"
-  "GDO_USE_DLOPEN\n"
-  "    If defined use `dlopen()' API on win32 targets.\n"
-  "    On other targets `dlopen()' is always used.\n"
-  "\n"
-  "GDO_STATIC\n"
-  "    If defined static linkage (the `static' keyword) is used for all\n"
-  "    functions.\n"
-  "\n"
-  "GDO_DEFAULT_FLAGS\n"
-  "    Override the default flags to use when loading a library.\n"
-  "\n"
-  "GDO_DEFAULT_LIB\n"
-  "    Set a default library name through this macro (including double quote\n"
-  "    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD\n"
-  "    or if you want to use the `gdo_load_lib()' function.\n"
-  "\n"
-  "GDO_WRAP_FUNCTIONS\n"
-  "    Use actual wrapped functions instead of a name alias. This is useful if you\n"
-  "    want to create a library to later link an application against.\n"
-  "\n"
-  "GDO_ENABLE_AUTOLOAD\n"
-  "    Define this macro if you want to use auto-loading wrapper functions.\n"
-  "    This means you don't need to explicitly call library load functions.\n"
-  "    The first wrapper function called will load all symbols at once.\n"
-  "    It requires GDO_DEFAULT_LIB to be defined.\n"
-  "    If an error occures during loading these functions print an error message\n"
-  "    and call `exit(1)'!\n"
-  "\n"
-  "GDO_DELAYLOAD\n"
-  "    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its\n"
-  "    wrapper function is called instead of all symbols.\n"
-  "    It requires GDO_ENABLE_AUTOLOAD to be defined.\n"
-  "\n"
-  "GDO_AUTO_RELEASE\n"
-  "    If defined the library handle will automatically be released on program exit.\n"
-  "\n"
-  "GDO_VISIBILITY\n"
-  "    You can set the symbol visibility of wrapped functions (enabled with GDO_WRAP_FUNCTIONS)\n"
-  "    using this macro.\n"
-  "\n"
-  "GDO_USE_MESSAGE_BOX\n"
-  "    If win32 API is used and GDO_ENABLE_AUTOLOAD was activated this will enable\n"
-  "    error messages from auto-loading to be displayed in MessageBox windows.\n"
-  "\n"
-  "GDO_DISABLE_ALIASING\n"
-  "    Don't use preprocessor macros to alias symbol names. Use with care.\n"
-  "\n"
-  "GDO_DISABLE_DLINFO\n"
-  "    Always disable usage of `dlinfo(3)'.\n"
-  "\n"
-  "GDO_DISABLE_DLMOPEN\n"
-  "    Always disable usage of `dlmopen(3)'.\n"
-  "\n"
-  "\n"
-  "\n"
-  "*****************\n"
-  "* Helper macros *\n"
-  "*****************\n"
-  "\n"
-  "GDO_DEFAULT_FLAGS\n"
-  "    Default flags for `dlopen()' or `LoadLibraryEx()'\n"
-  "\n"
-  "LIBNAME(NAME, API)\n"
-  "LIBNAMEA(NAME, API)\n"
-  "LIBNAMEW(NAME, API)\n"
-  "    Convenience macro to create versioned library names for DLLs, dylibs and DSOs,\n"
-  "    including double quote marks.\n"
-  "    LIBNAME(z,1) for example will become \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\".\n"
-  "\n"
-  "LIBEXT\n"
-  "LIBEXTA\n"
-  "LIBEXTW\n"
-  "    Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").\n"
-  "    Useful i.e. on plugins.\n"
-  "\n"
-  "***/\n"
-  "\n"
-  "\n"
-  "/* static linkage */\n"
-  "#ifdef GDO_STATIC\n"
-  "# define GDO_LINKAGE  static\n"
-  "#else\n"
-  "# define GDO_LINKAGE  /**/\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "/* char / wchar_t */\n"
-  "#if defined(GDO_WINAPI) && defined(_UNICODE)\n"
-  "typedef wchar_t gdo_char_t;\n"
-  "#else\n"
-  "typedef char gdo_char_t;\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "/* Our library and symbols handle */\n"
-  "typedef struct gdo_handle\n"
-  "{\n"
-  "#ifdef GDO_WINAPI\n"
-  "    HMODULE handle;\n"
-  "    DWORD last_errno;\n"
-  "    /* FormatMessage: according to MSDN the maximum is either 64k or 128k */\n"
-  "    gdo_char_t buf_formatted[64*1024];\n"
-  "#else\n"
-  "    void *handle;\n"
-  "#endif\n"
-  "    bool call_free_lib_is_registered;\n"
-  "    gdo_char_t buf[8*1024];\n"
-  "\n"
-  "    /* symbols */\n"
-  "    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);\n"
-  "    %%obj_type%% *%%obj_symbol%%_ptr_;\n"
-  "\n"
-  "} gdo_handle_t;\n"
-  "\n"
-  "extern GDO_LINKAGE gdo_handle_t gdo_hndl;\n"
-  "\n"
-  "\n"
-  "#ifdef GDO_DEFAULT_LIB\n"
-  "GDO_LINKAGE bool gdo_load_lib(void);\n"
-  "GDO_LINKAGE bool gdo_load_lib_and_symbols(void);\n"
-  "#endif\n"
-  "GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename);\n"
-  "GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);\n"
-  "GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);\n"
-  "\n"
-  "GDO_LINKAGE bool gdo_lib_is_loaded(void);\n"
-  "GDO_LINKAGE bool gdo_free_lib(void);\n"
-  "\n"
-  "GDO_LINKAGE bool gdo_all_symbols_loaded(void);\n"
-  "GDO_LINKAGE bool gdo_no_symbols_loaded(void);\n"
-  "GDO_LINKAGE bool gdo_any_symbol_loaded(void);\n"
-  "GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors);\n"
-  "GDO_LINKAGE bool gdo_load_symbol(const char *symbol);\n"
-  "\n"
-  "GDO_LINKAGE const gdo_char_t *gdo_last_error(void);\n"
-  "GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);\n"
-  "\n"
-  "\n"
-  "\n"
-  "/* aliases to raw function pointers */\n"
-  "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)\n"
-  "#define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_\n"
-  "#endif\n"
-  "\n"
-  "/* aliases to raw object pointers */\n"
-  "#if !defined(GDO_DISABLE_ALIASING)\n"
-  "#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "";
-
-#define c_header_LENGTH 7829
-
+static const char *c_header[] = {
+  "",
+  "/***",
+  "",
+  "******************",
+  "*   gdo_char_t   *",
+  "******************",
+  "",
+  "If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT defined",
+  "`gdo_char_t` will become `wchar_t`.",
+  "",
+  "Otherwise `gdo_char_t` will become `char`.",
+  "",
+  "",
+  "**************************",
+  "*   Functions provided   *",
+  "**************************",
+  "",
+  "bool               gdo_load_lib ();",
+  "bool               gdo_load_lib_and_symbols ();",
+  "bool               gdo_load_lib_name (const gdo_char_t *filename);",
+  "bool               gdo_load_lib_name_and_symbols (const gdo_char_t *filename);",
+  "bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);",
+  "",
+  "bool               gdo_lib_is_loaded ();",
+  "bool               gdo_free_lib ();",
+  "",
+  "bool               gdo_all_symbols_loaded ();",
+  "bool               gdo_no_symbols_loaded ();",
+  "bool               gdo_any_symbol_loaded ();",
+  "bool               gdo_load_all_symbols (bool ignore_errors);",
+  "bool               gdo_load_symbol (const char *symbol);",
+  "",
+  "bool               gdo_all_symbols_loaded ();",
+  "bool               gdo_no_symbols_loaded ();",
+  "bool               gdo_any_symbol_loaded ();",
+  "",
+  "const gdo_char_t * gdo_last_error ();",
+  "gdo_char_t *       gdo_lib_origin ();",
+  "",
+  "",
+  "",
+  "bool gdo_load_lib ();",
+  "",
+  "    Load the library specified by the macro GDO_DEFAULT_LIB using default flags.",
+  "    This function is not available if GDO_DEFAULT_LIB was not defined.",
+  "",
+  "",
+  "bool gdo_load_lib_and_symbols ();",
+  "",
+  "    Calls gdo_load_lib() and gdo_load_symbols().",
+  "",
+  "",
+  "bool gdo_load_lib_name (const gdo_char_t *filename);",
+  "",
+  "    Load the library specified by `filename' using default flags.",
+  "",
+  "",
+  "bool gdo_load_lib_name_and_symbols (const gdo_char_t *filename);",
+  "",
+  "    Calls gdo_load_lib_name() and gdo_load_symbols().",
+  "",
+  "",
+  "bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);",
+  "",
+  "    Load the library; `filename' and `flags' are passed to the underlying library",
+  "    loading functions.",
+  "",
+  "    If `new_namespace' is true the library will be loaded into a new namespace.",
+  "    This is done using dlmopen() with the LM_ID_NEWLM argument.",
+  "    This argument is only used on Glibc and if _GNU_SOURCE was defined.",
+  "",
+  "",
+  "bool gdo_lib_is_loaded ();",
+  "",
+  "    Returns true if the library was successfully loaded.",
+  "",
+  "",
+  "bool gdo_free_lib ();",
+  "",
+  "    Free/release library handle.",
+  "",
+  "",
+  "bool gdo_load_symbols (bool ignore_errors);",
+  "",
+  "    Load the symbols. This function can safely be called multiple times.",
+  "    If ignore_errors is set true the function won't stop on the first",
+  "    symbol that can't be loaded but instead tries to load them all.",
+  "    If one or more symbols weren't loaded the function returns false.",
+  "",
+  "",
+  "bool gdo_load_symbol (const char *symbol);",
+  "",
+  "    Load a specific symbol.",
+  "",
+  "",
+  "bool gdo_all_symbols_loaded ();",
+  "",
+  "    Returns true if ALL symbols were successfully loaded.",
+  "",
+  "",
+  "bool gdo_no_symbols_loaded ();",
+  "",
+  "    Returns true if NO symbols were loaded at all.",
+  "",
+  "",
+  "bool gdo_any_symbol_loaded ();",
+  "",
+  "    Returns true if 1 or more symbols were successfully loaded.",
+  "",
+  "",
+  "const gdo_char_t *gdo_last_error ();",
+  "",
+  "    Returns a pointer to the error message buffer with the last saved error string.",
+  "    This buffer can be empty and is in fact cleared when no error occured in a function.",
+  "    This function doesn't return a null pointer.",
+  "",
+  "",
+  "gdo_char_t *gdo_lib_origin ();",
+  "",
+  "    Return the full library path. The returned string must be deallocated with free().",
+  "    On error or if no library was loaded NULL is returned.",
+  "",
+  "",
+  "",
+  "****************************************************",
+  "* The following options may be set through macros: *",
+  "****************************************************",
+  "",
+  "GDO_USE_DLOPEN",
+  "    If defined use `dlopen()' API on win32 targets.",
+  "    On other targets `dlopen()' is always used.",
+  "",
+  "GDO_STATIC",
+  "    If defined static linkage (the `static' keyword) is used for all",
+  "    functions.",
+  "",
+  "GDO_DEFAULT_FLAGS",
+  "    Override the default flags to use when loading a library.",
+  "",
+  "GDO_DEFAULT_LIB",
+  "    Set a default library name through this macro (including double quote",
+  "    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD",
+  "    or if you want to use the `gdo_load_lib()' function.",
+  "",
+  "GDO_WRAP_FUNCTIONS",
+  "    Use actual wrapped functions instead of a name alias. This is useful if you",
+  "    want to create a library to later link an application against.",
+  "",
+  "GDO_ENABLE_AUTOLOAD",
+  "    Define this macro if you want to use auto-loading wrapper functions.",
+  "    This means you don't need to explicitly call library load functions.",
+  "    The first wrapper function called will load all symbols at once.",
+  "    It requires GDO_DEFAULT_LIB to be defined.",
+  "    If an error occures during loading these functions print an error message",
+  "    and call `exit(1)'!",
+  "",
+  "GDO_DELAYLOAD",
+  "    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its",
+  "    wrapper function is called instead of all symbols.",
+  "    It requires GDO_ENABLE_AUTOLOAD to be defined.",
+  "",
+  "GDO_AUTO_RELEASE",
+  "    If defined the library handle will automatically be released on program exit.",
+  "",
+  "GDO_VISIBILITY",
+  "    You can set the symbol visibility of wrapped functions (enabled with GDO_WRAP_FUNCTIONS)",
+  "    using this macro.",
+  "",
+  "GDO_USE_MESSAGE_BOX",
+  "    If win32 API is used and GDO_ENABLE_AUTOLOAD was activated this will enable",
+  "    error messages from auto-loading to be displayed in MessageBox windows.",
+  "",
+  "GDO_DISABLE_ALIASING",
+  "    Don't use preprocessor macros to alias symbol names. Use with care.",
+  "",
+  "GDO_DISABLE_DLINFO",
+  "    Always disable usage of `dlinfo(3)'.",
+  "",
+  "GDO_DISABLE_DLMOPEN",
+  "    Always disable usage of `dlmopen(3)'.",
+  "",
+  "",
+  "",
+  "*****************",
+  "* Helper macros *",
+  "*****************",
+  "",
+  "GDO_DEFAULT_FLAGS",
+  "    Default flags for `dlopen()' or `LoadLibraryEx()'",
+  "",
+  "LIBNAME(NAME, API)",
+  "LIBNAMEA(NAME, API)",
+  "LIBNAMEW(NAME, API)",
+  "    Convenience macro to create versioned library names for DLLs, dylibs and DSOs,",
+  "    including double quote marks.",
+  "    LIBNAME(z,1) for example will become \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\".",
+  "",
+  "LIBEXT",
+  "LIBEXTA",
+  "LIBEXTW",
+  "    Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").",
+  "    Useful i.e. on plugins.",
+  "",
+  "***/",
+  "",
+  "",
+  "/* static linkage */",
+  "#ifdef GDO_STATIC",
+  "# define GDO_LINKAGE  static",
+  "#else",
+  "# define GDO_LINKAGE  /**/",
+  "#endif",
+  "",
+  "",
+  "/* char / wchar_t */",
+  "#if defined(GDO_WINAPI) && defined(_UNICODE)",
+  "typedef wchar_t gdo_char_t;",
+  "#else",
+  "typedef char gdo_char_t;",
+  "#endif",
+  "",
+  "",
+  "/* Our library and symbols handle */",
+  "typedef struct gdo_handle",
+  "{",
+  "#ifdef GDO_WINAPI",
+  "    HMODULE handle;",
+  "    DWORD last_errno;",
+  "    /* FormatMessage: according to MSDN the maximum is either 64k or 128k */",
+  "    gdo_char_t buf_formatted[64*1024];",
+  "#else",
+  "    void *handle;",
+  "#endif",
+  "    bool call_free_lib_is_registered;",
+  "    gdo_char_t buf[8*1024];",
+  "",
+  "    /* symbols */",
+  "    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);",
+  "    %%obj_type%% *%%obj_symbol%%_ptr_;",
+  "",
+  "} gdo_handle_t;",
+  "",
+  "extern GDO_LINKAGE gdo_handle_t gdo_hndl;",
+  "",
+  "",
+  "#ifdef GDO_DEFAULT_LIB",
+  "GDO_LINKAGE bool gdo_load_lib(void);",
+  "GDO_LINKAGE bool gdo_load_lib_and_symbols(void);",
+  "#endif",
+  "GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename);",
+  "GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);",
+  "GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);",
+  "",
+  "GDO_LINKAGE bool gdo_lib_is_loaded(void);",
+  "GDO_LINKAGE bool gdo_free_lib(void);",
+  "",
+  "GDO_LINKAGE bool gdo_all_symbols_loaded(void);",
+  "GDO_LINKAGE bool gdo_no_symbols_loaded(void);",
+  "GDO_LINKAGE bool gdo_any_symbol_loaded(void);",
+  "GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors);",
+  "GDO_LINKAGE bool gdo_load_symbol(const char *symbol);",
+  "",
+  "GDO_LINKAGE const gdo_char_t *gdo_last_error(void);",
+  "GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);",
+  "",
+  "",
+  "",
+  "/* aliases to raw function pointers */",
+  "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)",
+  "#define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_",
+  "#endif",
+  "",
+  "/* aliases to raw object pointers */",
+  "#if !defined(GDO_DISABLE_ALIASING)",
+  "#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_",
+  "#endif",
+  "",
+  NULL
+};
 
 /* c.c */
-static const char *c_body =
-  "#if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)\n"
-  "# pragma comment(lib, \"user32.lib\")\n"
-  "#endif\n"
-  "\n"
-  "#include <assert.h>\n"
-  "#include <errno.h>\n"
-  "#include <stdarg.h>\n"
-  "#include <stdio.h>\n"
-  "#include <stdlib.h>\n"
-  "#include <string.h>\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "# include <tchar.h>\n"
-  "# ifdef _UNICODE\n"
-  "#  define GDO_XS   L\"%ls\"\n"
-  "#  define GDO_XHS  L\"%hs\"\n"
-  "# endif\n"
-  "#endif\n"
-  "#ifndef GDO_XS\n"
-  "# define GDO_XS   \"%s\"\n"
-  "# define GDO_XHS  \"%s\"\n"
-  "#endif\n"
-  "\n"
-  "#ifndef _T\n"
-  "# define _T(x) x\n"
-  "#endif\n"
-  "#ifndef _countof\n"
-  "# define _countof(array) (sizeof(array) / sizeof(array[0]))\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "#define GDO_SNPRINTF(dst, fmt, ...) \\\n"
-  "    gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)\n"
-  "\n"
-  "#define GDO_STRLCPY(dst, src) \\\n"
-  "    gdo_strlcpy(dst, src, _countof(dst))\n"
-  "\n"
-  "\n"
-  "/* typedefs */\n"
-  "typedef void GDO_UNUSED_REF;\n"
-  "typedef void GDO_UNUSED_RESULT;\n"
-  "\n"
-  "\n"
-  "/* library handle */\n"
-  "GDO_LINKAGE gdo_handle_t gdo_hndl = {0};\n"
-  "\n"
-  "\n"
-  "/* forward declarations */\n"
-  "GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);\n"
-  "GDO_LINKAGE void gdo_register_free_lib(void);\n"
-  "GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg);\n"
-  "#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)\n"
-  "GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                                save error                                 */\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "/* simplified implementation of snprintf (based on NetBSD's version) */\n"
-  "/*-\n"
-  " * Copyright (c) 1990, 1993\n"
-  " *\tThe Regents of the University of California.  All rights reserved.\n"
-  " *\n"
-  " * This code is derived from software contributed to Berkeley by\n"
-  " * Chris Torek.\n"
-  " *\n"
-  " * Redistribution and use in source and binary forms, with or without\n"
-  " * modification, are permitted provided that the following conditions\n"
-  " * are met:\n"
-  " * 1. Redistributions of source code must retain the above copyright\n"
-  " *    notice, this list of conditions and the following disclaimer.\n"
-  " * 2. Redistributions in binary form must reproduce the above copyright\n"
-  " *    notice, this list of conditions and the following disclaimer in the\n"
-  " *    documentation and/or other materials provided with the distribution.\n"
-  " * 3. Neither the name of the University nor the names of its contributors\n"
-  " *    may be used to endorse or promote products derived from this software\n"
-  " *    without specific prior written permission.\n"
-  " *\n"
-  " * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND\n"
-  " * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\n"
-  " * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n"
-  " * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE\n"
-  " * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\n"
-  " * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS\n"
-  " * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\n"
-  " * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT\n"
-  " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY\n"
-  " * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF\n"
-  " * SUCH DAMAGE.\n"
-  " */\n"
-  "GDO_LINKAGE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *fmt, ...)\n"
-  "{\n"
-  "    /* max number of elements to write, not including the terminating NUL */\n"
-  "    const size_t count = buflen - 1;\n"
-  "\n"
-  "    va_list ap;\n"
-  "    va_start(ap, fmt);\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    _vsntprintf_s(str, buflen, count, fmt, ap);\n"
-  "#else\n"
-  "    vsnprintf(str, buflen, fmt, ap);\n"
-  "#endif\n"
-  "\n"
-  "    va_end(ap);\n"
-  "\n"
-  "    /* just in case */\n"
-  "    str[count] = 0;\n"
-  "}\n"
-  "\n"
-  "/* simplified implementation of strlcpy (based on NetBSD's version) */\n"
-  "/*\n"
-  " * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>\n"
-  " *\n"
-  " * Permission to use, copy, modify, and distribute this software for any\n"
-  " * purpose with or without fee is hereby granted, provided that the above\n"
-  " * copyright notice and this permission notice appear in all copies.\n"
-  " *\n"
-  " * THE SOFTWARE IS PROVIDED \"AS IS\" AND TODD C. MILLER DISCLAIMS ALL\n"
-  " * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES\n"
-  " * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL TODD C. MILLER BE LIABLE\n"
-  " * FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\n"
-  " * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION\n"
-  " * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN\n"
-  " * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n"
-  " */\n"
-  "GDO_LINKAGE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t dst_len)\n"
-  "{\n"
-  "    gdo_char_t *dst_end = dst + (dst_len - 1);\n"
-  "\n"
-  "    while (dst != dst_end) {\n"
-  "        if ((*dst++ = *src++) == 0) {\n"
-  "            return;\n"
-  "        }\n"
-  "    }\n"
-  "\n"
-  "    *dst_end = 0;\n"
-  "}\n"
-  "\n"
-  "/* save message to error buffer */\n"
-  "GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)\n"
-  "{\n"
-  "    if (msg) {\n"
-  "        GDO_STRLCPY(gdo_hndl.buf, msg);\n"
-  "    }\n"
-  "}\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "\n"
-  "/* Clear error buffers. */\n"
-  "GDO_LINKAGE void gdo_clear_errbuf(void)\n"
-  "{\n"
-  "    gdo_hndl.buf[0] = 0;\n"
-  "    gdo_hndl.buf_formatted[0] = 0;\n"
-  "    gdo_hndl.last_errno = 0;\n"
-  "}\n"
-  "\n"
-  "/* Save the last system error code. A message for additional information\n"
-  " * can be provided too. */\n"
-  "GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "    gdo_hndl.last_errno = GetLastError();\n"
-  "    gdo_save_to_errbuf(msg);\n"
-  "}\n"
-  "\n"
-  "/* Sets the \"no library was loaded\" error message */\n"
-  "GDO_LINKAGE void gdo_set_error_no_library_loaded(void)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "    gdo_hndl.last_errno = ERROR_INVALID_HANDLE;\n"
-  "    gdo_save_to_errbuf(_T(\"no library was loaded\"));\n"
-  "}\n"
-  "\n"
-  "#else\n"
-  "/*********************************** dlfcn ***********************************/\n"
-  "\n"
-  "/* Clear error buffers. */\n"
-  "GDO_LINKAGE void gdo_clear_errbuf(void)\n"
-  "{\n"
-  "    gdo_hndl.buf[0] = 0;\n"
-  "}\n"
-  "\n"
-  "/* Save the last message provided by dlerror() */\n"
-  "GDO_LINKAGE void gdo_save_dlerror(void)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "    gdo_save_to_errbuf(dlerror());\n"
-  "}\n"
-  "\n"
-  "/* Sets the \"no library was loaded\" error message */\n"
-  "GDO_LINKAGE void gdo_set_error_no_library_loaded(void)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "    gdo_save_to_errbuf(\"no library was loaded\");\n"
-  "}\n"
-  "\n"
-  "#endif //!GDO_WINAPI\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                load default library with default flags                    */\n"
-  "/*****************************************************************************/\n"
-  "#ifdef GDO_DEFAULT_LIB\n"
-  "GDO_LINKAGE bool gdo_load_lib(void)\n"
-  "{\n"
-  "    return gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false);\n"
-  "}\n"
-  "#endif\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*       load default library with default flags and load the symbols        */\n"
-  "/*****************************************************************************/\n"
-  "#ifdef GDO_DEFAULT_LIB\n"
-  "GDO_LINKAGE bool gdo_load_lib_and_symbols(void)\n"
-  "{\n"
-  "    return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&\n"
-  "        gdo_load_all_symbols(false));\n"
-  "}\n"
-  "#endif\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*            load library by filename with default flags                    */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)\n"
-  "{\n"
-  "    return gdo_load_lib_args(filename, GDO_DEFAULT_FLAGS, false);\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*     load library by filename with default flags and load the symbols      */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename)\n"
-  "{\n"
-  "    return (gdo_load_lib_name(filename) && gdo_load_all_symbols(false));\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                          load the library                                 */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "    /* check if the library was already loaded */\n"
-  "    if (gdo_lib_is_loaded()) {\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    /* empty filename */\n"
-  "    if (!filename || *filename == 0) {\n"
-  "        gdo_clear_errbuf();\n"
-  "        gdo_hndl.last_errno = ERROR_INVALID_NAME;\n"
-  "        gdo_save_to_errbuf(_T(\"empty filename\"));\n"
+static const char *c_body[] = {
+  "#if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)",
+  "# pragma comment(lib, \"user32.lib\")",
+  "#endif",
+  "",
+  "#include <assert.h>",
+  "#include <errno.h>",
+  "#include <stdarg.h>",
+  "#include <stdio.h>",
+  "#include <stdlib.h>",
+  "#include <string.h>",
+  "",
+  "#ifdef GDO_WINAPI",
+  "# include <tchar.h>",
+  "# ifdef _UNICODE",
+  "#  define GDO_XS   L\"%ls\"",
+  "#  define GDO_XHS  L\"%hs\"",
+  "# endif",
+  "#endif",
+  "#ifndef GDO_XS",
+  "# define GDO_XS   \"%s\"",
+  "# define GDO_XHS  \"%s\"",
+  "#endif",
+  "",
+  "#ifndef _T",
+  "# define _T(x) x",
+  "#endif",
+  "#ifndef _countof",
+  "# define _countof(array) (sizeof(array) / sizeof(array[0]))",
+  "#endif",
+  "",
+  "",
+  "#define GDO_SNPRINTF(dst, fmt, ...) \\",
+  "    gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)",
+  "",
+  "#define GDO_STRLCPY(dst, src) \\",
+  "    gdo_strlcpy(dst, src, _countof(dst))",
+  "",
+  "",
+  "/* typedefs */",
+  "typedef void GDO_UNUSED_REF;",
+  "typedef void GDO_UNUSED_RESULT;",
+  "",
+  "",
+  "/* library handle */",
+  "GDO_LINKAGE gdo_handle_t gdo_hndl = {0};",
+  "",
+  "",
+  "/* forward declarations */",
+  "GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);",
+  "GDO_LINKAGE void gdo_register_free_lib(void);",
+  "GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg);",
+  "#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)",
+  "GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);",
+  "#endif",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                                save error                                 */",
+  "/*****************************************************************************/",
+  "",
+  "/* simplified implementation of snprintf (based on NetBSD's version) */",
+  "/*-",
+  " * Copyright (c) 1990, 1993",
+  " *\tThe Regents of the University of California.  All rights reserved.",
+  " *",
+  " * This code is derived from software contributed to Berkeley by",
+  " * Chris Torek.",
+  " *",
+  " * Redistribution and use in source and binary forms, with or without",
+  " * modification, are permitted provided that the following conditions",
+  " * are met:",
+  " * 1. Redistributions of source code must retain the above copyright",
+  " *    notice, this list of conditions and the following disclaimer.",
+  " * 2. Redistributions in binary form must reproduce the above copyright",
+  " *    notice, this list of conditions and the following disclaimer in the",
+  " *    documentation and/or other materials provided with the distribution.",
+  " * 3. Neither the name of the University nor the names of its contributors",
+  " *    may be used to endorse or promote products derived from this software",
+  " *    without specific prior written permission.",
+  " *",
+  " * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND",
+  " * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE",
+  " * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE",
+  " * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE",
+  " * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL",
+  " * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS",
+  " * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)",
+  " * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT",
+  " * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY",
+  " * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF",
+  " * SUCH DAMAGE.",
+  " */",
+  "GDO_LINKAGE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *fmt, ...)",
+  "{",
+  "    /* max number of elements to write, not including the terminating NUL */",
+  "    const size_t count = buflen - 1;",
+  "",
+  "    va_list ap;",
+  "    va_start(ap, fmt);",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    _vsntprintf_s(str, buflen, count, fmt, ap);",
+  "#else",
+  "    vsnprintf(str, buflen, fmt, ap);",
+  "#endif",
+  "",
+  "    va_end(ap);",
+  "",
+  "    /* just in case */",
+  "    str[count] = 0;",
+  "}",
+  "",
+  "/* simplified implementation of strlcpy (based on NetBSD's version) */",
+  "/*",
+  " * Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>",
+  " *",
+  " * Permission to use, copy, modify, and distribute this software for any",
+  " * purpose with or without fee is hereby granted, provided that the above",
+  " * copyright notice and this permission notice appear in all copies.",
+  " *",
+  " * THE SOFTWARE IS PROVIDED \"AS IS\" AND TODD C. MILLER DISCLAIMS ALL",
+  " * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES",
+  " * OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL TODD C. MILLER BE LIABLE",
+  " * FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES",
+  " * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION",
+  " * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN",
+  " * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.",
+  " */",
+  "GDO_LINKAGE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t dst_len)",
+  "{",
+  "    gdo_char_t *dst_end = dst + (dst_len - 1);",
+  "",
+  "    while (dst != dst_end) {",
+  "        if ((*dst++ = *src++) == 0) {",
+  "            return;",
+  "        }",
+  "    }",
+  "",
+  "    *dst_end = 0;",
+  "}",
+  "",
+  "/* save message to error buffer */",
+  "GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)",
+  "{",
+  "    if (msg) {",
+  "        GDO_STRLCPY(gdo_hndl.buf, msg);",
+  "    }",
+  "}",
+  "",
+  "#ifdef GDO_WINAPI",
+  "",
+  "/* Clear error buffers. */",
+  "GDO_LINKAGE void gdo_clear_errbuf(void)",
+  "{",
+  "    gdo_hndl.buf[0] = 0;",
+  "    gdo_hndl.buf_formatted[0] = 0;",
+  "    gdo_hndl.last_errno = 0;",
+  "}",
+  "",
+  "/* Save the last system error code. A message for additional information",
+  " * can be provided too. */",
+  "GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "    gdo_hndl.last_errno = GetLastError();",
+  "    gdo_save_to_errbuf(msg);",
+  "}",
+  "",
+  "/* Sets the \"no library was loaded\" error message */",
+  "GDO_LINKAGE void gdo_set_error_no_library_loaded(void)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "    gdo_hndl.last_errno = ERROR_INVALID_HANDLE;",
+  "    gdo_save_to_errbuf(_T(\"no library was loaded\"));",
+  "}",
+  "",
+  "#else",
+  "/*********************************** dlfcn ***********************************/",
+  "",
+  "/* Clear error buffers. */",
+  "GDO_LINKAGE void gdo_clear_errbuf(void)",
+  "{",
+  "    gdo_hndl.buf[0] = 0;",
+  "}",
+  "",
+  "/* Save the last message provided by dlerror() */",
+  "GDO_LINKAGE void gdo_save_dlerror(void)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "    gdo_save_to_errbuf(dlerror());",
+  "}",
+  "",
+  "/* Sets the \"no library was loaded\" error message */",
+  "GDO_LINKAGE void gdo_set_error_no_library_loaded(void)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "    gdo_save_to_errbuf(\"no library was loaded\");",
+  "}",
+  "",
+  "#endif //!GDO_WINAPI",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                load default library with default flags                    */",
+  "/*****************************************************************************/",
+  "#ifdef GDO_DEFAULT_LIB",
+  "GDO_LINKAGE bool gdo_load_lib(void)",
+  "{",
+  "    return gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false);",
+  "}",
+  "#endif",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*       load default library with default flags and load the symbols        */",
+  "/*****************************************************************************/",
+  "#ifdef GDO_DEFAULT_LIB",
+  "GDO_LINKAGE bool gdo_load_lib_and_symbols(void)",
+  "{",
+  "    return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&",
+  "        gdo_load_all_symbols(false));",
+  "}",
+  "#endif",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*            load library by filename with default flags                    */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)",
+  "{",
+  "    return gdo_load_lib_args(filename, GDO_DEFAULT_FLAGS, false);",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*     load library by filename with default flags and load the symbols      */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename)",
+  "{",
+  "    return (gdo_load_lib_name(filename) && gdo_load_all_symbols(false));",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                          load the library                                 */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "",
+  "    /* check if the library was already loaded */",
+  "    if (gdo_lib_is_loaded()) {",
+  "        return true;",
+  "    }",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    /* empty filename */",
+  "    if (!filename || *filename == 0) {",
+  "        gdo_clear_errbuf();",
+  "        gdo_hndl.last_errno = ERROR_INVALID_NAME;",
+  "        gdo_save_to_errbuf(_T(\"empty filename\"));",
+  "        return false;",
+  "    }",
+  "",
+  "    gdo_load_library(filename, flags, new_namespace);",
+  "",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        gdo_save_GetLastError(filename);",
+  "        return false;",
+  "    }",
+  "",
+  "#else /* dlfcn */",
+  "",
+  "    /* an empty filename will actually return a handle to the main program,",
+  "     * but we don't want that */",
+  "    if (!filename || *filename == 0) {",
+  "        gdo_clear_errbuf();",
+  "        gdo_save_to_errbuf(\"empty filename\");",
+  "        return false;",
+  "    }",
+  "",
+  "#ifdef _AIX",
+  "    errno = 0;",
+  "    gdo_load_library(filename, flags, new_namespace);",
+  "    int errsav = errno;",
+  "",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        gdo_clear_errbuf();",
+  "        const char *ptr = (errsav == ENOEXEC) ? dlerror() : strerror(errsav);",
+  "        gdo_save_to_errbuf(ptr);",
+  "    }",
+  "#else",
+  "    gdo_load_library(filename, flags, new_namespace);",
+  "",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        gdo_save_dlerror();",
+  "        return false;",
+  "    }",
+  "#endif //!_AIX",
+  "",
+  "#endif //!GDO_WINAPI",
+  "",
+  "    gdo_register_free_lib();",
+  "",
+  "    return true;",
+  "}",
+  "",
+  "/* call LoadLibraryEx/dlopen/dlmopen */",
+  "GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)",
+  "{",
+  "#ifdef GDO_WINAPI",
+  "",
+  "    (GDO_UNUSED_REF) new_namespace;",
+  "    gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);",
+  "",
+  "#elif defined(GDO_HAVE_DLMOPEN)",
+  "",
+  "    /* call dlmopen() for new namespace, otherwise dlopen() */",
+  "    if (new_namespace) {",
+  "        gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);",
+  "    } else {",
+  "        gdo_hndl.handle = dlopen(filename, flags);",
+  "    }",
+  "",
+  "#else",
+  "",
+  "    /* no dlmopen() */",
+  "    (GDO_UNUSED_REF) new_namespace;",
+  "    gdo_hndl.handle = dlopen(filename, flags);",
+  "",
+  "#endif //!GDO_WINAPI",
+  "}",
+  "",
+  "/* If registered with atexit() this function will be called at",
+  " * the program's exit. Function must be of type \"void (*)(void)\". */",
+  "GDO_LINKAGE void gdo_call_free_lib(void)",
+  "{",
+  "    if (gdo_lib_is_loaded()) {",
+  "#ifdef GDO_WINAPI",
+  "        FreeLibrary(gdo_hndl.handle);",
+  "#else",
+  "        dlclose(gdo_hndl.handle);",
+  "#endif",
+  "    }",
+  "}",
+  "",
+  "/* register our call to free the library handle with atexit()",
+  " * so that the library will automatically be freed upon exit */",
+  "GDO_LINKAGE void gdo_register_free_lib(void)",
+  "{",
+  "#ifdef GDO_AUTO_RELEASE",
+  "    if (!gdo_hndl.call_free_lib_is_registered) {",
+  "        atexit(gdo_call_free_lib);",
+  "        gdo_hndl.call_free_lib_is_registered = true;",
+  "    }",
+  "#endif",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                whether the library is currently loaded                    */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_lib_is_loaded(void)",
+  "{",
+  "    return (gdo_hndl.handle != NULL);",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*          Free the library handle and set pointers to NULL                 */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_free_lib(void)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        /* nothing to free */",
+  "        return true;",
+  "    }",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    if (FreeLibrary(gdo_hndl.handle) == FALSE) {",
+  "        gdo_save_GetLastError(_T(\"FreeLibrary()\"));",
+  "        return false;",
+  "    }",
+  "#else",
+  "    if (dlclose(gdo_hndl.handle) != 0) {",
+  "        gdo_save_dlerror();",
+  "        return false;",
+  "    }",
+  "#endif",
+  "",
+  "    /* set pointers back to NULL */",
+  "    gdo_hndl.handle = NULL;",
+  "    gdo_hndl.%%symbol%%_ptr_ = NULL;",
+  "",
+  "    return true;",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                    check if ALL symbols were loaded                       */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_all_symbols_loaded(void)",
+  "{",
+  "    if (true",
+  "        && gdo_hndl.%%symbol%%_ptr_ != NULL",
+  "    ) {",
+  "        return true;",
+  "    }",
+  "",
+  "    return false;",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                    check if NO symbols were loaded                        */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_no_symbols_loaded(void)",
+  "{",
+  "    if (true",
+  "        && gdo_hndl.%%symbol%%_ptr_ == NULL",
+  "    ) {",
+  "        return true;",
+  "    }",
+  "",
+  "    return false;",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                     check if ANY symbol was loaded                        */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_any_symbol_loaded(void)",
+  "{",
+  "    if (false",
+  "        || gdo_hndl.%%symbol%%_ptr_ != NULL",
+  "    ) {",
+  "        return true;",
+  "    }",
+  "",
+  "    return false;",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*          load all symbols; can safely be called multiple times            */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "",
+  "    /* already loaded all symbols */",
+  "    if (gdo_all_symbols_loaded()) {",
+  "        return true;",
+  "    }",
+  "",
+  "    /* no library was loaded */",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        gdo_set_error_no_library_loaded();",
+  "        return false;",
+  "    }",
+  "",
+  "    /* We can ignore errors in which case dlsym() or GetProcAddress()",
+  "     * is called for each symbol and continue to do so even if it fails.",
+  "     * The function will however in the end still return false if 1 or more",
+  "     * symbols failed to load.",
+  "     * If we do not ignore errors the function will simply return false on",
+  "     * the first error it encounters. */",
+  "",
+  "    /* get symbol addresses */",
+  "\n" /* multiline entry */
+  "    /* %%symbol%% */\n"
+  "    gdo_hndl.%%symbol%%_ptr_ = \n"
+  "        (%%sym_type%%)\n"
+  "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
+  "    if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {\n"
   "        return false;\n"
+  "    }",
+  "",
+  "    gdo_clear_errbuf();",
+  "",
+  "    return gdo_all_symbols_loaded();",
+  "}",
+  "",
+  "GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "",
+  "#ifdef GDO_WINAPI",
+  "",
+  "    /* cast to void* to supress compiler warnings */",
+  "    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);",
+  "",
+  "    if (!ptr) {",
+  "        gdo_save_GetLastError(msg);",
+  "    }",
+  "",
+  "#else",
+  "",
+  "    (GDO_UNUSED_REF) msg;",
+  "",
+  "    void *ptr = dlsym(gdo_hndl.handle, symbol);",
+  "",
+  "    /**",
+  "     * Linux man page mentions cases where NULL pointer is a valid address.",
+  "     * These however seem to be edge-cases that are irrelevant to us.",
+  "     * Furthermore this is contradicting POSIX which says a NULL pointer shall",
+  "     * be returned on an error.",
+  "     */",
+  "    if (!ptr) {",
+  "        gdo_save_dlerror();",
+  "    }",
+  "",
+  "#endif //!GDO_WINAPI",
+  "",
+  "    return ptr;",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                        load a specific symbol                             */",
+  "/*                                                                           */",
+  "/* The main intention is to check if a certain symbol is present in a        */",
+  "/* library so that you can conditionally enable or disable features.         */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE bool gdo_load_symbol(const char *symbol)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "",
+  "    /* no library was loaded */",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        gdo_set_error_no_library_loaded();",
+  "        return false;",
+  "    }",
+  "",
+  "    /* empty symbol? */",
+  "    if (!symbol) {",
+  "        gdo_save_to_errbuf(_T(\"symbol == NULL\"));",
+  "        return false;",
+  "    }",
+  "",
+  "    if (symbol[0] == 0) {",
+  "        gdo_save_to_errbuf(_T(\"'symbol' is empty\"));",
+  "        return false;",
+  "    }",
+  "",
+  "    /* opt out if symbol doesn't begin with prefix */",
+  "    const char * const pfx = \"%COMMON_PREFIX%\";",
+  "    const size_t len = sizeof(pfx) - 1;",
+  "",
+  "    if ((len == 1 && *symbol == *pfx) ||",
+  "        (len > 1 && strncmp(symbol, pfx, len) == 0))",
+  "    {",
+  "        const char *ptr = symbol + len;",
+  "\n" /* multiline entry */
+  "        /* %%symbol%% */\n"
+  "        if (strcmp((const char *)\"%%symbol%%\" + len, ptr) == 0) {\n"
+  "            gdo_hndl.%%symbol%%_ptr_ =\n"
+  "                (%%sym_type%%)\n"
+  "                    gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
+  "            return (gdo_hndl.%%symbol%%_ptr_ != NULL);\n"
+  "        }",
+  "    }",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    gdo_hndl.last_errno = ERROR_NOT_FOUND;",
+  "#endif",
+  "",
+  "    GDO_SNPRINTF(gdo_hndl.buf, _T(\"symbol not among lookup list: \") GDO_XHS, symbol);",
+  "",
+  "    return false;",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/* retrieve the last saved error message (can be an empty buffer)            */",
+  "/*                                                                           */",
+  "/* For WinAPI the message will be generated from an error code.              */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE const gdo_char_t *gdo_last_error(void)",
+  "{",
+  "#ifdef GDO_WINAPI",
+  "    /* message was already saved */",
+  "    if (gdo_hndl.buf_formatted[0] != 0) {",
+  "        return gdo_hndl.buf_formatted;",
+  "    }",
+  "",
+  "    gdo_char_t *buf = NULL;",
+  "    gdo_char_t *msg = gdo_hndl.buf;",
+  "",
+  "    /* format the message */",
+  "    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |",
+  "                    FORMAT_MESSAGE_FROM_SYSTEM |",
+  "                    FORMAT_MESSAGE_MAX_WIDTH_MASK,",
+  "                NULL, gdo_hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);",
+  "",
+  "    if (buf) {",
+  "        /* put custom message in front of system error message */",
+  "        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) <",
+  "            _countof(gdo_hndl.buf_formatted))",
+  "        {",
+  "            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_XS _T(\": \") GDO_XS, msg, buf);",
+  "        } else {",
+  "            GDO_STRLCPY(gdo_hndl.buf_formatted, buf);",
+  "        }",
+  "        LocalFree(buf);",
+  "    } else {",
+  "        /* FormatMessage() failed, save the error code */",
+  "        GDO_SNPRINTF(gdo_hndl.buf_formatted, _T(\"Last saved error code: %lu\"), gdo_hndl.last_errno);",
+  "    }",
+  "",
+  "    return gdo_hndl.buf_formatted;",
+  "#else",
+  "    /* simply return the buffer */",
+  "    return gdo_hndl.buf;",
+  "#endif //GDO_WINAPI",
+  "}",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                       get the full library path                           */",
+  "/*                                                                           */",
+  "/* Result must be deallocated with free(), returns NULL on error.            */",
+  "/*****************************************************************************/",
+  "GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)",
+  "{",
+  "    gdo_clear_errbuf();",
+  "",
+  "    /* check if library was loaded */",
+  "    if (!gdo_lib_is_loaded()) {",
+  "        gdo_set_error_no_library_loaded();",
+  "        return NULL;",
+  "    }",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    gdo_char_t *origin;",
+  "    DWORD len = 260; /* MAX_PATH */",
+  "",
+  "    /* allocate enough space */",
+  "    origin = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));",
+  "    assert(origin != NULL);",
+  "",
+  "    /* receive path from handle */",
+  "    if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {",
+  "        gdo_save_GetLastError(_T(\"GetModuleFileName\"));",
+  "        free(origin);",
+  "        return NULL;",
+  "    }",
+  "",
+  "    /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation",
+  "     * technically the path could exceed 260 characters, but in reality",
+  "     * it's practically still stuck at the old MAX_PATH value */",
+  "    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {",
+  "        len = 32*1024;",
+  "        origin = (gdo_char_t *)realloc(origin, len * sizeof(gdo_char_t));",
+  "        assert(origin != NULL);",
+  "",
+  "        if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {",
+  "            gdo_save_GetLastError(_T(\"GetModuleFileName\"));",
+  "            free(origin);",
+  "            return NULL;",
+  "        }",
+  "    }",
+  "",
+  "    return origin;",
+  "#elif defined(GDO_HAVE_DLINFO)",
+  "    /* use dlinfo() to get a link map */",
+  "    struct link_map *lm = NULL;",
+  "    //%DNL%// fprintf(stderr, \"DEBUG: using dlinfo()\\n\");",
+  "",
+  "    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {",
+  "        gdo_save_dlerror();",
+  "        return NULL;",
+  "    }",
+  "",
+  "    return lm->l_name ? strdup(lm->l_name) : NULL;",
+  "#else",
+  "    /* use dladdr() to get the library path from a symbol pointer */",
+  "    char *fname;",
+  "    //%DNL%// fprintf(stderr, \"DEBUG: using dladdr()\\n\");",
+  "",
+  "    if (gdo_no_symbols_loaded()) {",
+  "        gdo_save_to_errbuf(\"no symbols were loaded\");",
+  "        return NULL;",
+  "    }",
+  "",
+  "    fname = gdo_dladdr_get_fname((void *)gdo_hndl.%%symbol%%_ptr_);\n" /* multiline entry */
+  "    if (fname) return fname;",
+  "",
+  "    gdo_save_to_errbuf(\"dladdr() failed to get library path\");",
+  "",
+  "    return NULL;",
+  "#endif //GDO_WINAPI",
+  "}",
+  "",
+  "#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)",
+  "GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)",
+  "{",
+  "    Dl_info info;",
+  "",
+  "    if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {",
+  "        return strdup(info.dli_fname);",
+  "    }",
+  "",
+  "    return NULL;",
+  "}",
+  "#endif // !GDO_WINAPI && !GDO_HAVE_DLINFO",
+  "/*****************************************************************************/",
+  "",
+  "",
+  "",
+  "/*****************************************************************************/",
+  "/*                                wrap code                                  */",
+  "/*****************************************************************************/",
+  "%PARAM_SKIP_COMMENT_BEGIN%",
+  "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)",
+  "",
+  "",
+  "GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)",
+  "{",
+  "#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)",
+  "    MessageBox(NULL, msg, _T(\"Error\"), MB_OK | MB_ICONERROR);",
+  "#elif defined(_WIN32) && defined(_UNICODE)",
+  "    fwprintf(stderr, L\"%ls\\n\", msg);",
+  "#else",
+  "    fprintf(stderr, \"%s\\n\", msg);",
+  "#endif",
+  "",
+  "    gdo_free_lib();",
+  "    exit(1);",
+  "}",
+  "",
+  "",
+  "/* function wrappers */",
+  "\n" /* multiline entry */
+  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
+  "    if (!gdo_hndl.%%func_symbol%%_ptr_) {\n"
+  "        gdo_error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
   "    }\n"
-  "\n"
-  "    gdo_load_library(filename, flags, new_namespace);\n"
-  "\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        gdo_save_GetLastError(filename);\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "#else /* dlfcn */\n"
-  "\n"
-  "    /* an empty filename will actually return a handle to the main program,\n"
-  "     * but we don't want that */\n"
-  "    if (!filename || *filename == 0) {\n"
-  "        gdo_clear_errbuf();\n"
-  "        gdo_save_to_errbuf(\"empty filename\");\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "#ifdef _AIX\n"
-  "    errno = 0;\n"
-  "    gdo_load_library(filename, flags, new_namespace);\n"
-  "    int errsav = errno;\n"
-  "\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        gdo_clear_errbuf();\n"
-  "        const char *ptr = (errsav == ENOEXEC) ? dlerror() : strerror(errsav);\n"
-  "        gdo_save_to_errbuf(ptr);\n"
-  "    }\n"
-  "#else\n"
-  "    gdo_load_library(filename, flags, new_namespace);\n"
-  "\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        gdo_save_dlerror();\n"
-  "        return false;\n"
-  "    }\n"
-  "#endif //!_AIX\n"
-  "\n"
-  "#endif //!GDO_WINAPI\n"
-  "\n"
-  "    gdo_register_free_lib();\n"
-  "\n"
-  "    return true;\n"
-  "}\n"
-  "\n"
-  "/* call LoadLibraryEx/dlopen/dlmopen */\n"
-  "GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)\n"
-  "{\n"
-  "#ifdef GDO_WINAPI\n"
-  "\n"
-  "    (GDO_UNUSED_REF) new_namespace;\n"
-  "    gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);\n"
-  "\n"
-  "#elif defined(GDO_HAVE_DLMOPEN)\n"
-  "\n"
-  "    /* call dlmopen() for new namespace, otherwise dlopen() */\n"
-  "    if (new_namespace) {\n"
-  "        gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);\n"
-  "    } else {\n"
-  "        gdo_hndl.handle = dlopen(filename, flags);\n"
-  "    }\n"
-  "\n"
-  "#else\n"
-  "\n"
-  "    /* no dlmopen() */\n"
-  "    (GDO_UNUSED_REF) new_namespace;\n"
-  "    gdo_hndl.handle = dlopen(filename, flags);\n"
-  "\n"
-  "#endif //!GDO_WINAPI\n"
-  "}\n"
-  "\n"
-  "/* If registered with atexit() this function will be called at\n"
-  " * the program's exit. Function must be of type \"void (*)(void)\". */\n"
-  "GDO_LINKAGE void gdo_call_free_lib(void)\n"
-  "{\n"
-  "    if (gdo_lib_is_loaded()) {\n"
-  "#ifdef GDO_WINAPI\n"
-  "        FreeLibrary(gdo_hndl.handle);\n"
-  "#else\n"
-  "        dlclose(gdo_hndl.handle);\n"
-  "#endif\n"
-  "    }\n"
-  "}\n"
-  "\n"
-  "/* register our call to free the library handle with atexit()\n"
-  " * so that the library will automatically be freed upon exit */\n"
-  "GDO_LINKAGE void gdo_register_free_lib(void)\n"
-  "{\n"
-  "#ifdef GDO_AUTO_RELEASE\n"
-  "    if (!gdo_hndl.call_free_lib_is_registered) {\n"
-  "        atexit(gdo_call_free_lib);\n"
-  "        gdo_hndl.call_free_lib_is_registered = true;\n"
-  "    }\n"
-  "#endif\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                whether the library is currently loaded                    */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_lib_is_loaded(void)\n"
-  "{\n"
-  "    return (gdo_hndl.handle != NULL);\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*          Free the library handle and set pointers to NULL                 */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_free_lib(void)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        /* nothing to free */\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    if (FreeLibrary(gdo_hndl.handle) == FALSE) {\n"
-  "        gdo_save_GetLastError(_T(\"FreeLibrary()\"));\n"
-  "        return false;\n"
-  "    }\n"
-  "#else\n"
-  "    if (dlclose(gdo_hndl.handle) != 0) {\n"
-  "        gdo_save_dlerror();\n"
-  "        return false;\n"
-  "    }\n"
-  "#endif\n"
-  "\n"
-  "    /* set pointers back to NULL */\n"
-  "    gdo_hndl.handle = NULL;\n"
-  "    gdo_hndl.%%symbol%%_ptr_ = NULL;\n"
-  "\n"
-  "    return true;\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                    check if ALL symbols were loaded                       */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_all_symbols_loaded(void)\n"
-  "{\n"
-  "    if (true\n"
-  "        && gdo_hndl.%%symbol%%_ptr_ != NULL\n"
-  "    ) {\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "    return false;\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                    check if NO symbols were loaded                        */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_no_symbols_loaded(void)\n"
-  "{\n"
-  "    if (true\n"
-  "        && gdo_hndl.%%symbol%%_ptr_ == NULL\n"
-  "    ) {\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "    return false;\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                     check if ANY symbol was loaded                        */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_any_symbol_loaded(void)\n"
-  "{\n"
-  "    if (false\n"
-  "        || gdo_hndl.%%symbol%%_ptr_ != NULL\n"
-  "    ) {\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "    return false;\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*          load all symbols; can safely be called multiple times            */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "    /* already loaded all symbols */\n"
-  "    if (gdo_all_symbols_loaded()) {\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "    /* no library was loaded */\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        gdo_set_error_no_library_loaded();\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "    /* We can ignore errors in which case dlsym() or GetProcAddress()\n"
-  "     * is called for each symbol and continue to do so even if it fails.\n"
-  "     * The function will however in the end still return false if 1 or more\n"
-  "     * symbols failed to load.\n"
-  "     * If we do not ignore errors the function will simply return false on\n"
-  "     * the first error it encounters. */\n"
-  "\n"
-  "    /* get symbol addresses */\n"
-  "@\n"
-  "    /* %%symbol%% */@\n"
-  "    gdo_hndl.%%symbol%%_ptr_ = @\n"
-  "        (%%sym_type%%)@\n"
-  "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));@\n"
-  "    if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {@\n"
-  "        return false;@\n"
-  "    }\n"
-  "\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "    return gdo_all_symbols_loaded();\n"
-  "}\n"
-  "\n"
-  "GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "\n"
-  "    /* cast to void* to supress compiler warnings */\n"
-  "    void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);\n"
-  "\n"
-  "    if (!ptr) {\n"
-  "        gdo_save_GetLastError(msg);\n"
-  "    }\n"
-  "\n"
-  "#else\n"
-  "\n"
-  "    (GDO_UNUSED_REF) msg;\n"
-  "\n"
-  "    void *ptr = dlsym(gdo_hndl.handle, symbol);\n"
-  "\n"
-  "    /**\n"
-  "     * Linux man page mentions cases where NULL pointer is a valid address.\n"
-  "     * These however seem to be edge-cases that are irrelevant to us.\n"
-  "     * Furthermore this is contradicting POSIX which says a NULL pointer shall\n"
-  "     * be returned on an error.\n"
-  "     */\n"
-  "    if (!ptr) {\n"
-  "        gdo_save_dlerror();\n"
-  "    }\n"
-  "\n"
-  "#endif //!GDO_WINAPI\n"
-  "\n"
-  "    return ptr;\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                        load a specific symbol                             */\n"
-  "/*                                                                           */\n"
-  "/* The main intention is to check if a certain symbol is present in a        */\n"
-  "/* library so that you can conditionally enable or disable features.         */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE bool gdo_load_symbol(const char *symbol)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "    /* no library was loaded */\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        gdo_set_error_no_library_loaded();\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "    /* empty symbol? */\n"
-  "    if (!symbol) {\n"
-  "        gdo_save_to_errbuf(_T(\"symbol == NULL\"));\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "    if (symbol[0] == 0) {\n"
-  "        gdo_save_to_errbuf(_T(\"'symbol' is empty\"));\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "    /* opt out if symbol doesn't begin with prefix */\n"
-  "    const char * const pfx = \"%COMMON_PREFIX%\";\n"
-  "    const size_t len = sizeof(pfx) - 1;\n"
-  "\n"
-  "    if ((len == 1 && *symbol == *pfx) ||\n"
-  "        (len > 1 && strncmp(symbol, pfx, len) == 0))\n"
-  "    {\n"
-  "        const char *ptr = symbol + len;\n"
-  "@\n"
-  "        /* %%symbol%% */@\n"
-  "        if (strcmp((const char *)\"%%symbol%%\" + len, ptr) == 0) {@\n"
-  "            gdo_hndl.%%symbol%%_ptr_ =@\n"
-  "                (%%sym_type%%)@\n"
-  "                    gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));@\n"
-  "            return (gdo_hndl.%%symbol%%_ptr_ != NULL);@\n"
-  "        }\n"
-  "    }\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    gdo_hndl.last_errno = ERROR_NOT_FOUND;\n"
-  "#endif\n"
-  "\n"
-  "    GDO_SNPRINTF(gdo_hndl.buf, _T(\"symbol not among lookup list: \") GDO_XHS, symbol);\n"
-  "\n"
-  "    return false;\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/* retrieve the last saved error message (can be an empty buffer)            */\n"
-  "/*                                                                           */\n"
-  "/* For WinAPI the message will be generated from an error code.              */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE const gdo_char_t *gdo_last_error(void)\n"
-  "{\n"
-  "#ifdef GDO_WINAPI\n"
-  "    /* message was already saved */\n"
-  "    if (gdo_hndl.buf_formatted[0] != 0) {\n"
-  "        return gdo_hndl.buf_formatted;\n"
-  "    }\n"
-  "\n"
-  "    gdo_char_t *buf = NULL;\n"
-  "    gdo_char_t *msg = gdo_hndl.buf;\n"
-  "\n"
-  "    /* format the message */\n"
-  "    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |\n"
-  "                    FORMAT_MESSAGE_FROM_SYSTEM |\n"
-  "                    FORMAT_MESSAGE_MAX_WIDTH_MASK,\n"
-  "                NULL, gdo_hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);\n"
-  "\n"
-  "    if (buf) {\n"
-  "        /* put custom message in front of system error message */\n"
-  "        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) <\n"
-  "            _countof(gdo_hndl.buf_formatted))\n"
-  "        {\n"
-  "            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_XS _T(\": \") GDO_XS, msg, buf);\n"
-  "        } else {\n"
-  "            GDO_STRLCPY(gdo_hndl.buf_formatted, buf);\n"
-  "        }\n"
-  "        LocalFree(buf);\n"
-  "    } else {\n"
-  "        /* FormatMessage() failed, save the error code */\n"
-  "        GDO_SNPRINTF(gdo_hndl.buf_formatted, _T(\"Last saved error code: %lu\"), gdo_hndl.last_errno);\n"
-  "    }\n"
-  "\n"
-  "    return gdo_hndl.buf_formatted;\n"
-  "#else\n"
-  "    /* simply return the buffer */\n"
-  "    return gdo_hndl.buf;\n"
-  "#endif //GDO_WINAPI\n"
-  "}\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                       get the full library path                           */\n"
-  "/*                                                                           */\n"
-  "/* Result must be deallocated with free(), returns NULL on error.            */\n"
-  "/*****************************************************************************/\n"
-  "GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)\n"
-  "{\n"
-  "    gdo_clear_errbuf();\n"
-  "\n"
-  "    /* check if library was loaded */\n"
-  "    if (!gdo_lib_is_loaded()) {\n"
-  "        gdo_set_error_no_library_loaded();\n"
-  "        return NULL;\n"
-  "    }\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    gdo_char_t *origin;\n"
-  "    DWORD len = 260; /* MAX_PATH */\n"
-  "\n"
-  "    /* allocate enough space */\n"
-  "    origin = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));\n"
-  "    assert(origin != NULL);\n"
-  "\n"
-  "    /* receive path from handle */\n"
-  "    if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {\n"
-  "        gdo_save_GetLastError(_T(\"GetModuleFileName\"));\n"
-  "        free(origin);\n"
-  "        return NULL;\n"
-  "    }\n"
-  "\n"
-  "    /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation\n"
-  "     * technically the path could exceed 260 characters, but in reality\n"
-  "     * it's practically still stuck at the old MAX_PATH value */\n"
-  "    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {\n"
-  "        len = 32*1024;\n"
-  "        origin = (gdo_char_t *)realloc(origin, len * sizeof(gdo_char_t));\n"
-  "        assert(origin != NULL);\n"
-  "\n"
-  "        if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {\n"
-  "            gdo_save_GetLastError(_T(\"GetModuleFileName\"));\n"
-  "            free(origin);\n"
-  "            return NULL;\n"
-  "        }\n"
-  "    }\n"
-  "\n"
-  "    return origin;\n"
-  "#elif defined(GDO_HAVE_DLINFO)\n"
-  "    /* use dlinfo() to get a link map */\n"
-  "    struct link_map *lm = NULL;\n"
-  "    //%DNL%// fprintf(stderr, \"DEBUG: using dlinfo()\\n\");\n"
-  "\n"
-  "    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {\n"
-  "        gdo_save_dlerror();\n"
-  "        return NULL;\n"
-  "    }\n"
-  "\n"
-  "    return lm->l_name ? strdup(lm->l_name) : NULL;\n"
-  "#else\n"
-  "    /* use dladdr() to get the library path from a symbol pointer */\n"
-  "    char *fname;\n"
-  "    //%DNL%// fprintf(stderr, \"DEBUG: using dladdr()\\n\");\n"
-  "\n"
-  "    if (gdo_no_symbols_loaded()) {\n"
-  "        gdo_save_to_errbuf(\"no symbols were loaded\");\n"
-  "        return NULL;\n"
-  "    }\n"
-  "\n"
-  "    fname = gdo_dladdr_get_fname((void *)gdo_hndl.%%symbol%%_ptr_);@\n"
-  "    if (fname) return fname;\n"
-  "\n"
-  "    gdo_save_to_errbuf(\"dladdr() failed to get library path\");\n"
-  "\n"
-  "    return NULL;\n"
-  "#endif //GDO_WINAPI\n"
-  "}\n"
-  "\n"
-  "#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)\n"
-  "GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)\n"
-  "{\n"
-  "    Dl_info info;\n"
-  "\n"
-  "    if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {\n"
-  "        return strdup(info.dli_fname);\n"
-  "    }\n"
-  "\n"
-  "    return NULL;\n"
-  "}\n"
-  "#endif // !GDO_WINAPI && !GDO_HAVE_DLINFO\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                                wrap code                                  */\n"
-  "/*****************************************************************************/\n"
-  "%PARAM_SKIP_COMMENT_BEGIN%\n"
-  "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)\n"
-  "\n"
-  "\n"
-  "GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)\n"
-  "{\n"
-  "#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)\n"
-  "    MessageBox(NULL, msg, _T(\"Error\"), MB_OK | MB_ICONERROR);\n"
-  "#elif defined(_WIN32) && defined(_UNICODE)\n"
-  "    fwprintf(stderr, L\"%ls\\n\", msg);\n"
-  "#else\n"
-  "    fprintf(stderr, \"%s\\n\", msg);\n"
-  "#endif\n"
-  "\n"
-  "    gdo_free_lib();\n"
-  "    exit(1);\n"
-  "}\n"
-  "\n"
-  "\n"
-  "/* function wrappers */\n"
-  "@\n"
-  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@\n"
-  "    if (!gdo_hndl.%%func_symbol%%_ptr_) {@\n"
-  "        gdo_error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");@\n"
-  "    }@\n"
-  "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@\n"
-  "}\n"
-  "\n"
-  "\n"
-  "#elif defined(GDO_ENABLE_AUTOLOAD)\n"
-  "\n"
-  "\n"
-  "#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)\n"
-  "/* Windows: show message in a MessageBox window */\n"
-  "GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)\n"
-  "{\n"
-  "    const gdo_char_t *fmt = _T(\"error in wrapper function for symbol\")\n"
-  "        _T(\"`\") GDO_XS _T(\"':\\n\\n\") GDO_XS;\n"
-  "\n"
-  "    const gdo_char_t *err = gdo_last_error();\n"
-  "\n"
-  "    const size_t buflen = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;\n"
-  "    gdo_char_t *buf = (gdo_char_t *)malloc(buflen * sizeof(gdo_char_t));\n"
-  "    assert(buf != NULL);\n"
-  "\n"
-  "    gdo_snprintf(buf, buflen, fmt, symbol, err);\n"
-  "    MessageBox(NULL, buf, _T(\"Error\"), MB_OK | MB_ICONERROR);\n"
-  "\n"
-  "    free(buf);\n"
-  "}\n"
-  "#endif //_WIN32 && GDO_USE_MESSAGE_BOX\n"
-  "\n"
-  "\n"
-  "/* This function is used by the wrapper functions to perform the loading\n"
-  " * and handle errors. */\n"
-  "GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)\n"
-  "{\n"
-  "#ifdef GDO_DELAYLOAD\n"
-  "    /* load library + requested symbol */\n"
-  "    if (gdo_load_lib() && gdo_load_symbol(function)) {\n"
-  "        return;\n"
-  "    }\n"
-  "#else\n"
-  "    (GDO_UNUSED_REF) function;\n"
-  "\n"
-  "    /* return immediately if everything is already loaded,\n"
-  "     * otherwise load library + all symbols */\n"
-  "    if (gdo_all_symbols_loaded() || gdo_load_lib_and_symbols()) {\n"
-  "        return;\n"
-  "    }\n"
-  "#endif\n"
-  "\n"
-  "    /* an error has occured: display an error message */\n"
-  "\n"
-  "#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)\n"
-  "    /* Windows: popup message box window */\n"
-  "    gdo_win32_last_error_messagebox(symbol);\n"
-  "#elif defined(_WIN32) && defined(_UNICODE)\n"
-  "    /* Windows: output to console (wide characters) */\n"
-  "    fwprintf(stderr, L\"error in wrapper function for symbol `%ls':\\n%ls\\n\",\n"
-  "        symbol, gdo_last_error());\n"
-  "#else\n"
-  "    /* default: UTF-8 output to console (any operating system) */\n"
-  "    fprintf(stderr, \"error in wrapper function for symbol `%s':\\n%s\\n\",\n"
-  "        symbol, gdo_last_error());\n"
-  "#endif //_WIN32 && GDO_USE_MESSAGE_BOX\n"
-  "\n"
-  "    /* free library handle and exit */\n"
-  "    gdo_free_lib();\n"
-  "    exit(1);\n"
-  "}\n"
-  "\n"
-  "\n"
-  "/* autoload function wrappers */\n"
-  "@\n"
-  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@\n"
-  "    gdo_quick_load(\"%%func_symbol%%\", _T(\"%%func_symbol%%\"));@\n"
-  "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@\n"
-  "}\n"
-  "\n"
-  "#endif //GDO_ENABLE_AUTOLOAD\n"
-  "%PARAM_SKIP_END%\n"
-  "/***************************** end of wrap code ******************************/\n"
-  "\n"
-  "";
-
-#define c_body_LENGTH 25540
-
+  "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
+  "}",
+  "",
+  "",
+  "#elif defined(GDO_ENABLE_AUTOLOAD)",
+  "",
+  "",
+  "#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)",
+  "/* Windows: show message in a MessageBox window */",
+  "GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)",
+  "{",
+  "    const gdo_char_t *fmt = _T(\"error in wrapper function for symbol\")",
+  "        _T(\"`\") GDO_XS _T(\"':\\n\\n\") GDO_XS;",
+  "",
+  "    const gdo_char_t *err = gdo_last_error();",
+  "",
+  "    const size_t buflen = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;",
+  "    gdo_char_t *buf = (gdo_char_t *)malloc(buflen * sizeof(gdo_char_t));",
+  "    assert(buf != NULL);",
+  "",
+  "    gdo_snprintf(buf, buflen, fmt, symbol, err);",
+  "    MessageBox(NULL, buf, _T(\"Error\"), MB_OK | MB_ICONERROR);",
+  "",
+  "    free(buf);",
+  "}",
+  "#endif //_WIN32 && GDO_USE_MESSAGE_BOX",
+  "",
+  "",
+  "/* This function is used by the wrapper functions to perform the loading",
+  " * and handle errors. */",
+  "GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)",
+  "{",
+  "#ifdef GDO_DELAYLOAD",
+  "    /* load library + requested symbol */",
+  "    if (gdo_load_lib() && gdo_load_symbol(function)) {",
+  "        return;",
+  "    }",
+  "#else",
+  "    (GDO_UNUSED_REF) function;",
+  "",
+  "    /* return immediately if everything is already loaded,",
+  "     * otherwise load library + all symbols */",
+  "    if (gdo_all_symbols_loaded() || gdo_load_lib_and_symbols()) {",
+  "        return;",
+  "    }",
+  "#endif",
+  "",
+  "    /* an error has occured: display an error message */",
+  "",
+  "#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)",
+  "    /* Windows: popup message box window */",
+  "    gdo_win32_last_error_messagebox(symbol);",
+  "#elif defined(_WIN32) && defined(_UNICODE)",
+  "    /* Windows: output to console (wide characters) */",
+  "    fwprintf(stderr, L\"error in wrapper function for symbol `%ls':\\n%ls\\n\",",
+  "        symbol, gdo_last_error());",
+  "#else",
+  "    /* default: UTF-8 output to console (any operating system) */",
+  "    fprintf(stderr, \"error in wrapper function for symbol `%s':\\n%s\\n\",",
+  "        symbol, gdo_last_error());",
+  "#endif //_WIN32 && GDO_USE_MESSAGE_BOX",
+  "",
+  "    /* free library handle and exit */",
+  "    gdo_free_lib();",
+  "    exit(1);",
+  "}",
+  "",
+  "",
+  "/* autoload function wrappers */",
+  "\n" /* multiline entry */
+  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
+  "    gdo_quick_load(\"%%func_symbol%%\", _T(\"%%func_symbol%%\"));\n"
+  "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
+  "}",
+  "",
+  "#endif //GDO_ENABLE_AUTOLOAD",
+  "%PARAM_SKIP_END%",
+  "/***************************** end of wrap code ******************************/",
+  NULL
+};
 
 /* cxx.hpp */
-static const char *cxx_header =
-  "#if 0\n"
-  "\n"
-  "namespace gdo\n"
-  "{\n"
-  "\n"
-  "class dl\n"
-  "{\n"
-  "public:\n"
-  "\n"
-  "    using message_callback_t = void (*)(const char *);\n"
-  "\n"
-  "\n"
-  "    /* default flags */\n"
-  "    static constexpr const int default_flags;\n"
-  "\n"
-  "\n"
-  "    /* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").\n"
-  "     * Useful i.e. on plugins. */\n"
-  "    static constexpr const char * const libext;\n"
-  "\n"
-  "\n"
-  "    /* c'tor */\n"
-  "    dl();\n"
-  "    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);\n"
-  "\n"
-  "\n"
-  "    /* d'tor */\n"
-  "    ~dl();\n"
-  "\n"
-  "\n"
-  "    /* Load the library; `filename' and `flags' are passed to the underlying library\n"
-  "     * loading functions.\n"
-  "     *\n"
-  "     * If `new_namespace' is true the library will be loaded into a new namespace.\n"
-  "     * This is done using dlmopen() (if available on the platform) with the\n"
-  "     * LM_ID_NEWLM argument. */\n"
-  "    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);\n"
-  "#ifdef GDO_WINAPI\n"
-  "    bool load(const std::wstring &filename, int flags=default_flags, bool unused=false);\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "    /* Load the library.\n"
-  "     * Filename and flags must have been set with the the constructor. */\n"
-  "    bool load();\n"
-  "\n"
-  "\n"
-  "    /* Load library from a list.\n"
-  "     * T should be of a container type like std::vector, std::list, std::array, ... */\n"
-  "    bool load_from_list(const T &list, int flags=default_flags, bool new_namespace=false)\n"
-  "\n"
-  "\n"
-  "    /* Load library and symbols.\n"
-  "     * Filename and flags must have been set with the the constructor. */\n"
-  "    bool load_lib_and_symbols();\n"
-  "\n"
-  "\n"
-  "    /* check if the library is loaded */\n"
-  "    bool lib_loaded();\n"
-  "\n"
-  "\n"
-  "    /* return the flags used to load the library */\n"
-  "    int flags();\n"
-  "\n"
-  "\n"
-  "    /* Load the symbols. This function can safely be called multiple times.\n"
-  "     * If ignore_errors is set true the function won't stop on the first\n"
-  "     * symbol that can't be loaded but instead tries to load them all.\n"
-  "     * If one or more symbols weren't loaded the function returns false. */\n"
-  "    bool load_all_symbols(bool ignore_errors=false);\n"
-  "\n"
-  "\n"
-  "    /* load a specific symbol */\n"
-  "    bool load_symbol(const std::string &symbol);\n"
-  "\n"
-  "\n"
-  "    /* check if ALL symbols were loaded */\n"
-  "    bool all_symbols_loaded();\n"
-  "\n"
-  "\n"
-  "    /* check if NO symbols were loaded */\n"
-  "    bool no_symbols_loaded();\n"
-  "\n"
-  "\n"
-  "    /* check if ANY symbol was loaded */\n"
-  "    bool any_symbol_loaded();\n"
-  "\n"
-  "\n"
-  "    /* free library */\n"
-  "    bool free();\n"
-  "\n"
-  "\n"
-  "    /* whether to free the library in the class destructor */\n"
-  "    void free_lib_in_dtor(bool b);\n"
-  "\n"
-  "\n"
-  "\n"
-  "    /* Create versioned library names for DLLs, dylibs and DSOs.\n"
-  "     * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */\n"
-  "    static std::string make_libname(const std::string &name, unsigned int api);\n"
-  "#ifdef GDO_WINAPI\n"
-  "    static std::wstring make_libname(const std::wstring &name, unsigned int api);\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)\n"
-  "\n"
-  "    /* Set a message callback function to be used if an error occurred\n"
-  "     * in a wrapped function. */\n"
-  "    static void message_callback(message_callback_t cb);\n"
-  "\n"
-  "\n"
-  "    /* Get a pointer to the message callback function. */\n"
-  "    static message_callback_t message_callback();\n"
-  "\n"
-  "#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD\n"
-  "\n"
-  "\n"
-  "    /* get path of loaded library */\n"
-  "    std::string origin();\n"
-  "#ifdef GDO_WINAPI\n"
-  "    std::wstring origin_w();\n"
-  "#endif\n"
-  "\n"
-  "    /* retrieve the last error */\n"
-  "#ifdef GDO_WINAPI\n"
-  "    std::string error();\n"
-  "    std::wstring error_w();\n"
-  "#else\n"
-  "    std::string error() const;\n"
-  "#endif\n"
-  "\n"
-  "    /* get filename passed to load */\n"
-  "#ifdef GDO_WINAPI\n"
-  "    std::string filename();\n"
-  "    std::wstring filename_w();\n"
-  "#else\n"
-  "    std::string filename() const;\n"
-  "#endif\n"
-  "\n"
-  "}; /* class */\n"
-  "\n"
-  "} /* namespace */\n"
-  "\n"
-  "#endif // 0\n"
-  "\n"
-  "\n"
-  "/***\n"
-  "\n"
-  "****************************************************\n"
-  "* The following options may be set through macros: *\n"
-  "****************************************************\n"
-  "\n"
-  "GDO_USE_DLOPEN\n"
-  "    If defined `dlopen()' API is used on win32 targets.\n"
-  "    On other targets `dlopen()' is always used.\n"
-  "\n"
-  "GDO_DEFAULT_FLAGS\n"
-  "    Override the default flags to use when loading a library.\n"
-  "\n"
-  "GDO_DEFAULT_LIB\n"
-  "    Set a default library name through this macro (including double quote\n"
-  "    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD.\n"
-  "\n"
-  "GDO_WRAP_FUNCTIONS\n"
-  "    Use actual wrapped functions instead of a name alias. This is useful if you\n"
-  "    want to create a library to later link an application against.\n"
-  "\n"
-  "GDO_ENABLE_AUTOLOAD\n"
-  "    Define this macro if you want to use auto-loading wrapper functions.\n"
-  "    This means you don't need to explicitly call library load functions.\n"
-  "    The first wrapper function called will load all symbols at once.\n"
-  "    It requires GDO_DEFAULT_LIB to be defined.\n"
-  "    If an error occures during loading these functions print an error message\n"
-  "    and call `std::exit(1)'!\n"
-  "\n"
-  "GDO_DELAYLOAD\n"
-  "    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its\n"
-  "    wrapper function is called instead of all symbols.\n"
-  "    It requires GDO_ENABLE_AUTOLOAD to be defined.\n"
-  "\n"
-  "GDO_VISIBILITY\n"
-  "    You can set the symbol visibility of wrapped functions (enabled with\n"
-  "    GDO_WRAP_FUNCTIONS) using this macro.\n"
-  "\n"
-  "GDO_DISABLE_ALIASING\n"
-  "    Don't use preprocessor macros to alias symbol names. Use with care.\n"
-  "\n"
-  "GDO_DISABLE_DLINFO\n"
-  "    Always disable usage of `dlinfo(3)'.\n"
-  "\n"
-  "GDO_DISABLE_DLMOPEN\n"
-  "    Always disable usage of `dlmopen(3)'.\n"
-  "\n"
-  "***/\n"
-  "\n"
-  "#include <iostream>\n"
-  "#include <string>\n"
-  "#include <errno.h>\n"
-  "#include <stdlib.h>\n"
-  "#include <string.h>\n"
-  "\n"
-  "\n"
-  "\n"
-  "namespace gdo\n"
-  "{\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                          library loader class                             */\n"
-  "/*****************************************************************************/\n"
-  "class dl\n"
-  "{\n"
-  "public:\n"
-  "\n"
-  "    using message_callback_t = void (*)(const char *);\n"
-  "\n"
-  "\n"
-  "    /* default flags */\n"
-  "    static constexpr const int default_flags = GDO_DEFAULT_FLAGS;\n"
-  "\n"
-  "    /* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").\n"
-  "     * Useful i.e. on plugins. */\n"
-  "    static constexpr const char * const libext = LIBEXTA;\n"
-  "\n"
-  "    /* symbol pointers */\n"
-  "    static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);\n"
-  "    static %%obj_type%% *m_ptr_%%obj_symbol%%;\n"
-  "\n"
-  "\n"
-  "private:\n"
-  "\n"
-  "    using UNUSED_REF = void;\n"
-  "    using UNUSED_RESULT = void;\n"
-  "\n"
-  "#ifdef GDO_HAS_MSG_CB\n"
-  "    /* function pointer to error message callback */\n"
-  "    static message_callback_t m_message_callback;\n"
-  "#endif\n"
-  "\n"
-  "    std::string m_filename;\n"
-  "    int m_flags = default_flags;\n"
-  "    bool m_new_namespace = false;\n"
-  "    bool m_free_lib_in_dtor = true;\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "\n"
-  "    template<typename T>\n"
-  "    T function_cast(FARPROC proc) {\n"
-  "        /* cast to void* to supress compiler warnings */\n"
-  "        return reinterpret_cast<T>(reinterpret_cast<void *>(proc));\n"
-  "    }\n"
-  "\n"
-  "    /* library handle */\n"
-  "    using handle_t = HMODULE;\n"
-  "    static handle_t m_handle;\n"
-  "\n"
-  "    /* error message */\n"
-  "    DWORD m_last_error = 0;\n"
-  "    std::string m_errmsg;\n"
-  "    std::wstring m_werrmsg;\n"
-  "    std::wstring m_wfilename;\n"
-  "\n"
-  "\n"
-  "    /* wstring to string */\n"
-  "    static std::string wstr_to_str(const std::wstring &wstr)\n"
-  "    {\n"
-  "        size_t len, n;\n"
-  "        char *buf;\n"
-  "        std::string str;\n"
-  "\n"
-  "        if (wstr.empty()) {\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        if (::wcstombs_s(&len, nullptr, 0, wstr.c_str(), 0) != 0 || len == 0) {\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        buf = new char[len + 1];\n"
-  "        if (!buf) return {};\n"
-  "\n"
-  "        if (::wcstombs_s(&n, buf, len+1, wstr.c_str(), len) != 0 || n == 0) {\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        buf[len] = '\\0';\n"
-  "        str = buf;\n"
-  "        delete[] buf;\n"
-  "\n"
-  "        return str;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* string to wstring */\n"
-  "    static std::wstring str_to_wstr(const std::string &str)\n"
-  "    {\n"
-  "        size_t len, n;\n"
-  "        wchar_t *buf;\n"
-  "        std::wstring wstr;\n"
-  "\n"
-  "        if (str.empty()) {\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        if (::mbstowcs_s(&len, nullptr, 0, str.c_str(), 0) != 0 || len == 0) {\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];\n"
-  "        if (!buf) return {};\n"
-  "\n"
-  "        if (::mbstowcs_s(&n, buf, len+1, str.c_str(), len) != 0 || n == 0) {\n"
-  "            delete[] buf;\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        buf[len] = L'\\0';\n"
-  "        wstr = buf;\n"
-  "        delete[] buf;\n"
-  "\n"
-  "        return wstr;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* clear error */\n"
-  "    void clear_error()\n"
-  "    {\n"
-  "        m_errmsg.clear();\n"
-  "        m_werrmsg.clear();\n"
-  "        m_last_error = 0;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* save last error (no extra message) */\n"
-  "    void save_error()\n"
-  "    {\n"
-  "        m_last_error = ::GetLastError();\n"
-  "        m_errmsg.clear();\n"
-  "        m_werrmsg.clear();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* save last error (narrow char message) */\n"
-  "    void save_error(const std::string &msg)\n"
-  "    {\n"
-  "        m_last_error = ::GetLastError();\n"
-  "        m_errmsg = msg;\n"
-  "        m_werrmsg.clear();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* save last error (wide char message) */\n"
-  "    void save_error(const std::wstring &msg)\n"
-  "    {\n"
-  "        m_last_error = ::GetLastError();\n"
-  "        m_errmsg.clear();\n"
-  "        m_werrmsg = msg;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* if m_handle is NULL */\n"
-  "    void set_error_invalid_handle()\n"
-  "    {\n"
-  "        clear_error();\n"
-  "        m_last_error = ERROR_INVALID_HANDLE;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* if filename is empty */\n"
-  "    void set_error_empty_filename()\n"
-  "    {\n"
-  "        clear_error();\n"
-  "        m_last_error = ERROR_INVALID_NAME;\n"
-  "        m_errmsg = \"empty filename\";\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load library */\n"
-  "    void load_lib(const char *filename, int flags, bool /*unused*/)\n"
-  "    {\n"
-  "        m_wfilename.clear();\n"
-  "        m_filename = filename;\n"
-  "        m_flags = flags;\n"
-  "\n"
-  "        m_handle = ::LoadLibraryExA(filename, nullptr, m_flags);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* free library handle */\n"
-  "    bool free_lib()\n"
-  "    {\n"
-  "        return (::FreeLibrary(m_handle) == TRUE);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load symbol address */\n"
-  "    template<typename T>\n"
-  "    T sym(const char *symbol)\n"
-  "    {\n"
-  "        clear_error();\n"
-  "\n"
-  "        T proc = function_cast<T>(::GetProcAddress(m_handle, symbol));\n"
-  "\n"
-  "        if (!proc) {\n"
-  "            save_error(symbol);\n"
-  "        }\n"
-  "\n"
-  "        return proc;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {\n"
-  "        return ::GetModuleFileNameW(handle, buf, len);\n"
-  "    }\n"
-  "\n"
-  "    inline DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {\n"
-  "        return ::GetModuleFileNameA(handle, buf, len);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* get the module's full path using GetModuleFileName() */\n"
-  "    template<typename T>\n"
-  "    std::basic_string<T> get_origin_from_module_handle()\n"
-  "    {\n"
-  "        if (!lib_loaded()) {\n"
-  "            set_error_invalid_handle();\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        DWORD len = 260; /* MAX_PATH */\n"
-  "        T *origin = new T[len * sizeof(T)]();\n"
-  "        ::memset(origin, 0, len * sizeof(T));\n"
-  "\n"
-  "        if (get_module_filename(m_handle, origin, len-1) == 0) {\n"
-  "            save_error();\n"
-  "            delete[] origin;\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation\n"
-  "         * technically the path could exceed 260 characters, but in reality\n"
-  "         * it's practically still stuck at the old MAX_PATH value */\n"
-  "        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {\n"
-  "            delete[] origin;\n"
-  "\n"
-  "            len = 32*1024;\n"
-  "            origin = new T[len * sizeof(T)]();\n"
-  "            ::memset(origin, 0, len * sizeof(T));\n"
-  "\n"
-  "            if (get_module_filename(m_handle, origin, len-1) == 0) {\n"
-  "                save_error();\n"
-  "                delete[] origin;\n"
-  "                return {};\n"
-  "            }\n"
-  "        }\n"
-  "\n"
-  "        std::basic_string<T> str = origin;\n"
-  "        delete[] origin;\n"
-  "\n"
-  "        return str;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    inline DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {\n"
-  "        return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);\n"
-  "    }\n"
-  "\n"
-  "    inline DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {\n"
-  "        return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* return a formatted error message */\n"
-  "    template<typename T>\n"
-  "    std::basic_string<T> format_last_error_message()\n"
-  "    {\n"
-  "        std::basic_string<T> str;\n"
-  "        T *buf = nullptr;\n"
-  "\n"
-  "        const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |\n"
-  "                            FORMAT_MESSAGE_FROM_SYSTEM |\n"
-  "                            FORMAT_MESSAGE_MAX_WIDTH_MASK;\n"
-  "\n"
-  "        format_message(flags, m_last_error, reinterpret_cast<T*>(&buf));\n"
-  "\n"
-  "        if (buf) {\n"
-  "            str = buf;\n"
-  "            ::LocalFree(buf);\n"
-  "        }\n"
-  "\n"
-  "        return str;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "#else\n"
-  "/*********************************** dlfcn ***********************************/\n"
-  "\n"
-  "\n"
-  "    /* library handle */\n"
-  "    using handle_t = void*;\n"
-  "    static handle_t m_handle;\n"
-  "\n"
-  "    /* error message */\n"
-  "    std::string m_errmsg;\n"
-  "\n"
-  "\n"
-  "    /* clear error */\n"
-  "    void clear_error()\n"
-  "    {\n"
-  "        m_errmsg.clear();\n"
-  "        (UNUSED_RESULT) ::dlerror();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* save last error */\n"
-  "    void save_error()\n"
-  "    {\n"
-  "        auto ptr = ::dlerror();\n"
-  "        m_errmsg = ptr ? ptr : \"\";\n"
-  "    }\n"
-  "\n"
-  "    void save_error(const std::string&)\n"
-  "    {\n"
-  "        save_error();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* if m_handle is NULL */\n"
-  "    void set_error_invalid_handle()\n"
-  "    {\n"
-  "        clear_error();\n"
-  "        m_errmsg = \"no library was loaded\";\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* if filename is empty */\n"
-  "    void set_error_empty_filename()\n"
-  "    {\n"
-  "        clear_error();\n"
-  "        m_errmsg = \"empty filename\";\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load library */\n"
-  "    void load_lib(const char *filename, int flags, bool new_namespace)\n"
-  "    {\n"
-  "        m_flags = flags;\n"
-  "        m_filename = filename;\n"
-  "\n"
-  "#ifdef GDO_HAVE_DLMOPEN\n"
-  "        /* dlmopen() for new namespace or dlopen() */\n"
-  "        if (new_namespace) {\n"
-  "            m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);\n"
-  "        } else {\n"
-  "            m_handle = ::dlopen(filename, m_flags);\n"
-  "        }\n"
-  "#else\n"
-  "        /* no dlmopen() */\n"
-  "        (UNUSED_REF) new_namespace;\n"
-  "        m_handle = ::dlopen(filename, m_flags);\n"
-  "#endif\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* free library handle */\n"
-  "    bool free_lib()\n"
-  "    {\n"
-  "        return (::dlclose(m_handle) == 0);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load symbol address */\n"
-  "    template<typename T>\n"
-  "    T sym(const char *symbol)\n"
-  "    {\n"
-  "        clear_error();\n"
-  "\n"
-  "        T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));\n"
-  "\n"
-  "        /**\n"
-  "        * Linux man page mentions cases where NULL pointer is a valid address.\n"
-  "        * These however seem to be edge-cases that are irrelevant to us.\n"
-  "        * Furthermore this is contradicting POSIX which says a NULL pointer shall\n"
-  "        * be returned on an error.\n"
-  "        */\n"
-  "        if (!ptr) {\n"
-  "            save_error();\n"
-  "        }\n"
-  "\n"
-  "        return ptr;\n"
-  "    }\n"
-  "\n"
-  "#endif // !GDO_WINAPI\n"
-  "\n"
-  "\n"
-  "public:\n"
-  "\n"
-  "    /* c'tor (empty) */\n"
-  "    dl()\n"
-  "    {}\n"
-  "\n"
-  "\n"
-  "    /* c'tor (set filename) */\n"
-  "    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false)\n"
-  "      : m_filename(filename),\n"
-  "        m_flags(flags),\n"
-  "        m_new_namespace(new_namespace)\n"
-  "    {}\n"
-  "\n"
-  "\n"
-  "    /* d'tor */\n"
-  "    virtual ~dl()\n"
-  "    {\n"
-  "        if (m_free_lib_in_dtor && lib_loaded()) {\n"
-  "            free_lib();\n"
-  "        }\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load library */\n"
-  "    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false)\n"
-  "    {\n"
-  "        /* release old libhandle */\n"
-  "        if (lib_loaded() && !free()) {\n"
+static const char *cxx_header[] = {
+  "#if 0",
+  "",
+  "namespace gdo",
+  "{",
+  "",
+  "class dl",
+  "{",
+  "public:",
+  "",
+  "    using message_callback_t = void (*)(const char *);",
+  "",
+  "",
+  "    /* default flags */",
+  "    static constexpr const int default_flags;",
+  "",
+  "",
+  "    /* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").",
+  "     * Useful i.e. on plugins. */",
+  "    static constexpr const char * const libext;",
+  "",
+  "",
+  "    /* c'tor */",
+  "    dl();",
+  "    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);",
+  "",
+  "",
+  "    /* d'tor */",
+  "    ~dl();",
+  "",
+  "",
+  "    /* Load the library; `filename' and `flags' are passed to the underlying library",
+  "     * loading functions.",
+  "     *",
+  "     * If `new_namespace' is true the library will be loaded into a new namespace.",
+  "     * This is done using dlmopen() (if available on the platform) with the",
+  "     * LM_ID_NEWLM argument. */",
+  "    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);",
+  "#ifdef GDO_WINAPI",
+  "    bool load(const std::wstring &filename, int flags=default_flags, bool unused=false);",
+  "#endif",
+  "",
+  "",
+  "    /* Load the library.",
+  "     * Filename and flags must have been set with the the constructor. */",
+  "    bool load();",
+  "",
+  "",
+  "    /* Load library from a list.",
+  "     * T should be of a container type like std::vector, std::list, std::array, ... */",
+  "    bool load_from_list(const T &list, int flags=default_flags, bool new_namespace=false)",
+  "",
+  "",
+  "    /* Load library and symbols.",
+  "     * Filename and flags must have been set with the the constructor. */",
+  "    bool load_lib_and_symbols();",
+  "",
+  "",
+  "    /* check if the library is loaded */",
+  "    bool lib_loaded();",
+  "",
+  "",
+  "    /* return the flags used to load the library */",
+  "    int flags();",
+  "",
+  "",
+  "    /* Load the symbols. This function can safely be called multiple times.",
+  "     * If ignore_errors is set true the function won't stop on the first",
+  "     * symbol that can't be loaded but instead tries to load them all.",
+  "     * If one or more symbols weren't loaded the function returns false. */",
+  "    bool load_all_symbols(bool ignore_errors=false);",
+  "",
+  "",
+  "    /* load a specific symbol */",
+  "    bool load_symbol(const std::string &symbol);",
+  "",
+  "",
+  "    /* check if ALL symbols were loaded */",
+  "    bool all_symbols_loaded();",
+  "",
+  "",
+  "    /* check if NO symbols were loaded */",
+  "    bool no_symbols_loaded();",
+  "",
+  "",
+  "    /* check if ANY symbol was loaded */",
+  "    bool any_symbol_loaded();",
+  "",
+  "",
+  "    /* free library */",
+  "    bool free();",
+  "",
+  "",
+  "    /* whether to free the library in the class destructor */",
+  "    void free_lib_in_dtor(bool b);",
+  "",
+  "",
+  "",
+  "    /* Create versioned library names for DLLs, dylibs and DSOs.",
+  "     * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */",
+  "    static std::string make_libname(const std::string &name, unsigned int api);",
+  "#ifdef GDO_WINAPI",
+  "    static std::wstring make_libname(const std::wstring &name, unsigned int api);",
+  "#endif",
+  "",
+  "",
+  "#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)",
+  "",
+  "    /* Set a message callback function to be used if an error occurred",
+  "     * in a wrapped function. */",
+  "    static void message_callback(message_callback_t cb);",
+  "",
+  "",
+  "    /* Get a pointer to the message callback function. */",
+  "    static message_callback_t message_callback();",
+  "",
+  "#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD",
+  "",
+  "",
+  "    /* get path of loaded library */",
+  "    std::string origin();",
+  "#ifdef GDO_WINAPI",
+  "    std::wstring origin_w();",
+  "#endif",
+  "",
+  "    /* retrieve the last error */",
+  "#ifdef GDO_WINAPI",
+  "    std::string error();",
+  "    std::wstring error_w();",
+  "#else",
+  "    std::string error() const;",
+  "#endif",
+  "",
+  "    /* get filename passed to load */",
+  "#ifdef GDO_WINAPI",
+  "    std::string filename();",
+  "    std::wstring filename_w();",
+  "#else",
+  "    std::string filename() const;",
+  "#endif",
+  "",
+  "}; /* class */",
+  "",
+  "} /* namespace */",
+  "",
+  "#endif // 0",
+  "",
+  "",
+  "/***",
+  "",
+  "****************************************************",
+  "* The following options may be set through macros: *",
+  "****************************************************",
+  "",
+  "GDO_USE_DLOPEN",
+  "    If defined `dlopen()' API is used on win32 targets.",
+  "    On other targets `dlopen()' is always used.",
+  "",
+  "GDO_DEFAULT_FLAGS",
+  "    Override the default flags to use when loading a library.",
+  "",
+  "GDO_DEFAULT_LIB",
+  "    Set a default library name through this macro (including double quote",
+  "    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD.",
+  "",
+  "GDO_WRAP_FUNCTIONS",
+  "    Use actual wrapped functions instead of a name alias. This is useful if you",
+  "    want to create a library to later link an application against.",
+  "",
+  "GDO_ENABLE_AUTOLOAD",
+  "    Define this macro if you want to use auto-loading wrapper functions.",
+  "    This means you don't need to explicitly call library load functions.",
+  "    The first wrapper function called will load all symbols at once.",
+  "    It requires GDO_DEFAULT_LIB to be defined.",
+  "    If an error occures during loading these functions print an error message",
+  "    and call `std::exit(1)'!",
+  "",
+  "GDO_DELAYLOAD",
+  "    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its",
+  "    wrapper function is called instead of all symbols.",
+  "    It requires GDO_ENABLE_AUTOLOAD to be defined.",
+  "",
+  "GDO_VISIBILITY",
+  "    You can set the symbol visibility of wrapped functions (enabled with",
+  "    GDO_WRAP_FUNCTIONS) using this macro.",
+  "",
+  "GDO_DISABLE_ALIASING",
+  "    Don't use preprocessor macros to alias symbol names. Use with care.",
+  "",
+  "GDO_DISABLE_DLINFO",
+  "    Always disable usage of `dlinfo(3)'.",
+  "",
+  "GDO_DISABLE_DLMOPEN",
+  "    Always disable usage of `dlmopen(3)'.",
+  "",
+  "***/",
+  "",
+  "#include <iostream>",
+  "#include <string>",
+  "#include <errno.h>",
+  "#include <stdlib.h>",
+  "#include <string.h>",
+  "",
+  "",
+  "",
+  "namespace gdo",
+  "{",
+  "",
+  "/*****************************************************************************/",
+  "/*                          library loader class                             */",
+  "/*****************************************************************************/",
+  "class dl",
+  "{",
+  "public:",
+  "",
+  "    using message_callback_t = void (*)(const char *);",
+  "",
+  "",
+  "    /* default flags */",
+  "    static constexpr const int default_flags = GDO_DEFAULT_FLAGS;",
+  "",
+  "    /* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").",
+  "     * Useful i.e. on plugins. */",
+  "    static constexpr const char * const libext = LIBEXTA;",
+  "",
+  "    /* symbol pointers */",
+  "    static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);",
+  "    static %%obj_type%% *m_ptr_%%obj_symbol%%;",
+  "",
+  "",
+  "private:",
+  "",
+  "    using UNUSED_REF = void;",
+  "    using UNUSED_RESULT = void;",
+  "",
+  "#ifdef GDO_HAS_MSG_CB",
+  "    /* function pointer to error message callback */",
+  "    static message_callback_t m_message_callback;",
+  "#endif",
+  "",
+  "    std::string m_filename;",
+  "    int m_flags = default_flags;",
+  "    bool m_new_namespace = false;",
+  "    bool m_free_lib_in_dtor = true;",
+  "",
+  "#ifdef GDO_WINAPI",
+  "",
+  "    template<typename T>",
+  "    T function_cast(FARPROC proc) {",
+  "        /* cast to void* to supress compiler warnings */",
+  "        return reinterpret_cast<T>(reinterpret_cast<void *>(proc));",
+  "    }",
+  "",
+  "    /* library handle */",
+  "    using handle_t = HMODULE;",
+  "    static handle_t m_handle;",
+  "",
+  "    /* error message */",
+  "    DWORD m_last_error = 0;",
+  "    std::string m_errmsg;",
+  "    std::wstring m_werrmsg;",
+  "    std::wstring m_wfilename;",
+  "",
+  "",
+  "    /* wstring to string */",
+  "    static std::string wstr_to_str(const std::wstring &wstr)",
+  "    {",
+  "        size_t len, n;",
+  "        char *buf;",
+  "        std::string str;",
+  "",
+  "        if (wstr.empty()) {",
+  "            return {};",
+  "        }",
+  "",
+  "        if (::wcstombs_s(&len, nullptr, 0, wstr.c_str(), 0) != 0 || len == 0) {",
+  "            return {};",
+  "        }",
+  "",
+  "        buf = new char[len + 1];",
+  "        if (!buf) return {};",
+  "",
+  "        if (::wcstombs_s(&n, buf, len+1, wstr.c_str(), len) != 0 || n == 0) {",
+  "            return {};",
+  "        }",
+  "",
+  "        buf[len] = '\\0';",
+  "        str = buf;",
+  "        delete[] buf;",
+  "",
+  "        return str;",
+  "    }",
+  "",
+  "",
+  "    /* string to wstring */",
+  "    static std::wstring str_to_wstr(const std::string &str)",
+  "    {",
+  "        size_t len, n;",
+  "        wchar_t *buf;",
+  "        std::wstring wstr;",
+  "",
+  "        if (str.empty()) {",
+  "            return {};",
+  "        }",
+  "",
+  "        if (::mbstowcs_s(&len, nullptr, 0, str.c_str(), 0) != 0 || len == 0) {",
+  "            return {};",
+  "        }",
+  "",
+  "        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];",
+  "        if (!buf) return {};",
+  "",
+  "        if (::mbstowcs_s(&n, buf, len+1, str.c_str(), len) != 0 || n == 0) {",
+  "            delete[] buf;",
+  "            return {};",
+  "        }",
+  "",
+  "        buf[len] = L'\\0';",
+  "        wstr = buf;",
+  "        delete[] buf;",
+  "",
+  "        return wstr;",
+  "    }",
+  "",
+  "",
+  "    /* clear error */",
+  "    void clear_error()",
+  "    {",
+  "        m_errmsg.clear();",
+  "        m_werrmsg.clear();",
+  "        m_last_error = 0;",
+  "    }",
+  "",
+  "",
+  "    /* save last error (no extra message) */",
+  "    void save_error()",
+  "    {",
+  "        m_last_error = ::GetLastError();",
+  "        m_errmsg.clear();",
+  "        m_werrmsg.clear();",
+  "    }",
+  "",
+  "",
+  "    /* save last error (narrow char message) */",
+  "    void save_error(const std::string &msg)",
+  "    {",
+  "        m_last_error = ::GetLastError();",
+  "        m_errmsg = msg;",
+  "        m_werrmsg.clear();",
+  "    }",
+  "",
+  "",
+  "    /* save last error (wide char message) */",
+  "    void save_error(const std::wstring &msg)",
+  "    {",
+  "        m_last_error = ::GetLastError();",
+  "        m_errmsg.clear();",
+  "        m_werrmsg = msg;",
+  "    }",
+  "",
+  "",
+  "    /* if m_handle is NULL */",
+  "    void set_error_invalid_handle()",
+  "    {",
+  "        clear_error();",
+  "        m_last_error = ERROR_INVALID_HANDLE;",
+  "    }",
+  "",
+  "",
+  "    /* if filename is empty */",
+  "    void set_error_empty_filename()",
+  "    {",
+  "        clear_error();",
+  "        m_last_error = ERROR_INVALID_NAME;",
+  "        m_errmsg = \"empty filename\";",
+  "    }",
+  "",
+  "",
+  "    /* load library */",
+  "    void load_lib(const char *filename, int flags, bool /*unused*/)",
+  "    {",
+  "        m_wfilename.clear();",
+  "        m_filename = filename;",
+  "        m_flags = flags;",
+  "",
+  "        m_handle = ::LoadLibraryExA(filename, nullptr, m_flags);",
+  "    }",
+  "",
+  "",
+  "    /* free library handle */",
+  "    bool free_lib()",
+  "    {",
+  "        return (::FreeLibrary(m_handle) == TRUE);",
+  "    }",
+  "",
+  "",
+  "    /* load symbol address */",
+  "    template<typename T>",
+  "    T sym(const char *symbol)",
+  "    {",
+  "        clear_error();",
+  "",
+  "        T proc = function_cast<T>(::GetProcAddress(m_handle, symbol));",
+  "",
+  "        if (!proc) {",
+  "            save_error(symbol);",
+  "        }",
+  "",
+  "        return proc;",
+  "    }",
+  "",
+  "",
+  "    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {",
+  "        return ::GetModuleFileNameW(handle, buf, len);",
+  "    }",
+  "",
+  "    inline DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {",
+  "        return ::GetModuleFileNameA(handle, buf, len);",
+  "    }",
+  "",
+  "",
+  "    /* get the module's full path using GetModuleFileName() */",
+  "    template<typename T>",
+  "    std::basic_string<T> get_origin_from_module_handle()",
+  "    {",
+  "        if (!lib_loaded()) {",
+  "            set_error_invalid_handle();",
+  "            return {};",
+  "        }",
+  "",
+  "        DWORD len = 260; /* MAX_PATH */",
+  "        T *origin = new T[len * sizeof(T)]();",
+  "        ::memset(origin, 0, len * sizeof(T));",
+  "",
+  "        if (get_module_filename(m_handle, origin, len-1) == 0) {",
+  "            save_error();",
+  "            delete[] origin;",
+  "            return {};",
+  "        }",
+  "",
+  "        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation",
+  "         * technically the path could exceed 260 characters, but in reality",
+  "         * it's practically still stuck at the old MAX_PATH value */",
+  "        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {",
+  "            delete[] origin;",
+  "",
+  "            len = 32*1024;",
+  "            origin = new T[len * sizeof(T)]();",
+  "            ::memset(origin, 0, len * sizeof(T));",
+  "",
+  "            if (get_module_filename(m_handle, origin, len-1) == 0) {",
+  "                save_error();",
+  "                delete[] origin;",
+  "                return {};",
+  "            }",
+  "        }",
+  "",
+  "        std::basic_string<T> str = origin;",
+  "        delete[] origin;",
+  "",
+  "        return str;",
+  "    }",
+  "",
+  "",
+  "    inline DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {",
+  "        return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);",
+  "    }",
+  "",
+  "    inline DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {",
+  "        return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);",
+  "    }",
+  "",
+  "",
+  "    /* return a formatted error message */",
+  "    template<typename T>",
+  "    std::basic_string<T> format_last_error_message()",
+  "    {",
+  "        std::basic_string<T> str;",
+  "        T *buf = nullptr;",
+  "",
+  "        const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |",
+  "                            FORMAT_MESSAGE_FROM_SYSTEM |",
+  "                            FORMAT_MESSAGE_MAX_WIDTH_MASK;",
+  "",
+  "        format_message(flags, m_last_error, reinterpret_cast<T*>(&buf));",
+  "",
+  "        if (buf) {",
+  "            str = buf;",
+  "            ::LocalFree(buf);",
+  "        }",
+  "",
+  "        return str;",
+  "    }",
+  "",
+  "",
+  "#else",
+  "/*********************************** dlfcn ***********************************/",
+  "",
+  "",
+  "    /* library handle */",
+  "    using handle_t = void*;",
+  "    static handle_t m_handle;",
+  "",
+  "    /* error message */",
+  "    std::string m_errmsg;",
+  "",
+  "",
+  "    /* clear error */",
+  "    void clear_error()",
+  "    {",
+  "        m_errmsg.clear();",
+  "        (UNUSED_RESULT) ::dlerror();",
+  "    }",
+  "",
+  "",
+  "    /* save last error */",
+  "    void save_error()",
+  "    {",
+  "        auto ptr = ::dlerror();",
+  "        m_errmsg = ptr ? ptr : \"\";",
+  "    }",
+  "",
+  "    void save_error(const std::string&)",
+  "    {",
+  "        save_error();",
+  "    }",
+  "",
+  "",
+  "    /* if m_handle is NULL */",
+  "    void set_error_invalid_handle()",
+  "    {",
+  "        clear_error();",
+  "        m_errmsg = \"no library was loaded\";",
+  "    }",
+  "",
+  "",
+  "    /* if filename is empty */",
+  "    void set_error_empty_filename()",
+  "    {",
+  "        clear_error();",
+  "        m_errmsg = \"empty filename\";",
+  "    }",
+  "",
+  "",
+  "    /* load library */",
+  "    void load_lib(const char *filename, int flags, bool new_namespace)",
+  "    {",
+  "        m_flags = flags;",
+  "        m_filename = filename;",
+  "",
+  "#ifdef GDO_HAVE_DLMOPEN",
+  "        /* dlmopen() for new namespace or dlopen() */",
+  "        if (new_namespace) {",
+  "            m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);",
+  "        } else {",
+  "            m_handle = ::dlopen(filename, m_flags);",
+  "        }",
+  "#else",
+  "        /* no dlmopen() */",
+  "        (UNUSED_REF) new_namespace;",
+  "        m_handle = ::dlopen(filename, m_flags);",
+  "#endif",
+  "    }",
+  "",
+  "",
+  "    /* free library handle */",
+  "    bool free_lib()",
+  "    {",
+  "        return (::dlclose(m_handle) == 0);",
+  "    }",
+  "",
+  "",
+  "    /* load symbol address */",
+  "    template<typename T>",
+  "    T sym(const char *symbol)",
+  "    {",
+  "        clear_error();",
+  "",
+  "        T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));",
+  "",
+  "        /**",
+  "        * Linux man page mentions cases where NULL pointer is a valid address.",
+  "        * These however seem to be edge-cases that are irrelevant to us.",
+  "        * Furthermore this is contradicting POSIX which says a NULL pointer shall",
+  "        * be returned on an error.",
+  "        */",
+  "        if (!ptr) {",
+  "            save_error();",
+  "        }",
+  "",
+  "        return ptr;",
+  "    }",
+  "",
+  "#endif // !GDO_WINAPI",
+  "",
+  "",
+  "public:",
+  "",
+  "    /* c'tor (empty) */",
+  "    dl()",
+  "    {}",
+  "",
+  "",
+  "    /* c'tor (set filename) */",
+  "    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false)",
+  "      : m_filename(filename),",
+  "        m_flags(flags),",
+  "        m_new_namespace(new_namespace)",
+  "    {}",
+  "",
+  "",
+  "    /* d'tor */",
+  "    virtual ~dl()",
+  "    {",
+  "        if (m_free_lib_in_dtor && lib_loaded()) {",
+  "            free_lib();",
+  "        }",
+  "    }",
+  "",
+  "",
+  "    /* load library */",
+  "    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false)",
+  "    {",
+  "        /* release old libhandle */",
+  "        if (lib_loaded() && !free()) {",
+  "            return false;",
+  "        }",
+  "",
+  "        if (filename.empty()) {",
+  "            set_error_empty_filename();",
+  "            return false;",
+  "        }",
+  "",
+  "        clear_error();",
+  "",
+  "#ifdef _AIX",
+  "        errno = 0;",
+  "        load_lib(filename.c_str(), flags, new_namespace);",
+  "        int errsav = errno;",
+  "",
+  "        if (!lib_loaded()) {",
+  "            const char *ptr = (errsav == ENOEXEC) ? ::dlerror() : ::strerror(errsav);",
+  "            m_errmsg = ptr ? ptr : \"\";",
+  "        }",
+  "#else",
+  "        load_lib(filename.c_str(), flags, new_namespace);",
+  "        save_error(filename);",
+  "#endif //!_AIX",
+  "",
+  "        return lib_loaded();",
+  "    }",
+  "",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    /* load library (wide characters version) */",
+  "    bool load(const std::wstring &filename, int flags=default_flags, bool unused=false)",
+  "    {",
+  "        (UNUSED_REF) unused;",
+  "",
+  "        /* release old libhandle */",
+  "        if (lib_loaded() && !free()) {",
+  "            return false;",
+  "        }",
+  "",
+  "        if (filename.empty()) {",
+  "            set_error_empty_filename();",
+  "            return false;",
+  "        }",
+  "",
+  "        clear_error();",
+  "",
+  "        m_filename.clear();",
+  "        m_wfilename = filename;",
+  "        m_flags = flags;",
+  "",
+  "        m_handle = ::LoadLibraryExW(filename.c_str(), NULL, m_flags);",
+  "        save_error(filename);",
+  "",
+  "        return lib_loaded();",
+  "    }",
+  "#endif //GDO_WINAPI",
+  "",
+  "",
+  "    /* load library */",
+  "    bool load()",
+  "    {",
+  "        return load(m_filename, m_flags, m_new_namespace);",
+  "    }",
+  "",
+  "",
+  "    /* load from a container list of filenames (std::vector, std::list, etc.) */",
+  "    template<class T>",
+  "    bool load_from_list(const T &list, int flags=default_flags, bool new_namespace=false)",
+  "    {",
+  "        for (const auto &e : list) {",
+  "            if (load(e, flags, new_namespace)) {",
+  "                return true;",
+  "            }",
+  "        }",
+  "",
+  "        return false;",
+  "    }",
+  "",
+  "",
+  "    /* load library and symbols */",
+  "    bool load_lib_and_symbols()",
+  "    {",
+  "        return (load() && load_all_symbols());",
+  "    }",
+  "",
+  "",
+  "    /* check if library is loaded */",
+  "    bool lib_loaded() const",
+  "    {",
+  "        return (m_handle != nullptr);",
+  "    }",
+  "",
+  "",
+  "    /* return the flags used to load the library */",
+  "    int flags() const",
+  "    {",
+  "        return m_flags;",
+  "    }",
+  "",
+  "",
+  "    /* load all symbols */",
+  "    bool load_all_symbols(bool ignore_errors=false)",
+  "    {",
+  "        clear_error();",
+  "",
+  "        if (all_symbols_loaded()) {",
+  "            return true;",
+  "        } else if (!lib_loaded()) {",
+  "            set_error_invalid_handle();",
+  "            return false;",
+  "        }",
+  "",
+  "        /* We can ignore errors in which case dlsym() or GetProcAddress()",
+  "         * is called for each symbol and continue to do so even if it fails.",
+  "         * The function will however in the end still return false if 1 or more",
+  "         * symbols failed to load.",
+  "         * If we do not ignore errors the function will simply return false on",
+  "         * the first error it encounters. */",
+  "",
+  "        /* get symbol addresses */",
+  "\n" /* multiline entry */
+  "        /* %%symbol%% */\n"
+  "        m_ptr_%%symbol%% =\n"
+  "            sym<%%sym_type%%>\n"
+  "                (\"%%symbol%%\");\n"
+  "        if (!m_ptr_%%symbol%% && !ignore_errors) {\n"
   "            return false;\n"
-  "        }\n"
-  "\n"
-  "        if (filename.empty()) {\n"
-  "            set_error_empty_filename();\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        clear_error();\n"
-  "\n"
-  "#ifdef _AIX\n"
-  "        errno = 0;\n"
-  "        load_lib(filename.c_str(), flags, new_namespace);\n"
-  "        int errsav = errno;\n"
-  "\n"
-  "        if (!lib_loaded()) {\n"
-  "            const char *ptr = (errsav == ENOEXEC) ? ::dlerror() : ::strerror(errsav);\n"
-  "            m_errmsg = ptr ? ptr : \"\";\n"
-  "        }\n"
-  "#else\n"
-  "        load_lib(filename.c_str(), flags, new_namespace);\n"
-  "        save_error(filename);\n"
-  "#endif //!_AIX\n"
-  "\n"
-  "        return lib_loaded();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    /* load library (wide characters version) */\n"
-  "    bool load(const std::wstring &filename, int flags=default_flags, bool unused=false)\n"
-  "    {\n"
-  "        (UNUSED_REF) unused;\n"
-  "\n"
-  "        /* release old libhandle */\n"
-  "        if (lib_loaded() && !free()) {\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        if (filename.empty()) {\n"
-  "            set_error_empty_filename();\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        clear_error();\n"
-  "\n"
-  "        m_filename.clear();\n"
-  "        m_wfilename = filename;\n"
-  "        m_flags = flags;\n"
-  "\n"
-  "        m_handle = ::LoadLibraryExW(filename.c_str(), NULL, m_flags);\n"
-  "        save_error(filename);\n"
-  "\n"
-  "        return lib_loaded();\n"
-  "    }\n"
-  "#endif //GDO_WINAPI\n"
-  "\n"
-  "\n"
-  "    /* load library */\n"
-  "    bool load()\n"
-  "    {\n"
-  "        return load(m_filename, m_flags, m_new_namespace);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load from a container list of filenames (std::vector, std::list, etc.) */\n"
-  "    template<class T>\n"
-  "    bool load_from_list(const T &list, int flags=default_flags, bool new_namespace=false)\n"
-  "    {\n"
-  "        for (const auto &e : list) {\n"
-  "            if (load(e, flags, new_namespace)) {\n"
-  "                return true;\n"
-  "            }\n"
-  "        }\n"
-  "\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load library and symbols */\n"
-  "    bool load_lib_and_symbols()\n"
-  "    {\n"
-  "        return (load() && load_all_symbols());\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* check if library is loaded */\n"
-  "    bool lib_loaded() const\n"
-  "    {\n"
-  "        return (m_handle != nullptr);\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* return the flags used to load the library */\n"
-  "    int flags() const\n"
-  "    {\n"
-  "        return m_flags;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load all symbols */\n"
-  "    bool load_all_symbols(bool ignore_errors=false)\n"
-  "    {\n"
-  "        clear_error();\n"
-  "\n"
-  "        if (all_symbols_loaded()) {\n"
-  "            return true;\n"
-  "        } else if (!lib_loaded()) {\n"
-  "            set_error_invalid_handle();\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        /* We can ignore errors in which case dlsym() or GetProcAddress()\n"
-  "         * is called for each symbol and continue to do so even if it fails.\n"
-  "         * The function will however in the end still return false if 1 or more\n"
-  "         * symbols failed to load.\n"
-  "         * If we do not ignore errors the function will simply return false on\n"
-  "         * the first error it encounters. */\n"
-  "\n"
-  "        /* get symbol addresses */\n"
-  "@\n"
-  "        /* %%symbol%% */@\n"
-  "        m_ptr_%%symbol%% =@\n"
-  "            sym<%%sym_type%%>@\n"
-  "                (\"%%symbol%%\");@\n"
-  "        if (!m_ptr_%%symbol%% && !ignore_errors) {@\n"
-  "            return false;@\n"
-  "        }\n"
-  "\n"
-  "        clear_error();\n"
-  "\n"
-  "        return all_symbols_loaded();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* load a specific symbol */\n"
-  "    bool load_symbol(const std::string &symbol)\n"
-  "    {\n"
-  "        auto err_not_found = [&] ()\n"
-  "        {\n"
-  "# ifdef GDO_WINAPI\n"
-  "            m_last_error = ERROR_NOT_FOUND;\n"
-  "# endif\n"
-  "            m_errmsg = \"symbol not among lookup list: \" + symbol;\n"
-  "        };\n"
-  "\n"
-  "        clear_error();\n"
-  "\n"
-  "        if (!lib_loaded()) {\n"
-  "            set_error_invalid_handle();\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        /* empty symbol? */\n"
-  "        if (symbol.empty()) {\n"
-  "#ifdef GDO_WINAPI\n"
-  "            m_last_error = ERROR_INVALID_PARAMETER;\n"
-  "#endif\n"
-  "            m_errmsg = \"empty symbol name\";\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        /* opt out if symbol doesn't begin with prefix */\n"
-  "        const char * const pfx = \"%COMMON_PREFIX%\";\n"
-  "        const size_t len = sizeof(pfx) - 1;\n"
-  "\n"
-  "        if (len == 0 || (len == 1 && symbol[0] != pfx[0]) ||\n"
-  "            (len > 1 && strncmp(symbol.c_str(), pfx, len) != 0))\n"
-  "        {\n"
-  "            //%DNL%// std::cerr << \"DEBUG: not a common symbol prefix\" << std::endl;\n"
-  "            err_not_found();\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        /* get symbol address */\n"
-  "        const char * const ptr = symbol.c_str() + len;\n"
-  "@\n"
-  "        if (strcmp(static_cast<const char *>(\"%%symbol%%\") + len, ptr) == 0) {@\n"
-  "            m_ptr_%%symbol%% =@\n"
-  "                sym<%%sym_type%%>@\n"
-  "                    (\"%%symbol%%\");@\n"
-  "            return (m_ptr_%%symbol%% != nullptr);@\n"
-  "        }\n"
-  "\n"
-  "        err_not_found();\n"
-  "\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* check if ALL symbols were loaded */\n"
-  "    bool all_symbols_loaded() const\n"
-  "    {\n"
-  "        if (true\n"
-  "            && m_ptr_%%symbol%% != nullptr\n"
-  "        ) {\n"
-  "            return true;\n"
-  "        }\n"
-  "\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* check if NO symbols were loaded */\n"
-  "    bool no_symbols_loaded() const\n"
-  "    {\n"
-  "        if (true\n"
-  "            && m_ptr_%%symbol%% == nullptr\n"
-  "        ) {\n"
-  "            return true;\n"
-  "        }\n"
-  "\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* check if ANY symbol was loaded */\n"
-  "    bool any_symbol_loaded() const\n"
-  "    {\n"
-  "        if (false\n"
-  "            || m_ptr_%%symbol%% != nullptr\n"
-  "        ) {\n"
-  "            return true;\n"
-  "        }\n"
-  "\n"
-  "        return false;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* free library */\n"
-  "    bool free()\n"
-  "    {\n"
-  "        clear_error();\n"
-  "\n"
-  "        if (!lib_loaded()) {\n"
-  "            return true;\n"
-  "        }\n"
-  "\n"
-  "        bool ret = free_lib();\n"
-  "        save_error();\n"
-  "\n"
-  "        if (!ret) {\n"
-  "            return false;\n"
-  "        }\n"
-  "\n"
-  "        m_handle = nullptr;\n"
-  "\n"
-  "        m_ptr_%%symbol%% = nullptr;\n"
-  "\n"
-  "        return true;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* whether to free the library in the class destructor */\n"
-  "    void free_lib_in_dtor(bool b)\n"
-  "    {\n"
-  "        m_free_lib_in_dtor = b;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* Create versioned library names for DLLs, dylibs and DSOs.\n"
-  "     * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */\n"
-  "    static std::string make_libname(const std::string &name, unsigned int api)\n"
-  "    {\n"
-  "#ifdef _WIN32\n"
-  "        return \"lib\" + name + '-' + std::to_string(api) + \".dll\";\n"
-  "#elif defined(__APPLE__) && defined(__MACH__)\n"
-  "        return \"lib\" + name + '.' + std::to_string(api) + \".dylib\";\n"
-  "#elif defined(_AIX)\n"
-  "        (UNUSED_REF) api;\n"
-  "        return \"lib\" + name + \".a\";\n"
-  "#elif defined(__ANDROID__)\n"
-  "        (UNUSED_REF) api;\n"
-  "        return \"lib\" + name + \".so\";\n"
-  "#else\n"
-  "        return \"lib\" + name + \".so.\" + std::to_string(api);\n"
-  "#endif\n"
-  "    }\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "    static std::wstring make_libname(const std::wstring &name, unsigned int api)\n"
-  "    {\n"
-  "        return L\"lib\" + name + L'-' + std::to_wstring(api) + L\".dll\";\n"
-  "    }\n"
-  "#endif //GDO_WINAPI\n"
-  "\n"
-  "\n"
-  "#ifdef GDO_HAS_MSG_CB\n"
-  "\n"
-  "    /* Set a message callback function. */\n"
-  "    static void message_callback(message_callback_t cb)\n"
-  "    {\n"
-  "        m_message_callback = cb;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* Get a pointer to the message callback function. */\n"
-  "    static message_callback_t message_callback()\n"
-  "    {\n"
-  "        return m_message_callback;\n"
-  "    }\n"
-  "\n"
-  "#endif //GDO_HAS_MSG_CB\n"
-  "\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "\n"
-  "    /* get path of loaded library */\n"
-  "    std::string origin()\n"
-  "    {\n"
-  "        return get_origin_from_module_handle<char>();\n"
-  "    }\n"
-  "\n"
-  "    std::wstring origin_w()\n"
-  "    {\n"
-  "        return get_origin_from_module_handle<wchar_t>();\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* retrieve the last error */\n"
-  "    std::string error()\n"
-  "    {\n"
-  "        std::string buf = format_last_error_message<char>();\n"
-  "\n"
-  "        if (buf.empty()) {\n"
-  "            buf = \"Last saved error code: \" + std::to_string(m_last_error);\n"
-  "        }\n"
-  "\n"
-  "        if (!m_errmsg.empty()) {\n"
-  "            buf.insert(0, \": \");\n"
-  "            buf.insert(0, m_errmsg);\n"
-  "        } else if (!m_werrmsg.empty()) {\n"
-  "            buf.insert(0, \": \");\n"
-  "            buf.insert(0, wstr_to_str(m_werrmsg));\n"
-  "        }\n"
-  "\n"
-  "        return buf;\n"
-  "    }\n"
-  "\n"
-  "    std::wstring error_w()\n"
-  "    {\n"
-  "        std::wstring buf = format_last_error_message<wchar_t>();\n"
-  "\n"
-  "        if (buf.empty()) {\n"
-  "            buf = L\"Last saved error code: \" + std::to_wstring(m_last_error);\n"
-  "        }\n"
-  "\n"
-  "        if (!m_werrmsg.empty()) {\n"
-  "            buf.insert(0, L\": \");\n"
-  "            buf.insert(0, m_werrmsg);\n"
-  "        } else if (!m_errmsg.empty()) {\n"
-  "            buf.insert(0, L\": \");\n"
-  "            buf.insert(0, str_to_wstr(m_errmsg));\n"
-  "        }\n"
-  "\n"
-  "        return buf;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* get filename passed to load */\n"
-  "    std::string filename()\n"
-  "    {\n"
-  "        if (m_filename.empty() && !m_wfilename.empty()) {\n"
-  "            return wstr_to_str(m_wfilename);\n"
-  "        }\n"
-  "\n"
-  "        return m_filename;\n"
-  "    }\n"
-  "\n"
-  "    std::wstring filename_w()\n"
-  "    {\n"
-  "        if (m_wfilename.empty() && !m_filename.empty()) {\n"
-  "            return str_to_wstr(m_filename);\n"
-  "        }\n"
-  "\n"
-  "        return m_wfilename;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "#else\n"
-  "/*********************************** dlfcn ***********************************/\n"
-  "\n"
-  "\n"
-  "    /* get path of loaded library */\n"
-  "    std::string origin()\n"
-  "    {\n"
-  "        clear_error();\n"
-  "\n"
-  "        if (!lib_loaded()) {\n"
-  "            set_error_invalid_handle();\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "#ifdef GDO_HAVE_DLINFO\n"
-  "        struct link_map *lm = nullptr;\n"
-  "        //%DNL%// std::cerr << \"DEBUG: using dlinfo()\" << std::endl;\n"
-  "\n"
-  "        int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));\n"
-  "        save_error();\n"
-  "\n"
-  "        return (ret != -1 && lm->l_name) ? lm->l_name : \"\";\n"
-  "#else\n"
-  "        /* use dladdr() to get the library path from a symbol pointer */\n"
-  "        std::string fname;\n"
-  "        //%DNL%// std::cerr << \"DEBUG: using dladdr()\" << std::endl;\n"
-  "\n"
-  "        if (no_symbols_loaded()) {\n"
-  "            m_errmsg = \"no symbols were loaded\";\n"
-  "            return {};\n"
-  "        }\n"
-  "\n"
-  "        auto get_fname = [&fname] (const void *ptr)\n"
-  "        {\n"
-  "            Dl_info info;\n"
-  "\n"
-  "            if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {\n"
-  "                fname = info.dli_fname;\n"
-  "            }\n"
-  "        };\n"
-  "\n"
-  "        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%));@\n"
-  "        if (!fname.empty()) return fname;\n"
-  "\n"
-  "        m_errmsg = \"dladdr() failed to get library path\";\n"
-  "\n"
-  "        return {};\n"
-  "#endif // !GDO_HAVE_DLINFO\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* retrieve the last error */\n"
-  "    std::string error() const\n"
-  "    {\n"
-  "        return m_errmsg;\n"
-  "    }\n"
-  "\n"
-  "\n"
-  "    /* get filename passed to load */\n"
-  "    std::string filename() const\n"
-  "    {\n"
-  "        return m_filename;\n"
-  "    }\n"
-  "\n"
-  "#endif // !GDO_WINAPI\n"
-  "\n"
-  "};\n"
-  "/******************************* end of class ********************************/\n"
-  "\n"
-  "} /* namespace gdo */\n"
-  "\n"
-  "\n"
-  "\n"
-  "/* aliases to raw function pointers */\n"
-  "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)\n"
-  "#define %%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%\n"
-  "#endif\n"
-  "\n"
-  "/* aliases to raw object pointers */\n"
-  "#if !defined(GDO_DISABLE_ALIASING)\n"
-  "#define %%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "";
-
-#define cxx_header_LENGTH 25522
-
+  "        }",
+  "",
+  "        clear_error();",
+  "",
+  "        return all_symbols_loaded();",
+  "    }",
+  "",
+  "",
+  "    /* load a specific symbol */",
+  "    bool load_symbol(const std::string &symbol)",
+  "    {",
+  "        auto err_not_found = [&] ()",
+  "        {",
+  "# ifdef GDO_WINAPI",
+  "            m_last_error = ERROR_NOT_FOUND;",
+  "# endif",
+  "            m_errmsg = \"symbol not among lookup list: \" + symbol;",
+  "        };",
+  "",
+  "        clear_error();",
+  "",
+  "        if (!lib_loaded()) {",
+  "            set_error_invalid_handle();",
+  "            return false;",
+  "        }",
+  "",
+  "        /* empty symbol? */",
+  "        if (symbol.empty()) {",
+  "#ifdef GDO_WINAPI",
+  "            m_last_error = ERROR_INVALID_PARAMETER;",
+  "#endif",
+  "            m_errmsg = \"empty symbol name\";",
+  "            return false;",
+  "        }",
+  "",
+  "        /* opt out if symbol doesn't begin with prefix */",
+  "        const char * const pfx = \"%COMMON_PREFIX%\";",
+  "        const size_t len = sizeof(pfx) - 1;",
+  "",
+  "        if (len == 0 || (len == 1 && symbol[0] != pfx[0]) ||",
+  "            (len > 1 && strncmp(symbol.c_str(), pfx, len) != 0))",
+  "        {",
+  "            //%DNL%// std::cerr << \"DEBUG: not a common symbol prefix\" << std::endl;",
+  "            err_not_found();",
+  "            return false;",
+  "        }",
+  "",
+  "        /* get symbol address */",
+  "        const char * const ptr = symbol.c_str() + len;",
+  "\n" /* multiline entry */
+  "        if (strcmp(static_cast<const char *>(\"%%symbol%%\") + len, ptr) == 0) {\n"
+  "            m_ptr_%%symbol%% =\n"
+  "                sym<%%sym_type%%>\n"
+  "                    (\"%%symbol%%\");\n"
+  "            return (m_ptr_%%symbol%% != nullptr);\n"
+  "        }",
+  "",
+  "        err_not_found();",
+  "",
+  "        return false;",
+  "    }",
+  "",
+  "",
+  "    /* check if ALL symbols were loaded */",
+  "    bool all_symbols_loaded() const",
+  "    {",
+  "        if (true",
+  "            && m_ptr_%%symbol%% != nullptr",
+  "        ) {",
+  "            return true;",
+  "        }",
+  "",
+  "        return false;",
+  "    }",
+  "",
+  "",
+  "    /* check if NO symbols were loaded */",
+  "    bool no_symbols_loaded() const",
+  "    {",
+  "        if (true",
+  "            && m_ptr_%%symbol%% == nullptr",
+  "        ) {",
+  "            return true;",
+  "        }",
+  "",
+  "        return false;",
+  "    }",
+  "",
+  "",
+  "    /* check if ANY symbol was loaded */",
+  "    bool any_symbol_loaded() const",
+  "    {",
+  "        if (false",
+  "            || m_ptr_%%symbol%% != nullptr",
+  "        ) {",
+  "            return true;",
+  "        }",
+  "",
+  "        return false;",
+  "    }",
+  "",
+  "",
+  "    /* free library */",
+  "    bool free()",
+  "    {",
+  "        clear_error();",
+  "",
+  "        if (!lib_loaded()) {",
+  "            return true;",
+  "        }",
+  "",
+  "        bool ret = free_lib();",
+  "        save_error();",
+  "",
+  "        if (!ret) {",
+  "            return false;",
+  "        }",
+  "",
+  "        m_handle = nullptr;",
+  "",
+  "        m_ptr_%%symbol%% = nullptr;",
+  "",
+  "        return true;",
+  "    }",
+  "",
+  "",
+  "    /* whether to free the library in the class destructor */",
+  "    void free_lib_in_dtor(bool b)",
+  "    {",
+  "        m_free_lib_in_dtor = b;",
+  "    }",
+  "",
+  "",
+  "    /* Create versioned library names for DLLs, dylibs and DSOs.",
+  "     * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */",
+  "    static std::string make_libname(const std::string &name, unsigned int api)",
+  "    {",
+  "#ifdef _WIN32",
+  "        return \"lib\" + name + '-' + std::to_string(api) + \".dll\";",
+  "#elif defined(__APPLE__) && defined(__MACH__)",
+  "        return \"lib\" + name + '.' + std::to_string(api) + \".dylib\";",
+  "#elif defined(_AIX)",
+  "        (UNUSED_REF) api;",
+  "        return \"lib\" + name + \".a\";",
+  "#elif defined(__ANDROID__)",
+  "        (UNUSED_REF) api;",
+  "        return \"lib\" + name + \".so\";",
+  "#else",
+  "        return \"lib\" + name + \".so.\" + std::to_string(api);",
+  "#endif",
+  "    }",
+  "",
+  "#ifdef GDO_WINAPI",
+  "    static std::wstring make_libname(const std::wstring &name, unsigned int api)",
+  "    {",
+  "        return L\"lib\" + name + L'-' + std::to_wstring(api) + L\".dll\";",
+  "    }",
+  "#endif //GDO_WINAPI",
+  "",
+  "",
+  "#ifdef GDO_HAS_MSG_CB",
+  "",
+  "    /* Set a message callback function. */",
+  "    static void message_callback(message_callback_t cb)",
+  "    {",
+  "        m_message_callback = cb;",
+  "    }",
+  "",
+  "",
+  "    /* Get a pointer to the message callback function. */",
+  "    static message_callback_t message_callback()",
+  "    {",
+  "        return m_message_callback;",
+  "    }",
+  "",
+  "#endif //GDO_HAS_MSG_CB",
+  "",
+  "",
+  "#ifdef GDO_WINAPI",
+  "",
+  "    /* get path of loaded library */",
+  "    std::string origin()",
+  "    {",
+  "        return get_origin_from_module_handle<char>();",
+  "    }",
+  "",
+  "    std::wstring origin_w()",
+  "    {",
+  "        return get_origin_from_module_handle<wchar_t>();",
+  "    }",
+  "",
+  "",
+  "    /* retrieve the last error */",
+  "    std::string error()",
+  "    {",
+  "        std::string buf = format_last_error_message<char>();",
+  "",
+  "        if (buf.empty()) {",
+  "            buf = \"Last saved error code: \" + std::to_string(m_last_error);",
+  "        }",
+  "",
+  "        if (!m_errmsg.empty()) {",
+  "            buf.insert(0, \": \");",
+  "            buf.insert(0, m_errmsg);",
+  "        } else if (!m_werrmsg.empty()) {",
+  "            buf.insert(0, \": \");",
+  "            buf.insert(0, wstr_to_str(m_werrmsg));",
+  "        }",
+  "",
+  "        return buf;",
+  "    }",
+  "",
+  "    std::wstring error_w()",
+  "    {",
+  "        std::wstring buf = format_last_error_message<wchar_t>();",
+  "",
+  "        if (buf.empty()) {",
+  "            buf = L\"Last saved error code: \" + std::to_wstring(m_last_error);",
+  "        }",
+  "",
+  "        if (!m_werrmsg.empty()) {",
+  "            buf.insert(0, L\": \");",
+  "            buf.insert(0, m_werrmsg);",
+  "        } else if (!m_errmsg.empty()) {",
+  "            buf.insert(0, L\": \");",
+  "            buf.insert(0, str_to_wstr(m_errmsg));",
+  "        }",
+  "",
+  "        return buf;",
+  "    }",
+  "",
+  "",
+  "    /* get filename passed to load */",
+  "    std::string filename()",
+  "    {",
+  "        if (m_filename.empty() && !m_wfilename.empty()) {",
+  "            return wstr_to_str(m_wfilename);",
+  "        }",
+  "",
+  "        return m_filename;",
+  "    }",
+  "",
+  "    std::wstring filename_w()",
+  "    {",
+  "        if (m_wfilename.empty() && !m_filename.empty()) {",
+  "            return str_to_wstr(m_filename);",
+  "        }",
+  "",
+  "        return m_wfilename;",
+  "    }",
+  "",
+  "",
+  "#else",
+  "/*********************************** dlfcn ***********************************/",
+  "",
+  "",
+  "    /* get path of loaded library */",
+  "    std::string origin()",
+  "    {",
+  "        clear_error();",
+  "",
+  "        if (!lib_loaded()) {",
+  "            set_error_invalid_handle();",
+  "            return {};",
+  "        }",
+  "",
+  "#ifdef GDO_HAVE_DLINFO",
+  "        struct link_map *lm = nullptr;",
+  "        //%DNL%// std::cerr << \"DEBUG: using dlinfo()\" << std::endl;",
+  "",
+  "        int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));",
+  "        save_error();",
+  "",
+  "        return (ret != -1 && lm->l_name) ? lm->l_name : \"\";",
+  "#else",
+  "        /* use dladdr() to get the library path from a symbol pointer */",
+  "        std::string fname;",
+  "        //%DNL%// std::cerr << \"DEBUG: using dladdr()\" << std::endl;",
+  "",
+  "        if (no_symbols_loaded()) {",
+  "            m_errmsg = \"no symbols were loaded\";",
+  "            return {};",
+  "        }",
+  "",
+  "        auto get_fname = [&fname] (const void *ptr)",
+  "        {",
+  "            Dl_info info;",
+  "",
+  "            if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {",
+  "                fname = info.dli_fname;",
+  "            }",
+  "        };",
+  "",
+  "        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%));\n" /* multiline entry */
+  "        if (!fname.empty()) return fname;",
+  "",
+  "        m_errmsg = \"dladdr() failed to get library path\";",
+  "",
+  "        return {};",
+  "#endif // !GDO_HAVE_DLINFO",
+  "    }",
+  "",
+  "",
+  "    /* retrieve the last error */",
+  "    std::string error() const",
+  "    {",
+  "        return m_errmsg;",
+  "    }",
+  "",
+  "",
+  "    /* get filename passed to load */",
+  "    std::string filename() const",
+  "    {",
+  "        return m_filename;",
+  "    }",
+  "",
+  "#endif // !GDO_WINAPI",
+  "",
+  "};",
+  "/******************************* end of class ********************************/",
+  "",
+  "} /* namespace gdo */",
+  "",
+  "",
+  "",
+  "/* aliases to raw function pointers */",
+  "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)",
+  "#define %%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%",
+  "#endif",
+  "",
+  "/* aliases to raw object pointers */",
+  "#if !defined(GDO_DISABLE_ALIASING)",
+  "#define %%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%",
+  "#endif",
+  "",
+  NULL
+};
 
 /* cxx.cpp */
-static const char *cxx_body =
-  "#ifdef GDO_HAS_MSG_CB\n"
-  "gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;\n"
-  "#endif\n"
-  "gdo::dl::handle_t gdo::dl::m_handle = nullptr;\n"
-  "\n"
-  "%%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;\n"
-  "%%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;\n"
-  "\n"
-  "\n"
-  "\n"
-  "%PARAM_SKIP_COMMENT_BEGIN%\n"
-  "/* helpers used by function wrappers */\n"
-  "namespace gdo\n"
-  "{\n"
-  "    namespace helper\n"
-  "    {\n"
-  "#ifdef GDO_HAS_MSG_CB\n"
-  "        static void error_exit(const char *msg)\n"
-  "        {\n"
-  "            auto cb = gdo::dl::message_callback();\n"
-  "\n"
-  "            if (cb) {\n"
-  "                cb(msg);\n"
-  "            } else {\n"
-  "                std::cerr << msg << std::endl;\n"
-  "            }\n"
-  "\n"
-  "            std::exit(1);\n"
-  "        }\n"
-  "#endif //GDO_HAS_MSG_CB\n"
+static const char *cxx_body[] = {
+  "#ifdef GDO_HAS_MSG_CB",
+  "gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;",
+  "#endif",
+  "gdo::dl::handle_t gdo::dl::m_handle = nullptr;",
+  "",
+  "%%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;",
+  "%%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;",
+  "",
+  "",
+  "",
+  "%PARAM_SKIP_COMMENT_BEGIN%",
+  "/* helpers used by function wrappers */",
+  "namespace gdo",
+  "{",
+  "    namespace helper",
+  "    {",
+  "#ifdef GDO_HAS_MSG_CB",
+  "        static void error_exit(const char *msg)",
+  "        {",
+  "            auto cb = gdo::dl::message_callback();",
+  "",
+  "            if (cb) {",
+  "                cb(msg);",
+  "            } else {",
+  "                std::cerr << msg << std::endl;",
+  "            }",
+  "",
+  "            std::exit(1);",
+  "        }",
+  "#endif //GDO_HAS_MSG_CB",
+  "    }",
+  "}",
+  "",
+  "",
+  "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)",
+  "",
+  "",
+  "/* function wrappers */",
+  "\n" /* multiline entry */
+  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
+  "    if (!gdo::dl::m_ptr_%%func_symbol%%) {\n"
+  "        gdo::helper::error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
   "    }\n"
-  "}\n"
-  "\n"
-  "\n"
-  "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)\n"
-  "\n"
-  "\n"
-  "/* function wrappers */\n"
-  "@\n"
-  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@\n"
-  "    if (!gdo::dl::m_ptr_%%func_symbol%%) {@\n"
-  "        gdo::helper::error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");@\n"
-  "    }@\n"
-  "    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@\n"
-  "}\n"
-  "\n"
-  "\n"
-  "#elif defined(GDO_ENABLE_AUTOLOAD)\n"
-  "\n"
-  "\n"
-  "namespace gdo\n"
-  "{\n"
-  "    namespace helper\n"
-  "    {\n"
-  "        static auto al = gdo::dl(GDO_DEFAULT_LIBA);\n"
-  "\n"
-  "        /* used internally by wrapper functions, symbol is never NULL */\n"
-  "        static void quick_load(const char *symbol)\n"
-  "        {\n"
-  "            if (!al.load()) {\n"
-  "                std::string msg = \"error loading library `\" GDO_DEFAULT_LIBA \"':\\n\" + al.error();\n"
-  "                error_exit(msg.c_str());\n"
-  "            }\n"
-  "\n"
-  "#ifdef GDO_DELAYLOAD\n"
-  "            if (!al.load_symbol(symbol))\n"
-  "#else\n"
-  "            if (!al.load_all_symbols())\n"
-  "#endif\n"
-  "            {\n"
-  "                std::string msg = \"error in auto-loading wrapper function `gdo::autoload::\";\n"
-  "                msg += symbol + (\"': \" + al.error());\n"
-  "                error_exit(msg.c_str());\n"
-  "            }\n"
-  "        }\n"
-  "    }\n"
-  "}\n"
-  "\n"
-  "\n"
-  "/* autoload function wrappers */\n"
-  "@\n"
-  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@\n"
-  "    gdo::helper::quick_load(\"%%func_symbol%%\");@\n"
-  "    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@\n"
-  "}\n"
-  "\n"
-  "#endif //GDO_ENABLE_AUTOLOAD\n"
-  "%PARAM_SKIP_END%\n"
-  "\n"
-  "";
-
-#define cxx_body_LENGTH 2112
-
+  "    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);\n"
+  "}",
+  "",
+  "",
+  "#elif defined(GDO_ENABLE_AUTOLOAD)",
+  "",
+  "",
+  "namespace gdo",
+  "{",
+  "    namespace helper",
+  "    {",
+  "        static auto al = gdo::dl(GDO_DEFAULT_LIBA);",
+  "",
+  "        /* used internally by wrapper functions, symbol is never NULL */",
+  "        static void quick_load(const char *symbol)",
+  "        {",
+  "            if (!al.load()) {",
+  "                std::string msg = \"error loading library `\" GDO_DEFAULT_LIBA \"':\\n\" + al.error();",
+  "                error_exit(msg.c_str());",
+  "            }",
+  "",
+  "#ifdef GDO_DELAYLOAD",
+  "            if (!al.load_symbol(symbol))",
+  "#else",
+  "            if (!al.load_all_symbols())",
+  "#endif",
+  "            {",
+  "                std::string msg = \"error in auto-loading wrapper function `gdo::autoload::\";",
+  "                msg += symbol + (\"': \" + al.error());",
+  "                error_exit(msg.c_str());",
+  "            }",
+  "        }",
+  "    }",
+  "}",
+  "",
+  "",
+  "/* autoload function wrappers */",
+  "\n" /* multiline entry */
+  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
+  "    gdo::helper::quick_load(\"%%func_symbol%%\");\n"
+  "    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);\n"
+  "}",
+  "",
+  "#endif //GDO_ENABLE_AUTOLOAD",
+  "%PARAM_SKIP_END%",
+  NULL
+};
 
 /* minimal.h */
-static const char *min_c_header =
-  "/* whether to use WinAPI */\n"
-  "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)\n"
-  "# define GDO_WINAPI\n"
-  "#endif\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "# include <windows.h>\n"
-  "# define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)\n"
-  "# define GDO_FREE_LIB(handle)         FreeLibrary(handle)\n"
-  "/* cast to void* to avoid compiler warnings */\n"
-  "# define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)\n"
-  "#else\n"
-  "# include <dlfcn.h>\n"
-  "# define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)\n"
-  "# define GDO_FREE_LIB(handle)         dlclose(handle)\n"
-  "# define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)\n"
-  "#endif\n"
-  "\n"
-  "#ifdef GDO_STATIC\n"
-  "# define GDO_LINKAGE  static\n"
-  "#else\n"
-  "# define GDO_LINKAGE  /**/\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "/* Our library and symbols handle */\n"
-  "typedef struct gdo_handle\n"
-  "{\n"
-  "#ifdef GDO_WINAPI\n"
-  "    HMODULE handle;\n"
-  "#else\n"
-  "    void *handle;\n"
-  "#endif\n"
-  "\n"
-  "    %%type%% (*%%func_symbol%%)(%%args%%);\n"
-  "    %%obj_type%% *%%obj_symbol%%;\n"
-  "\n"
-  "} gdo_handle_t;\n"
-  "\n"
-  "GDO_LINKAGE gdo_handle_t gdo_hndl = {0};\n"
-  "\n"
-  "\n"
-  "/* returns NULL on success and an error message if loading failed */\n"
-  "GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)\n"
-  "{\n"
-  "    gdo_hndl.handle = GDO_LOAD_LIB(filename);\n"
-  "\n"
-  "    if (!gdo_hndl.handle) {\n"
-  "        return \"failed to load library\";\n"
-  "    }\n"
-  "@\n"
-  "    /* %%symbol%% */@\n"
-  "    gdo_hndl.%%symbol%% = @\n"
-  "        (%%sym_type%%)@\n"
-  "            GDO_GET_SYM(gdo_hndl.handle, \"%%symbol%%\");@\n"
-  "    if (!gdo_hndl.%%symbol%%) {@\n"
-  "        GDO_FREE_LIB(gdo_hndl.handle);@\n"
-  "        return \"failed to load symbol: %%symbol%%\";@\n"
-  "    }\n"
-  "\n"
-  "    return NULL;\n"
-  "}\n"
-  "\n"
-  "/* free library handle, no error checks */\n"
-  "GDO_LINKAGE void gdo_free_library(void)\n"
-  "{\n"
-  "    GDO_FREE_LIB(gdo_hndl.handle);\n"
-  "}\n"
-  "\n"
-  "\n"
-  "#if !defined(GDO_NOALIAS)\n"
-  "\n"
-  "/* aliases to raw symbol pointers */\n"
-  "#define %%func_symbol%%  gdo_hndl.%%func_symbol%%\n"
-  "#define %%obj_symbol%%  *gdo_hndl.%%obj_symbol%%\n"
-  "\n"
-  "#endif // !GDO_NOALIAS\n"
-  "\n"
-  "";
-
-#define min_c_header_LENGTH 1840
-
+static const char *min_c_header[] = {
+  "/* whether to use WinAPI */",
+  "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)",
+  "# define GDO_WINAPI",
+  "#endif",
+  "",
+  "#ifdef GDO_WINAPI",
+  "# include <windows.h>",
+  "# define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)",
+  "# define GDO_FREE_LIB(handle)         FreeLibrary(handle)",
+  "/* cast to void* to avoid compiler warnings */",
+  "# define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)",
+  "#else",
+  "# include <dlfcn.h>",
+  "# define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)",
+  "# define GDO_FREE_LIB(handle)         dlclose(handle)",
+  "# define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)",
+  "#endif",
+  "",
+  "#ifdef GDO_STATIC",
+  "# define GDO_LINKAGE  static",
+  "#else",
+  "# define GDO_LINKAGE  /**/",
+  "#endif",
+  "",
+  "",
+  "/* Our library and symbols handle */",
+  "typedef struct gdo_handle",
+  "{",
+  "#ifdef GDO_WINAPI",
+  "    HMODULE handle;",
+  "#else",
+  "    void *handle;",
+  "#endif",
+  "",
+  "    %%type%% (*%%func_symbol%%)(%%args%%);",
+  "    %%obj_type%% *%%obj_symbol%%;",
+  "",
+  "} gdo_handle_t;",
+  "",
+  "GDO_LINKAGE gdo_handle_t gdo_hndl = {0};",
+  "",
+  "",
+  "/* returns NULL on success and an error message if loading failed */",
+  "GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)",
+  "{",
+  "    gdo_hndl.handle = GDO_LOAD_LIB(filename);",
+  "",
+  "    if (!gdo_hndl.handle) {",
+  "        return \"failed to load library\";",
+  "    }",
+  "\n" /* multiline entry */
+  "    /* %%symbol%% */\n"
+  "    gdo_hndl.%%symbol%% = \n"
+  "        (%%sym_type%%)\n"
+  "            GDO_GET_SYM(gdo_hndl.handle, \"%%symbol%%\");\n"
+  "    if (!gdo_hndl.%%symbol%%) {\n"
+  "        GDO_FREE_LIB(gdo_hndl.handle);\n"
+  "        return \"failed to load symbol: %%symbol%%\";\n"
+  "    }",
+  "",
+  "    return NULL;",
+  "}",
+  "",
+  "/* free library handle, no error checks */",
+  "GDO_LINKAGE void gdo_free_library(void)",
+  "{",
+  "    GDO_FREE_LIB(gdo_hndl.handle);",
+  "}",
+  "",
+  "",
+  "#if !defined(GDO_NOALIAS)",
+  "",
+  "/* aliases to raw symbol pointers */",
+  "#define %%func_symbol%%  gdo_hndl.%%func_symbol%%",
+  "#define %%obj_symbol%%  *gdo_hndl.%%obj_symbol%%",
+  "",
+  "#endif // !GDO_NOALIAS",
+  NULL
+};
 
 /* minimal_cxxeh.hpp */
-static const char *min_cxx_header =
-  "/* whether to use WinAPI */\n"
-  "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)\n"
-  "# define GDO_WINAPI\n"
-  "#endif\n"
-  "\n"
-  "#include <stdexcept>\n"
-  "#include <string>\n"
-  "#ifdef GDO_WINAPI\n"
-  "# include <windows.h>\n"
-  "#else\n"
-  "# include <dlfcn.h>\n"
-  "#endif\n"
-  "\n"
-  "\n"
-  "/***\n"
-  "\n"
-  "A small C++ library loader that throws exceptions on error.\n"
-  "\n"
-  "Usage:\n"
-  "\n"
-  "    try {\n"
-  "        gdo::load_library_and_symbols( LIBNAME(helloworld,0) );\n"
-  "    }\n"
-  "    catch (const gdo::LibraryError &e) {\n"
-  "        std::cerr << \"error: failed to load library: \" << e.what() << std::endl;\n"
-  "        return 1;\n"
-  "    }\n"
-  "    catch (const gdo::SymbolError &e) {\n"
-  "        std::cerr << \"error: failed to load symbol: \" << e.what() << std::endl;\n"
-  "        return 1;\n"
-  "    }\n"
-  "    catch (...) {\n"
-  "        std::cerr << \"an unknown error has occurred\" << std::endl;\n"
-  "        return 1;\n"
-  "    }\n"
-  "\n"
-  "***/\n"
-  "\n"
-  "namespace gdo\n"
-  "{\n"
-  "    /* symbol pointers */\n"
-  "    namespace ptr\n"
-  "    {\n"
-  "        %%type%% (*%%func_symbol%%)(%%args%%) = nullptr;\n"
-  "        %%obj_type%% *%%obj_symbol%% = nullptr;\n"
-  "    }\n"
-  "\n"
-  "#ifdef GDO_WINAPI\n"
-  "\n"
-  "    /* library handle */\n"
-  "    HMODULE handle = nullptr;\n"
-  "\n"
-  "    /* load library */\n"
-  "    inline HMODULE load_lib(const char *filename, int flags=0) {\n"
-  "        return ::LoadLibraryExA(filename, nullptr, flags);\n"
-  "    }\n"
-  "\n"
-  "    /* free library */\n"
-  "    inline bool free_lib(HMODULE handle) {\n"
-  "        return (::FreeLibrary(handle) == TRUE);\n"
-  "    }\n"
-  "\n"
-  "    /* get symbol */\n"
-  "    inline void *get_symbol(HMODULE handle, const char *symbol) {\n"
-  "        /* cast to void* to avoid warnings such as [-Wcast-function-type] */\n"
-  "        return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));\n"
-  "    }\n"
-  "\n"
-  "#else /* dlfcn */\n"
-  "\n"
-  "    /* library handle */\n"
-  "    void *handle = nullptr;\n"
-  "\n"
-  "    /* load library */\n"
-  "    inline void *load_lib(const char *filename, int flags=RTLD_LAZY) {\n"
-  "        return ::dlopen(filename, flags);\n"
-  "    }\n"
-  "\n"
-  "    /* free library */\n"
-  "    inline bool free_lib(void *handle) {\n"
-  "        return (::dlclose(handle) == 0);\n"
-  "    }\n"
-  "\n"
-  "    /* get symbol */\n"
-  "    inline void *get_symbol(void *handle, const char *symbol) {\n"
-  "        return ::dlsym(handle, symbol);\n"
-  "    }\n"
-  "\n"
-  "#endif //GDO_WINAPI\n"
-  "\n"
-  "\n"
-  "    /* base error class */\n"
-  "    class Error : public std::runtime_error\n"
-  "    {\n"
-  "        public:\n"
-  "            Error(const std::string &message) : std::runtime_error(message) {}\n"
-  "            virtual ~Error() {}\n"
-  "    };\n"
-  "\n"
-  "    /* library loading error */\n"
-  "    class LibraryError : public Error\n"
-  "    {\n"
-  "        public:\n"
-  "            LibraryError(const std::string &message) : Error(message) {}\n"
-  "            virtual ~LibraryError() {}\n"
-  "    };\n"
-  "\n"
-  "    /* symbol loading error */\n"
-  "    class SymbolError : public Error\n"
-  "    {\n"
-  "        public:\n"
-  "            SymbolError(const std::string &message) : Error(message) {}\n"
-  "            virtual ~SymbolError() {}\n"
-  "    };\n"
-  "\n"
-  "\n"
-  "    /* throw an exception on error */\n"
-  "    void load_library_and_symbols(const char *filename) noexcept(false)\n"
-  "    {\n"
-  "        handle = load_lib(filename);\n"
-  "\n"
-  "        if (!handle) {\n"
-  "            if (filename == NULL) {\n"
-  "                filename = \"<NULL>\";\n"
-  "            } else if (*filename == 0) {\n"
-  "                filename = \"<EMPTY>\";\n"
-  "            }\n"
-  "\n"
-  "            throw LibraryError(filename);\n"
-  "        }\n"
-  "@\n"
-  "        /* %%symbol%% */@\n"
-  "        ptr::%%symbol%% =@\n"
-  "            reinterpret_cast<%%sym_type%%>(@\n"
-  "                get_symbol(handle, \"%%symbol%%\"));@\n"
-  "        if (!ptr::%%symbol%%) {@\n"
-  "            free_lib(handle);@\n"
-  "            throw SymbolError(\"%%symbol%%\");@\n"
-  "        }\n"
-  "    }\n"
-  "\n"
-  "}; /* end namespace */\n"
-  "\n"
-  "\n"
-  "#if !defined(GDO_NOALIAS)\n"
-  "\n"
-  "/* aliases to raw symbol pointers */\n"
-  "#define %%func_symbol%%  gdo::ptr::%%func_symbol%%\n"
-  "#define %%obj_symbol%%  *gdo::ptr::%%obj_symbol%%\n"
-  "\n"
-  "#endif // !GDO_NOALIAS\n"
-  "\n"
-  "";
-
-#define min_cxx_header_LENGTH 3558
-
+static const char *min_cxx_header[] = {
+  "/* whether to use WinAPI */",
+  "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)",
+  "# define GDO_WINAPI",
+  "#endif",
+  "",
+  "#include <stdexcept>",
+  "#include <string>",
+  "#ifdef GDO_WINAPI",
+  "# include <windows.h>",
+  "#else",
+  "# include <dlfcn.h>",
+  "#endif",
+  "",
+  "",
+  "/***",
+  "",
+  "A small C++ library loader that throws exceptions on error.",
+  "",
+  "Usage:",
+  "",
+  "    try {",
+  "        gdo::load_library_and_symbols( LIBNAME(helloworld,0) );",
+  "    }",
+  "    catch (const gdo::LibraryError &e) {",
+  "        std::cerr << \"error: failed to load library: \" << e.what() << std::endl;",
+  "        return 1;",
+  "    }",
+  "    catch (const gdo::SymbolError &e) {",
+  "        std::cerr << \"error: failed to load symbol: \" << e.what() << std::endl;",
+  "        return 1;",
+  "    }",
+  "    catch (...) {",
+  "        std::cerr << \"an unknown error has occurred\" << std::endl;",
+  "        return 1;",
+  "    }",
+  "",
+  "***/",
+  "",
+  "namespace gdo",
+  "{",
+  "    /* symbol pointers */",
+  "    namespace ptr",
+  "    {",
+  "        %%type%% (*%%func_symbol%%)(%%args%%) = nullptr;",
+  "        %%obj_type%% *%%obj_symbol%% = nullptr;",
+  "    }",
+  "",
+  "#ifdef GDO_WINAPI",
+  "",
+  "    /* library handle */",
+  "    HMODULE handle = nullptr;",
+  "",
+  "    /* load library */",
+  "    inline HMODULE load_lib(const char *filename, int flags=0) {",
+  "        return ::LoadLibraryExA(filename, nullptr, flags);",
+  "    }",
+  "",
+  "    /* free library */",
+  "    inline bool free_lib(HMODULE handle) {",
+  "        return (::FreeLibrary(handle) == TRUE);",
+  "    }",
+  "",
+  "    /* get symbol */",
+  "    inline void *get_symbol(HMODULE handle, const char *symbol) {",
+  "        /* cast to void* to avoid warnings such as [-Wcast-function-type] */",
+  "        return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));",
+  "    }",
+  "",
+  "#else /* dlfcn */",
+  "",
+  "    /* library handle */",
+  "    void *handle = nullptr;",
+  "",
+  "    /* load library */",
+  "    inline void *load_lib(const char *filename, int flags=RTLD_LAZY) {",
+  "        return ::dlopen(filename, flags);",
+  "    }",
+  "",
+  "    /* free library */",
+  "    inline bool free_lib(void *handle) {",
+  "        return (::dlclose(handle) == 0);",
+  "    }",
+  "",
+  "    /* get symbol */",
+  "    inline void *get_symbol(void *handle, const char *symbol) {",
+  "        return ::dlsym(handle, symbol);",
+  "    }",
+  "",
+  "#endif //GDO_WINAPI",
+  "",
+  "",
+  "    /* base error class */",
+  "    class Error : public std::runtime_error",
+  "    {",
+  "        public:",
+  "            Error(const std::string &message) : std::runtime_error(message) {}",
+  "            virtual ~Error() {}",
+  "    };",
+  "",
+  "    /* library loading error */",
+  "    class LibraryError : public Error",
+  "    {",
+  "        public:",
+  "            LibraryError(const std::string &message) : Error(message) {}",
+  "            virtual ~LibraryError() {}",
+  "    };",
+  "",
+  "    /* symbol loading error */",
+  "    class SymbolError : public Error",
+  "    {",
+  "        public:",
+  "            SymbolError(const std::string &message) : Error(message) {}",
+  "            virtual ~SymbolError() {}",
+  "    };",
+  "",
+  "",
+  "    /* throw an exception on error */",
+  "    void load_library_and_symbols(const char *filename) noexcept(false)",
+  "    {",
+  "        handle = load_lib(filename);",
+  "",
+  "        if (!handle) {",
+  "            if (filename == NULL) {",
+  "                filename = \"<NULL>\";",
+  "            } else if (*filename == 0) {",
+  "                filename = \"<EMPTY>\";",
+  "            }",
+  "",
+  "            throw LibraryError(filename);",
+  "        }",
+  "\n" /* multiline entry */
+  "        /* %%symbol%% */\n"
+  "        ptr::%%symbol%% =\n"
+  "            reinterpret_cast<%%sym_type%%>(\n"
+  "                get_symbol(handle, \"%%symbol%%\"));\n"
+  "        if (!ptr::%%symbol%%) {\n"
+  "            free_lib(handle);\n"
+  "            throw SymbolError(\"%%symbol%%\");\n"
+  "        }",
+  "    }",
+  "",
+  "}; /* end namespace */",
+  "",
+  "",
+  "#if !defined(GDO_NOALIAS)",
+  "",
+  "/* aliases to raw symbol pointers */",
+  "#define %%func_symbol%%  gdo::ptr::%%func_symbol%%",
+  "#define %%obj_symbol%%  *gdo::ptr::%%obj_symbol%%",
+  "",
+  "#endif // !GDO_NOALIAS",
+  NULL
+};
 
 #endif //_TEMPLATE_H_

@@ -85,7 +85,7 @@ private:
     void parse_custom_template(const std::string &ofile, bool use_stdout);
 
     /* parse.cpp */
-    std::string parse(const cstrList_t &data);
+    void parse(const cstrList_t &data, cio::ofstream &ofs);
 
 public:
 

@@ -29,6 +29,7 @@
 #else
 # include <unistd.h>
 #endif
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,8 +38,9 @@
 static void textdump(const char *in, const char *varName, FILE *fpOut)
 {
     FILE *fp = NULL;
-    unsigned int len = 0;
-    int c;
+    int c = 0;
+    bool multi_line = false;
+    bool new_line = true;
 
     if ((fp = fopen(in, "rb")) == NULL) {
         perror("fopen()");
@@ -47,24 +49,44 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     }
 
     fprintf(fpOut, "/* %s */\n", in);
-    fprintf(fpOut, "static const char *%s =\n  \"", varName);
+    fprintf(fpOut, "static const char *%s[] = {\n", varName);
 
     while ((c = fgetc(fp)) != EOF)
     {
-        len++;
+        if (new_line) {
+            fprintf(fpOut, "%s", "  \"");
+            new_line = false;
+        }
 
         switch (c) {
         case '\t':
             fprintf(fpOut, "%s", "\\t");
             break;
         case '\n':
-            fprintf(fpOut, "%s", "\\n\"\n  \"");
+            fprintf(fpOut, "%s", "\",\n");
+            new_line = true;
+            multi_line = false;
             break;
         case '"':
             fprintf(fpOut, "%s", "\\\"");
             break;
         case '\\':
             fprintf(fpOut, "%s", "\\\\");
+            break;
+        case '@':
+            /* concatenate lines ending on »@\n« */
+            if ((c = fgetc(fp)) == '\n' || c == EOF) {
+                if (!multi_line) {
+                    fprintf(fpOut, "%s", "\\n\" /* multiline entry */\n");
+                    multi_line = true;
+                } else {
+                    fprintf(fpOut, "%s", "\\n\"\n");
+                }
+                fprintf(fpOut, "%s", "  \"");
+            } else {
+                fprintf(fpOut, "%c", '@');
+                ungetc(c, fp);
+            }
             break;
         default:
             if (c < ' ' || c > '~') {
@@ -76,13 +98,12 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
         }
     }
 
-    if (c != '\n') {
-        len++;
-        fprintf(fpOut, "%s", "\\n\"\n  \"");
+    if (!new_line) {
+        fprintf(fpOut, "%s", "\",\n");
     }
 
-    fprintf(fpOut, "%s", "\";\n\n");
-    fprintf(fpOut, "#define %s_LENGTH %u\n\n\n", varName, len);
+    fprintf(fpOut, "%s", "  NULL\n");
+    fprintf(fpOut, "%s", "};\n\n");
 
     fclose(fp);
 }
@@ -106,6 +127,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    fprintf(fp, "%s\n", "/* this file was automatically generated; do not edit! */\n");
     fprintf(fp, "%s\n", "#ifndef _TEMPLATE_H_");
     fprintf(fp, "%s\n", "#define _TEMPLATE_H_\n");
 
