@@ -5,6 +5,11 @@
 
 /* filename_macros.h */
 static const char *filename_macros[] = {
+  "",
+  "/*****************************************************************************/",
+  "/*                              filename macros                              */",
+  "/*****************************************************************************/",
+  "",
   "/* default library filename extension */",
   "#ifdef LIBEXT",
   "# undef LIBEXT",
@@ -28,7 +33,6 @@ static const char *filename_macros[] = {
   "# define LIBEXTA    \".so\"",
   "# define LIBEXTW   L\".so\"",
   "#endif",
-  "",
   "",
   "/**",
   " * library name with API number",
@@ -74,7 +78,6 @@ static const char *filename_macros[] = {
   "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so.\" #API",
   "#endif",
   "",
-  "",
   "/* Unicode/ANSI default macros */",
   "#if defined(_WIN32) && defined(_UNICODE)",
   "# define LIBEXT              LIBEXTW",
@@ -116,7 +119,10 @@ static const char *license[] = {
 
 /* common.h */
 static const char *common_header[] = {
-  "//%DNL%// common macros and includes",
+  "",
+  "/*****************************************************************************/",
+  "/*                         common macros and headers                         */",
+  "/*****************************************************************************/",
   "",
   "/* whether to use WinAPI or dlfcn */",
   "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)",
@@ -266,7 +272,6 @@ static const char *common_header[] = {
   "#  define GDO_DEFAULT_FLAGS (RTLD_LAZY | RTLD_MEMBER)",
   "# endif",
   "#endif",
-  "",
   "",
   "%PARAM_SKIP_COMMENT_BEGIN%",
   "#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)",
@@ -497,6 +502,11 @@ static const char *c_header[] = {
   "***/",
   "",
   "",
+  "/*****************************************************************************/",
+  "/*                                   C API                                   */",
+  "/*****************************************************************************/",
+  "",
+  "",
   "/* static linkage */",
   "#ifdef GDO_STATIC",
   "# define GDO_LINKAGE  static",
@@ -557,7 +567,6 @@ static const char *c_header[] = {
   "GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);",
   "",
   "",
-  "",
   "/* aliases to raw function pointers */",
   "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)",
   "#define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_",
@@ -567,12 +576,16 @@ static const char *c_header[] = {
   "#if !defined(GDO_DISABLE_ALIASING)",
   "#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_",
   "#endif",
-  "",
   NULL
 };
 
 /* c.c */
 static const char *c_body[] = {
+  "",
+  "/*****************************************************************************/",
+  "/*                           C API implementation                            */",
+  "/*****************************************************************************/",
+  "",
   "#if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)",
   "# pragma comment(lib, \"user32.lib\")",
   "#endif",

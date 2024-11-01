@@ -204,6 +204,11 @@ LIBEXTW
 ***/
 
 
+/*****************************************************************************/
+/*                                   C API                                   */
+/*****************************************************************************/
+
+
 /* static linkage */
 #ifdef GDO_STATIC
 # define GDO_LINKAGE  static
@@ -264,7 +269,6 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
 
-
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_
@@ -274,4 +278,3 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 #if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_
 #endif
-

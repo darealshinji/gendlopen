@@ -1,4 +1,7 @@
-//%DNL%// common macros and includes
+
+/*****************************************************************************/
+/*                         common macros and headers                         */
+/*****************************************************************************/
 
 /* whether to use WinAPI or dlfcn */
 #if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
@@ -148,7 +151,6 @@
 #  define GDO_DEFAULT_FLAGS (RTLD_LAZY | RTLD_MEMBER)
 # endif
 #endif
-
 
 %PARAM_SKIP_COMMENT_BEGIN%
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)

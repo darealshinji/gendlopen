@@ -517,7 +517,8 @@ void gendlopen::generate()
 
     m_ofs << note;
     data::save_license_data(m_ofs);
-    m_ofs << "#ifndef _" << header_guard << "_\n"
+    m_ofs << "\n"
+             "#ifndef _" << header_guard << "_\n"
              "#define _" << header_guard << "_\n\n";
 
     if (output_is_c) {
@@ -528,7 +529,6 @@ void gendlopen::generate()
 
     /* insert filename macros BEFORE defines and headers */
     data::save_filename_macros_data(m_ofs);
-    m_ofs << '\n';
 
     print_extra_defines(m_ofs, m_defines);
     print_default_libname(m_ofs, m_name_upper, m_deflib_a, m_deflib_w);

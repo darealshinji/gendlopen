@@ -1,3 +1,8 @@
+
+/*****************************************************************************/
+/*                              filename macros                              */
+/*****************************************************************************/
+
 /* default library filename extension */
 #ifdef LIBEXT
 # undef LIBEXT
@@ -21,7 +26,6 @@
 # define LIBEXTA    ".so"
 # define LIBEXTW   L".so"
 #endif
-
 
 /**
  * library name with API number
@@ -66,7 +70,6 @@
 # define LIBNAMEA(NAME, API)    "lib" #NAME ".so." #API
 # define LIBNAMEW(NAME, API)   L"lib" #NAME ".so." #API
 #endif
-
 
 /* Unicode/ANSI default macros */
 #if defined(_WIN32) && defined(_UNICODE)

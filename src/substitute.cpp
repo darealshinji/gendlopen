@@ -206,7 +206,11 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
         {
             /* empty line */
             if (line[0] == 0) {
-                ofs << '\n';
+                if (comment_out) {
+                    ofs << "//\n";
+                } else {
+                    ofs << '\n';
+                }
                 continue;
             }
 
