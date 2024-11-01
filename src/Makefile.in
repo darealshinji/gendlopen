@@ -7,7 +7,7 @@ OBJS = \
 	generate.o \
 	help.o \
 	main.o \
-	parse.o \
+	substitute.o \
 	tokenize.o \
 	utils.o \
 	$(NULL)
@@ -72,8 +72,8 @@ help.o: help.cpp
 main.o: main.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
 
-parse.o: parse.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse.cpp -o $@
+substitute.o: substitute.cpp
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c substitute.cpp -o $@
 
 tokenize.o: tokenize.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c tokenize.cpp -o $@

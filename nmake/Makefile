@@ -65,7 +65,7 @@ sources = \
 	$(s)\src\generate.cpp \
 	$(s)\src\help.cpp \
 	$(s)\src\main.cpp \
-	$(s)\src\parse.cpp \
+	$(s)\src\substitute.cpp \
 	$(s)\src\tokenize.cpp \
 	$(s)\src\utils.cpp
 

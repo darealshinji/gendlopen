@@ -370,8 +370,8 @@ void gendlopen::tokenize_input()
     format_args(m_objects);
 }
 
-/* read and parse custom template */
-void gendlopen::parse_custom_template(const std::string &ofile, bool use_stdout)
+/* read and process custom template */
+void gendlopen::read_custom_template(const std::string &ofile, bool use_stdout)
 {
     cstrList_t data;
     cio::ofstream out;
@@ -401,7 +401,7 @@ void gendlopen::parse_custom_template(const std::string &ofile, bool use_stdout)
 
         twolines[0] = line.c_str();
         list.push_back(twolines);
-        parse(list, m_ofs);
+        substitute(list, m_ofs);
 
         list.clear();
         line.clear();
@@ -440,9 +440,9 @@ void gendlopen::generate()
 
     const bool use_stdout = (m_ofile == "-");
 
-    /* read and parse custom template (`-format' will be ignored) */
+    /* custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
-        parse_custom_template(m_ofile, use_stdout);
+        read_custom_template(m_ofile, use_stdout);
         return;
     }
 
@@ -535,7 +535,7 @@ void gendlopen::generate()
     print_includes(m_ofs, m_includes);
 
     data::concat_templates(header_data, body_data, m_format, m_separate);
-    parse(header_data, m_ofs);
+    substitute(header_data, m_ofs);
 
     if (output_is_c) {
         m_ofs << "\n"
@@ -557,7 +557,7 @@ void gendlopen::generate()
         m_ofs_body << note;
         data::save_license_data(m_ofs_body);
         m_ofs_body << "#include \"" << header_name << "\"\n\n";
-        parse(body_data, m_ofs_body);
+        substitute(body_data, m_ofs_body);
     }
 }
 

@@ -82,10 +82,10 @@ private:
     /* generate.cpp */
     void open_ofstream(const std::filesystem::path &opath, bool force, bool body);
     void tokenize_input();
-    void parse_custom_template(const std::string &ofile, bool use_stdout);
+    void read_custom_template(const std::string &ofile, bool use_stdout);
 
-    /* parse.cpp */
-    void parse(const cstrList_t &data, cio::ofstream &ofs);
+    /* substitute.cpp */
+    void substitute(const cstrList_t &data, cio::ofstream &ofs);
 
 public:
 

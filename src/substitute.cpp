@@ -23,7 +23,7 @@
  */
 
 /**
- * Parse the embedded template data and substitute the placeholders.
+ * Substitute placeholders in embedded template data.
  */
 
 #include <iostream>
@@ -153,8 +153,8 @@ namespace /* anonymous */
     }
 }
 
-/* parse the template data */
-void gendlopen::parse(const cstrList_t &data, cio::ofstream &ofs)
+/* substitute placeholders */
+void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
 {
     std::string fmt_upper, fmt_lower, fmt_namespace;
     bool comment_out = false;
