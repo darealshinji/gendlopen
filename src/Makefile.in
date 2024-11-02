@@ -7,6 +7,7 @@ OBJS = \
 	generate.o \
 	help.o \
 	main.o \
+	lex.yy.o \
 	substitute.o \
 	tokenize.o \
 	utils.o \
@@ -50,6 +51,8 @@ gendlopen$(EXEEXT): $(OBJS)
 
 $(OBJS): $(HDRS)
 
+lex.yy.c: mylex.l
+	$(gen_v)$(LEX) mylex.l
 
 cio_ifstream.o: cio_ifstream.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ifstream.cpp -o $@
@@ -71,6 +74,9 @@ help.o: help.cpp
 
 main.o: main.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
+
+lex.yy.o: lex.yy.c
+	$(cc_v)$(CC) $(CFLAGS) -c lex.yy.c -o $@
 
 substitute.o: substitute.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c substitute.cpp -o $@

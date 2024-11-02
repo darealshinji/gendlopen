@@ -39,17 +39,14 @@
 #include "gendlopen.hpp"
 
 
+/* lex.yy.c */
+extern "C" const char *mylex(FILE *fp, int *rv);
+extern "C" const char *mylex_lasterror();
+extern "C" void yyset_lineno(int n);
+
+
 namespace /* anonymous */
 {
-
-template<class T1, class T2>
-void save_to_vec(T1 &item, T2 &vec)
-{
-    if (!item.empty()) {
-        vec.push_back(item);
-        item.clear();
-    }
-}
 
 template<class C, typename T>
 bool find_in_list(C &list, T &item)
@@ -96,143 +93,32 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
-void remove_comment(const std::string &beg, const std::string &end, std::string &s)
-{
-    size_t pos_beg = 0;
-    size_t pos_end = 0;
-
-    while ((pos_beg = s.find(beg, pos_beg)) != std::string::npos) {
-        if ((pos_end = s.find(end, pos_beg)) != std::string::npos) {
-            /* replace with spaces, keep newlines */
-            for (size_t i = pos_beg; i < pos_end + end.size(); i++) {
-                if (s[i] != '\n') {
-                    s[i] = ' ';
-                }
-            }
-        }
-    }
-}
-
-const char *illegal_char(const char &c, int &lineno)
-{
-    static char buf[128];
-    const char *fmt = "illegal character `%c' at line %d";
-
-    if (!isprint(c)) {
-        fmt = "illegal character `\\%03u' at line %d";
-    }
-
-    sprintf(buf, fmt, c, lineno);
-
-    return buf;
-}
-
 /* tokenize stream */
-std::string tokenize_stream(cio::ifstream &ifs, std::vector<vstring_t> &vec, bool first_line_read)
+bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
 {
-    char ch;
-    std::string token, text;
-    vstring_t line;
-    int lineno = 1;
+    int rv = 0;
+    const char *str;
+    vstring_t proto;
 
-    /* bump initial line number if input is stdin and we
-     * had already read the first line */
-    if (first_line_read && ifs.is_stdin()) {
-        lineno++;
-    }
-
-    /* save file content to std::string first
-     * which makes it much easier to parse */
-    if (ifs.file_size() > 0) {
-        text.reserve(ifs.file_size());
-    }
-
-    while (ifs.get(ch) && ifs.good()) {
-        text += ch;
-    }
-
-    /* newline in case of »//« comment,
-     * semicolon in case it's missing */
-    text += "\n;";
-
-    ifs.close();
-
-    /* strip commentary */
-    remove_comment("/*", "*/", text);
-    remove_comment("//", "\n", text);
-
-    for (size_t i = 0; i < text.size(); i++)
+    while ((str = mylex(fp, &rv)) != NULL)
     {
-        char &c = text[i];
-
-        switch (c)
-        {
-        /* newline */
-        case '\n':
-            lineno++;
-            /* FALLTHROUGH */
-
-        /* space */
-        case ' ':
-        case '\t':
-        case '\v':
-        case '\f':
-        case '\r':
-            save_to_vec(token, line);
-            break;
-
-        /* var, type, etc. */
-#ifndef _MSC_VER
-        case 'a' ... 'z':
-        case 'A' ... 'Z':
-        case '0' ... '9':
-#endif
-        case '_':
-            token += c;
-            break;
-
-        /* »...« */
-        case '.':
-            if (strncmp(text.c_str() + i, "...", 3) != 0) {
-                return illegal_char(c, lineno);
-            }
-            save_to_vec(token, line);
-            line.push_back("...");
-            i += 2;
-            break;
-
-        /* other legal characters */
-        case '*':
-        case ',':
-        case '(': case ')':
-        case '[': case ']':
-            save_to_vec(token, line);
-            token = c;
-            save_to_vec(token, line);
-            break;
-
-        /* sequence end */
-        case ';':
-            save_to_vec(token, line);
-            save_to_vec(line, vec);
-            break;
-
-        /* other */
-        default:
-#ifdef _MSC_VER
-            if (utils::range(c, 'a', 'z') ||
-                utils::range(c, 'A', 'Z') ||
-                utils::range(c, '0', '9'))
-            {
-                token += c;
-                break;
-            }
-#endif
-            return illegal_char(c, lineno);
+        if (str[0] == ';' && !proto.empty()) {
+            vec.push_back(proto);
+            proto.clear();
+        } else {
+            proto.push_back(str);
         }
     }
 
-    return {};
+    if (rv == -1) {
+        return false;
+    }
+
+    if (!proto.empty()) {
+        vec.push_back(proto);
+    }
+
+    return true;
 }
 
 /* check for mismatching parentheses */
@@ -541,17 +427,42 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 /* read input and tokenize */
 void gendlopen::tokenize()
 {
+    FILE *fp;
     std::string msg;
     std::vector<vstring_t> vec_tokens;
     vproto_t vproto;
 
     std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>" : "file: " + m_ifile;
 
-    /* read and tokenize input */
-    msg = tokenize_stream(m_ifs, vec_tokens, m_second_attempt);
+    m_ifs.close();
 
-    if (!msg.empty()) {
-        throw error(file_or_stdin + '\n' + msg);
+    if (m_ifile == "-") {
+        fp = stdin;
+    } else if ((fp = fopen(m_ifile.c_str(), "rb")) == NULL) {
+        perror("fopen()");
+        throw error(file_or_stdin);
+    }
+
+    if (m_second_attempt) {
+        yyset_lineno(2);
+    }
+
+    /* read and tokenize input */
+    bool ret = tokenize_stream(fp, vec_tokens);
+
+    if (fp != stdin) {
+        fclose(fp);
+    }
+
+    if (!ret) {
+        const char *p = mylex_lasterror();
+
+        if (p) {
+            file_or_stdin += '\n';
+            file_or_stdin += p;
+        }
+
+        throw error(file_or_stdin);
     }
 
     /* get prototypes from tokens */

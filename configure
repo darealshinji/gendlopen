@@ -485,6 +485,21 @@ if [ "x$ar" = "x" ]; then
     ar="$tool"
 fi
 
+# flex
+if [ "x$lex" = "x" ]; then
+    check_tool flex
+
+    if [ "x$tool" = "x" ]; then
+        check_tool lex #exit
+    fi
+
+    if [ "x$tool" = "x" ]; then
+        tool="lex" # normally it's not needed anyway
+    fi
+
+    lex="$tool"
+fi
+
 
 
 ###############################################################################
@@ -731,6 +746,7 @@ CCBUILD       = $cc_build
 AR            = $ar
 CLANG         = $clang
 CLANG_TARGET  = $clang_ast_target
+LEX           = $lex
 
 EXEEXT        = $exeext
 DEF_GENDLOPEN = $PWD/src/gendlopen\$(EXEEXT)

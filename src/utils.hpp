@@ -31,7 +31,7 @@
 namespace utils
 {
 
-const char * const wspcs = " \t\n\r\v\f";
+const char * const wspcs = " \t\n\r";
 
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);
