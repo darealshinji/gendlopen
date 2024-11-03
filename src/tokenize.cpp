@@ -40,7 +40,8 @@
 
 
 /* lex.yy.c */
-extern "C" const char *mylex(FILE *fp, int *rv);
+extern "C" char *yytext;
+extern "C" int mylex(FILE *fp);
 extern "C" const char *mylex_lasterror();
 extern "C" void yyset_lineno(int n);
 
@@ -96,17 +97,17 @@ bool keyword_or_type(const std::string &s)
 /* tokenize stream */
 bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
 {
-    int rv = 0;
-    const char *str;
-    vstring_t proto;
+    int rv = -1;
+    vstring_t tokens;
 
-    while ((str = mylex(fp, &rv)) != NULL)
+    while ((rv = mylex(fp)) == 1)
     {
-        if (str[0] == ';' && !proto.empty()) {
-            vec.push_back(proto);
-            proto.clear();
-        } else {
-            proto.push_back(str);
+        if (yytext[0] == ';' && !tokens.empty()) {
+            vec.push_back(tokens);
+            tokens.clear();
+        } else if (strcmp(yytext, "extern") != 0) {
+            /* don't add "extern" keyword */
+            tokens.push_back(yytext);
         }
     }
 
@@ -114,118 +115,177 @@ bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
         return false;
     }
 
-    if (!proto.empty()) {
-        vec.push_back(proto);
+    /* push back if last prototype didn't end on semicolon */
+    if (!tokens.empty()) {
+        vec.push_back(tokens);
     }
 
     return true;
 }
 
-/* check for mismatching parentheses */
-bool has_mismatching_parentheses(const vstring_t &tokens)
-{
-    int scope = 0;
+template <typename T, class C>
+bool not_beg(T &it, C &vec) {
+    return (it != vec.begin());
+}
 
-    for (const auto &e : tokens) {
-        if (e == "(") {
-            scope++;
-        } else if (e == ")") {
-            if (--scope < 0) {
-                break;
+template <class C>
+bool last_is(char c, C &vec) {
+    return (vec.back()[0] == c);
+}
+
+template <typename T, class C>
+bool incr_if(char c, T &it, C &vec) {
+    return ((*it)[0] == c && ++it != vec.end());
+}
+
+template <typename T, class C>
+bool incr_if_ident(T &it, C &vec)
+{
+    if (utils::range((*it)[0], 'A','Z') ||
+        utils::range((*it)[0], 'a','z') ||
+        (*it)[0] == '_')
+    {
+        return (++it != vec.end());
+    }
+
+    return false;
+}
+
+bool is_function_pointer(const vstring_t &v, proto_t &p)
+{
+    /* type ( * name ) ( ) */
+    if (v.size() < 7) {
+        return false;
+    }
+
+    for (auto i = v.begin(); i != v.end(); i++) {
+        /* first open parentheses */
+        if (not_beg(i, v) && incr_if('(', i, v)) {
+            if (incr_if('*', i, v) && incr_if_ident(i, v))
+            {
+                auto ident = i - 1;
+
+                if (incr_if(')', i, v) && incr_if('(', i, v) && last_is(')', v))
+                {
+                    p.prototype = proto::function_pointer;
+                    p.symbol = *ident;
+
+                    for (i = v.begin(); i != ident - 2; i++) {
+                        p.type += *i + ' ';
+                    }
+                    p.type += "(*";
+
+                    for (i = ident + 1; i != v.end(); i++) {
+                        p.type += *i + ' ';
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    return false;
+}
+
+bool is_function(const vstring_t &v, proto_t &p)
+{
+    /* type name ( ) */
+    if (v.size() < 4) {
+        return false;
+    }
+
+    for (auto i = v.begin(); i != v.end(); i++) {
+        /* type ... ident */
+        if (not_beg(i, v) && incr_if_ident(i, v))
+        {
+            auto ident = i - 1;
+
+            /* type ... ident lparen */
+            if (incr_if('(', i, v)) {
+                /* type ... ident lparen ... rparen */
+                if (!incr_if('*', i, v) && last_is(')',v)) {
+                    p.prototype = proto::function;
+                    p.symbol = *ident;
+
+                    /* type */
+                    for (i = v.begin(); i != ident; i++) {
+                        p.type += *i + ' ';
+                    }
+
+                    /* args */
+                    for (i = ident + 1; i != v.end(); i++) {
+                        p.args += *i + ' ';
+                    }
+
+                    utils::delete_prefix(p.args, "( ");
+                    utils::delete_suffix(p.args, ") ");
+
+                    if (p.args.empty()) {
+                        p.args = "void";
+                    }
+
+                    return true;
+                }
+                return false;
             }
         }
     }
 
-    return (scope != 0);
+    return false;
+}
+
+bool is_object(vstring_t &vec, proto_t &proto)
+{
+    /* type name */
+    if (vec.size() < 2) {
+        return false;
+    }
+
+    for (const auto &e : vec) {
+        if (e[0] == '(' || e[0] == ')') {
+            return false;
+        }
+    }
+
+    proto.prototype = proto::object;
+    proto.symbol = vec.back();
+    vec.pop_back();
+
+    for (const auto &e : vec) {
+        proto.type += e + ' ';
+    }
+
+    return true;
 }
 
 /* save tokens into prototypes */
-std::string get_prototypes(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
+bool get_prototypes(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
 {
-    for (auto &l : vec_tokens) {
+    for (auto &tokens : vec_tokens) {
         proto_t proto;
 
-        if (has_mismatching_parentheses(l)) {
-            std::string s = "mismatching parentheses:";
-
-            for (const auto &e : l) {
-                s += ' ' + e;
-            }
-            return s;
-        }
-
-        if (l.back() == ")") {
-            /* function */
-            vstring_t vec_type;
-            l.pop_back();
-
-            auto it = l.begin();
-
-            /* look for the first opening parentheses */
-            for ( ; it != l.end(); it++) {
-                if (*it == "(") {
-                    it++;
-                    break;
-                }
-                vec_type.push_back(*it);
-            }
-
-            /* symbol */
-            proto.symbol = vec_type.back();
-            vec_type.pop_back();
-
-            /* type */
-            for (const auto &e : vec_type) {
-                proto.type += e + ' ';
-            }
-
-            /* args */
-            for ( ; it != l.end(); it++) {
-                proto.args += *it + ' ';
-            }
-
-            if (proto.args.empty()) {
-                proto.args = "void";
-            }
-
+        if (tokens.size() >= 2 &&
+            (is_function(tokens, proto) ||
+             is_object(tokens, proto) ||
+             is_function_pointer(tokens, proto)))
+        {
             utils::strip_spaces(proto.type);
             utils::strip_spaces(proto.args);
-
-            if (proto.type.empty() || proto.symbol.empty()) {
-                std::string s = concat_function_prototype(proto);
-                utils::strip_spaces(s);
-                return "failed to read prototype: " + s;
-            }
+            vproto.push_back(proto);
         } else {
-            /* object */
-            proto.symbol = l.back();
-            l.pop_back();
+            std::cerr << "error: ";
 
-            for (const auto &e : l) {
-                proto.type += e + ' ';
+            for (const auto &e : tokens) {
+                std::cerr << e << ' ';
             }
+            std::cerr << std::endl;
 
-            utils::strip_spaces(proto.type);
-
-            if (proto.type.empty() || proto.symbol.empty() ||
-                proto.type.find_first_of("()") != std::string::npos ||
-                proto.symbol.find_first_of("()") != std::string::npos)
-            {
-                std::string s = proto.type + ' ' + proto.symbol;
-                utils::strip_spaces(s);
-                return "failed to read prototype: " + s;
-            }
+            return false;
         }
-
-        /* remove reserved "extern" keyword */
-        if (proto.type.starts_with("extern ")) {
-            proto.type.erase(0, 7);
-        }
-
-        vproto.push_back(proto);
     }
 
-    return {};
+    return true;
 }
 
 /* extract argument names from args list */
@@ -428,7 +488,6 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 void gendlopen::tokenize()
 {
     FILE *fp;
-    std::string msg;
     std::vector<vstring_t> vec_tokens;
     vproto_t vproto;
 
@@ -466,16 +525,10 @@ void gendlopen::tokenize()
     }
 
     /* get prototypes from tokens */
-    msg = get_prototypes(vec_tokens, vproto);
-
-    if (!msg.empty()) {
-        if (msg.find("(*") != std::string::npos ||
-            msg.find("( *") != std::string::npos)
-        {
-            msg += "\nhint: use typedefs for function pointers!";
-        }
-
-        throw error(file_or_stdin + '\n' + msg);
+    if (!get_prototypes(vec_tokens, vproto)) {
+        file_or_stdin += '\n';
+        file_or_stdin += "failed to read prototypes";
+        throw error(file_or_stdin);
     }
 
     /* nothing found? */
@@ -495,7 +548,7 @@ void gendlopen::tokenize()
 
     /* get parameter names */
     for (auto &e : vproto) {
-        msg = get_parameter_names(e, m_parameter_names);
+        std::string msg = get_parameter_names(e, m_parameter_names);
 
         if (!msg.empty()) {
             throw error(msg);

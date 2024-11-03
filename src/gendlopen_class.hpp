@@ -47,7 +47,7 @@ public:
 private:
 
     vstring_t m_args, m_includes, m_symbols, m_prefix;
-    vproto_t m_prototypes, m_objects;
+    vproto_t m_prototypes, m_objects, m_fptrs;
 
     std::string m_ifile;
     std::string m_ofile = "-";

@@ -31,7 +31,17 @@
 
 /* typedefs */
 
+namespace proto
+{
+    typedef enum {
+        function,
+        function_pointer,
+        object
+    } type;
+}
+
 typedef struct _proto {
+    proto::type prototype;
     std::string type;
     std::string symbol;
     std::string args;

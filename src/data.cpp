@@ -36,6 +36,7 @@ namespace /* anonymous */
         for (int i = 0; line != NULL; i++, line = data[i]) {
             ofs << line << '\n';
         }
+        ofs << '\n';
     }
 }
 

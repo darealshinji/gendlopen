@@ -108,7 +108,7 @@ namespace /* anonymous */
                 utils::replace("%%return%%", "return", copy);
             }
 
-            if (e.type.ends_with("*")) {
+            if (e.type.back() == '*') {
                 /* »char * x«  -->  »char *x« */
                 utils::replace("%%type%% ", e.type, copy);
             }

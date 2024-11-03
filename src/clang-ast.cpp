@@ -69,7 +69,7 @@ enum {
 };
 
 typedef struct decl {
-    bool is_func;
+    proto::type prototype;
     std::string symbol;
     std::string type;
     //std::string notype_args;
@@ -123,14 +123,19 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
         if (pos == std::string::npos) {
             return false;
         }
-        decl.is_func = true;
+        decl.prototype = proto::function;
         decl.type = m[3].str().substr(0, pos);
         //decl.notype_args = m[3].str().substr(pos + 1);
         //decl.notype_args.pop_back();
     } else {
         /* variable declaration */
-        decl.is_func = false;
         decl.type = m[3];
+
+        if (m[3].str().find("(*)") != std::string::npos) {
+            decl.prototype = proto::function_pointer;
+        } else {
+            decl.prototype = proto::object;
+        }
     }
 
     utils::strip_spaces(decl.type);
@@ -185,7 +190,7 @@ bool gendlopen::clang_ast_line(std::string &line, int mode)
         return false;
     }
 
-    if (decl.is_func) {
+    if (decl.prototype == proto::function) {
         /* function */
         std::string args, notype_args;
         char letter = 'a';
@@ -205,15 +210,15 @@ bool gendlopen::clang_ast_line(std::string &line, int mode)
         utils::delete_suffix(args, ", ");
         utils::delete_suffix(notype_args, ", ");
 
-        proto_t proto = { decl.type, decl.symbol, args, notype_args };
+        proto_t proto = { proto::function, decl.type, decl.symbol, args, notype_args };
         m_prototypes.push_back(proto);
 
         /* continue to analyze the current line stored in buffer */
         return true;
-    } else if (!decl.symbol.empty()) {
+    } else {
         /* variable */
-        proto_t obj = { decl.type, decl.symbol, {}, {} };
-        m_objects.push_back(obj);
+        proto_t proto = { decl.prototype, decl.type, decl.symbol, {}, {} };
+        m_objects.push_back(proto);
     }
 
     return false;

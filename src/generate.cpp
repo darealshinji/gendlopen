@@ -47,6 +47,10 @@ namespace fs = std::filesystem;
 
 namespace /* anonymous */
 {
+
+/* suffix for function pointer typedefs */
+const char * const fptr_suffix = "__fptr_t";
+
 /**
  * convert from string to wstring;
  * this is required because on MinGW std::filesystem will throw an exception
@@ -211,13 +215,30 @@ inline void print_extra_defines(cio::ofstream &out, const std::string &defs)
     }
 }
 
-/* extra includes */
-inline void print_includes(cio::ofstream &out, const vstring_t &incs)
+/* typedefs */
+inline void print_typedefs(cio::ofstream &out, const vproto_t &fptrs)
 {
-    if (!incs.empty()) {
+    if (!fptrs.empty()) {
+        out << "/* function pointer typedefs */\n";
+
+        for (auto &e : fptrs) {
+            std::string s = e.type;
+            auto pos = s.find("(*)") + 2;
+            s.insert(pos, fptr_suffix);
+            s.insert(pos, e.symbol);
+            out << "typedef " << s << ";\n";
+        }
+        out << '\n';
+    }
+}
+
+/* extra includes */
+inline void print_includes(cio::ofstream &out, const vstring_t &includes)
+{
+    if (!includes.empty()) {
         out << "/* extra headers */\n";
 
-        for (auto &e : incs) {
+        for (auto &e : includes) {
             out << "#include " << e << '\n';
         }
         out << '\n';
@@ -225,27 +246,34 @@ inline void print_includes(cio::ofstream &out, const vstring_t &incs)
 }
 
 /* print all found symbols */
-void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions)
+void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions, const vproto_t &fptrs)
 {
-    for (const auto &e : objects) {
-        std::cout << e.type;
+    cio::ofstream out;
 
-        if (!e.type.ends_with(" *")) {
-            std::cout << ' ';
+    print_typedefs(out, fptrs);
+
+    std::cout << "/* prototypes */\n";
+
+    auto print_type = [] (const std::string &s)
+    {
+        if (s.back() == '*') {
+            std::cout << s;
+        } else {
+            std::cout << s << ' ';
         }
+    };
+
+    for (const auto &e : objects) {
+        print_type(e.type);
         std::cout << e.symbol << ";\n";
     }
 
     for (const auto &e : functions) {
-        std::cout << e.type;
-
-        if (!e.type.ends_with(" *")) {
-            std::cout << ' ';
-        }
+        print_type(e.type);
         std::cout << e.symbol << '(' << e.args << ");\n";
     }
 
-    std::cout << "/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
+    std::cout << "\n/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
 }
 
 inline bool has_ignore_commands_set(const std::string &line)
@@ -260,6 +288,31 @@ inline bool has_ignore_commands_set(const std::string &line)
     }
 
     return false;
+}
+
+void format_prototypes(vproto_t &vec)
+{
+    auto do_format = [] (std::string &s)
+    {
+        utils::replace("* ", "*", s);
+        utils::replace(" ,", ",", s);
+
+        utils::replace("( ", "(", s);
+        utils::replace(" )", ")", s);
+        utils::replace(") (", ")(", s);
+
+        utils::replace("[ ", "[", s);
+        utils::replace("] ", "]", s);
+        utils::replace(" [", "[", s);
+        utils::replace(" ]", "]", s);
+
+        utils::strip_spaces(s);
+    };
+
+    for (auto &p : vec) {
+        do_format(p.type);
+        do_format(p.args);
+    }
 }
 
 } /* end anonymous namespace */
@@ -347,27 +400,6 @@ void gendlopen::tokenize_input()
         /* regular tokenizer */
         tokenize();
     }
-
-    /* cosmetics */
-    auto format_args = [] (vproto_t &vec)
-    {
-        for (auto &p : vec) {
-            utils::replace("* ", "*", p.args);
-            utils::replace(" ,", ",", p.args);
-
-            utils::replace("( ", "(", p.args);
-            utils::replace(" )", ")", p.args);
-            utils::replace(") (", ")(", p.args);
-
-            utils::replace("[ ", "[", p.args);
-            utils::replace("] ", "]", p.args);
-            utils::replace(" [", "[", p.args);
-            utils::replace(" ]", "]", p.args);
-        }
-    };
-
-    format_args(m_prototypes);
-    format_args(m_objects);
 }
 
 /* read and process custom template */
@@ -429,9 +461,27 @@ void gendlopen::generate()
     /* tokenize */
     tokenize_input();
 
+    /* copy function pointers */
+    for (auto &p : m_objects) {
+        if (p.prototype == proto::function_pointer) {
+            proto_t proto;
+            proto.type = p.type;
+            proto.symbol = p.symbol;
+            m_fptrs.push_back(proto);
+
+            /* replace old type */
+            p.type = p.symbol + fptr_suffix;
+        }
+    }
+
+    /* cosmetics */
+    format_prototypes(m_prototypes);
+    format_prototypes(m_objects);
+    format_prototypes(m_fptrs);
+
     /* print symbols and exit */
     if (m_print_symbols) {
-        print_symbols_to_stdout(m_objects, m_prototypes);
+        print_symbols_to_stdout(m_objects, m_prototypes, m_fptrs);
         return;
     }
 
@@ -532,6 +582,7 @@ void gendlopen::generate()
 
     print_extra_defines(m_ofs, m_defines);
     print_default_libname(m_ofs, m_name_upper, m_deflib_a, m_deflib_w);
+    print_typedefs(m_ofs, m_fptrs);
     print_includes(m_ofs, m_includes);
 
     data::concat_templates(header_data, body_data, m_format, m_separate);

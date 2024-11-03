@@ -31,7 +31,7 @@ static int count = 0;
 static int lineno = 1;
 static char errbuf[128] = {0};
 
-const char *mylex(FILE *fp, int *rv);
+int mylex(FILE *fp);
 const char *mylex_lasterror();
 %}
 
@@ -90,77 +90,17 @@ illegal         .
 }
 %%
 
-/* return last error message */
 const char *mylex_lasterror() {
     return (errbuf[0] == 0) ? NULL : errbuf;
 }
 
-/* returns a token on a successful match;
- * returns NULL if EOF was reached;
- * returns NULL and sets rv to -1 on error
- */
-const char *mylex(FILE *fp, int *rv)
+int mylex(FILE *fp)
 {
-    /* set FILE* */
     if (fp && yyget_in() != fp) {
         yyset_in(fp);
     }
 
-    /* reset values */
-    *rv = 1;
     errbuf[0] = 0;
 
-    switch (yylex())
-    {
-    /* return token */
-    case 1:
-        return yytext;
-
-    /* error */
-    case -1:
-        *rv = -1;
-        return NULL;
-
-    /* stop */
-    default:
-        break;
-    }
-
-    return NULL;
+    return yylex();
 }
-
-//#define TEST_MAIN 1
-
-#ifdef TEST_MAIN
-int main(int argc, char **argv)
-{
-    if (argc < 2) {
-        fprintf(stderr, "%s\n", "no input file");
-        return 1;
-    }
-
-    /* open input */
-    FILE *fp = fopen(argv[1], "rb");
-
-    if (!fp) {
-        perror("fopen()");
-        return 1;
-    }
-
-    int rv = 0;
-    const char *str;
-
-    while ((str = mylex(fp, &rv)) != NULL)
-    {
-        printf("%s ", str);
-
-        if (str[0] == ';') {
-            putchar('\n');
-        }
-    }
-
-    putchar('\n');
-
-    return (rv == -1) ? 1 : 0;
-}
-#endif
