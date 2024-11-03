@@ -152,7 +152,7 @@
 # endif
 #endif
 
-%PARAM_SKIP_COMMENT_BEGIN%
+%PARAM_SKIP_REMOVE_BEGIN%
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 # error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
 #endif

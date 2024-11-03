@@ -741,13 +741,13 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 }
 #endif // !GDO_WINAPI && !GDO_HAVE_DLINFO
 /*****************************************************************************/
+%PARAM_SKIP_REMOVE_BEGIN%
 
 
 
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-%PARAM_SKIP_COMMENT_BEGIN%
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
@@ -848,5 +848,5 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 }
 
 #endif //GDO_ENABLE_AUTOLOAD
-%PARAM_SKIP_END%
 /***************************** end of wrap code ******************************/
+%PARAM_SKIP_END%

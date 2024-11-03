@@ -1,1 +1,1 @@
-See `gendlopen help --custom-template` for information about the template format.
+See `gendlopen -full-help` for information about the template format.

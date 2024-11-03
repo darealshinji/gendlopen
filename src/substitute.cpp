@@ -39,7 +39,7 @@ namespace /* anonymous */
 {
     enum {
         NO_PARAM_SKIP_FOUND,
-        PARAM_SKIP_COMMENT_BEGIN,
+        PARAM_SKIP_REMOVE_BEGIN,
         PARAM_SKIP_USE_BEGIN,
         PARAM_SKIP_END
     };
@@ -47,25 +47,22 @@ namespace /* anonymous */
     using list_t = std::list<const char *>;
 
     /* check for a "%PARAM_SKIP_*%" line */
-    int check_skip_keyword(const char *line)
+    int check_skip_keyword(const char *ptr)
     {
-        if (strstr(line, "PARAM_SKIP_") == NULL) {
+        const char str[] = "%PARAM_SKIP_";
+        const size_t len = sizeof(str) - 1;
+
+        if (strncmp(ptr, str, len) != 0) {
             return NO_PARAM_SKIP_FOUND;
         }
 
-        const std::regex reg(R"(^\s*?%PARAM_SKIP_(COMMENT_BEGIN|USE_BEGIN|END)%\s*?$)");
-        std::smatch m;
-        std::string s = line;
+        ptr += len;
 
-        if (!std::regex_match(s, m, reg) || m.size() != 2) {
-            return NO_PARAM_SKIP_FOUND;
-        }
-
-        if (m[1] == "COMMENT_BEGIN") {
-            return PARAM_SKIP_COMMENT_BEGIN;
-        } else if (m[1] == "USE_BEGIN") {
+        if (strcmp(ptr, "REMOVE_BEGIN%") == 0) {
+            return PARAM_SKIP_REMOVE_BEGIN;
+        } else if (strcmp(ptr, "USE_BEGIN%") == 0) {
             return PARAM_SKIP_USE_BEGIN;
-        } else if (m[1] == "END") {
+        } else if (strcmp(ptr, "END%") == 0) {
             return PARAM_SKIP_END;
         }
 
@@ -238,7 +235,7 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
                 * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
                 switch (check_skip_keyword(line))
                 {
-                case PARAM_SKIP_COMMENT_BEGIN:
+                case PARAM_SKIP_REMOVE_BEGIN:
                     skip_code = (m_parameter_names == param::skip);
                     continue;
                 case PARAM_SKIP_USE_BEGIN:

@@ -5,10 +5,10 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 %%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;
 %%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;
+%PARAM_SKIP_REMOVE_BEGIN%
 
 
 
-%PARAM_SKIP_COMMENT_BEGIN%
 /* helpers used by function wrappers */
 namespace gdo
 {
