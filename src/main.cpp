@@ -427,7 +427,7 @@ namespace
                 if ( get_arg(args, "include") ) {
                     gdo.add_inc(format_inc(args.opt));
                     continue;
-                } else if ( get_noarg(args, "ignore-commands") ) {
+                } else if ( get_noarg(args, "ignore-options") ) {
                     gdo.read_extra_cmds(false);
                     continue;
                 }

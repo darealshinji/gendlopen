@@ -368,7 +368,7 @@ void gendlopen::tokenize_input()
     }
 
     /* read extra commands from file */
-    if (m_read_extra_cmds && peek.starts_with("//@CMD")) {
+    if (m_read_extra_cmds && peek.starts_with("//%options")) {
         peek.erase(0, 6);
         utils::strip_spaces(peek);
 

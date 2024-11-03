@@ -33,12 +33,11 @@ Here's how the input text format must be:
 
  * all symbols that should be loaded must be listed as C-style prototypes, ending on semi-colon (;)
  * old K&R syntax is not allowed
- * function pointers (`int (*foo)()`) must be typedef'd, but function pointers in parameter lists are accepted (`int foo(int (*bar)())`)
  * comments are ignored
  * line-breaks are treated as spaces
  * any other code will throw an error
- * first line may contain extra command line arguments in the form `//@CMD <commands>`,
- for example `//@CMD -format=c++ -name=mydl -library=libfoo.so`
+ * first line may contain extra command line arguments in the form `//%options <commands>`,
+ for example `//%options -format=c++ -name=mydl -library=libfoo.so`
 
 You can create such a file with GCC:
 `echo '#include "foobar.h"' | gcc -xc -c - -o /dev/null -aux-info aux.txt`

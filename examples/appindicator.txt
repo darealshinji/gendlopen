@@ -1,4 +1,4 @@
-//@CMD -name xappindicator -library libappindicator.so.1 -param=create
+//%options -name xappindicator -library libappindicator.so.1 -param=create
 
 // testing "-param=create"
 AppIndicator *app_indicator_new        (const gchar*, const gchar*, AppIndicatorCategory);
