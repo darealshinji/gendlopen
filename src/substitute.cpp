@@ -72,17 +72,30 @@ namespace /* anonymous */
         return NO_PARAM_SKIP_FOUND;
     }
 
-    /* comment out lines in code */
-    void comment_out_code(cio::ofstream &ofs, std::string &code, bool always_comment_line)
+    std::string get_leading_newlines(const std::string &s)
     {
-        utils::replace("\n", "\n//", code);
+        size_t n = 0;
 
-        /* optionally don't comment an empty first line, which looks better in the output */
-        if (code.front() != '\n' || always_comment_line) {
-            ofs << "//";
+        for ( ; n < s.size(); n++) {
+            if (s[n] != '\n') {
+                break;
+            }
         }
 
-        ofs << code << '\n';
+        return std::string(n, '\n');
+    }
+
+    std::string get_trailing_newlines(const std::string &s)
+    {
+        size_t n = 0;
+
+        for (auto it = s.rbegin(); it != s.rend(); it++, n++) {
+            if (*it != '\n') {
+                break;
+            }
+        }
+
+        return std::string(n, '\n');
     }
 
     /* loop and replace function prototypes, append to buffer */
@@ -91,13 +104,17 @@ namespace /* anonymous */
         std::string copy;
 
         for (const auto &e : vec) {
-            bool comment_out = false;
-            copy = line;
-
             /* we can't handle variable argument lists in wrapper functions */
-            if (e.args.ends_with("...") && copy.find("%%return%%") != std::string::npos) {
-                comment_out = true;
+            if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
+                /* print same amount of trailing and leading newlines */
+                ofs << get_leading_newlines(line);
+                ofs << "/* can't handle variable argument lists in wrapper functions */\n";
+                ofs << "// " << e.type << ' ' << e.symbol << '(' << e.args << ");\n";
+                ofs << get_trailing_newlines(line);
+                continue;
             }
+
+            copy = line;
 
             /* don't "return" on "void" functions */
             if (utils::eq_str_case(e.type, "void")) {
@@ -117,11 +134,7 @@ namespace /* anonymous */
             utils::replace("%%args%%", e.args, copy);
             utils::replace("%%notype_args%%", e.notype_args, copy);
 
-            if (comment_out) {
-                comment_out_code(ofs, copy, false);
-            } else {
-                ofs << copy << '\n';
-            }
+            ofs << copy << '\n';
         }
     }
 
@@ -157,7 +170,7 @@ namespace /* anonymous */
 void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
 {
     std::string fmt_upper, fmt_lower, fmt_namespace;
-    bool comment_out = false;
+    bool skip_code = false;
 
     const list_t function_keywords = {
         "%%return%%",
@@ -206,9 +219,7 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
         {
             /* empty line */
             if (line[0] == 0) {
-                if (comment_out) {
-                    ofs << "//\n";
-                } else {
+                if (!skip_code) {
                     ofs << '\n';
                 }
                 continue;
@@ -228,17 +239,21 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
                 switch (check_skip_keyword(line))
                 {
                 case PARAM_SKIP_COMMENT_BEGIN:
-                    comment_out = (m_parameter_names == param::skip);
+                    skip_code = (m_parameter_names == param::skip);
                     continue;
                 case PARAM_SKIP_USE_BEGIN:
-                    comment_out = (m_parameter_names != param::skip);
+                    skip_code = (m_parameter_names != param::skip);
                     continue;
                 case PARAM_SKIP_END:
-                    comment_out = false;
+                    skip_code = false;
                     continue;
                 default:
                     break;
                 }
+            }
+
+            if (skip_code) {
+                continue;
             }
 
             std::string buf = line;
@@ -248,11 +263,6 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
                 buf = std::regex_replace(buf, reg_upper, fmt_upper);
                 buf = std::regex_replace(buf, reg_lower, fmt_lower);
                 buf = std::regex_replace(buf, reg_nmspc, fmt_namespace);
-            }
-
-            if (comment_out) {
-                comment_out_code(ofs, buf, true);
-                continue;
             }
 
             if (maybe_keyword) {
