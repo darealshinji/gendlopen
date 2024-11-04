@@ -32,6 +32,7 @@
 #include <fstream>
 #include <list>
 #include <ranges>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -123,164 +124,101 @@ bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
     return true;
 }
 
-template <typename T, class C>
-bool not_beg(T &it, C &vec) {
-    return (it != vec.begin());
-}
-
-template <class C>
-bool last_is(char c, C &vec) {
-    return (vec.back()[0] == c);
-}
-
-template <typename T, class C>
-bool incr_if(char c, T &it, C &vec) {
-    return ((*it)[0] == c && ++it != vec.end());
-}
-
-template <typename T, class C>
-bool incr_if_ident(T &it, C &vec)
+bool is_object(const std::string &line, proto_t &proto)
 {
-    if (utils::range((*it)[0], 'A','Z') ||
-        utils::range((*it)[0], 'a','z') ||
-        (*it)[0] == '_')
-    {
-        return (++it != vec.end());
-    }
+    const std::regex reg(
+        "^([A-Za-z_][A-Za-z0-9_ \\*]*?) "  /* type */
+        "([A-Za-z_][A-Za-z0-9_]*?) "       /* symbol */
+    );
 
-    return false;
-}
+    std::smatch m;
 
-bool is_function_pointer(const vstring_t &v, proto_t &p)
-{
-    /* type ( * name ) ( ) */
-    if (v.size() < 7) {
+    if (!std::regex_match(line, m, reg) || m.size() != 3) {
         return false;
-    }
-
-    for (auto i = v.begin(); i != v.end(); i++) {
-        /* first open parentheses */
-        if (not_beg(i, v) && incr_if('(', i, v)) {
-            if (incr_if('*', i, v) && incr_if_ident(i, v))
-            {
-                auto ident = i - 1;
-
-                if (incr_if(')', i, v) && incr_if('(', i, v) && last_is(')', v))
-                {
-                    p.prototype = proto::function_pointer;
-                    p.symbol = *ident;
-
-                    for (i = v.begin(); i != ident - 2; i++) {
-                        p.type += *i + ' ';
-                    }
-                    p.type += "(*";
-
-                    for (i = ident + 1; i != v.end(); i++) {
-                        p.type += *i + ' ';
-                    }
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    return false;
-}
-
-bool is_function(const vstring_t &v, proto_t &p)
-{
-    /* type name ( ) */
-    if (v.size() < 4) {
-        return false;
-    }
-
-    for (auto i = v.begin(); i != v.end(); i++) {
-        /* type ... ident */
-        if (not_beg(i, v) && incr_if_ident(i, v))
-        {
-            auto ident = i - 1;
-
-            /* type ... ident lparen */
-            if (incr_if('(', i, v)) {
-                /* type ... ident lparen ... rparen */
-                if (!incr_if('*', i, v) && last_is(')',v)) {
-                    p.prototype = proto::function;
-                    p.symbol = *ident;
-
-                    /* type */
-                    for (i = v.begin(); i != ident; i++) {
-                        p.type += *i + ' ';
-                    }
-
-                    /* args */
-                    for (i = ident + 1; i != v.end(); i++) {
-                        p.args += *i + ' ';
-                    }
-
-                    utils::delete_prefix(p.args, "( ");
-                    utils::delete_suffix(p.args, ") ");
-
-                    if (p.args.empty()) {
-                        p.args = "void";
-                    }
-
-                    return true;
-                }
-                return false;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool is_object(vstring_t &vec, proto_t &proto)
-{
-    /* type name */
-    if (vec.size() < 2) {
-        return false;
-    }
-
-    for (const auto &e : vec) {
-        if (e[0] == '(' || e[0] == ')') {
-            return false;
-        }
     }
 
     proto.prototype = proto::object;
-    proto.symbol = vec.back();
-    vec.pop_back();
+    proto.type = m[1].str();
+    proto.symbol = m[2].str();
 
-    for (const auto &e : vec) {
-        proto.type += e + ' ';
+    return true;
+}
+
+bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
+{
+    const std::regex reg(
+        /* type */
+        "^([A-Za-z_][A-Za-z0-9_ \\*]*?) "
+
+#define REGEX_SYMBOL "[A-Za-z_][A-Za-z0-9_]*?"
+
+        /* symbol */
+        "("
+                       REGEX_SYMBOL        "|"  /* function */
+            "\\( \\* " REGEX_SYMBOL " \\)" "|"  /* function pointer */
+            "\\( "     REGEX_SYMBOL " \\)"      /* function with parentheses */
+        ") "
+
+#undef REGEX_SYMBOL
+
+        /* args */
+        R"(\( ([A-Za-z0-9_ \.\*,\(\)\[\]]*?)\) )"
+    );
+
+    std::smatch m;
+
+    if (!std::regex_match(line, m, reg) || m.size() != 4) {
+        return false;
+    }
+
+    std::string f = m[2].str();
+
+    if (f.starts_with("( *")) {
+        /* funtion pointer */
+        proto.prototype = proto::function_pointer;
+        proto.type = m[1].str() + "(*)(" + m[3].str() + ")";
+        proto.symbol = f.substr(4, f.size() - 6);
+    } else {
+        /* function */
+        proto.prototype = proto::function;
+        proto.type = m[1].str();
+        proto.args = m[3].str();
+
+        /* cannot be empty (why?) */
+        if (proto.args.empty()) {
+            proto.args = "void";
+        }
+
+        if (f.starts_with('(')) {
+            /* "( symbol )" */
+            proto.symbol = f.substr(2, f.size() - 4);
+        } else {
+            proto.symbol = f;
+        }
     }
 
     return true;
 }
 
 /* save tokens into prototypes */
-bool get_prototypes(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
+bool get_prototypes(const std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
 {
     for (auto &tokens : vec_tokens) {
         proto_t proto;
+        std::string line;
 
-        if (tokens.size() >= 2 &&
-            (is_function(tokens, proto) ||
-             is_object(tokens, proto) ||
-             is_function_pointer(tokens, proto)))
+        for (const auto &e : tokens) {
+            line += e + ' ';
+        }
+
+        if (tokens.size() > 1 && (is_object(line, proto) ||
+            is_function_or_function_pointer(line, proto)))
         {
             utils::strip_spaces(proto.type);
             utils::strip_spaces(proto.args);
             vproto.push_back(proto);
         } else {
-            std::cerr << "error: ";
-
-            for (const auto &e : tokens) {
-                std::cerr << e << ' ';
-            }
-            std::cerr << std::endl;
-
+            std::cerr << "error: " << line << std::endl;
             return false;
         }
     }
@@ -321,15 +259,15 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
 
     /* tokenize argument list */
     while (iss >> token) {
-        if (token == "(") {
+        if (token[0] == '(') {
             scope++;
-        } else if (token == ")") {
+        } else if (token[0] == ')') {
             scope--;
         }
 
         if (search == E_FUNC_PTR_NAME) {
             /* function pointer name */
-            if (token == ")") {
+            if (token[0] == ')') {
                 /* end of name sequence */
                 if (create) {
                     args_new += ')';
@@ -361,14 +299,14 @@ std::string get_parameter_names(proto_t &proto, param::names parameter_names)
             }
             continue;
         } else { /* search == E_DEFAULT */
-            if (token == "(") {
+            if (token[0] == '(') {
                 /* begin of a function pointer name */
                 if (create) {
                     args_new += " (";
                 }
                 search = E_FUNC_PTR_NAME;
                 continue;
-            } else if (token == ",") {
+            } else if (token[0] == ',') {
                 /* argument list separator */
                 if (arg.size() == 1 && arg.back() == "...") {
                     /* handle variable arguments token */

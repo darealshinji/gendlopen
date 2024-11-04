@@ -367,9 +367,11 @@ void gendlopen::tokenize_input()
         m_ifs.ignore(3);
     }
 
+    const char options[] = "//%options";
+
     /* read extra commands from file */
-    if (m_read_extra_cmds && peek.starts_with("//%options")) {
-        peek.erase(0, 6);
+    if (m_read_extra_cmds && peek.starts_with(options)) {
+        peek.erase(0, sizeof(options) - 1);
         utils::strip_spaces(peek);
 
         if (!peek.empty() && !has_ignore_commands_set(peek)) {
