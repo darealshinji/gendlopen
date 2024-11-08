@@ -44,8 +44,6 @@ namespace /* anonymous */
         PARAM_SKIP_END
     };
 
-    using list_t = std::list<const char *>;
-
     /* check for a "%PARAM_SKIP_*%" line */
     int check_skip_keyword(const char *ptr)
     {

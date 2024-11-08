@@ -72,7 +72,7 @@ inline std::string concat_function_prototype(const proto_t &proto)
  * may appear in parameter lists to guess if it could be a name */
 bool keyword_or_type(const std::string &s)
 {
-    const std::list<const char *> keywords =
+    const list_t keywords =
     {
         "char",
         "int", "long", "short",
@@ -176,14 +176,12 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
     const std::regex reg(
         "^(" REGEX_TYPE ") "
 
-        /* symbol */
         "("
                        REGEX_SYMBOL        "|"  /* function */
             "\\( \\* " REGEX_SYMBOL " \\)" "|"  /* function pointer */
             "\\( "     REGEX_SYMBOL " \\)"      /* function with parentheses */
         ") "
 
-        /* args */
         "\\( (" REGEX_ARGS ")\\) "
     );
 

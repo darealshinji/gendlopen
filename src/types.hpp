@@ -25,6 +25,7 @@
 #ifndef GDO_TYPES_HPP
 #define GDO_TYPES_HPP
 
+#include <list>
 #include <string>
 #include <vector>
 
@@ -50,6 +51,7 @@ typedef struct _proto {
 
 using vproto_t = std::vector<proto_t>;
 using vstring_t = std::vector<std::string>;
+using list_t = std::list<const char *>;
 using cstrList_t = std::vector<const char **>;
 
 
