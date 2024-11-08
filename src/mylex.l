@@ -39,7 +39,7 @@ newline         [\n]
 comment1        "//".*
 comment2        [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]
 white_space     [ \t\r]+
-identifier      [a-zA-Z_][a-zA-Z0-9_]+
+identifier      [a-zA-Z_][a-zA-Z0-9_]*
 triple_dot      "..."
 other           [*,()\[\]]
 semicolon       ;

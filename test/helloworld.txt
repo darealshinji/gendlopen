@@ -21,5 +21,5 @@ int helloworld_fprintf(FILE *stream, const char *format,
 
 /* release */
 void helloworld_release
-  (/* //comment inside comment */ helloworld * hw)
+  (/* //comment inside comment */ helloworld * p) /* single letter parameter name */
 
