@@ -39,6 +39,9 @@
 #include <cstdint>
 #include "gendlopen.hpp"
 
+#define REGEX_TYPE   "[A-Za-z_][A-Za-z0-9_ \\*]*?"
+#define REGEX_SYMBOL "[A-Za-z_][A-Za-z0-9_]*?"
+#define REGEX_ARGS   "[A-Za-z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
 
 /* lex.yy.c */
 extern "C" char *yytext;
@@ -124,11 +127,35 @@ bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
     return true;
 }
 
+std::string get_param_name(const std::string &line)
+{
+    const std::regex reg_object(
+        "^" REGEX_TYPE " "
+        "(" REGEX_SYMBOL ")"
+    );
+
+    const std::regex reg_fptr(
+        "^" REGEX_TYPE " "
+        "\\( \\* (" REGEX_SYMBOL ") \\) "
+        "\\( " REGEX_ARGS "\\)"
+    );
+
+    std::smatch m;
+
+    if ((std::regex_match(line, m, reg_object) && m.size() == 2) ||
+        (std::regex_match(line, m, reg_fptr) && m.size() == 2))
+    {
+        return m[1].str();
+    }
+
+    return {};
+}
+
 bool is_object(const std::string &line, proto_t &proto)
 {
     const std::regex reg(
-        "^([A-Za-z_][A-Za-z0-9_ \\*]*?) "  /* type */
-        "([A-Za-z_][A-Za-z0-9_]*?) "       /* symbol */
+        "^(" REGEX_TYPE ") "
+        "(" REGEX_SYMBOL ") "
     );
 
     std::smatch m;
@@ -147,10 +174,7 @@ bool is_object(const std::string &line, proto_t &proto)
 bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
 {
     const std::regex reg(
-        /* type */
-        "^([A-Za-z_][A-Za-z0-9_ \\*]*?) "
-
-#define REGEX_SYMBOL "[A-Za-z_][A-Za-z0-9_]*?"
+        "^(" REGEX_TYPE ") "
 
         /* symbol */
         "("
@@ -159,10 +183,8 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
             "\\( "     REGEX_SYMBOL " \\)"      /* function with parentheses */
         ") "
 
-#undef REGEX_SYMBOL
-
         /* args */
-        R"(\( ([A-Za-z0-9_ \.\*,\(\)\[\]]*?)\) )"
+        "\\( (" REGEX_ARGS ")\\) "
     );
 
     std::smatch m;
@@ -227,158 +249,103 @@ bool get_prototypes(const std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
 }
 
 /* extract argument names from args list */
-std::string get_parameter_names(proto_t &proto, param::names parameter_names)
+std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 {
-    enum {
-        E_DEFAULT,
-        E_FUNC_PTR_NAME,
-        E_FUNC_PTR_PARAM_LIST
-    };
-
-    int search = E_DEFAULT;
+    vstring_t vec;
+    std::string arg;
     int scope = 0;
-    char letter[] = " a";
-    std::string ok, args_notypes, token, args_new, name;
-    vstring_t arg;
 
-    /* nothing to do if empty (== object) or "void" */
-    if (proto.args.empty() || utils::eq_str_case(proto.args, "void")) {
-        return ok;
-    }
-
-    if (parameter_names == param::skip) {
-        proto.notype_args = "/* disabled with -param=skip !! */";
-        return ok;
-    }
-
-    /* trailing comma is needed for parsing */
-    std::istringstream iss(proto.args + " ,");
-
-    /* whether we create new parameter names or not */
-    const bool create = (parameter_names == param::create);
-
-    /* tokenize argument list */
-    while (iss >> token) {
-        if (token[0] == '(') {
-            scope++;
-        } else if (token[0] == ')') {
-            scope--;
-        }
-
-        if (search == E_FUNC_PTR_NAME) {
-            /* function pointer name */
-            if (token[0] == ')') {
-                /* end of name sequence */
-                if (create) {
-                    args_new += ')';
-                }
-                search = E_FUNC_PTR_PARAM_LIST;
-                continue;
-            } else {
-                /* add name */
-                if (create) {
-                    if (letter[1] > 'z') {
-                        return proto.symbol + ": too many parameters";
-                    }
-                    name = letter;
-                    args_new += token + name;
-                    letter[1]++;
-                } else {
-                    arg.push_back(token);
-                }
-                continue;
-            }
-        } else if (search == E_FUNC_PTR_PARAM_LIST) {
-            /* parameter list of a function pointer */
+    /* split parameters, take care of paretheses */
+    for (const char &c : proto.args) {
+        switch (c)
+        {
+        case ',':
             if (scope == 0) {
-                search = E_DEFAULT;
-            }
-
-            if (create) {
-                args_new += ' ' + token;
-            }
-            continue;
-        } else { /* search == E_DEFAULT */
-            if (token[0] == '(') {
-                /* begin of a function pointer name */
-                if (create) {
-                    args_new += " (";
-                }
-                search = E_FUNC_PTR_NAME;
+                utils::strip_spaces(arg);
+                vec.push_back(arg);
+                arg.clear();
                 continue;
-            } else if (token[0] == ',') {
-                /* argument list separator */
-                if (arg.size() == 1 && arg.back() == "...") {
-                    /* handle variable arguments token */
-                    if (create) {
-                        args_new += " ...";
-                    }
-                    args_notypes += ", ...";
-                    arg.clear();
-                    continue;
-                } else if (create) {
-                    args_notypes += ',';
+            }
+            break;
+        case '(':
+            scope++;
+            break;
+        case ')':
+            scope--;
+            break;
+        default:
+            break;
+        }
 
-                    if (name.empty()) {
-                        /* create new argument name */
-                        if (letter[1] > 'z') {
-                            return proto.symbol + ": too many parameters";
-                        }
-                        args_new += letter;
-                        args_notypes += letter;
-                        letter[1]++;
-                    } else {
-                        args_notypes += name;
-                        name.clear();
-                    }
-                    args_new += ',';
-                    continue;
-                } else {
-                    /* append existing argument name */
-                    if (arg.size() < 2 ||  /* must be at least 2 to hold a type and parameter name */
-                        arg.back().back() == '*' ||  /* pointer type without parameter name */
-                        keyword_or_type(arg.back()))  /* reserved keyword or a very basic type (i.e. "int") */
-                    {
-                        return "a parameter name is missing: " + concat_function_prototype(proto) + ";\n"
-                            "hint: try again with `-param=skip' or `-param=create'";
-                    }
+        arg += c;
+    }
 
-                    args_notypes += ", " + arg.back();
-                    arg.clear();
-                    continue;
-                }
+    if (!arg.empty()) {
+        utils::strip_spaces(arg);
+        vec.push_back(arg);
+    }
+
+    if (parameter_names == param::create) {
+        /* always add parameter names */
+        std::string abc = " a";
+
+        proto.args.clear();
+        proto.notype_args.clear();
+
+        for (auto &e : vec) {
+            if (abc[1] > 'z') {
+                return proto.symbol + ": too many parameters to handle";
+            }
+
+            if (e == "...") {
+                /* va_list */
+                proto.notype_args += "...";
             } else {
-                /* append token */
-                if (create) {
-                    args_new += ' ' + token;
+                /* add parameter name */
+                const size_t pos = e.find('(');
+
+                if (pos != std::string::npos && e.find("( * ") == pos) {
+                    /* function pointer */
+                    e.insert(pos + 3, abc);
                 } else {
-                    arg.push_back(token);
+                    /* object */
+                    e += abc;
                 }
-                continue;
+
+                proto.notype_args += abc;
+                abc[1]++;
             }
-        }
-    }
 
-    /* .args */
-    if (create) {
-        if (args_new.ends_with(',')) {
-            args_new.pop_back();
+            proto.args += e + ", ";
+            proto.notype_args += ", ";
         }
 
-        /* overwrite old args */
-        utils::strip_spaces(args_new);
-        proto.args = args_new;
+        utils::delete_suffix(proto.args, ", ");
+        utils::delete_suffix(proto.notype_args, ", ");
+    } else {
+        /* get parameter names */
+        for (auto &e : vec) {
+            if (e == "...") {
+                /* va_list */
+                proto.notype_args += "...";
+            } else {
+                std::string name = get_param_name(e);
+
+                if (name.empty() || keyword_or_type(name)) {
+                    return "a parameter name is missing: " + concat_function_prototype(proto) + ";\n"
+                        "hint: try again with `-param=skip' or `-param=create'";
+                }
+
+                proto.notype_args += name;
+            }
+
+            proto.notype_args += ", ";
+        }
+
+        utils::delete_suffix(proto.notype_args, ", ");
     }
 
-    /* .notype_args */
-    if (args_notypes.starts_with(',')) {
-        args_notypes.erase(0, 1);
-    }
-
-    utils::strip_spaces(args_notypes);
-    proto.notype_args = args_notypes;
-
-    return ok;
+    return {};
 }
 
 } /* end anonymous namespace */
@@ -486,7 +453,17 @@ void gendlopen::tokenize()
 
     /* get parameter names */
     for (auto &e : vproto) {
-        std::string msg = get_parameter_names(e, m_parameter_names);
+        /* not a function or a function without parameters */
+        if (e.prototype != proto::function || e.args.empty() || e.args == "void") {
+            continue;
+        }
+
+        /* don't use parameter names */
+        if (m_parameter_names == param::skip) {
+            continue;
+        }
+
+        std::string msg = read_parameter_names(e, m_parameter_names);
 
         if (!msg.empty()) {
             throw error(msg);
