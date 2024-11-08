@@ -405,23 +405,22 @@ void gendlopen::tokenize_input()
 }
 
 /* read and process custom template */
-void gendlopen::read_custom_template(const std::string &ofile, bool use_stdout)
+void gendlopen::read_custom_template(const std::string &ofile)
 {
-    cstrList_t data;
-    cio::ofstream out;
     std::string buf, line;
-    cstrList_t list;
-    const char *twolines[2] = { NULL, "" };
+    bool skip_code = false;
 
     /* open file for reading */
     if (!m_ifs.open(m_custom_template)) {
         throw error("failed to open file for reading: " + m_custom_template);
     }
 
-    if (!use_stdout) {
+    if (ofile != "-") {
         /* create output file */
         open_ofstream(ofile, m_force, false);
     }
+
+    substitute_prepare();
 
     while (m_ifs.getline(buf)) {
         /* concat lines ending on '@' */
@@ -432,12 +431,7 @@ void gendlopen::read_custom_template(const std::string &ofile, bool use_stdout)
         }
 
         line += buf;
-
-        twolines[0] = line.c_str();
-        list.push_back(twolines);
-        substitute(list, m_ofs);
-
-        list.clear();
+        substitute_line(line.c_str(), skip_code, m_ofs);
         line.clear();
     }
 }
@@ -490,15 +484,15 @@ void gendlopen::generate()
     /* look for a common symbol prefix */
     m_common_prefix = get_common_prefix(m_prototypes, m_objects);
 
-    const bool use_stdout = (m_ofile == "-");
-
     /* custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
-        read_custom_template(m_ofile, use_stdout);
+        read_custom_template(m_ofile);
         return;
     }
 
     /* output filename */
+
+    const bool use_stdout = (m_ofile == "-");
 
     if (!use_stdout) {
 #ifdef __MINGW32__
