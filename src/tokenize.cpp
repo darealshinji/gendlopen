@@ -206,11 +206,6 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
         proto.type = m[1].str();
         proto.args = m[3].str();
 
-        /* cannot be empty (why?) */
-        if (proto.args.empty()) {
-            proto.args = "void";
-        }
-
         if (f.starts_with('(')) {
             /* "( symbol )" */
             proto.symbol = f.substr(2, f.size() - 4);
@@ -355,11 +350,10 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 {
     auto save_symbol = [this] (const proto_t &p)
     {
-        /* no arguments means object, else function prototype */
-        if (p.args.empty()) {
-            m_objects.push_back(p);
-        } else {
+        if (p.prototype == proto::function) {
             m_prototypes.push_back(p);
+        } else {
+            m_objects.push_back(p);
         }
     };
 
