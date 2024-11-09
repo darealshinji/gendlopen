@@ -3,6 +3,7 @@ OBJS = \
 	cio_ofstream.o \
 	clang-ast.o \
 	data.o \
+	gendlopen.o \
 	generate.o \
 	help.o \
 	main.o \
@@ -60,6 +61,9 @@ clang-ast.o: clang-ast.cpp
 
 data.o: data.cpp template.h
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c data.cpp -o $@
+
+gendlopen.o: gendlopen.cpp
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c gendlopen.cpp -o $@
 
 generate.o: generate.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@

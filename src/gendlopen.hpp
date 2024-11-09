@@ -37,13 +37,6 @@ public:
             virtual ~error() {}
     };
 
-    class cmdline : public std::runtime_error
-    {
-        public:
-            cmdline(const std::string &message) : std::runtime_error(message) {}
-            virtual ~cmdline() {}
-    };
-
 private:
 
     vstring_t m_args, m_includes, m_symbols, m_prefix;
@@ -95,19 +88,10 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int argc, char **argv)
-    {
-        m_args.reserve(argc - 1);
-
-        /* copy arguments */
-        for (int i = 1; i < argc; i++) {
-            m_args.push_back(argv[i]);
-        }
-    }
+    gendlopen(int argc, char **argv);
 
     /* d'tor */
-    virtual ~gendlopen()
-    {}
+    ~gendlopen();
 
     /* set options */
     void input(const std::string &s) { m_ifile = s; }
@@ -121,26 +105,8 @@ public:
     void print_symbols(bool b) { m_print_symbols = b; }
     void read_options(bool b) { m_read_options = b; }
 
-    void name(const std::string &s)
-    {
-        /* set name */
-        m_name = s;
-
-        /* set uppercase/lowercase name */
-        m_name_upper = utils::convert_to_upper(m_name);
-        m_name_lower = utils::convert_to_lower(m_name);
-
-        /* set regex format string */
-        m_fmt_upper = "$1" + m_name_upper + '_';
-        m_fmt_lower = "$1" + m_name_lower + '_';
-        m_fmt_namespace = "$1" + m_name_lower + "::";
-    }
-
-    void default_lib(const std::string &lib_a, const std::string &lib_w) {
-        assert(!lib_a.empty() && !lib_w.empty());
-        m_deflib_a = lib_a;
-        m_deflib_w = lib_w;
-    }
+    void name(const std::string &s);
+    void default_lib(const std::string &lib_a, const std::string &lib_w);
 
     /* add code */
     void add_def(const std::string &s) { m_defines += s; }

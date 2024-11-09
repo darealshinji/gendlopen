@@ -61,6 +61,7 @@ sources = \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
 	$(s)\src\data.cpp \
+	$(s)\src\gendlopen.cpp \
 	$(s)\src\generate.cpp \
 	$(s)\src\help.cpp \
 	$(s)\src\main.cpp \
