@@ -64,7 +64,9 @@ sources = \
 	$(s)\src\gendlopen.cpp \
 	$(s)\src\generate.cpp \
 	$(s)\src\help.cpp \
+	$(s)\src\lex.yy.c \
 	$(s)\src\main.cpp \
+	$(s)\src\open_file.cpp \
 	$(s)\src\substitute.cpp \
 	$(s)\src\tokenize.cpp \
 	$(s)\src\utils.cpp

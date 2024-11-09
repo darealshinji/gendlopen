@@ -490,7 +490,7 @@ void gendlopen::parse_options(const vstring_t &options)
 /* read input and tokenize */
 void gendlopen::tokenize()
 {
-    FILE *fp;
+    open_file file;
     std::vector<vstring_t> vec_tokens;
     vstring_t options;
     vstring_t *poptions = m_read_options ? &options : NULL;
@@ -499,26 +499,20 @@ void gendlopen::tokenize()
 
     std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>" : "file: " + m_ifile;
 
-    if (m_ifile == "-") {
-        fp = stdin;
-    } else if ((fp = fopen(m_ifile.c_str(), "rb")) == NULL) {
-        perror("fopen()");
-        throw error(file_or_stdin);
+    if (!file.open(m_ifile)) {
+        throw error(file_or_stdin + "\nfailed to open file for reading");
     }
 
     /* read and tokenize input */
-    int ret = tokenize_stream(fp, vec_tokens, poptions);
+    int ret = tokenize_stream(file.file_pointer(), vec_tokens, poptions);
 
     /* input is a clang AST file */
     if (ret == MYLEX_CLANG_AST) {
-        clang_ast(fp);
+        clang_ast(file.file_pointer());
         return;
     }
 
-    /* close file handle */
-    if (fp != stdin) {
-        fclose(fp);
-    }
+    file.close();
 
     /* lexer error */
     if (ret == MYLEX_ERROR) {

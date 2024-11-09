@@ -267,10 +267,6 @@ void gendlopen::clang_ast(FILE *fp)
         }
     }
 
-    if (fp != stdin) {
-        fclose(fp);
-    }
-
     if (m_prototypes.empty() && m_objects.empty()) {
         throw error("no function or object prototypes found in file: " + m_ifile);
     }

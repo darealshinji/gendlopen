@@ -22,45 +22,45 @@
  * THE SOFTWARE
  */
 
-#include "global.hpp"
+#include <iostream>
+#include <string>
+#include <stdio.h>
+
+#include "open_file.hpp"
 
 
-/* c'tor */
-gendlopen::gendlopen(int argc, char **argv)
+open_file::open_file()
 {
-    m_args.reserve(argc - 1);
+}
 
-    /* copy arguments (without argv[0]) */
-    for (int i = 1; i < argc; i++) {
-        m_args.push_back(argv[i]);
+open_file::~open_file()
+{
+    close();
+}
+
+bool open_file::open(const std::string &path)
+{
+    close();
+
+    if (path.empty() || path == "-") {
+        m_fp = stdin;
+    } else {
+        m_fp = fopen(path.c_str(), "rb");
     }
+
+    return (m_fp != NULL);
 }
 
-/* d'tor */
-gendlopen::~gendlopen()
-{}
-
-/* set symbol prefix name */
-void gendlopen::name(const std::string &s)
+void open_file::close()
 {
-    /* set name */
-    m_name = s;
+    if (m_fp && m_fp != stdin) {
+        fclose(m_fp);
+    }
 
-    /* set uppercase/lowercase name */
-    m_name_upper = utils::convert_to_upper(m_name);
-    m_name_lower = utils::convert_to_lower(m_name);
-
-    /* set regex format string */
-    m_fmt_upper = "$1" + m_name_upper + '_';
-    m_fmt_lower = "$1" + m_name_lower + '_';
-    m_fmt_namespace = "$1" + m_name_lower + "::";
+    m_fp = stdin;
 }
 
-/* set default library to load */
-void gendlopen::default_lib(const std::string &lib_a, const std::string &lib_w)
+FILE *open_file::file_pointer() const
 {
-    assert(!lib_a.empty() && !lib_w.empty());
-    m_deflib_a = lib_a;
-    m_deflib_w = lib_w;
+    return m_fp;
 }
-

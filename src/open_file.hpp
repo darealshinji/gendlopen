@@ -22,45 +22,35 @@
  * THE SOFTWARE
  */
 
-#include "global.hpp"
+/**
+ * Tiny wrapper class around fopen()/fclose() used to open files for reading.
+ * Main purpose is automatic stream closing through class destructor.
+ */
+
+#ifndef OPEN_FILE_HPP
+#define OPEN_FILE_HPP
+
+#include <string>
+#include <stdio.h>
 
 
-/* c'tor */
-gendlopen::gendlopen(int argc, char **argv)
+class open_file
 {
-    m_args.reserve(argc - 1);
+private:
 
-    /* copy arguments (without argv[0]) */
-    for (int i = 1; i < argc; i++) {
-        m_args.push_back(argv[i]);
-    }
-}
+    FILE *m_fp = stdin;
 
-/* d'tor */
-gendlopen::~gendlopen()
-{}
+public:
 
-/* set symbol prefix name */
-void gendlopen::name(const std::string &s)
-{
-    /* set name */
-    m_name = s;
+    open_file();
+    ~open_file();
 
-    /* set uppercase/lowercase name */
-    m_name_upper = utils::convert_to_upper(m_name);
-    m_name_lower = utils::convert_to_lower(m_name);
+    /* open/close stream */
+    bool open(const std::string &path);
+    void close();
 
-    /* set regex format string */
-    m_fmt_upper = "$1" + m_name_upper + '_';
-    m_fmt_lower = "$1" + m_name_lower + '_';
-    m_fmt_namespace = "$1" + m_name_lower + "::";
-}
+    /* return raw FILE* */
+    FILE *file_pointer() const;
+};
 
-/* set default library to load */
-void gendlopen::default_lib(const std::string &lib_a, const std::string &lib_w)
-{
-    assert(!lib_a.empty() && !lib_w.empty());
-    m_deflib_a = lib_a;
-    m_deflib_w = lib_w;
-}
-
+#endif /* OPEN_FILE_HPP */
