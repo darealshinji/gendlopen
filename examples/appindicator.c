@@ -24,8 +24,8 @@
 
 /* a more complex real-life example */
 
-#include <gtk/gtk.h>
-#include <libappindicator/app-indicator.h>
+//#include <gtk/gtk.h>
+//#include <libappindicator/app-indicator.h>
 
 #include "example_appindicator.h"
 #include "example_appindicator_gobject.h"

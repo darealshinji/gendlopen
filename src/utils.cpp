@@ -29,6 +29,33 @@
 #include "gendlopen.hpp"
 
 
+namespace /* anonymous */
+{
+    /* quote library name */
+    std::string quote_lib(const std::string &lib, bool wide)
+    {
+        if (wide) {
+            if (lib.starts_with("L\"") && lib.back() == '"') {
+                /* already quoted */
+                return lib;
+            } else if (lib.front() == '"' && lib.back() == '"') {
+                /* prepend 'L' */
+                return 'L' + lib;
+            }
+
+            return "L\"" + lib + '"';
+        }
+
+        if (lib.front() == '"' && lib.back() == '"') {
+            /* already quoted */
+            return lib;
+        }
+
+        return '"' + lib + '"';
+    }
+}
+
+
 /* case-insensitive string comparison (ignoring current locale) */
 bool utils::eq_str_case(const std::string &str1, const std::string &str2)
 {
@@ -86,6 +113,134 @@ std::string utils::convert_to_lower(const std::string &str, bool underscores)
             out += c;
         } else {
             out += '_';
+        }
+    }
+
+    return out;
+}
+
+/* create "#define" lines */
+std::string utils::format_def(std::string def)
+{
+    std::string name, value, out;
+    const size_t pos = def.find('=');
+
+    if (pos == std::string::npos) {
+        name = def;
+    } else {
+        name = def.substr(0, pos);
+        value = ' ' + def.substr(pos + 1);
+    }
+
+    strip_spaces(name);
+
+    if (name.empty()) {
+        /* empty string will be "appended" to code */
+        return "";
+    }
+
+    out  = "#ifndef "  + name + '\n';
+    out += "# define " + name + value + '\n';
+    out += "#endif\n";
+
+    return out;
+}
+
+/**
+    * format library name
+    * foo        ==>  "foo"
+    * nq:foo     ==>  foo
+    * ext:foo    ==>  "foo" LIBEXTA
+    * api:2:foo  ==>  LIBNAMEA(foo,2)
+    */
+void utils::format_libname(const std::string &str, std::string &lib_a, std::string &lib_w)
+{
+    switch(str.at(0))
+    {
+    case 'N':
+    case 'n':
+        /* no quotes */
+        if (prefixed_case(str, "nq:")) {
+            lib_a = lib_w = str.substr(3);
+            return;
+        }
+        break;
+
+    case 'E':
+    case 'e':
+        /* quotes + file extension macro */
+        if (prefixed_case(str, "ext:")) {
+            auto sub = str.substr(4);
+            lib_a = quote_lib(sub, false) + " LIBEXTA";
+            lib_w = quote_lib(sub, true) + " LIBEXTW";
+            return;
+        }
+        break;
+
+    case 'A':
+    case 'a':
+        /* no quotes, API libname macro */
+        if (prefixed_case(str, "api:")) {
+            const std::regex reg("(.*?):(.*)");
+            std::smatch m;
+            auto sub = str.substr(4);
+
+            if (std::regex_match(sub, m, reg) && m.size() == 3) {
+                /* LIBNAMEA(xxx,0) */
+                lib_w = lib_a = "LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
+                lib_w[7] = 'W';
+                return;
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    /* quote string */
+    lib_a = quote_lib(str, false);
+    lib_w = quote_lib(str, true);
+}
+
+/* quote header name if needed */
+std::string utils::format_inc(const std::string &inc)
+{
+    if (prefixed_case(inc, "nq:")) {
+        /* no quotes */
+        return inc.substr(3);
+    }
+
+    if ((inc.front() == '<' && inc.back() == '>') ||
+        (inc.front() == '"' && inc.back() == '"'))
+    {
+        /* already quoted */
+        return inc;
+    }
+
+    /* add quotes */
+    return '"' + inc + '"';
+}
+
+/* format */
+output::format utils::format_enum(const char *in)
+{
+    std::string s = convert_to_lower(in, false);
+    output::format out = output::error;
+
+    if (s.front() == 'c') {
+        if (s == "c") {
+            out = output::c;
+        } else if (s == "cxx" || s == "c++" || s == "cpp") {
+            out = output::cxx;
+        }
+    } else if (s.starts_with("minimal")) {
+        s.erase(0, 7);
+
+        if (s.empty() || s == "-c") {
+            out = output::minimal;
+        } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
+            out = output::minimal_cxx;
         }
     }
 

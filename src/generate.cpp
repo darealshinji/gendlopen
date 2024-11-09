@@ -276,20 +276,6 @@ void print_symbols_to_stdout(const vproto_t &objects, const vproto_t &functions,
     std::cout << "\n/***  " << (objects.size() + functions.size()) << " matches  ***/" << std::endl;
 }
 
-inline bool has_ignore_commands_set(const std::string &line)
-{
-    std::string token;
-    std::istringstream iss(line);
-
-    while (iss >> token) {
-        if (token == "-ignore-commands") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void format_prototypes(vproto_t &vec)
 {
     auto do_format = [] (std::string &s)
@@ -337,81 +323,15 @@ void gendlopen::open_ofstream(const fs::path &opath, bool force, bool body)
     }
 }
 
-/* read input and tokenize */
-void gendlopen::tokenize_input()
-{
-    std::string peek;
-
-    /* open file for reading */
-    if (!m_ifs.open(m_ifile)) {
-        throw error("failed to open file for reading: " + m_ifile);
-    }
-
-    /* check first line */
-    if (!m_ifs.peek_line(peek)) {
-        throw error("failed to read first line from file: " + m_ifile);
-    }
-
-    /* sort vectors and remove duplicates */
-    auto sort_vstring = [] (vstring_t &vec) {
-        std::sort(vec.begin(), vec.end());
-        vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
-    };
-
-    sort_vstring(m_prefix);
-    sort_vstring(m_symbols);
-
-    /* skip UTF-8 Byte Order Mark */
-    if (peek.starts_with("\xEF\xBB\xBF")) {
-        peek.erase(0, 3);
-        m_ifs.ignore(3);
-    }
-
-    const char options[] = "//%options";
-
-    /* read extra commands from file */
-    if (m_read_extra_cmds && peek.starts_with(options)) {
-        peek.erase(0, sizeof(options) - 1);
-        utils::strip_spaces(peek);
-
-        if (!peek.empty() && !has_ignore_commands_set(peek)) {
-            throw cmdline(peek);
-        }
-    }
-
-    utils::strip_ansi_colors(peek);
-
-    if (peek.starts_with("TranslationUnitDecl 0x")) {
-        /* Clang AST */
-        if (m_ast_all_symbols) {
-            /* flags/settings that exclude each other */
-            if (!m_symbols.empty() || !m_prefix.empty()) {
-                throw error("cannot combine `-ast-all-symbols' with `-S' or `-P'");
-            }
-        } else {
-            /* no symbols provided */
-            if (m_symbols.empty() && m_prefix.empty()) {
-                throw error("Clang AST: no symbols provided to look for\n"
-                            "use `-S', `-P' or `-ast-all-symbols'");
-            }
-        }
-
-        m_ifs.ignore_line();
-        clang_ast();
-    } else {
-        /* regular tokenizer */
-        tokenize();
-    }
-}
-
 /* read and process custom template */
 void gendlopen::read_custom_template(const std::string &ofile)
 {
+    cio::ifstream ifs;
     std::string buf, line;
     bool skip_code = false;
 
     /* open file for reading */
-    if (!m_ifs.open(m_custom_template)) {
+    if (!ifs.open(m_custom_template)) {
         throw error("failed to open file for reading: " + m_custom_template);
     }
 
@@ -422,7 +342,7 @@ void gendlopen::read_custom_template(const std::string &ofile)
 
     substitute_prepare();
 
-    while (m_ifs.getline(buf)) {
+    while (ifs.getline(buf)) {
         /* concat lines ending on '@' */
         if (buf.back() == '@') {
             buf.pop_back();
@@ -451,11 +371,8 @@ void gendlopen::generate()
         throw error("cannot read input file and custom template both from STDIN");
     }
 
-    m_name_upper = utils::convert_to_upper(m_name);
-    m_name_lower = utils::convert_to_lower(m_name);
-
     /* tokenize */
-    tokenize_input();
+    tokenize();
 
     /* copy function pointers */
     for (auto &p : m_objects) {

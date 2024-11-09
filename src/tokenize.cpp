@@ -44,20 +44,16 @@
 #define REGEX_ARGS   "[A-Za-z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
 
 /* lex.yy.c */
+#define MYLEX_ERROR     -1
+#define MYLEX_OK         1
+#define MYLEX_CLANG_AST  2
 extern "C" char *yytext;
 extern "C" int mylex(FILE *fp);
 extern "C" const char *mylex_lasterror();
-extern "C" void yyset_lineno(int n);
 
 
 namespace /* anonymous */
 {
-
-template<class C, typename T>
-bool find_in_list(C &list, T &item)
-{
-    return std::find(list.begin(), list.end(), item) != list.end();
-}
 
 inline std::string concat_function_prototype(const proto_t &proto)
 {
@@ -98,25 +94,36 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
-/* tokenize stream */
-bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
+/* tokenize stream into prototype tokens and options */
+int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
 {
-    int rv = -1;
+    int rv = MYLEX_ERROR;
     vstring_t tokens;
 
-    while ((rv = mylex(fp)) == 1)
+    const char opt_str[] = "%option";
+    const size_t opt_len = sizeof(opt_str) - 1;
+
+    while ((rv = mylex(fp)) == MYLEX_OK)
     {
         if (yytext[0] == ';' && !tokens.empty()) {
+            /* semicolon found, save declaration */
             vec.push_back(tokens);
             tokens.clear();
+        } else if (strncmp(yytext, opt_str, opt_len) == 0) {
+            /* split `%option' line into strings;
+             * `options' is set to NULL if reading those lines was disabled by the user */
+            if (options) {
+                std::istringstream iss(yytext + opt_len);
+                std::string s;
+
+                while (iss >> s) {
+                    options->push_back(s);
+                }
+            }
         } else if (strcmp(yytext, "extern") != 0) {
             /* don't add "extern" keyword */
             tokens.push_back(yytext);
         }
-    }
-
-    if (rv == -1) {
-        return false;
     }
 
     /* push back if last prototype didn't end on semicolon */
@@ -124,7 +131,29 @@ bool tokenize_stream(FILE *fp, std::vector<vstring_t> &vec)
         vec.push_back(tokens);
     }
 
-    return true;
+    return rv;
+}
+
+/* get argument from an option string */
+const char *get_argx(const std::string &str, const char *opt, const size_t optlen)
+{
+    if (strncmp(str.c_str(), opt, optlen) != 0) {
+        /* not the argument we're looking for */
+        return NULL;
+    }
+
+    if (str.size() > optlen) {
+        return str.c_str() + optlen;
+    }
+
+    /* no argument */
+    return NULL;
+}
+
+template<size_t N>
+constexpr const char *get_arg(const std::string &str, char const (&opt)[N])
+{
+    return get_argx(str, opt, N-1);
 }
 
 std::string get_param_name(const std::string &line)
@@ -216,7 +245,7 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
 }
 
 /* save tokens into prototypes */
-bool get_prototypes(const std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
+bool get_prototypes_from_tokens(const std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
 {
     for (auto &tokens : vec_tokens) {
         proto_t proto;
@@ -372,12 +401,88 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 
         /* copy whitelisted symbols */
         if (!m_symbols.empty()) {
+            auto it_beg = m_symbols.begin();
+            auto it_end = m_symbols.end();
+
             for (const auto &e : vproto) {
-                if (find_in_list(m_symbols, e.symbol)) {
+                /* look for item e.symbol in list m_symbols */
+                if (std::find(it_beg, it_end, e.symbol) != it_end) {
                     save_symbol(e);
                 }
             }
         }
+    }
+}
+
+/* parse `%option' strings */
+void gendlopen::parse_options(const vstring_t &options)
+{
+    const char *p;
+
+    for (const auto &e : options)
+    {
+        switch (e[0])
+        {
+        case 'f':
+            if ( (p = get_arg(e, "format=")) != NULL ) {
+                output::format out = utils::format_enum(p);
+
+                if (out == output::error) {
+                    throw error("unknown output format: " + std::string(p));
+                }
+                format(out);
+                continue;
+            }
+            break;
+
+        case 'n':
+            if ( (p = get_arg(e, "name=")) != NULL ) {
+                name(p);
+                continue;
+            }
+            break;
+
+        case 'l':
+            if ( (p = get_arg(e, "library=")) != NULL ) {
+                std::string lib_a, lib_w;
+                utils::format_libname(p, lib_a, lib_w);
+                default_lib(lib_a, lib_w);
+                continue;
+            }
+            break;
+
+        case 'i':
+            if ( (p = get_arg(e, "include=")) != NULL ) {
+                add_inc(utils::format_inc(p));
+                continue;
+            }
+            break;
+
+        case 'd':
+            if ( (p = get_arg(e, "define=")) != NULL ) {
+                add_def(utils::format_def(p));
+                continue;
+            }
+            break;
+
+        case 'p':
+            if ( (p = get_arg(e, "param=")) != NULL ) {
+                if (utils::eq_str_case(p, "skip")) {
+                    parameter_names(param::skip);
+                } else if (utils::eq_str_case(p, "create")) {
+                    parameter_names(param::create);
+                } else {
+                    throw error("unknown argument for option 'param': " + std::string(p));
+                }
+                continue;
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        throw error("unknown %option string: " + e);
     }
 }
 
@@ -386,11 +491,12 @@ void gendlopen::tokenize()
 {
     FILE *fp;
     std::vector<vstring_t> vec_tokens;
+    vstring_t options;
+    vstring_t *poptions = m_read_options ? &options : NULL;
     vproto_t vproto;
+    std::string msg;
 
     std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>" : "file: " + m_ifile;
-
-    m_ifs.close();
 
     if (m_ifile == "-") {
         fp = stdin;
@@ -399,18 +505,22 @@ void gendlopen::tokenize()
         throw error(file_or_stdin);
     }
 
-    if (m_second_attempt) {
-        yyset_lineno(2);
+    /* read and tokenize input */
+    int ret = tokenize_stream(fp, vec_tokens, poptions);
+
+    /* input is a clang AST file */
+    if (ret == MYLEX_CLANG_AST) {
+        clang_ast(fp);
+        return;
     }
 
-    /* read and tokenize input */
-    bool ret = tokenize_stream(fp, vec_tokens);
-
+    /* close file handle */
     if (fp != stdin) {
         fclose(fp);
     }
 
-    if (!ret) {
+    /* lexer error */
+    if (ret == MYLEX_ERROR) {
         const char *p = mylex_lasterror();
 
         if (p) {
@@ -421,11 +531,14 @@ void gendlopen::tokenize()
         throw error(file_or_stdin);
     }
 
+    /* parse `%options' strings */
+    if (m_read_options) {
+        parse_options(options);
+    }
+
     /* get prototypes from tokens */
-    if (!get_prototypes(vec_tokens, vproto)) {
-        file_or_stdin += '\n';
-        file_or_stdin += "failed to read prototypes";
-        throw error(file_or_stdin);
+    if (!get_prototypes_from_tokens(vec_tokens, vproto)) {
+        throw error(file_or_stdin + "\nfailed to read prototypes");
     }
 
     /* nothing found? */
@@ -455,7 +568,7 @@ void gendlopen::tokenize()
             continue;
         }
 
-        std::string msg = read_parameter_names(e, m_parameter_names);
+        msg = read_parameter_names(e, m_parameter_names);
 
         if (!msg.empty()) {
             throw error(msg);

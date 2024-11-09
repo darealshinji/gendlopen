@@ -27,68 +27,91 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int count = 0;
-static int lineno = 1;
+static int token_count = 0;
 static char errbuf[128] = {0};
+static void illegal_char();
 
-int mylex(FILE *fp);
-const char *mylex_lasterror();
+#define MYLEX_ERROR     -1
+#define MYLEX_OK         1
+#define MYLEX_CLANG_AST  2
 %}
 
-newline         [\n]
 comment1        "//".*
 comment2        [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]
-white_space     [ \t\r]+
+
+color           [\x1B][\[][0-9;]*[m]
+ast             ^"TranslationUnitDecl 0x".*
+ast_color       ^{color}"TranslationUnitDecl"{color}{color}" 0x".*
+
+option          ^"%option"[ \t].*
+utf8_bom        ^"\xEF\xBB\xBF"
+
 identifier      [a-zA-Z_][a-zA-Z0-9_]*
 triple_dot      "..."
 other           [*,()\[\]]
 semicolon       ;
 illegal         .
 
-%option noyywrap noinput nounput
+%option noinput nounput noyywrap yylineno
 
 %%
-{newline}           lineno++;
-{white_space}       /* do nothing */
-{comment1}          /* do nothing */
+[[:space:]]         ;
 
-{comment2} { /* count lines */
-    for (char *p = yytext; *p != 0; p++) {
-        if (*p == '\n') {
-            lineno++;
-        }
+{utf8_bom}          { /* ignore BOM at beginning of first line */
+    if (yylineno != 1) {
+        illegal_char();
+        return MYLEX_ERROR;
     }
 }
 
-{identifier}        count++; return 1;
-{triple_dot}        count++; return 1;
-{other}             count++; return 1;
+{comment1}          ;
+{comment2}          ;
 
-{semicolon} { /* return if statement was not empty */
-    if (count > 0) {
-        count = 0;
-        return 1;
+{ast}               { /* clang AST identifier in first line */
+    if (yylineno == 1) {
+        return MYLEX_CLANG_AST;
     }
 }
 
-{illegal} { /* save error message */
+{ast_color}         {
+    if (yylineno == 1) {
+        return MYLEX_CLANG_AST;
+    }
+}
+
+{option}            { token_count = 0; return MYLEX_OK; }
+{identifier}        { token_count++; return MYLEX_OK; }
+{triple_dot}        { token_count++; return MYLEX_OK; }
+{other}             { token_count++; return MYLEX_OK; }
+
+{semicolon}         { /* return if statement was not empty */
+    if (token_count > 0) {
+        token_count = 0;
+        return MYLEX_OK;
+    }
+}
+
+{illegal}           { illegal_char(); return MYLEX_ERROR; }
+%%
+
+/* save error message */
+static void illegal_char()
+{
     const char *fmt = "illegal character `%c' at line %d";
-    const size_t count = sizeof(errbuf) - 1;
+    const size_t buflen = sizeof(errbuf) - 1;
 
     if (!isprint(*yytext)) {
         fmt = "illegal character `\\%03u' at line %d";
     }
 
 #ifdef _WIN32
-    _snprintf_s(errbuf, sizeof(errbuf), count, fmt, *yytext, lineno);
+    _snprintf_s(errbuf, sizeof(errbuf), buflen, fmt, *yytext, yylineno);
 #else
-    snprintf(errbuf, count, fmt, *yytext, lineno);
+    snprintf(errbuf, buflen, fmt, *yytext, yylineno);
 #endif
-    errbuf[count] = 0;
 
-    return -1;
+    errbuf[buflen] = 0;
 }
-%%
 
 const char *mylex_lasterror() {
     return (errbuf[0] == 0) ? NULL : errbuf;

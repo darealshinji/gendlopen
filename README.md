@@ -36,8 +36,8 @@ Here's how the input text format must be:
  * comments are ignored
  * line-breaks are treated as spaces
  * any other code will throw an error
- * first line may contain extra command line arguments in the form `//%options <commands>`,
- for example `//%options -format=c++ -name=mydl -library=libfoo.so`
+ * some options can be set on a line beginning with `%option`,
+ for example `%option format=c++ name=mydl library=libfoo.so`
 
 You can create such a file with GCC:
 `echo '#include "foobar.h"' | gcc -xc -c - -o /dev/null -aux-info aux.txt`
@@ -61,7 +61,7 @@ void foobar_bar(bar_t b);
 ```
 
 Create a header file `load_foo.h` from the input:
-`gendlopen foo.txt -Pfoobar_ -oload_foo.h`
+`gendlopen foo.txt -o load_foo.h`
 
 Include `load_foo.h` it in your source file and use the provided functions to load the symbols:
 ``` C
@@ -82,7 +82,7 @@ Include `load_foo.h` it in your source file and use the provided functions to lo
 ```
 
 Or in C++ using the `gdo::dl` class:
-`gendlopen foo.txt -Pfoobar_ -format=c++ -oload_foo.hpp`
+`gendlopen foo.txt -format=c++ -o load_foo.hpp`
 
 ``` C++
     /* load library; resources are freed by the class d'tor */

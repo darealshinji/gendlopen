@@ -1,9 +1,9 @@
-//%options -name xappindicator -library libappindicator.so.1 -param=create
-
-// testing "-param=create"
 AppIndicator *app_indicator_new        (const gchar*, const gchar*, AppIndicatorCategory);
 void          app_indicator_set_status (AppIndicator*, AppIndicatorStatus);
 void          app_indicator_set_menu   (AppIndicator*, GtkMenu*);
+
+%option name=xappindicator library=api:1:appindicator param=create
+%option include=<libappindicator/app-indicator.h>
 
 /*
 AppIndicator                   *app_indicator_new                (const gchar          *id,

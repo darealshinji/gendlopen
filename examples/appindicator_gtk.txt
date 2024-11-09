@@ -1,12 +1,9 @@
-//%options -name xgtk -library libgtk-x11-2.0.so.0
+%option name=xgtk library=libgtk-x11-2.0.so.0 include=<gtk/gtk.h>
 
 void
-gtk_main_quit
-(
-void
-)
-;
-// ^ test how the tokenizer handles this
+gtk_main_quit (
+  void
+);
 
 void
 gtk_init (

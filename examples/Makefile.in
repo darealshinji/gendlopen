@@ -28,15 +28,12 @@ run_examples: $(BINS)
 
 @APPIND@example_appindicator.h: appindicator.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator.txt > $@
-# -name xappindicator -library libappindicator.so.1 -param=create
 
 @APPIND@example_appindicator_gtk.h: appindicator_gtk.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator_gtk.txt > $@
-# -name xgtk -library libgtk-x11-2.0.so.0
 
 @APPIND@example_appindicator_gobject.h: appindicator_gobject.txt
 @APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator_gobject.txt > $@
-# -name xgobject -library libgobject-2.0.so.0
 
 @APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h appindicator.c
 @APPIND@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
@@ -45,10 +42,10 @@ run_examples: $(BINS)
 # libnotify
 
 @NOTIFY@example_notify.h: notify.txt
-@NOTIFY@	$(gen_v)$(GENDLOPEN) notify.txt -force -o $@ -name xnotify -library api:4:notify
+@NOTIFY@	$(gen_v)$(GENDLOPEN) notify.txt -force -o $@
 
 @NOTIFY@example_notify_gobject.h: notify_gobject.txt
-@NOTIFY@	$(gen_v)$(GENDLOPEN) notify_gobject.txt -force -o $@ -name xgobject -library api:0:gobject-2.0
+@NOTIFY@	$(gen_v)$(GENDLOPEN) notify_gobject.txt -force -o $@
 
 @NOTIFY@notify: example_notify.h example_notify_gobject.h notify.c
 @NOTIFY@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
@@ -56,13 +53,13 @@ run_examples: $(BINS)
 
 # msgbox
 @MSGBOX@example_msgbox_gtk.h: msgbox_gtk.txt
-@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_gtk.txt -force -o $@ -name dl_gtk
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_gtk.txt -force -o $@
 
 @MSGBOX@example_msgbox_sdl.h: msgbox_sdl.txt
-@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_sdl.txt -force -o $@ -name dl_sdl
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_sdl.txt -force -o $@
 
 @MSGBOX@example_msgbox_x11.h: msgbox_x11.txt
-@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_x11.txt -force -o $@ -name dl_x11 -param=skip
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_x11.txt -force -o $@
 
 @MSGBOX@msgbox: example_msgbox_gtk.h example_msgbox_sdl.h example_msgbox_x11.h msgbox.c
 @MSGBOX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty -Ithirdparty/sdl $(GTK_CFLAGS) $(X11_CFLAGS) msgbox.c -o $@ $(TEST_LDFLAGS) $(LIBDL)

@@ -1,3 +1,5 @@
+%option name=xnotify library=api:4:notify
+
 /* libnotify/notify.h */
 gboolean        notify_init (const char *app_name);
 void            notify_uninit (void);

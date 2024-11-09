@@ -1,3 +1,5 @@
+%option name=dl_gtk
+
 void
 gtk_init (int *argc,
           char ***argv);

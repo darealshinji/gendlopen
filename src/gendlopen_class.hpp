@@ -51,9 +51,11 @@ private:
 
     std::string m_ifile;
     std::string m_ofile = "-";
-    std::string m_name = "gdo";
 
-    std::string m_name_upper, m_name_lower;
+    std::string m_name = "gdo";
+    std::string m_name_upper = "GDO";
+    std::string m_name_lower = "gdo";
+
     std::string m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;
     std::string m_common_prefix;
@@ -61,27 +63,25 @@ private:
     output::format m_format = output::c;
     param::names m_parameter_names = param::param_default;
 
-    cio::ifstream m_ifs;
     cio::ofstream m_ofs, m_ofs_body;
 
     bool m_force = false;
     bool m_separate = false;
     bool m_ast_all_symbols = false;
     bool m_print_symbols = false;
-    bool m_read_extra_cmds = true;
-    bool m_second_attempt = false;
+    bool m_read_options = true;
 
     /* clang-ast.cpp */
-    bool clang_ast_line(std::string &line, int mode);
-    void clang_ast();
+    bool clang_ast_line(FILE *fp, std::string &line, int mode);
+    void clang_ast(FILE *fp);
 
     /* tokenize.cpp */
     void tokenize();
     void filter_and_copy_symbols(vproto_t &proto);
+    void parse_options(const vstring_t &options);
 
     /* generate.cpp */
     void open_ofstream(const std::filesystem::path &opath, bool force, bool body);
-    void tokenize_input();
     void read_custom_template(const std::string &ofile);
 
     /* substitute.cpp */
@@ -92,18 +92,13 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int argc, char **argv, bool second_attempt = false)
+    gendlopen(int argc, char **argv)
     {
         m_args.reserve(argc - 1);
 
         /* copy arguments */
         for (int i = 1; i < argc; i++) {
             m_args.push_back(argv[i]);
-        }
-
-        if (second_attempt) {
-            m_read_extra_cmds = false;
-            m_second_attempt = true;
         }
     }
 
@@ -114,7 +109,6 @@ public:
     /* set options */
     void input(const std::string &s) { m_ifile = s; }
     void output(const std::string &s) { m_ofile = s; }
-    void name(const std::string &s) { m_name = s; }
     void format(output::format val) { m_format = val; }
     void parameter_names(param::names val) { m_parameter_names = val; }
     void custom_template(const std::string &s) { m_custom_template = s; }
@@ -122,7 +116,13 @@ public:
     void separate(bool b) { m_separate = b; }
     void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
     void print_symbols(bool b) { m_print_symbols = b; }
-    void read_extra_cmds(bool b) { m_read_extra_cmds = b; }
+    void read_options(bool b) { m_read_options = b; }
+
+    void name(const std::string &s) {
+        m_name = s;
+        m_name_upper = utils::convert_to_upper(s);
+        m_name_lower = utils::convert_to_lower(s);
+    }
 
     void default_lib(const std::string &lib_a, const std::string &lib_w) {
         assert(!lib_a.empty() && !lib_w.empty());

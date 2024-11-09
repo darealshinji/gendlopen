@@ -178,11 +178,28 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
     return true;
 }
 
+/* simple getline() implementation */
+bool my_getline(FILE *fp, std::string &line)
+{
+    int c;
+
+    line.clear();
+
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == '\n') {
+            break;
+        }
+        line.push_back(c);
+    }
+
+    return (line.size() > 0);
+}
+
 } /* end anonymous namespace */
 
 
 /* returns true if a function declaration was found */
-bool gendlopen::clang_ast_line(std::string &line, int mode)
+bool gendlopen::clang_ast_line(FILE *fp, std::string &line, int mode)
 {
     decl_t decl;
 
@@ -196,7 +213,7 @@ bool gendlopen::clang_ast_line(std::string &line, int mode)
         char letter = 'a';
 
         /* read next lines for parameters */
-        while (m_ifs.getline(line)) {
+        while (my_getline(fp, line)) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
             }
@@ -225,11 +242,24 @@ bool gendlopen::clang_ast_line(std::string &line, int mode)
 }
 
 /* read Clang AST */
-void gendlopen::clang_ast()
+void gendlopen::clang_ast(FILE *fp)
 {
     std::string line;
     int mode = M_ALL;
     bool list = false;
+
+    if (m_ast_all_symbols) {
+        /* flags/settings that exclude each other */
+        if (!m_symbols.empty() || !m_prefix.empty()) {
+            throw error("cannot combine `-ast-all-symbols' with `-S' or `-P'");
+        }
+    } else {
+        /* no symbols provided */
+        if (m_symbols.empty() && m_prefix.empty()) {
+            throw error("Clang AST: no symbols provided to look for\n"
+                        "use `-S', `-P' or `-ast-all-symbols'");
+        }
+    }
 
     if (!m_prefix.empty() && !m_symbols.empty()) {
         mode = M_PFX_LIST;
@@ -242,9 +272,9 @@ void gendlopen::clang_ast()
     }
 
     /* read lines */
-    while (m_ifs.getline(line) && !line.empty()) {
+    while (my_getline(fp, line)) {
         /* inner loop to read parameters */
-        while (clang_ast_line(line, mode) && !line.empty())
+        while (clang_ast_line(fp, line, mode) && !line.empty())
         {}
 
         /* get_declarations() deletes found symbols,
@@ -252,6 +282,10 @@ void gendlopen::clang_ast()
         if (list && m_symbols.empty()) {
             break;
         }
+    }
+
+    if (fp != stdin) {
+        fclose(fp);
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {

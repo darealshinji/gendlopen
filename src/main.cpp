@@ -60,167 +60,6 @@ namespace
     } parser_retval_t;
 
 
-    /* create "#define" lines */
-    std::string format_def(std::string def)
-    {
-        std::string name, value, out;
-        const size_t pos = def.find('=');
-
-        if (pos == std::string::npos) {
-            name = def;
-        } else {
-            name = def.substr(0, pos);
-            value = ' ' + def.substr(pos + 1);
-        }
-
-        utils::strip_spaces(name);
-
-        if (name.empty()) {
-            /* empty string will be "appended" to code */
-            return "";
-        }
-
-        out  = "#ifndef "  + name + '\n';
-        out += "# define " + name + value + '\n';
-        out += "#endif\n";
-
-        return out;
-    }
-
-
-    /* quote library name */
-    std::string quote_lib(const std::string &lib, bool wide)
-    {
-        if (wide) {
-            if (lib.starts_with("L\"") && lib.back() == '"') {
-                /* already quoted */
-                return lib;
-            } else if (lib.front() == '"' && lib.back() == '"') {
-                /* prepend 'L' */
-                return 'L' + lib;
-            }
-
-            return "L\"" + lib + '"';
-        }
-
-        if (lib.front() == '"' && lib.back() == '"') {
-            /* already quoted */
-            return lib;
-        }
-
-        return '"' + lib + '"';
-    }
-
-
-    /**
-     * format library name
-     * foo        ==>  "foo"
-     * nq:foo     ==>  foo
-     * ext:foo    ==>  "foo" LIBEXTA
-     * api:2:foo  ==>  LIBNAMEA(foo,2)
-     */
-    void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w)
-    {
-        switch(str.at(0))
-        {
-        case 'N':
-        case 'n':
-            /* no quotes */
-            if (utils::prefixed_case(str, "nq:")) {
-                lib_a = lib_w = str.substr(3);
-                return;
-            }
-            break;
-
-        case 'E':
-        case 'e':
-            /* quotes + file extension macro */
-            if (utils::prefixed_case(str, "ext:")) {
-                auto sub = str.substr(4);
-                lib_a = quote_lib(sub, false) + " LIBEXTA";
-                lib_w = quote_lib(sub, true) + " LIBEXTW";
-                return;
-            }
-            break;
-
-        case 'A':
-        case 'a':
-            /* no quotes, API libname macro */
-            if (utils::prefixed_case(str, "api:")) {
-                const std::regex reg("(.*?):(.*)");
-                std::smatch m;
-                auto sub = str.substr(4);
-
-                if (std::regex_match(sub, m, reg) && m.size() == 3) {
-                    /* LIBNAMEA(xxx,0) */
-                    lib_w = lib_a = "LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
-                    lib_w[7] = 'W';
-                    return;
-                }
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        /* quote string */
-        lib_a = quote_lib(str, false);
-        lib_w = quote_lib(str, true);
-    }
-
-
-    /* quote header name if needed */
-    std::string format_inc(const std::string &inc)
-    {
-        if (utils::prefixed_case(inc, "nq:")) {
-            /* no quotes */
-            return inc.substr(3);
-        }
-
-        if ((inc.front() == '<' && inc.back() == '>') ||
-            (inc.front() == '"' && inc.back() == '"'))
-        {
-            /* already quoted */
-            return inc;
-        }
-
-        /* add quotes */
-        return '"' + inc + '"';
-    }
-
-
-    /* format */
-    output::format format_enum(const char *in)
-    {
-        std::string s = utils::convert_to_lower(in, false);
-        output::format out = output::error;
-
-        if (s.front() == 'c') {
-            if (s == "c") {
-                out = output::c;
-            } else if (s == "cxx" || s == "c++" || s == "cpp") {
-                out = output::cxx;
-            }
-        } else if (s.starts_with("minimal")) {
-            s.erase(0, 7);
-
-            if (s.empty() || s == "-c") {
-                out = output::minimal;
-            } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
-                out = output::minimal_cxx;
-            }
-        }
-
-        if (out == output::error) {
-            std::cerr << "error: unknown output format given: " << in << std::endl;
-            std::exit(1);
-        }
-
-        return out;
-    }
-
-
     const char *get_prog_name(const char *prog)
     {
         /* get program name without full path */
@@ -382,7 +221,14 @@ namespace
 
             case 'f':
                 if ( get_arg(args, "format") ) {
-                    gdo.format(format_enum(args.opt));
+                    output::format out = utils::format_enum(args.opt);
+
+                    if (out == output::error) {
+                        std::cerr << get_prog_name(argv[0]) << "unknown output format: "
+                            << args.opt << std::endl;
+                        return E_EXIT_ERROR;
+                    }
+                    gdo.format(out);
                     continue;
                 } else if ( get_noarg(args, "force") ) {
                     gdo.force(true);
@@ -417,7 +263,7 @@ namespace
             case 'l':
                 if ( get_arg(args, "library") ) {
                     std::string lib_a, lib_w;
-                    format_libname(args.opt, lib_a, lib_w);
+                    utils::format_libname(args.opt, lib_a, lib_w);
                     gdo.default_lib(lib_a, lib_w);
                     continue;
                 }
@@ -425,17 +271,24 @@ namespace
 
             case 'i':
                 if ( get_arg(args, "include") ) {
-                    gdo.add_inc(format_inc(args.opt));
+                    gdo.add_inc(utils::format_inc(args.opt));
                     continue;
                 } else if ( get_noarg(args, "ignore-options") ) {
-                    gdo.read_extra_cmds(false);
+                    gdo.read_options(false);
+                    continue;
+                }
+                break;
+
+            case 'd':
+                if ( get_arg(args, "define") ) {
+                    gdo.add_def(utils::format_def(args.opt));
                     continue;
                 }
                 break;
 
             case 'D':
                 if ( get_arg(args, "D") ) {
-                    gdo.add_def(format_def(args.opt));
+                    gdo.add_def(utils::format_def(args.opt));
                     continue;
                 }
                 break;
@@ -490,6 +343,11 @@ namespace
                 break;
             }
 
+            if (strcmp(cur, "--help") == 0) {
+                help::print(get_prog_name(argv[0]));
+                return E_EXIT_OK;
+            }
+
             std::cerr << get_prog_name(argv[0]) << ": unknown option: " << cur << std::endl;
             return E_EXIT_ERROR;
         }
@@ -505,116 +363,34 @@ namespace
         return E_CONTINUE;
     }
 
-
-    int main1(int argc, char **argv, std::string &extra_commands)
-    {
-        /* initialize class */
-        gendlopen gdo(argc, argv);
-
-        /* parse command line */
-        switch (parse_arguments(gdo, argc, argv))
-        {
-        case E_CONTINUE:
-            break;
-        case E_EXIT_OK:
-            return 0;
-        case E_EXIT_ERROR:
-            std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
-            return 1;
-        }
-
-        /* generate output */
-        try {
-            gdo.generate();
-        }
-        catch (const gendlopen::error &e) {
-            std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
-            return 1;
-        }
-        catch (const gendlopen::cmdline &e) {
-            extra_commands = e.what();
-            return -1;
-        }
-
-        return 0;
-    }
-
-
-    int main2(int argc, char **argv, const std::string &extra_commands)
-    {
-        /* merge argv with extra commands */
-        std::string token;
-        vstring_t token_list;
-        std::vector<char*> argv_new;
-
-        std::istringstream iss(extra_commands);
-
-        while (iss >> token) {
-            token_list.push_back(token);
-        }
-
-        const int argc_new = argc + token_list.size();
-        argv_new.reserve(argc_new);
-
-        for (int i = 0; i < argc; i++) {
-            argv_new.push_back(argv[i]);
-        }
-
-        for (const auto &e : token_list) {
-            //std::cerr << "DEBUG >> extra command >> " << e << std::endl;
-            argv_new.push_back(const_cast<char *>(e.data()));
-        }
-
-        /* initialize class */
-        gendlopen gdo(argc_new, argv_new.data(), true);
-
-        /* parse command line */
-        switch (parse_arguments(gdo, argc_new, argv_new.data()))
-        {
-        case E_CONTINUE:
-            break;
-        case E_EXIT_OK:
-            return 0;
-        case E_EXIT_ERROR:
-            std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
-            return 1;
-        }
-
-        /* generate output */
-        try {
-            gdo.generate();
-        }
-        catch (const gendlopen::error &e) {
-            std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
-            return 1;
-        }
-        catch (const gendlopen::cmdline &) {
-            std::cerr << get_prog_name(argv[0]) << ": error: reading extra commands a second time should not happen!" << std::endl;
-            return 1;
-        }
-
-        return 0;
-    }
-
 } /* anonymous namespace */
 
 
 int main(int argc, char **argv)
 {
-    std::string extra_commands;
+    /* initialize class */
+    gendlopen gdo(argc, argv);
 
-    if (argc == 2 && strcmp(argv[1], "--help") == 0) {
-        help::print(get_prog_name(argv[0]));
+    /* parse command line */
+    switch (parse_arguments(gdo, argc, argv))
+    {
+    case E_CONTINUE:
+        break;
+    case E_EXIT_OK:
         return 0;
+    case E_EXIT_ERROR:
+        std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
+        return 1;
     }
 
-    int rv = main1(argc, argv, extra_commands);
-
-    if (rv == -1) {
-        /* main1() has read extra commands from input,
-         * which we are now using in main2() */
-        rv = main2(argc, argv, extra_commands);
+    /* generate output */
+    try {
+        gdo.generate();
+    }
+    catch (const gendlopen::error &e) {
+        std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
+        return 1;
     }
 
-    return rv;
+    return 0;
 }
