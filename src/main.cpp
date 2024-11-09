@@ -38,7 +38,7 @@
 #include <regex>
 #include <stdlib.h>
 
-#include "gendlopen.hpp"
+#include "global.hpp"
 
 
 /* anonymous */

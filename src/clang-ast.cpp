@@ -55,7 +55,7 @@ TranslationUnitDecl 0x5f2a1096a4b8 <<invalid sloc>> <invalid sloc>
 #include <cstdio>
 #include <cstring>
 
-#include "gendlopen.hpp"
+#include "global.hpp"
 
 
 namespace /* anonymous */

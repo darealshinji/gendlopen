@@ -128,8 +128,8 @@ int main(int argc, char **argv)
     }
 
     fprintf(fp, "%s\n", "/* this file was automatically generated; do not edit! */\n");
-    fprintf(fp, "%s\n", "#ifndef _TEMPLATE_H_");
-    fprintf(fp, "%s\n", "#define _TEMPLATE_H_\n");
+    fprintf(fp, "%s\n", "#ifndef TEMPLATE_H");
+    fprintf(fp, "%s\n", "#define TEMPLATE_H\n");
 
     textdump("filename_macros.h", "filename_macros", fp);
     textdump("license.h",         "license",         fp);
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     textdump("minimal.h",         "min_c_header",    fp);
     textdump("minimal_cxxeh.hpp", "min_cxx_header",  fp);
 
-    fprintf(fp, "%s\n", "#endif //_TEMPLATE_H_");
+    fprintf(fp, "%s\n", "#endif /* TEMPLATE_H */");
     fclose(fp);
 
     return 0;

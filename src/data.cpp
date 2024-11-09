@@ -24,7 +24,7 @@
 
 /* use a separate compilation unit for the template data */
 
-#include "gendlopen.hpp"
+#include "global.hpp"
 #include "template.h"
 
 

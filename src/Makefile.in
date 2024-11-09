@@ -14,8 +14,8 @@ OBJS = \
 
 HDRS = \
 	cio_ofstream.hpp \
-	gendlopen_class.hpp \
 	gendlopen.hpp \
+	global.hpp \
 	types.hpp \
 	utils.hpp \
 	$(NULL)

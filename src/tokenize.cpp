@@ -37,7 +37,8 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include "gendlopen.hpp"
+
+#include "global.hpp"
 
 #define REGEX_TYPE   "[A-Za-z_][A-Za-z0-9_ \\*]*?"
 #define REGEX_SYMBOL "[A-Za-z_][A-Za-z0-9_]*?"

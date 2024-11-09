@@ -32,7 +32,8 @@
 #include <regex>
 #include <vector>
 #include <cstdlib>
-#include "gendlopen.hpp"
+
+#include "global.hpp"
 
 
 namespace /* anonymous */

@@ -26,7 +26,7 @@
 #include <string>
 #include <stdio.h>
 
-#include "gendlopen.hpp"
+#include "global.hpp"
 
 
 namespace /* anonymous */

@@ -1,7 +1,7 @@
 /* this file was automatically generated; do not edit! */
 
-#ifndef _TEMPLATE_H_
-#define _TEMPLATE_H_
+#ifndef TEMPLATE_H
+#define TEMPLATE_H
 
 /* filename_macros.h */
 static const char *filename_macros[] = {
@@ -2858,4 +2858,4 @@ static const char *min_cxx_header[] = {
   NULL
 };
 
-#endif //_TEMPLATE_H_
+#endif /* TEMPLATE_H */

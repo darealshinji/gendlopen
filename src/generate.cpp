@@ -39,7 +39,7 @@
 #include <ctime>
 #include <cwchar>
 
-#include "gendlopen.hpp"
+#include "global.hpp"
 
 
 namespace fs = std::filesystem;
