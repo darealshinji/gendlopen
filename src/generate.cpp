@@ -326,12 +326,12 @@ void gendlopen::open_ofstream(const fs::path &opath, bool force, bool body)
 /* read and process custom template */
 void gendlopen::read_custom_template(const std::string &ofile)
 {
-    cio::ifstream ifs;
+    FILE *fp = stdin;
     std::string buf, line;
     bool skip_code = false;
 
     /* open file for reading */
-    if (!ifs.open(m_custom_template)) {
+    if (m_custom_template != "-" && (fp = fopen(m_custom_template.c_str(), "rb")) == NULL) {
         throw error("failed to open file for reading: " + m_custom_template);
     }
 
@@ -340,9 +340,7 @@ void gendlopen::read_custom_template(const std::string &ofile)
         open_ofstream(ofile, m_force, false);
     }
 
-    substitute_prepare();
-
-    while (ifs.getline(buf)) {
+    while (utils::getline(fp, buf)) {
         /* concat lines ending on '@' */
         if (buf.back() == '@') {
             buf.pop_back();

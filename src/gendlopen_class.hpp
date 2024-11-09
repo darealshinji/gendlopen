@@ -55,6 +55,9 @@ private:
     std::string m_name = "gdo";
     std::string m_name_upper = "GDO";
     std::string m_name_lower = "gdo";
+    std::string m_fmt_upper; // = "$1" + m_name_upper + '_';
+    std::string m_fmt_lower; // = "$1" + m_name_lower + '_';
+    std::string m_fmt_namespace; // = "$1" + m_name_lower + "::";
 
     std::string m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;
@@ -118,10 +121,19 @@ public:
     void print_symbols(bool b) { m_print_symbols = b; }
     void read_options(bool b) { m_read_options = b; }
 
-    void name(const std::string &s) {
+    void name(const std::string &s)
+    {
+        /* set name */
         m_name = s;
-        m_name_upper = utils::convert_to_upper(s);
-        m_name_lower = utils::convert_to_lower(s);
+
+        /* set uppercase/lowercase name */
+        m_name_upper = utils::convert_to_upper(m_name);
+        m_name_lower = utils::convert_to_lower(m_name);
+
+        /* set regex format string */
+        m_fmt_upper = "$1" + m_name_upper + '_';
+        m_fmt_lower = "$1" + m_name_lower + '_';
+        m_fmt_namespace = "$1" + m_name_lower + "::";
     }
 
     void default_lib(const std::string &lib_a, const std::string &lib_w) {

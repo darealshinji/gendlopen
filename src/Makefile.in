@@ -1,6 +1,5 @@
 OBJS = \
 	$(GETOPT_O) \
-	cio_ifstream.o \
 	cio_ofstream.o \
 	clang-ast.o \
 	data.o \
@@ -14,7 +13,6 @@ OBJS = \
 	$(NULL)
 
 HDRS = \
-	cio_ifstream.hpp \
 	cio_ofstream.hpp \
 	gendlopen_class.hpp \
 	gendlopen.hpp \
@@ -53,9 +51,6 @@ $(OBJS): $(HDRS)
 
 lex.yy.c: mylex.l
 	$(gen_v)$(LEX) mylex.l
-
-cio_ifstream.o: cio_ifstream.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ifstream.cpp -o $@
 
 cio_ofstream.o: cio_ofstream.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ofstream.cpp -o $@

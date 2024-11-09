@@ -178,23 +178,6 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
     return true;
 }
 
-/* simple getline() implementation */
-bool my_getline(FILE *fp, std::string &line)
-{
-    int c;
-
-    line.clear();
-
-    while ((c = fgetc(fp)) != EOF) {
-        if (c == '\n') {
-            break;
-        }
-        line.push_back(c);
-    }
-
-    return (line.size() > 0);
-}
-
 } /* end anonymous namespace */
 
 
@@ -213,7 +196,7 @@ bool gendlopen::clang_ast_line(FILE *fp, std::string &line, int mode)
         char letter = 'a';
 
         /* read next lines for parameters */
-        while (my_getline(fp, line)) {
+        while (utils::getline(fp, line)) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
             }
@@ -272,7 +255,7 @@ void gendlopen::clang_ast(FILE *fp)
     }
 
     /* read lines */
-    while (my_getline(fp, line)) {
+    while (utils::getline(fp, line)) {
         /* inner loop to read parameters */
         while (clang_ast_line(fp, line, mode) && !line.empty())
         {}

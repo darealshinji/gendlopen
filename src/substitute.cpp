@@ -169,15 +169,6 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
-void gendlopen::substitute_prepare()
-{
-    if (m_name_upper != "GDO") {
-        fmt::upper = "$1" + m_name_upper + '_';
-        fmt::lower = "$1" + m_name_lower + '_';
-        fmt::cxx_namespace = "$1" + m_name_lower + "::";
-    }
-}
-
 void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream &ofs)
 {
     const list_t function_keywords = {
@@ -246,9 +237,12 @@ void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream
 
     /* replace prefixes */
     if (m_name_upper != "GDO") {
-        buf = std::regex_replace(buf, reg_upper, fmt::upper);
-        buf = std::regex_replace(buf, reg_lower, fmt::lower);
-        buf = std::regex_replace(buf, reg_namespace, fmt::cxx_namespace);
+        //m_fmt_upper = "$1" + m_name_upper + '_';
+        //m_fmt_lower = "$1" + m_name_lower + '_';
+        //m_fmt_namespace = "$1" + m_name_lower + "::";
+        buf = std::regex_replace(buf, reg_upper, m_fmt_upper);
+        buf = std::regex_replace(buf, reg_lower, m_fmt_lower);
+        buf = std::regex_replace(buf, reg_namespace, m_fmt_namespace);
     }
 
     if (maybe_keyword) {
@@ -329,8 +323,6 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
     if (m_prototypes.empty() && m_objects.empty()) {
         throw error("no function or object prototypes");
     }
-
-    substitute_prepare();
 
     for (auto &list : data) {
         const char *line = list[0];

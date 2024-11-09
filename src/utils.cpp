@@ -246,3 +246,20 @@ output::format utils::format_enum(const char *in)
 
     return out;
 }
+
+/* simple getline() implementation */
+bool utils::getline(FILE *fp, std::string &line)
+{
+    int c;
+
+    line.clear();
+
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == '\n') {
+            break;
+        }
+        line.push_back(c);
+    }
+
+    return (line.size() > 0);
+}

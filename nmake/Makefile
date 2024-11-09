@@ -58,7 +58,6 @@ cleanfiles_check = \
 	libhelloworld_dl.*
 
 sources = \
-	$(s)\src\cio_ifstream.cpp \
 	$(s)\src\cio_ofstream.cpp \
 	$(s)\src\clang-ast.cpp \
 	$(s)\src\data.cpp \

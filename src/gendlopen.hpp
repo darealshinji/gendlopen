@@ -13,7 +13,6 @@
 
 #include "types.hpp"
 #include "utils.hpp"
-#include "cio_ifstream.hpp"
 #include "cio_ofstream.hpp"
 #include "gendlopen_class.hpp"
 
