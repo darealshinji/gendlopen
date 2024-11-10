@@ -64,12 +64,12 @@ bool ofstream::open(const std::string &file)
 
 void ofstream::close()
 {
-    m_optr = &std::cout;
-    std::cout.flush();
-
     if (m_ofs.is_open()) {
         m_ofs.close();
     }
+
+    m_optr = &std::cout;
+    //std::cout.flush();
 }
 
 } /* namespace cio */

@@ -371,6 +371,32 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
     return {};
 }
 
+/* format the text of the prototypes to make it look pretty */
+void format_prototypes(vproto_t &vec)
+{
+    auto do_format = [] (std::string &s)
+    {
+        utils::replace("* ", "*", s);
+        utils::replace(" ,", ",", s);
+
+        utils::replace("( ", "(", s);
+        utils::replace(" )", ")", s);
+        utils::replace(") (", ")(", s);
+
+        utils::replace("[ ", "[", s);
+        utils::replace("] ", "]", s);
+        utils::replace(" [", "[", s);
+        utils::replace(" ]", "]", s);
+
+        utils::strip_spaces(s);
+    };
+
+    for (auto &p : vec) {
+        do_format(p.type);
+        do_format(p.args);
+    }
+}
+
 } /* end anonymous namespace */
 
 
@@ -413,6 +439,24 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
             }
         }
     }
+
+    /* copy function pointers */
+    for (auto &p : m_objects) {
+        if (p.prototype == proto::function_pointer) {
+            proto_t proto;
+            proto.type = p.type;
+            proto.symbol = p.symbol;
+            m_fptrs.push_back(proto);
+
+            /* replace old type */
+            p.type = p.symbol + m_fptr_suffix;
+        }
+    }
+
+    /* cosmetics */
+    format_prototypes(m_prototypes);
+    format_prototypes(m_objects);
+    format_prototypes(m_fptrs);
 }
 
 /* parse `%option' strings */

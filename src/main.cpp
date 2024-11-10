@@ -340,12 +340,12 @@ namespace
                 break;
 
             default:
+                /* let's support a help option with two dashes too */
+                if (strcmp(cur, "--help") == 0) {
+                    help::print(get_prog_name(argv[0]));
+                    return E_EXIT_OK;
+                }
                 break;
-            }
-
-            if (strcmp(cur, "--help") == 0) {
-                help::print(get_prog_name(argv[0]));
-                return E_EXIT_OK;
             }
 
             std::cerr << get_prog_name(argv[0]) << ": unknown option: " << cur << std::endl;
@@ -376,9 +376,12 @@ int main(int argc, char **argv)
     {
     case E_CONTINUE:
         break;
+
     case E_EXIT_OK:
         return 0;
+
     case E_EXIT_ERROR:
+    default:
         std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
         return 1;
     }

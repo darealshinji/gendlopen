@@ -52,6 +52,9 @@ private:
     std::string m_fmt_lower; // = "$1" + m_name_lower + '_';
     std::string m_fmt_namespace; // = "$1" + m_name_lower + "::";
 
+    /* suffix for function pointer typedefs */
+    static constexpr const char * const m_fptr_suffix = "__fptr_t_";
+
     std::string m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;
     std::string m_common_prefix;
@@ -66,6 +69,7 @@ private:
     bool m_ast_all_symbols = false;
     bool m_print_symbols = false;
     bool m_read_options = true;
+    bool m_print_date = true;
 
     /* clang-ast.cpp */
     bool clang_ast_line(FILE *fp, std::string &line, int mode);
@@ -77,7 +81,7 @@ private:
     void parse_options(const vstring_t &options);
 
     /* generate.cpp */
-    void open_ofstream(const std::filesystem::path &opath, bool force, bool body);
+    void open_ofstream(const std::filesystem::path &opath, cio::ofstream &ofs);
     void read_custom_template(const std::string &ofile);
 
     /* substitute.cpp */
