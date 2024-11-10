@@ -27,22 +27,31 @@
 /***
 For reference the AST from helloworld.h:
 
-TranslationUnitDecl 0x5f2a1096a4b8 <<invalid sloc>> <invalid sloc>
+TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 <...>
-|-VarDecl 0x5f2a109cb050 <line:35:1, col:35> col:35 helloworld_callback 'helloworld_cb_t':'void (*)(const char *)' extern
-| `-VisibilityAttr 0x5f2a109cb0b8 <line:25:44, col:65> Default
-|-FunctionDecl 0x5f2a109cb2c8 <col:28, line:38:40> line:11:29 helloworld_init 'helloworld *()'
-| `-VisibilityAttr 0x5f2a109cb370 <line:25:44, col:65> Default
-|-FunctionDecl 0x5f2a109cb510 <col:28, line:41:48> col:17 helloworld_hello 'void (helloworld *)'
-| |-ParmVarDecl 0x5f2a109cb400 <col:34, col:46> col:46 hw 'helloworld *'
-| `-VisibilityAttr 0x5f2a109cb5c0 <line:25:44, col:65> Default
-|-FunctionDecl 0x5f2a109cb890 <col:28, line:42:86> col:17 helloworld_hello2 'void (helloworld *, void (*)(const char *))'
-| |-ParmVarDecl 0x5f2a109cb650 <col:35, col:47> col:47 hw 'helloworld *'
-| |-ParmVarDecl 0x5f2a109cb770 <col:51, col:85> col:58 helloworld_cb 'void (*)(const char *)'
-| `-VisibilityAttr 0x5f2a109cb948 <line:25:44, col:65> Default
-`-FunctionDecl 0x5f2a109cba68 <col:28, line:45:50> col:17 helloworld_release 'void (helloworld *)'
-  |-ParmVarDecl 0x5f2a109cb9d8 <col:36, col:48> col:48 hw 'helloworld *'
-  `-VisibilityAttr 0x5f2a109cbb18 <line:25:44, col:65> Default
+|-VarDecl 0x59d98537ea20 <line:31:1, col:35> col:35 helloworld_callback 'helloworld_cb_t':'void (*)(const char *)' extern
+| `-VisibilityAttr 0x59d98537ea88 <line:21:44, col:65> Default
+|-FunctionDecl 0x59d98537ec48 <col:28, line:34:40> col:24 helloworld_init 'helloworld *()'
+| `-VisibilityAttr 0x59d98537ecf0 <line:21:44, col:65> Default
+|-FunctionDecl 0x59d98537efa8 <col:28, line:35:67> col:24 helloworld_init_argv 'helloworld *(int, char **)'
+| |-ParmVarDecl 0x59d98537ed80 <col:45, col:49> col:49 argc 'int'
+| |-ParmVarDecl 0x59d98537ee80 <col:55, col:66> col:61 argv 'char **'
+| `-VisibilityAttr 0x59d98537f060 <line:21:44, col:65> Default
+|-FunctionDecl 0x59d98537f200 <col:28, line:38:48> col:17 helloworld_hello 'void (helloworld *)'
+| |-ParmVarDecl 0x59d98537f0f0 <col:34, col:46> col:46 hw 'helloworld *'
+| `-VisibilityAttr 0x59d98537f2b0 <line:21:44, col:65> Default
+|-FunctionDecl 0x59d985361a30 <col:28, line:39:86> col:17 helloworld_hello2 'void (helloworld *, void (*)(const char *))'
+| |-ParmVarDecl 0x59d98537f340 <col:35, col:47> col:47 hw 'helloworld *'
+| |-ParmVarDecl 0x59d985361910 <col:51, col:85> col:58 helloworld_cb 'void (*)(const char *)'
+| `-VisibilityAttr 0x59d985361ae8 <line:21:44, col:65> Default
+|-FunctionDecl 0x59d985361c08 <col:28, line:42:50> col:17 helloworld_release 'void (helloworld *)'
+| |-ParmVarDecl 0x59d985361b78 <col:36, col:48> col:48 hw 'helloworld *'
+| `-VisibilityAttr 0x59d985361cb8 <line:21:44, col:65> Default
+`-FunctionDecl 0x59d985361eb0 <col:28, line:45:72> col:16 helloworld_fprintf 'int (FILE *, const char *, ...)'
+  |-ParmVarDecl 0x59d985361d48 <col:35, col:41> col:41 stream 'FILE *'
+  |-ParmVarDecl 0x59d985361dc8 <col:49, col:61> col:61 format 'const char *'
+  `-VisibilityAttr 0x59d985361f68 <line:21:44, col:65> Default
+
 
 ***/
 
@@ -72,7 +81,6 @@ typedef struct decl {
     proto::type prototype;
     std::string symbol;
     std::string type;
-    //std::string notype_args;
 } decl_t;
 
 
@@ -103,11 +111,13 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
         }
         break;
     case M_LIST:
+        /* erase from list if found */
         if (std::erase(list, decl.symbol) == 0) {
             return false;
         }
         break;
     case M_PFX_LIST:
+        /* erase from list if found */
         if (!utils::is_prefixed(decl.symbol, prefix) && std::erase(list, decl.symbol) == 0) {
             return false;
         }
@@ -118,15 +128,13 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
 
     if (m[1].str().front() == 'F') {
         /* function declaration */
-        auto pos = m[3].str().find('(');
+        size_t pos = m[3].str().find('(');
 
         if (pos == std::string::npos) {
             return false;
         }
         decl.prototype = proto::function;
         decl.type = m[3].str().substr(0, pos);
-        //decl.notype_args = m[3].str().substr(pos + 1);
-        //decl.notype_args.pop_back();
     } else {
         /* variable declaration */
         decl.type = m[3];
@@ -163,11 +171,17 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
     notype_args += ", ";
 
     /* search for function pointer */
-    auto pos = m[1].str().find("(*)");
+    size_t pos = m[1].str().find("(*)");
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        args += m[1].str() + ' ' + letter + ", ";
+        args += m[1].str();
+
+        if (args.back() != '*') {
+            args += ' ';
+        }
+        args += letter;
+        args += ", ";
     } else {
         /* function pointer */
         std::string s = m[1].str();
@@ -210,14 +224,28 @@ bool gendlopen::clang_ast_line(FILE *fp, std::string &line, int mode)
         utils::delete_suffix(args, ", ");
         utils::delete_suffix(notype_args, ", ");
 
-        proto_t proto = { proto::function, decl.type, decl.symbol, args, notype_args };
+        proto_t proto = {
+            proto::function,
+            decl.type,
+            decl.symbol,
+            args,
+            notype_args
+        };
+
         m_prototypes.push_back(proto);
 
         /* continue to analyze the current line stored in buffer */
         return true;
     } else {
         /* variable */
-        proto_t proto = { decl.prototype, decl.type, decl.symbol, {}, {} };
+        proto_t proto = {
+            decl.prototype,
+            decl.type,
+            decl.symbol,
+            {},
+            {}
+        };
+
         m_objects.push_back(proto);
     }
 
@@ -231,25 +259,24 @@ void gendlopen::clang_ast(FILE *fp)
     int mode = M_ALL;
     bool list = false;
 
-    if (m_ast_all_symbols) {
-        /* flags/settings that exclude each other */
-        if (!m_symbols.empty() || !m_prefix.empty()) {
-            throw error("cannot combine `-ast-all-symbols' with `-S' or `-P'");
-        }
-    } else {
-        /* no symbols provided */
-        if (m_symbols.empty() && m_prefix.empty()) {
-            throw error("Clang AST: no symbols provided to look for\n"
-                        "use `-S', `-P' or `-ast-all-symbols'");
-        }
+    /* no symbols provided */
+    if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
+        throw error("Clang AST: no symbols provided to look for\n"
+                    "use `-S', `-P' or `-ast-all-symbols'");
     }
 
-    if (!m_prefix.empty() && !m_symbols.empty()) {
+    /* ignore symbols provided with `-S' or `-P' if `-ast-all-symbols' was given */
+    if (m_ast_all_symbols && (m_symbols.size() > 0 || m_prefix.size() > 0)) {
+        m_symbols.clear();
+        m_prefix.clear();
+    }
+
+    if (m_symbols.size() > 0 && m_prefix.size() > 0) {
         mode = M_PFX_LIST;
         list = true;
-    } else if (!m_prefix.empty()) {
+    } else if (m_prefix.size() > 0) {
         mode = M_PREFIX;
-    } else if (!m_symbols.empty()) {
+    } else if (m_symbols.size() > 0) {
         mode = M_LIST;
         list = true;
     }

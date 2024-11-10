@@ -44,7 +44,7 @@ namespace help
             "  -o<file>          save to file instead of stdout\n"
             "  -name=<string>    use <string> in names of functions, macros and C++ namespaces (default: gdo)\n"
             "  -format=<string>  set output format: c (default), c++, minimal, minimal-c++\n"
-            "  -template=<file>  use a custom template (`-format' will be ignored)\n"
+            "  -template=<file>  use a custom template (`-format' is ignored)\n"
             "  -library=[<mode>:]<lib>    set a default library name to load; if <mode> is 'nq' no quotes are\n"
             "                    added, 'ext' will append a file extension to the library name and 'api:#'\n"
             "                    will create a library filename with API number\n"
@@ -58,7 +58,7 @@ namespace help
             "  -force            always overwrite existing output files\n"
             "  -param=skip       don't look for parameter names in function prototypes\n"
             "  -param=create     create parameter names for function prototypes\n"
-            "  -ast-all-symbols  use all symbols from a Clang AST\n"
+            "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
             "  -print-symbols    print list of found symbols and exit\n"
             "  -ignore-options   ignore `%option' lines from input file\n"
             "  -no-date          don't show current date in output\n"
@@ -259,9 +259,11 @@ namespace help
             "    Pass this flag if you really want to use all symbols found in a Clang AST.\n"
             "    Be careful as this might include unwanted prototypes from other headers.\n"
             "    It's recommended to use `-P' and/or `-S' instead.\n"
-            "    This flag cannot be combined with `-P' or `-S'.\n"
+            "    If the input is a Clang AST and this flag was set then `-P' and `-S' are\n"
+            "    ignored.\n"
             "\n"
             "    This flag is ignored if the input is not a Clang AST.\n"
+            "\n"
 
 
             "  -print-symbols\n"
@@ -269,9 +271,11 @@ namespace help
             "    This is useful for debugging.\n"
             "\n"
 
+
             "  -ignore-options\n"
             "    Ignore lines beginning with `%option' from the input file.\n"
             "\n"
+
 
             "  -no-date\n"
             "    Don't show the current date in output. Useful for reproducable builds.\n"

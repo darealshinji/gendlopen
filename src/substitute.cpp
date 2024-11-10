@@ -74,6 +74,7 @@ namespace /* anonymous */
         return NO_PARAM_SKIP_FOUND;
     }
 
+    /* return only the leading newlines from string s */
     std::string get_leading_newlines(const std::string &s)
     {
         size_t n = 0;
@@ -87,6 +88,7 @@ namespace /* anonymous */
         return std::string(n, '\n');
     }
 
+    /* return only the trailing newlines from string s */
     std::string get_trailing_newlines(const std::string &s)
     {
         size_t n = 0;
@@ -100,12 +102,10 @@ namespace /* anonymous */
         return std::string(n, '\n');
     }
 
-    /* loop and replace function prototypes, append to buffer */
-    void replace_function_prototypes(vproto_t &vec, const std::string &line, cio::ofstream &ofs)
+    /* loop and replace function prototypes, save to output stream */
+    void replace_function_prototypes(const vproto_t &vec, const std::string &line, cio::ofstream &ofs)
     {
-        std::string copy;
-
-        for (const auto &e : vec) {
+        for (auto &e : vec) {
             /* we can't handle variable argument lists in wrapper functions */
             if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
                 /* print same amount of trailing and leading newlines */
@@ -116,7 +116,7 @@ namespace /* anonymous */
                 continue;
             }
 
-            copy = line;
+            std::string copy = line;
 
             /* don't "return" on "void" functions */
             if (utils::eq_str_case(e.type, "void")) {
@@ -140,12 +140,30 @@ namespace /* anonymous */
         }
     }
 
-    void replace_symbol_names(vproto_t &proto, vproto_t &obj, const std::string &line, cio::ofstream &ofs)
+    /* loop and replace object prototypes */
+    void replace_object_prototypes(const vproto_t &vec, const std::string &line, cio::ofstream &ofs)
+    {
+        for (auto &e : vec) {
+            std::string copy = line;
+
+            if (e.type.back() == '*') {
+                /* »char * x«  -->  »char *x« */
+                utils::replace("%%obj_type%% ", e.type, copy);
+            }
+            utils::replace("%%obj_type%%", e.type, copy);
+            utils::replace("%%obj_symbol%%", e.symbol, copy);
+
+            ofs << copy << '\n';
+        }
+    }
+
+    /* loop and replace any symbol names */
+    void replace_symbol_names(const vproto_t &proto, const vproto_t &obj, const std::string &line, cio::ofstream &ofs)
     {
         std::string copy, type;
 
         /* function pointer */
-        for (const auto &e : proto) {
+        for (auto &e : proto) {
             copy = line;
 
             /* %%sym_type%% --> »%%type%% (*)(%%args%%)« */
@@ -156,7 +174,7 @@ namespace /* anonymous */
         }
 
         /* object pointer */
-        for (const auto &e : obj) {
+        for (auto &e : obj) {
             copy = line;
 
             /* %%sym_type%% --> »%%obj_type%% *« */
@@ -170,6 +188,7 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
+/* substitute placeholders in a single line */
 void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream &ofs)
 {
     const list_t function_keywords = {
@@ -230,6 +249,7 @@ void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream
         }
     }
 
+    /* skip line */
     if (skip_code) {
         return;
     }
@@ -276,6 +296,7 @@ void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream
     if (buf.find("%%") == std::string::npos) {
         has_func = has_obj = has_sym = 0;
     } else {
+        /* check for keywords that require a loop */
         has_func = find_keyword(function_keywords);
         has_obj = find_keyword(object_keywords);
         has_sym = find_keyword(symbol_keywords);
@@ -287,22 +308,10 @@ void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream
                     " placeholders:\n" + std::string{line});
     } else if (has_func == 1) {
         /* function prototypes */
-        if (m_prototypes.empty()) {
-            return;
-        }
         replace_function_prototypes(m_prototypes, buf, ofs);
     } else if (has_obj == 1) {
         /* object prototypes */
-        if (m_objects.empty()) {
-            return;
-        }
-
-        for (const auto &e : m_objects) {
-            std::string copy = buf;
-            utils::replace("%%obj_type%%", e.type, copy);
-            utils::replace("%%obj_symbol%%", e.symbol, copy);
-            ofs << copy << '\n';
-        }
+        replace_object_prototypes(m_objects, buf, ofs);
     } else if (has_sym == 1) {
         /* any symbol */
         replace_symbol_names(m_prototypes, m_objects, buf, ofs);
@@ -325,7 +334,7 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
         throw error("no function or object prototypes");
     }
 
-    for (auto &list : data) {
+    for (const auto &list : data) {
         const char *line = list[0];
 
         /* go through char** list */
