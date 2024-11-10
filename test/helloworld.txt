@@ -1,4 +1,5 @@
 helloworld *helloworld_init(  ); // init
+helloworld *helloworld_init_argv(int argc, char *argv[]); // testing arrays in parameters
 
 /* function pointer */
 //helloworld_cb_t helloworld_callback;

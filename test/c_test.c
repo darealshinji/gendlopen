@@ -11,7 +11,7 @@ void cb(const char *msg)
     puts(msg);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     /* filename of the library we want to load;
      * using the macro `LIBNAME` for cross-platform compatibility */
@@ -50,7 +50,7 @@ int main()
     }
 
     /* our code */
-    helloworld *hw = helloworld_init();
+    helloworld *hw = helloworld_init_argv(argc, argv);
     helloworld_callback = cb;
     helloworld_hello(hw);
     helloworld_hello2(hw, cb);

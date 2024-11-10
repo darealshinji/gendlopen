@@ -15,8 +15,16 @@ helloworld_cb_t helloworld_callback = NULL;
 
 
 /* allocate object */
-helloworld *HELLOWORLD_INIT()
+helloworld *helloworld_init()
 {
+    return malloc(sizeof(helloworld));
+}
+
+/* same as above */
+helloworld *helloworld_init_argv(int argc, char *argv[])
+{
+    (void)argc;
+    (void)argv;
     return malloc(sizeof(helloworld));
 }
 

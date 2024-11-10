@@ -40,14 +40,13 @@
 
 #include "global.hpp"
 
-#define REGEX_TYPE   "[A-Za-z_][A-Za-z0-9_ \\*]*?"
-#define REGEX_SYMBOL "[A-Za-z_][A-Za-z0-9_]*?"
-#define REGEX_ARGS   "[A-Za-z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
+/* regex macros */
+#define R_TYPE   "[a-zA-Z_][a-zA-Z0-9_ \\*]*?"
+#define R_SYMBOL "[a-zA-Z_][a-zA-Z0-9_]*?"
+#define R_PARAM  "[a-zA-Z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
+#define R_ARRAY  "[a-zA-Z0-9_]*?"
 
 /* lex.yy.c */
-#define MYLEX_ERROR     -1
-#define MYLEX_OK         1
-#define MYLEX_CLANG_AST  2
 extern "C" char *yytext;
 extern "C" int mylex(FILE *fp);
 extern "C" const char *mylex_lasterror();
@@ -55,6 +54,12 @@ extern "C" const char *mylex_lasterror();
 
 namespace /* anonymous */
 {
+
+enum {
+    MYLEX_ERROR     = -1,
+    MYLEX_OK        = 1,
+    MYLEX_CLANG_AST = 2
+};
 
 inline std::string concat_function_prototype(const proto_t &proto)
 {
@@ -157,35 +162,55 @@ constexpr const char *get_arg(const std::string &str, char const (&opt)[N])
     return get_argx(str, opt, N-1);
 }
 
-std::string get_param_name(const std::string &line)
+/* extract a function parameter name */
+std::string get_param_name(const std::string &element)
 {
+    /* regular parameter type */
     const std::regex reg_object(
-        "^" REGEX_TYPE " "
-        "(" REGEX_SYMBOL ")"
+        "^" R_TYPE " "
+
+        "("
+            R_SYMBOL                        "|" /* object */
+            R_SYMBOL " \\[ "          "\\]" "|" /* empty array object */
+            R_SYMBOL " \\[ " R_ARRAY " \\]"     /* array object */
+        ")"
     );
 
+    /* function pointer */
     const std::regex reg_fptr(
-        "^" REGEX_TYPE " "
-        "\\( \\* (" REGEX_SYMBOL ") \\) "
-        "\\( " REGEX_ARGS "\\)"
+        "^" R_TYPE " "
+        "\\( \\* (" R_SYMBOL ") \\) "
+        "\\( " R_PARAM "\\)"
     );
 
     std::smatch m;
 
-    if ((std::regex_match(line, m, reg_object) && m.size() == 2) ||
-        (std::regex_match(line, m, reg_fptr) && m.size() == 2))
-    {
+    /* object */
+    if (std::regex_match(element, m, reg_object) && m.size() == 2) {
+        std::string s = m[1].str();
+        size_t pos = s.find(' ');
+
+        if (pos == std::string::npos) {
+            return s;
+        }
+
+        return s.substr(0, pos);
+    }
+
+    /* function pointer */
+    if (std::regex_match(element, m, reg_fptr) && m.size() == 2) {
         return m[1].str();
     }
 
     return {};
 }
 
+/* check for object prototype */
 bool is_object(const std::string &line, proto_t &proto)
 {
     const std::regex reg(
-        "^(" REGEX_TYPE ") "
-        "(" REGEX_SYMBOL ") "
+        "^(" R_TYPE ") "
+        "(" R_SYMBOL ") "
     );
 
     std::smatch m;
@@ -201,18 +226,19 @@ bool is_object(const std::string &line, proto_t &proto)
     return true;
 }
 
+/* check for function or function pointer prototype */
 bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
 {
     const std::regex reg(
-        "^(" REGEX_TYPE ") "
+        "^(" R_TYPE ") "
 
         "("
-                       REGEX_SYMBOL        "|"  /* function */
-            "\\( \\* " REGEX_SYMBOL " \\)" "|"  /* function pointer */
-            "\\( "     REGEX_SYMBOL " \\)"      /* function with parentheses */
+                       R_SYMBOL        "|"  /* function */
+            "\\( \\* " R_SYMBOL " \\)" "|"  /* function pointer */
+            "\\( "     R_SYMBOL " \\)"      /* function with parentheses */
         ") "
 
-        "\\( (" REGEX_ARGS ")\\) "
+        "\\( (" R_PARAM ")\\) "
     );
 
     std::smatch m;
@@ -227,6 +253,7 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
         /* funtion pointer */
         proto.prototype = proto::function_pointer;
         proto.type = m[1].str() + "(*)(" + m[3].str() + ")";
+        /* "( * symbol )" */
         proto.symbol = f.substr(4, f.size() - 6);
     } else {
         /* function */
@@ -310,13 +337,13 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 
     if (parameter_names == param::create) {
         /* always add parameter names */
-        std::string abc = " a";
+        std::string name = " a";
 
         proto.args.clear();
         proto.notype_args.clear();
 
         for (auto &e : vec) {
-            if (abc[1] > 'z') {
+            if (name[1] > 'z') {
                 return proto.symbol + ": too many parameters to handle";
             }
 
@@ -329,14 +356,14 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 
                 if (pos != std::string::npos && e.find("( * ") == pos) {
                     /* function pointer */
-                    e.insert(pos + 3, abc);
+                    e.insert(pos + 3, name);
                 } else {
                     /* object */
-                    e += abc;
+                    e += name;
                 }
 
-                proto.notype_args += abc;
-                abc[1]++;
+                proto.notype_args += name;
+                name[1]++;
             }
 
             proto.args += e + ", ";
@@ -355,7 +382,8 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
                 std::string name = get_param_name(e);
 
                 if (name.empty() || keyword_or_type(name)) {
-                    return "a parameter name is missing: " + concat_function_prototype(proto) + ";\n"
+                    return "a parameter name is missing: " +
+                        concat_function_prototype(proto) + ";\n"
                         "hint: try again with `-param=skip' or `-param=create'";
                 }
 
@@ -541,7 +569,8 @@ void gendlopen::tokenize()
     vproto_t vproto;
     std::string msg;
 
-    std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>" : "file: " + m_ifile;
+    std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>"
+        : "file: " + m_ifile;
 
     if (!file.open(m_ifile)) {
         throw error(file_or_stdin + "\nfailed to open file for reading");
@@ -596,21 +625,21 @@ void gendlopen::tokenize()
     }
 
     /* get parameter names */
-    for (auto &e : vproto) {
-        /* not a function or a function without parameters */
-        if (e.prototype != proto::function || e.args.empty() || e.args == "void") {
-            continue;
-        }
+    if (m_parameter_names != param::skip) {
+        for (auto &e : vproto) {
+            if (e.prototype != proto::function ||
+                e.args.empty() ||
+                utils::eq_str_case(e.args, "void"))
+            {
+                /* not a function or a function without parameters */
+                continue;
+            }
 
-        /* don't use parameter names */
-        if (m_parameter_names == param::skip) {
-            continue;
-        }
+            msg = read_parameter_names(e, m_parameter_names);
 
-        msg = read_parameter_names(e, m_parameter_names);
-
-        if (!msg.empty()) {
-            throw error(msg);
+            if (!msg.empty()) {
+                throw error(msg);
+            }
         }
     }
 

@@ -49,7 +49,7 @@ public:
     bool open(const std::string &path);
     void close();
 
-    /* return raw FILE* */
+    /* return raw FILE pointer */
     FILE *file_pointer() const;
 };
 
