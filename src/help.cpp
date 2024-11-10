@@ -61,6 +61,7 @@ namespace help
             "  -ast-all-symbols  use all symbols from a Clang AST\n"
             "  -print-symbols    print list of found symbols and exit\n"
             "  -ignore-options   ignore `%option' lines from input file\n"
+            "  -no-date          don't show current date in output\n"
             "\n"
             "  * option may be passed multiple times" << std::endl;
     }
@@ -270,6 +271,10 @@ namespace help
 
             "  -ignore-options\n"
             "    Ignore lines beginning with `%option' from the input file.\n"
+            "\n"
+
+            "  -no-date\n"
+            "    Don't show the current date in output. Useful for reproducable builds.\n"
             "\n"
 
             << std::endl;

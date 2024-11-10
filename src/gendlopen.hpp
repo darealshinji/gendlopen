@@ -108,6 +108,7 @@ public:
     void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
     void print_symbols(bool b) { m_print_symbols = b; }
     void read_options(bool b) { m_read_options = b; }
+    void print_date(bool b) { m_print_date = b; }
 
     void name(const std::string &s);
     void default_lib(const std::string &lib_a, const std::string &lib_w);

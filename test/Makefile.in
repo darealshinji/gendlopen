@@ -172,7 +172,7 @@ c_auto_free.h:
 	$(gen_v)$(GENHDR) $@ -param=skip
 
 c_autoload.h:
-	$(gen_v)$(GENHDR) $@
+	$(gen_v)$(GENHDR) $@ -no-date
 
 c_load_symbol.h:
 	$(gen_v)$(GENHDR) $@

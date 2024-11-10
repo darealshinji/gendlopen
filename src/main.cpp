@@ -250,6 +250,9 @@ namespace
                 if ( get_arg(args, "name") ) {
                     gdo.name(args.opt);
                     continue;
+                } else if ( get_noarg(args, "no-date") ) {
+                    gdo.print_date(false);
+                    continue;
                 }
                 break;
 
