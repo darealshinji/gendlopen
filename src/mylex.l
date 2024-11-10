@@ -99,15 +99,16 @@ static void illegal_char()
 {
     const char *fmt = "illegal character `%c' at line %d";
     const size_t buflen = sizeof(errbuf) - 1;
+    unsigned char c = (unsigned char)*yytext;
 
     if (!isprint(*yytext)) {
-        fmt = "illegal character `\\%03u' at line %d";
+        fmt = "illegal character `0x%02X' at line %d";
     }
 
 #ifdef _WIN32
-    _snprintf_s(errbuf, sizeof(errbuf), buflen, fmt, *yytext, yylineno);
+    _snprintf_s(errbuf, sizeof(errbuf), buflen, fmt, c, yylineno);
 #else
-    snprintf(errbuf, buflen, fmt, *yytext, yylineno);
+    snprintf(errbuf, buflen, fmt, c, yylineno);
 #endif
 
     errbuf[buflen] = 0;
