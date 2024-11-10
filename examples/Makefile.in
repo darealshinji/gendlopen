@@ -3,8 +3,8 @@
 @NOTIFY@BIN_NOTIFY = notify$(EXEEXT)
 @MSGBOX@BIN_MSGBOX = msgbox$(EXEEXT)
 
-@CLANG@@NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
-@CLANG@@W32@BIN_UUIDWIN = uuid_win$(EXEEXT)
+@NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
+@W32@BIN_UUIDWIN = uuid_win$(EXEEXT)
 
 BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
@@ -65,23 +65,21 @@ run_examples: $(BINS)
 @MSGBOX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty -Ithirdparty/sdl $(GTK_CFLAGS) $(X11_CFLAGS) msgbox.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
-# UUID
+# UUID (read data from Clang AST file)
 
-@CLANG@DUMP_AST = $(CLANG) -Xclang -ast-dump $(CLANG_TARGET) -Wno-pragma-pack $(SYSROOT_INC)
+# clang -Xclang -ast-dump uuid.h
+@NIX@uuid_nix_dl.h: uuid_nix_ast.txt
+@NIX@	$(gen_v)$(GENDLOPEN) uuid_nix_ast.txt -force -o $@ -library libuuid.so.1 \
+@NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 
-@CLANG@@NIX@uuid_nix_dl.h: uuid_nix.h
-@CLANG@@NIX@	$(gen_v)$(DUMP_AST) -Ithirdparty/uuid uuid_nix.h | \
-@CLANG@@NIX@	  $(GENDLOPEN) - -force -o $@ -library libuuid.so.1 \
-@CLANG@@NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
+@NIX@uuid_nix: uuid_nix_dl.h uuid_nix.c
+@NIX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
-@CLANG@@NIX@uuid_nix: uuid_nix_dl.h uuid_nix.c
-@CLANG@@NIX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
+# clang -Xclang -ast-dump -DWIN32_LEAN_AND_MEAN --target=x86_64-mingw32 --sysroot=$PWD include/rpcdce.h
+@W32@uuid_win_dl.h: uuid_win_ast.txt
+@W32@	$(gen_v)$(GENDLOPEN) uuid_win_ast.txt -force -o $@ -library rpcrt4.dll \
+@W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 
-@CLANG@@W32@uuid_win_dl.h: uuid_win.h
-@CLANG@@W32@	$(gen_v)$(DUMP_AST) uuid_win.h | \
-@CLANG@@W32@	  $(GENDLOPEN) - -force -o $@ -library rpcrt4.dll \
-@CLANG@@W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
-
-@CLANG@@W32@uuid_win$(EXEEXT): uuid_win_dl.h uuid_win.c
-@CLANG@@W32@	$(cc_v)$(CC) $(TEST_CFLAGS) uuid_win.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
+@W32@uuid_win$(EXEEXT): uuid_win_dl.h uuid_win.c
+@W32@	$(cc_v)$(CC) $(TEST_CFLAGS) uuid_win.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
