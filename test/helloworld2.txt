@@ -1,8 +1,12 @@
 helloworld_cb_t helloworld_callback;
+char helloworld_buffer[64];
+
 helloworld *helloworld_init();
 helloworld *helloworld_init_argv(int argc, char *argv[]);
+
 void helloworld_hello(helloworld *hw);
 void helloworld_hello2(helloworld *hw, helloworld_cb_t cb);
+
 void helloworld_release(helloworld * hw);
 
 /* treat variable length arguments funtion as one with a fixed number of arguments

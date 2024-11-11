@@ -30,6 +30,9 @@ typedef void (*helloworld_cb_t)(const char *);
 /* pointer to callback function */
 extern DLL_PUBLIC helloworld_cb_t helloworld_callback;
 
+/* array type */
+extern DLL_PUBLIC char helloworld_buffer[64];
+
 /* initialize */
 DLL_PUBLIC helloworld *helloworld_init();
 DLL_PUBLIC helloworld *helloworld_init_argv(int argc, char *argv[]);

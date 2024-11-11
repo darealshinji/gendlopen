@@ -46,7 +46,7 @@ ast_color       ^{color}"TranslationUnitDecl"{color}{color}" 0x".*
 option          ^"%option"[ \t].*
 utf8_bom        ^"\xEF\xBB\xBF"
 
-identifier      [a-zA-Z_][a-zA-Z0-9_]*
+identifier      [a-zA-Z0-9_]+
 triple_dot      "..."
 other           [*,()\[\]]
 semicolon       ;

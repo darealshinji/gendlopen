@@ -25,6 +25,9 @@
 /**
  * Tokenize the input text files and save the function and object prototypes
  * into vectors.
+ *
+ * The regular expressions used to identify the prototypes are far from perfect
+ * but they are good enough for our purpose.
  */
 
 #include <algorithm>
@@ -44,7 +47,7 @@
 #define R_TYPE   "[a-zA-Z_][a-zA-Z0-9_ \\*]*?"
 #define R_SYMBOL "[a-zA-Z_][a-zA-Z0-9_]*?"
 #define R_PARAM  "[a-zA-Z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
-#define R_ARRAY  "[a-zA-Z0-9_]*?"
+#define R_ARRAY  "[a-zA-Z0-9_\\[\\] ]*?"
 
 /* lex.yy.c */
 extern "C" char *yytext;
@@ -169,10 +172,12 @@ std::string get_param_name(const std::string &element)
     const std::regex reg_object(
         "^" R_TYPE " "
 
+        "(" R_SYMBOL ")"
+
         "("
-            R_SYMBOL                        "|" /* object */
-            R_SYMBOL " \\[ "          "\\]" "|" /* empty array object */
-            R_SYMBOL " \\[ " R_ARRAY " \\]"     /* array object */
+            " \\[ \\]"             "|"
+            " \\[ " R_ARRAY " \\]" "|"
+            /* empty */
         ")"
     );
 
@@ -185,21 +190,10 @@ std::string get_param_name(const std::string &element)
 
     std::smatch m;
 
-    /* object */
-    if (std::regex_match(element, m, reg_object) && m.size() == 2) {
-        std::string s = m[1].str();
-        size_t pos = s.find(' ');
-
-        if (pos == std::string::npos) {
-            return s;
-        }
-
-        return s.substr(0, pos);
-    }
-
-    /* function pointer */
-    if (std::regex_match(element, m, reg_fptr) && m.size() == 2) {
-        return m[1].str();
+    if ((std::regex_match(element, m, reg_object) && m.size() == 3) ||
+        (std::regex_match(element, m, reg_fptr) && m.size() == 2))
+    {
+        return m.str(1);
     }
 
     return {};
@@ -210,18 +204,31 @@ bool is_object(const std::string &line, proto_t &proto)
 {
     const std::regex reg(
         "^(" R_TYPE ") "
-        "(" R_SYMBOL ") "
+
+        "(" R_SYMBOL ")"
+
+        "("
+            " \\[ \\]"             "|"
+            " \\[ " R_ARRAY " \\]" "|"
+            /* empty */
+        ") "
     );
 
     std::smatch m;
 
-    if (!std::regex_match(line, m, reg) || m.size() != 3) {
+    if (!std::regex_match(line, m, reg) || m.size() != 4) {
         return false;
     }
 
-    proto.prototype = proto::object;
-    proto.type = m[1].str();
-    proto.symbol = m[2].str();
+    proto.type = m.str(1);
+    proto.symbol = m.str(2);
+
+    if (m.str(3).empty()) {
+        proto.prototype = proto::object;
+    } else {
+        proto.prototype = proto::object_array;
+        proto.type += m.str(3);
+    }
 
     return true;
 }
@@ -247,25 +254,21 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
         return false;
     }
 
-    std::string f = m[2].str();
-
-    if (f.starts_with("( *")) {
+    if (m.str(2).starts_with("( *")) {
         /* funtion pointer */
         proto.prototype = proto::function_pointer;
-        proto.type = m[1].str() + "(*)(" + m[3].str() + ")";
-        /* "( * symbol )" */
-        proto.symbol = f.substr(4, f.size() - 6);
+        proto.type = m.str(1) + " (*)(" + m.str(3) + ")";
+        proto.symbol = m.str(2).substr(4, m.str(2).size() - 6);  /* "( * symbol )" */
     } else {
         /* function */
         proto.prototype = proto::function;
-        proto.type = m[1].str();
-        proto.args = m[3].str();
+        proto.type = m.str(1);
+        proto.args = m.str(3);
 
-        if (f.starts_with('(')) {
-            /* "( symbol )" */
-            proto.symbol = f.substr(2, f.size() - 4);
+        if (m.str(2).starts_with('(')) {
+            proto.symbol = m.str(2).substr(2, m.str(2).size() - 4);  /* "( symbol )" */
         } else {
-            proto.symbol = f;
+            proto.symbol = m.str(2);
         }
     }
 
@@ -400,29 +403,21 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 }
 
 /* format the text of the prototypes to make it look pretty */
-void format_prototypes(vproto_t &vec)
+void format_prototypes(std::string &s)
 {
-    auto do_format = [] (std::string &s)
-    {
-        utils::replace("* ", "*", s);
-        utils::replace(" ,", ",", s);
+    utils::replace("* ", "*", s);
+    utils::replace(" ,", ",", s);
 
-        utils::replace("( ", "(", s);
-        utils::replace(" )", ")", s);
-        utils::replace(") (", ")(", s);
+    utils::replace("( ", "(", s);
+    utils::replace(" )", ")", s);
+    utils::replace(") (", ")(", s);
 
-        utils::replace("[ ", "[", s);
-        utils::replace("] ", "]", s);
-        utils::replace(" [", "[", s);
-        utils::replace(" ]", "]", s);
+    utils::replace("[ ", "[", s);
+    utils::replace("] ", "]", s);
+    utils::replace(" [", "[", s);
+    utils::replace(" ]", "]", s);
 
-        utils::strip_spaces(s);
-    };
-
-    for (auto &p : vec) {
-        do_format(p.type);
-        do_format(p.args);
-    }
+    utils::strip_spaces(s);
 }
 
 } /* end anonymous namespace */
@@ -468,23 +463,50 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         }
     }
 
-    /* copy function pointers */
+    /* create typedefs for function pointers and arrays */
+
+    const char * const fptr_suffix = "__fptr_t";
+    const char * const array_suffix = "__array_t";
+
     for (auto &p : m_objects) {
         if (p.prototype == proto::function_pointer) {
-            proto_t proto;
-            proto.type = p.type;
-            proto.symbol = p.symbol;
-            m_fptrs.push_back(proto);
+            /* typedef */
+            std::string s = p.type;
+            auto pos = s.find("(*)") + 2;
+            s.insert(pos, fptr_suffix);
+            s.insert(pos, p.symbol);
+            m_typedefs.push_back(s);
 
             /* replace old type */
-            p.type = p.symbol + m_fptr_suffix;
+            p.type = p.symbol + fptr_suffix;
+        } else if (p.prototype == proto::object_array) {
+            /* typedef */
+            std::string s = p.type;
+            auto pos = s.find('[');
+            s.insert(pos, array_suffix);
+            s.insert(pos, p.symbol);
+            m_typedefs.push_back(s);
+
+            /* replace old type */
+            p.type = p.symbol + array_suffix;
         }
     }
 
     /* cosmetics */
-    format_prototypes(m_prototypes);
-    format_prototypes(m_objects);
-    format_prototypes(m_fptrs);
+
+    for (auto &p : m_prototypes) {
+        format_prototypes(p.type);
+        format_prototypes(p.args);
+    }
+
+    for (auto &p : m_objects) {
+        format_prototypes(p.type);
+        format_prototypes(p.args);
+    }
+
+    for (auto &e : m_typedefs) {
+        format_prototypes(e);
+    }
 }
 
 /* parse `%option' strings */

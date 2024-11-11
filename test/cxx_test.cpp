@@ -45,6 +45,11 @@ and the filename is then specified during loading:
     helloworld *hw = helloworld_init();
     helloworld_callback = cb;
     helloworld_hello(hw);
+
+    std::cout << "helloworld_buffer content: " << helloworld_buffer << std::endl;
+    memcpy(helloworld_buffer, "abc", 4);
+    std::cout << "helloworld_buffer new content: " << helloworld_buffer << std::endl;
+
     helloworld_release(hw);
 
 

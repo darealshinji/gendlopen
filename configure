@@ -103,23 +103,27 @@ _check_tool()
 
 check_tool()
 {
-    tool=""
-    _check_tool "$1"
+    if [ "x$(echo $1 | grep '/')" = "x" ]; then
+        tool=""
+        _check_tool "$1"
 
-    if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
-        echo "error: nothing found"
-        exit 1
+        if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
+            echo "error: nothing found"
+            exit 1
+        fi
     fi
 }
 
 check_host_tool()
 {
-    tool=""
-    _check_tool "${host}$1"
+    if [ "x$(echo $1 | grep '/')" = "x" ]; then
+        tool=""
+        _check_tool "${host}$1"
 
-    if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
-        echo "error: nothing found"
-        exit 1
+        if [ "x$2" = "xexit" ] && [ "x$tool" = "x" ]; then
+            echo "error: nothing found"
+            exit 1
+        fi
     fi
 }
 
@@ -271,9 +275,6 @@ set clang-cl:
 set ld:
     ld=..
 
-set clang:
-    clang=..
-
 override flags:
     cflags=..  cxxflags=..  cppflags=..  ldlfags=..
 
@@ -311,7 +312,6 @@ EOL
     host=*)         host="${i#*=}";;
     cl=*)           cl="${i#*=}";;
     ld=*)           ld="${i#*=}";;
-    clang=*)        clang="${i#*=}";;
     ar=*)           ar="${i#*=}";;
     pkgconfig=*)    pkgconfig="${i#*=}";;
     gdo=*)          gendlopen="${i#*=}";;
@@ -431,12 +431,6 @@ if [ "x$cc_build" = "x" ]; then
 
         cc_build="$tool"
     fi
-fi
-
-# host clang
-if [ "x$clang" = "x" ]; then
-    check_tool clang
-    clang="$tool"
 fi
 
 # host ar
@@ -688,7 +682,6 @@ CC            = $cc
 CXX           = $cxx
 CCBUILD       = $cc_build
 AR            = $ar
-CLANG         = $clang
 LEX           = $lex
 
 EXEEXT        = $exeext

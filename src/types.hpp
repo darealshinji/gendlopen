@@ -37,7 +37,8 @@ namespace proto
     typedef enum {
         function,
         function_pointer,
-        object
+        object,
+        object_array
     } type;
 }
 

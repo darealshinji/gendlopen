@@ -39,8 +39,8 @@ public:
 
 private:
 
-    vstring_t m_args, m_includes, m_symbols, m_prefix;
-    vproto_t m_prototypes, m_objects, m_fptrs;
+    vstring_t m_args, m_includes, m_symbols, m_prefix, m_typedefs;
+    vproto_t m_prototypes, m_objects;
 
     std::string m_ifile;
     std::string m_ofile = "-";
@@ -51,9 +51,6 @@ private:
     std::string m_fmt_upper; // = "$1" + m_name_upper + '_';
     std::string m_fmt_lower; // = "$1" + m_name_lower + '_';
     std::string m_fmt_namespace; // = "$1" + m_name_lower + "::";
-
-    /* suffix for function pointer typedefs */
-    static constexpr const char * const m_fptr_suffix = "__fptr_t_";
 
     std::string m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;

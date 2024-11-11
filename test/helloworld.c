@@ -13,6 +13,8 @@ struct helloworld_
 
 helloworld_cb_t helloworld_callback = NULL;
 
+char helloworld_buffer[64] = "pointless buffer!";
+
 
 /* allocate object */
 helloworld *helloworld_init()
@@ -25,7 +27,7 @@ helloworld *helloworld_init_argv(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
-    return malloc(sizeof(helloworld));
+    return helloworld_init();
 }
 
 /* use object and respond something */

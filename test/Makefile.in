@@ -54,10 +54,10 @@ clean:
 	$(_v)-rm -f $(DLL) $(BINS) *.exe *.o *.obj *.a *.lib *.dll *.so *.exp
 	$(_v)-rm -f $(GEN_SOURCES) $(_GEN_SOURCES_WIN32)
 
-run_tests: $(BINS)
+run-tests: $(BINS)
 	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests))
 
-@W32@run_tests_wine: $(BINS)
+@W32@run-tests-wine: $(BINS)
 @W32@	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests_wine))
 
 

@@ -5,6 +5,9 @@ helloworld *helloworld_init_argv(int argc, char *argv[]); // testing arrays in p
 //helloworld_cb_t helloworld_callback;
 extern void (*helloworld_callback) (const char*);
 
+/* array type */
+extern char helloworld_buffer[64];
+
 /*
  * say hello
  */

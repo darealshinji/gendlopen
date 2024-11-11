@@ -206,17 +206,13 @@ inline void print_extra_defines(cio::ofstream &out, const std::string &defs)
 }
 
 /* typedefs for function pointers */
-inline void print_typedefs(cio::ofstream &out, const vproto_t &fptrs, const char *suffix)
+inline void print_typedefs(cio::ofstream &out, const vstring_t &tdefs)
 {
-    if (!fptrs.empty()) {
-        out << "/* function pointer typedefs */\n";
+    if (!tdefs.empty()) {
+        out << "/* typedefs */\n";
 
-        for (auto &e : fptrs) {
-            std::string s = e.type;
-            auto pos = s.find("(*)") + 2;
-            s.insert(pos, suffix);
-            s.insert(pos, e.symbol);
-            out << "typedef " << s << ";\n";
+        for (auto &e : tdefs) {
+            out << "typedef " << e << ";\n";
         }
         out << '\n';
     }
@@ -342,7 +338,7 @@ void gendlopen::generate()
     /* print symbols and exit */
     if (m_print_symbols) {
         cio::ofstream out; /* defaults to STDOUT */
-        print_typedefs(out, m_fptrs, m_fptr_suffix);
+        print_typedefs(out, m_typedefs);
         print_symbols_to_stdout(m_objects, m_prototypes);
         return;
     }
@@ -442,7 +438,7 @@ void gendlopen::generate()
     print_extra_defines(m_ofs, m_defines);
     print_default_libname(m_ofs, m_name_upper, m_deflib_a, m_deflib_w);
     print_includes(m_ofs, m_includes);
-    print_typedefs(m_ofs, m_fptrs, m_fptr_suffix);
+    print_typedefs(m_ofs, m_typedefs);
 
     data::concat_templates(header_data, body_data, m_format, m_separate);
     substitute(header_data, m_ofs);

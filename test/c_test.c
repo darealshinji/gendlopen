@@ -54,6 +54,11 @@ int main(int argc, char *argv[])
     helloworld_callback = cb;
     helloworld_hello(hw);
     helloworld_hello2(hw, cb);
+
+    printf("helloworld_buffer content: %s\n", helloworld_buffer);
+    memcpy(helloworld_buffer, "abc", 4);
+    printf("helloworld_buffer new content: %s\n", helloworld_buffer);
+
     helloworld_release(hw);
 
     /* free library */
