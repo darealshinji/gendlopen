@@ -464,31 +464,27 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
     }
 
     /* create typedefs for function pointers and arrays */
-
-    const char * const fptr_suffix = "__fptr_t";
-    const char * const array_suffix = "__array_t";
-
     for (auto &p : m_objects) {
+        auto pos = std::string::npos;
+
         if (p.prototype == proto::function_pointer) {
-            /* typedef */
-            std::string s = p.type;
-            auto pos = s.find("(*)") + 2;
-            s.insert(pos, fptr_suffix);
-            s.insert(pos, p.symbol);
-            m_typedefs.push_back(s);
-
-            /* replace old type */
-            p.type = p.symbol + fptr_suffix;
+            pos = p.type.find("(*)") + 2;
         } else if (p.prototype == proto::object_array) {
+            pos = p.type.find('[');
+        } else {
+            continue;
+        }
+
+        if (pos != std::string::npos) {
+            std::string new_type = m_name_lower + "_" + p.symbol + "_t";
+
             /* typedef */
-            std::string s = p.type;
-            auto pos = s.find('[');
-            s.insert(pos, array_suffix);
-            s.insert(pos, p.symbol);
-            m_typedefs.push_back(s);
+            std::string tmp = p.type;
+            tmp.insert(pos, new_type);
+            m_typedefs.push_back(tmp);
 
             /* replace old type */
-            p.type = p.symbol + array_suffix;
+            p.type = new_type;
         }
     }
 
