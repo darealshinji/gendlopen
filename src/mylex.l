@@ -1,4 +1,4 @@
-%{
+%top{
 /**
  * The MIT License (MIT)
  *
@@ -22,10 +22,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE
  */
+}
+
+%{
 #include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 static int token_count = 0;
 static char errbuf[128] = {0};
@@ -36,26 +36,28 @@ static void illegal_char();
 #define MYLEX_CLANG_AST  2
 %}
 
-comment1        "//".*
-comment2        [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]
+color               [\x1B][\[][0-9;]*[m]
+ast                 ^"TranslationUnitDecl 0x".*
+ast_color           ^{color}"TranslationUnitDecl"{color}{color}" 0x".*
+option              ^"%option"[ \t].*
+utf8_bom            ^"\xEF\xBB\xBF"
+identifier          [a-zA-Z0-9_]+
+other               [*,()\[\]]
 
-color           [\x1B][\[][0-9;]*[m]
-ast             ^"TranslationUnitDecl 0x".*
-ast_color       ^{color}"TranslationUnitDecl"{color}{color}" 0x".*
+%option noinput nounput noyywrap yylineno nounistd never-interactive
 
-option          ^"%option"[ \t].*
-utf8_bom        ^"\xEF\xBB\xBF"
-
-identifier      [a-zA-Z0-9_]+
-triple_dot      "..."
-other           [*,()\[\]]
-semicolon       ;
-illegal         .
-
-%option noinput nounput noyywrap yylineno
+%x C_COMMENT
 
 %%
-[[:space:]]         ;
+
+"/*"                { BEGIN(C_COMMENT); }
+<C_COMMENT>"*/"     { BEGIN(INITIAL); }
+<C_COMMENT>\n       { }
+<C_COMMENT>.        { }
+
+"//".*              { }
+
+[[:space:]]         { }
 
 {utf8_bom}          { /* ignore BOM at beginning of first line */
     if (yylineno != 1) {
@@ -63,9 +65,6 @@ illegal         .
         return MYLEX_ERROR;
     }
 }
-
-{comment1}          ;
-{comment2}          ;
 
 {ast}               { /* clang AST identifier in first line */
     if (yylineno == 1) {
@@ -81,28 +80,28 @@ illegal         .
 
 {option}            { token_count = 0; return MYLEX_OK; }
 {identifier}        { token_count++; return MYLEX_OK; }
-{triple_dot}        { token_count++; return MYLEX_OK; }
+"..."               { token_count++; return MYLEX_OK; }
 {other}             { token_count++; return MYLEX_OK; }
 
-{semicolon}         { /* return if statement was not empty */
+";"                 { /* return if statement was not empty */
     if (token_count > 0) {
         token_count = 0;
         return MYLEX_OK;
     }
 }
 
-{illegal}           { illegal_char(); return MYLEX_ERROR; }
+.                   { illegal_char(); return MYLEX_ERROR; }
 %%
 
 /* save error message */
 static void illegal_char()
 {
-    const char *fmt = "illegal character `%c' at line %d";
+    const char *fmt = "illegal character [%c] at line %d";
     const size_t buflen = sizeof(errbuf) - 1;
     unsigned char c = (unsigned char)*yytext;
 
     if (!isprint(*yytext)) {
-        fmt = "illegal character `0x%02X' at line %d";
+        fmt = "illegal character [0x%02X] at line %d";
     }
 
 #ifdef _WIN32

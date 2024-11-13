@@ -17,7 +17,7 @@ void helloworld_hello2(helloworld *hw,
         (const char*)  /* testing non-typedef'd function pointer */
 );
 
-/* ignored */;
+/* ignored */;;;
 
 /* fprintf */
 int helloworld_fprintf(FILE *stream, const char *format,
