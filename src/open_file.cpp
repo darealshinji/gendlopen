@@ -29,8 +29,13 @@
 #include "open_file.hpp"
 
 
-open_file::open_file()
+open_file::open_file(const std::string &path)
 {
+    if (path.empty() || path == "-") {
+        m_fp = stdin;
+    } else {
+        m_fp = fopen(path.c_str(), "rb");
+    }
 }
 
 open_file::~open_file()
@@ -38,16 +43,8 @@ open_file::~open_file()
     close();
 }
 
-bool open_file::open(const std::string &path)
+bool open_file::is_open() const
 {
-    close();
-
-    if (path.empty() || path == "-") {
-        m_fp = stdin;
-    } else {
-        m_fp = fopen(path.c_str(), "rb");
-    }
-
     return (m_fp != NULL);
 }
 

@@ -51,7 +51,7 @@ namespace data
     }
 
     /* create template data */
-    void concat_templates(cstrList_t &header, cstrList_t &body, output::format format, bool separate)
+    void create_template_data_lists(cstrList_t &header, cstrList_t &body, output::format format, bool separate)
     {
         switch (format)
         {

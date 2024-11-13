@@ -27,7 +27,7 @@ namespace help {
 namespace data {
     void save_filename_macros_data(cio::ofstream &ofs);
     void save_license_data(cio::ofstream &ofs);
-    void concat_templates(cstrList_t &header, cstrList_t &body, output::format format, bool separate);
+    void create_template_data_lists(cstrList_t &header, cstrList_t &body, output::format format, bool separate);
 }
 
 #endif /* GLOBAL_HPP */

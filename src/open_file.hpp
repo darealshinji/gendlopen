@@ -38,15 +38,14 @@ class open_file
 {
 private:
 
-    FILE *m_fp = stdin;
+    FILE *m_fp = NULL;
 
 public:
 
-    open_file();
+    open_file(const std::string &path);
     ~open_file();
 
-    /* open/close stream */
-    bool open(const std::string &path);
+    bool is_open() const;
     void close();
 
     /* return raw FILE pointer */

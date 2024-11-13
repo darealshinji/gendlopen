@@ -79,7 +79,7 @@ private:
 
     /* generate.cpp */
     void open_ofstream(const std::filesystem::path &opath, cio::ofstream &ofs);
-    void read_custom_template(const std::string &ofile);
+    void read_custom_template();
 
     /* substitute.cpp */
     void substitute_prepare();
