@@ -105,6 +105,16 @@ namespace /* anonymous */
     /* loop and replace function prototypes, save to output stream */
     void replace_function_prototypes(const vproto_t &vec, const std::string &line, cio::ofstream &ofs)
     {
+        auto erase_token = [] (const std::string &token, std::string &s)
+        {
+            size_t pos = 0;
+            const size_t len = token.size();
+
+            while ((pos = s.find(token, pos)) != std::string::npos) {
+                s.erase(pos, len);
+            }
+        };
+
         for (auto &e : vec) {
             /* we can't handle variable argument lists in wrapper functions */
             if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
@@ -121,8 +131,8 @@ namespace /* anonymous */
             /* don't "return" on "void" functions */
             if (utils::eq_str_case(e.type, "void")) {
                 /* keep the indentation pretty */
-                utils::erase("%%return%% ", copy);
-                utils::erase("%%return%%", copy);
+                erase_token("%%return%% ", copy);
+                erase_token("%%return%%", copy);
             } else {
                 utils::replace("%%return%%", "return", copy);
             }

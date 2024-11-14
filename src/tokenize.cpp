@@ -64,7 +64,7 @@ enum {
     MYLEX_CLANG_AST = 2
 };
 
-inline std::string concat_function_prototype(const proto_t &proto)
+std::string concat_function_prototype(const proto_t &proto)
 {
     if (proto.type.ends_with(" *")) {
         return proto.type + proto.symbol + '(' + proto.args + ')';

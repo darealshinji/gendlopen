@@ -84,6 +84,13 @@ typedef struct decl {
 } decl_t;
 
 
+/* strip ANSI colors from line */
+void strip_ansi_colors(std::string &s)
+{
+    const std::regex reg(R"(\x1B\[[0-9;]*m)");
+    s = std::regex_replace(s, reg, "");
+}
+
 /* get function or variable declaration */
 bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
 {
@@ -95,7 +102,7 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
         "'(.*?)'.*"           /* type */
     );
 
-    utils::strip_ansi_colors(line);
+    strip_ansi_colors(line);
 
     if (!std::regex_match(line, m, reg) || m.size() != 4) {
         return false;
@@ -161,7 +168,7 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
 
     std::smatch m;
 
-    utils::strip_ansi_colors(line);
+    strip_ansi_colors(line);
 
     if (!std::regex_match(line, m, reg) || m.size() != 2) {
         return false;

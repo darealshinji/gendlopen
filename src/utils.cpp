@@ -53,6 +53,12 @@ namespace /* anonymous */
 
         return '"' + lib + '"';
     }
+
+    /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
+    bool prefixed_case(const std::string &str, const std::string &pfx)
+    {
+        return (str.size() > pfx.size() && utils::eq_str_case(str.substr(0, pfx.size()), pfx));
+    }
 }
 
 
@@ -262,4 +268,48 @@ bool utils::getline(FILE *fp, std::string &line)
     }
 
     return (line.size() > 0);
+}
+
+/* returns true if s begins with a prefix found in list */
+bool utils::is_prefixed(const std::string &s, const vstring_t &list)
+{
+    for (const auto &e : list) {
+        if (s.starts_with(e)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* delete suffix from string */
+void utils::delete_suffix(std::string &str, const std::string &suffix)
+{
+    if (str.ends_with(suffix)) {
+        str.erase(str.size() - suffix.size());
+    }
+}
+
+/* strip ANSI white-space characters from front and back */
+void utils::strip_spaces(std::string &s)
+{
+    /* remove from back */
+    while (!s.empty() && std::strchr(" \t\n\r", s.back())) {
+        s.pop_back();
+    }
+
+    /* remove from front */
+    while (!s.empty() && std::strchr(" \t\n\r", s.front())) {
+        s.erase(0, 1);
+    }
+}
+
+/* replace string "from" with string "to" in string "s" */
+void utils::replace(const std::string &from, const std::string &to, std::string &s)
+{
+    size_t pos = 0;
+    const size_t len = from.size();
+
+    for (; (pos = s.find(from, pos)) != std::string::npos; pos += to.size()) {
+        s.replace(pos, len, to);
+    }
 }

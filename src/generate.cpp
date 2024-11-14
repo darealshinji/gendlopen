@@ -131,7 +131,7 @@ void save_note(cio::ofstream &out, bool print_date)
 }
 
 /* define default library name */
-inline void save_default_libname(
+void save_default_libname(
     cio::ofstream &out,
     const std::string &pfx,
     const std::string &lib_a,
@@ -149,7 +149,7 @@ inline void save_default_libname(
 }
 
 /* extra defines */
-inline void save_extra_defines(cio::ofstream &out, const std::string &defs)
+void save_extra_defines(cio::ofstream &out, const std::string &defs)
 {
     if (!defs.empty()) {
         out << "/* extra defines */\n";
@@ -158,7 +158,7 @@ inline void save_extra_defines(cio::ofstream &out, const std::string &defs)
 }
 
 /* typedefs for function pointers */
-inline void save_typedefs(cio::ofstream &out, const vstring_t &tdefs)
+void save_typedefs(cio::ofstream &out, const vstring_t &tdefs)
 {
     if (!tdefs.empty()) {
         out << "/* typedefs */\n";
@@ -171,7 +171,7 @@ inline void save_typedefs(cio::ofstream &out, const vstring_t &tdefs)
 }
 
 /* extra includes */
-inline void save_includes(cio::ofstream &out, const vstring_t &includes)
+void save_includes(cio::ofstream &out, const vstring_t &includes)
 {
     if (!includes.empty()) {
         out << "/* extra headers */\n";

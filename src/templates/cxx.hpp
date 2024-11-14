@@ -409,11 +409,11 @@ private:
     }
 
 
-    inline DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
+    DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
         return ::GetModuleFileNameW(handle, buf, len);
     }
 
-    inline DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {
+    DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {
         return ::GetModuleFileNameA(handle, buf, len);
     }
 
@@ -461,11 +461,11 @@ private:
     }
 
 
-    inline DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {
+    DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {
         return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);
     }
 
-    inline DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {
+    DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {
         return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);
     }
 

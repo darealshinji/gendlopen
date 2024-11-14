@@ -51,17 +51,17 @@ namespace gdo
     HMODULE handle = nullptr;
 
     /* load library */
-    inline HMODULE load_lib(const char *filename, int flags=0) {
+    HMODULE load_lib(const char *filename, int flags=0) {
         return ::LoadLibraryExA(filename, nullptr, flags);
     }
 
     /* free library */
-    inline bool free_lib(HMODULE handle) {
+    bool free_lib(HMODULE handle) {
         return (::FreeLibrary(handle) == TRUE);
     }
 
     /* get symbol */
-    inline void *get_symbol(HMODULE handle, const char *symbol) {
+    void *get_symbol(HMODULE handle, const char *symbol) {
         /* cast to void* to avoid warnings such as [-Wcast-function-type] */
         return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));
     }
@@ -72,17 +72,17 @@ namespace gdo
     void *handle = nullptr;
 
     /* load library */
-    inline void *load_lib(const char *filename, int flags=RTLD_LAZY) {
+    void *load_lib(const char *filename, int flags=RTLD_LAZY) {
         return ::dlopen(filename, flags);
     }
 
     /* free library */
-    inline bool free_lib(void *handle) {
+    bool free_lib(void *handle) {
         return (::dlclose(handle) == 0);
     }
 
     /* get symbol */
-    inline void *get_symbol(void *handle, const char *symbol) {
+    void *get_symbol(void *handle, const char *symbol) {
         return ::dlsym(handle, symbol);
     }
 

@@ -31,7 +31,12 @@
 namespace utils
 {
 
-const char * const wspcs = " \t\n\r";
+/* whether "c" is within the range of "beg" and "end" */
+template<typename T=char>
+bool range(T c, T beg, T end)
+{
+    return (c >= beg && c <= end);
+}
 
 /* originally in main.cpp */
 std::string format_def(std::string def);
@@ -45,12 +50,6 @@ bool getline(FILE *fp, std::string &line);
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);
 
-/* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
-inline bool prefixed_case(const std::string &str, const std::string &pfx)
-{
-    return (str.size() > pfx.size() && eq_str_case(str.substr(0, pfx.size()), pfx));
-}
-
 /* convert a string to uppercase or lowercase
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
@@ -59,81 +58,16 @@ std::string convert_to_upper(const std::string &s, bool underscores=true);
 std::string convert_to_lower(const std::string &s, bool underscores=true);
 
 /* returns true if s begins with a prefix found in list */
-inline bool is_prefixed(const std::string &s, const vstring_t &list)
-{
-    for (const auto &e : list) {
-        if (s.starts_with(e)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/* delete prefix from string */
-inline void delete_prefix(std::string &str, const std::string &prefix)
-{
-    if (str.starts_with(prefix)) {
-        str.erase(0, prefix.size());
-    }
-}
+bool is_prefixed(const std::string &s, const vstring_t &list);
 
 /* delete suffix from string */
-inline void delete_suffix(std::string &str, const std::string &suffix)
-{
-    if (str.ends_with(suffix)) {
-        str.erase(str.size() - suffix.size());
-    }
-}
+void delete_suffix(std::string &str, const std::string &suffix);
 
 /* strip ANSI white-space characters from front and back */
-inline void strip_spaces(std::string &s)
-{
-    /* remove from back */
-    while (!s.empty() && std::strchr(wspcs, s.back())) {
-        s.pop_back();
-    }
-
-    /* remove from front */
-    while (!s.empty() && std::strchr(wspcs, s.front())) {
-        s.erase(0, 1);
-    }
-}
+void strip_spaces(std::string &s);
 
 /* replace string "from" with string "to" in string "s" */
-inline void replace(const std::string &from, const std::string &to, std::string &s)
-{
-    size_t pos = 0;
-    const size_t len = from.size();
-
-    for (; (pos = s.find(from, pos)) != std::string::npos; pos += to.size()) {
-        s.replace(pos, len, to);
-    }
-}
-
-/* erase string "token" in string "s" */
-inline void erase(const std::string &token, std::string &s)
-{
-    size_t pos = 0;
-    const size_t len = token.size();
-
-    while ((pos = s.find(token, pos)) != std::string::npos) {
-        s.erase(pos, len);
-    }
-}
-
-/* strip ANSI colors from line */
-inline void strip_ansi_colors(std::string &s)
-{
-    const std::regex reg(R"(\x1B\[[0-9;]*m)");
-    s = std::regex_replace(s, reg, "");
-}
-
-/* whether "c" is within the range of "beg" and "end" */
-template<typename T=char>
-inline bool range(T c, T beg, T end)
-{
-    return (c >= beg && c <= end);
-}
+void replace(const std::string &from, const std::string &to, std::string &s);
 
 } /* namespace utils end */
 
