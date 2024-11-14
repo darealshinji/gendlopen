@@ -23,6 +23,7 @@
  */
 
 #include <iostream>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -76,6 +77,8 @@ bool parse_args::get_arg_len(const char *str, const size_t len)
         std::exit(1);
     };
 
+    assert(argc > 0 && argv != NULL);
+
     opt = NULL;
 
     if (strncmp(cur, str, len) != 0) {
@@ -117,6 +120,8 @@ bool parse_args::get_arg_len(const char *str, const size_t len)
 /* option without argument */
 bool parse_args::get_noarg_len(const char *str, const size_t len)
 {
+    assert(argc > 0 && argv != NULL);
+
     /* -foo */
     if (strcmp(cur, str) == 0) {
         return true;

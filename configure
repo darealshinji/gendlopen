@@ -342,9 +342,9 @@ done
 # optimization flags
 case "x$opt" in
     xrelease)
-        opt_gcc="-O3 -ffunction-sections -fdata-sections"
+        opt_gcc="-O3 -DNDEBUG -ffunction-sections -fdata-sections"
         opt_ld="-Wl,--gc-sections -s"
-        opt_msc="-O2"
+        opt_msc="-O2 -DNDEBUG"
         opt_link="-release"
         ;;
     xdebug)
@@ -354,9 +354,9 @@ case "x$opt" in
         opt_link="-debug"
         ;;
     xminsize)
-        opt_gcc="-Os -ffunction-sections -fdata-sections"
+        opt_gcc="-Os -DNDEBUG -ffunction-sections -fdata-sections"
         opt_ld="-Wl,--gc-sections -s"
-        opt_msc="-Od -g"
+        opt_msc="-Od -DNDEBUG -g"
         opt_link="-release"
         ;;
     xnoopt)
