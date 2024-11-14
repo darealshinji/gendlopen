@@ -67,6 +67,7 @@ sources = \
 	$(s)\src\lex.yy.c \
 	$(s)\src\main.cpp \
 	$(s)\src\open_file.cpp \
+	$(s)\src\parse_args.cpp \
 	$(s)\src\substitute.cpp \
 	$(s)\src\tokenize.cpp \
 	$(s)\src\utils.cpp

@@ -9,6 +9,7 @@ OBJS = \
 	main.o \
 	lex.yy.o \
 	open_file.o \
+	parse_args.o \
 	substitute.o \
 	tokenize.o \
 	utils.o \
@@ -80,6 +81,9 @@ lex.yy.o: lex.yy.c
 
 open_file.o: open_file.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c open_file.cpp -o $@
+
+parse_args.o: parse_args.cpp
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse_args.cpp -o $@
 
 substitute.o: substitute.cpp
 	$(cxx_v)$(CXX) $(CXXFLAGS) -c substitute.cpp -o $@

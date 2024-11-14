@@ -15,6 +15,7 @@
 #include "utils.hpp"
 #include "cio_ofstream.hpp"
 #include "open_file.hpp"
+#include "parse_args.hpp"
 #include "gendlopen.hpp"
 
 /* help.cpp */
