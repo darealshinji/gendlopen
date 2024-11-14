@@ -240,7 +240,7 @@ namespace
 int main(int argc, char **argv)
 {
     /* initialize class */
-    gendlopen gdo(argc, argv);
+    gendlopen gdo;
 
     if (!parse_arguments(gdo, argc, argv)) {
         std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;

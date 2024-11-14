@@ -26,15 +26,8 @@
 
 
 /* c'tor */
-gendlopen::gendlopen(int argc, char **argv)
-{
-    m_args.reserve(argc - 1);
-
-    /* copy arguments (without argv[0]) */
-    for (int i = 1; i < argc; i++) {
-        m_args.push_back(argv[i]);
-    }
-}
+gendlopen::gendlopen()
+{}
 
 /* d'tor */
 gendlopen::~gendlopen()

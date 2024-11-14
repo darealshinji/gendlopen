@@ -39,7 +39,7 @@ public:
 
 private:
 
-    vstring_t m_args, m_includes, m_symbols, m_prefix, m_typedefs;
+    vstring_t m_includes, m_symbols, m_prefix, m_typedefs;
     vproto_t m_prototypes, m_objects;
 
     std::string m_ifile;
@@ -89,7 +89,7 @@ private:
 public:
 
     /* c'tor */
-    gendlopen(int argc, char **argv);
+    gendlopen();
 
     /* d'tor */
     ~gendlopen();
