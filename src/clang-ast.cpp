@@ -79,11 +79,19 @@ enum {
 
 
 /* strip ANSI colors from line */
-std::string strip_ansi_colors(const char *line)
+std::string strip_line(const char *line)
 {
     const std::regex reg(R"(\x1B\[[0-9;]*m)");
+
     std::string s = line;
-    return std::regex_replace(s, reg, "");
+    s = std::regex_replace(s, reg, "");
+
+    /* remains of Windows line endings */
+    if (s.back() == '\r') {
+        s.pop_back();
+    }
+
+    return s;
 }
 
 /* get function parameter declaration */
@@ -96,7 +104,7 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         "'(.*?)'.*"  /* type */
     );
 
-    std::string line = strip_ansi_colors(yytext);
+    std::string line = strip_line(yytext);
 
     if (!std::regex_match(line, m, reg) || m.size() != 2) {
         return false;
@@ -141,7 +149,7 @@ bool gendlopen::get_declarations(decl_t &decl, int mode)
         "'(.*?)'.*"           /* type */
     );
 
-    std::string line = strip_ansi_colors(yytext);
+    std::string line = strip_line(yytext);
 
     if (!std::regex_match(line, m, reg) || m.size() != 4) {
         return false;
