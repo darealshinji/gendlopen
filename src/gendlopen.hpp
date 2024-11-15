@@ -69,6 +69,7 @@ private:
     bool m_print_date = true;
 
     /* clang-ast.cpp */
+    bool get_declarations(decl_t &decl, int mode);
     bool clang_ast_line(FILE *fp, int mode);
     void clang_ast(FILE *fp);
 

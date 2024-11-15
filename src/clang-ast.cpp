@@ -71,17 +71,11 @@ namespace /* anonymous */
 {
 
 enum {
-    M_ALL,
-    M_PREFIX,
-    M_LIST,
-    M_PFX_LIST
+    M_DEFAULT,  /* no filter */
+    M_PREFIX,   /* look for prefixed symbols */
+    M_LIST,     /* look for whitelisted symbols */
+    M_PFX_LIST  /* look for prefixed and/or whitelisted symbols */
 };
-
-typedef struct decl {
-    proto::type prototype;
-    std::string symbol;
-    std::string type;
-} decl_t;
 
 
 /* strip ANSI colors from line */
@@ -90,73 +84,6 @@ std::string strip_ansi_colors(const char *line)
     const std::regex reg(R"(\x1B\[[0-9;]*m)");
     std::string s = line;
     return std::regex_replace(s, reg, "");
-}
-
-/* get function or variable declaration */
-bool get_declarations(decl_t &decl, int mode, const vstring_t &prefix, vstring_t &list)
-{
-    std::smatch m;
-
-    const std::regex reg(
-        "^[|`]-(Function|Var)Decl 0x.*?"
-        " ([A-Za-z0-9_]*?) "  /* symbol */
-        "'(.*?)'.*"           /* type */
-    );
-
-    std::string line = strip_ansi_colors(yytext);
-
-    if (!std::regex_match(line, m, reg) || m.size() != 4) {
-        return false;
-    }
-
-    decl.symbol = m[2];
-
-    switch (mode)
-    {
-    case M_PREFIX:
-        if (!utils::is_prefixed(decl.symbol, prefix)) {
-            return false;
-        }
-        break;
-    case M_LIST:
-        /* erase from list if found */
-        if (std::erase(list, decl.symbol) == 0) {
-            return false;
-        }
-        break;
-    case M_PFX_LIST:
-        /* erase from list if found */
-        if (!utils::is_prefixed(decl.symbol, prefix) && std::erase(list, decl.symbol) == 0) {
-            return false;
-        }
-        break;
-    default:
-        break;
-    }
-
-    if (m[1].str().front() == 'F') {
-        /* function declaration */
-        size_t pos = m[3].str().find('(');
-
-        if (pos == std::string::npos) {
-            return false;
-        }
-        decl.prototype = proto::function;
-        decl.type = m[3].str().substr(0, pos);
-    } else {
-        /* variable declaration */
-        decl.type = m[3];
-
-        if (m[3].str().find("(*)") != std::string::npos) {
-            decl.prototype = proto::function_pointer;
-        } else {
-            decl.prototype = proto::object;
-        }
-    }
-
-    utils::strip_spaces(decl.type);
-
-    return true;
 }
 
 /* get function parameter declaration */
@@ -203,12 +130,82 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
 } /* end anonymous namespace */
 
 
+/* get function or variable declaration */
+bool gendlopen::get_declarations(decl_t &decl, int mode)
+{
+    std::smatch m;
+
+    const std::regex reg(
+        "^[|`]-(Function|Var)Decl 0x.*?"
+        " ([A-Za-z0-9_]*?) "  /* symbol */
+        "'(.*?)'.*"           /* type */
+    );
+
+    std::string line = strip_ansi_colors(yytext);
+
+    if (!std::regex_match(line, m, reg) || m.size() != 4) {
+        return false;
+    }
+
+    decl.symbol = m.str(2);
+
+    switch (mode)
+    {
+    case M_PREFIX:
+        if (!utils::is_prefixed(decl.symbol, m_prefix)) {
+            return false; /* not prefixed */
+        }
+        break;
+
+    case M_PFX_LIST:
+        if (utils::is_prefixed(decl.symbol, m_prefix)) {
+            break; /* prefixed */
+        }
+        /* not prefixed */
+        [[fallthrough]];
+
+    case M_LIST:
+        /* erase from list if found */
+        if (std::erase(m_symbols, decl.symbol) == 0) {
+            return false; /* not in list */
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    if (m.str(1).front() == 'F') {
+        /* function declaration */
+        size_t pos = m.str(3).find('(');
+
+        if (pos == std::string::npos) {
+            return false;
+        }
+        decl.prototype = proto::function;
+        decl.type = m.str(3).substr(0, pos);
+    } else {
+        /* variable declaration */
+        decl.type = m.str(3);
+
+        if (m.str(3).find("(*)") != std::string::npos) {
+            decl.prototype = proto::function_pointer;
+        } else {
+            decl.prototype = proto::object;
+        }
+    }
+
+    utils::strip_spaces(decl.type);
+
+    return true;
+}
+
 /* returns true if a function declaration was found */
 bool gendlopen::clang_ast_line(FILE *fp, int mode)
 {
     decl_t decl;
 
-    if (!get_declarations(decl, mode, m_prefix, m_symbols)) {
+    if (!get_declarations(decl, mode)) {
         return false;
     }
 
@@ -264,8 +261,7 @@ bool gendlopen::clang_ast_line(FILE *fp, int mode)
 /* read Clang AST */
 void gendlopen::clang_ast(FILE *fp)
 {
-    int mode = M_ALL;
-    bool list = false;
+    int mode = M_DEFAULT;
     int rv;
 
     /* no symbols provided */
@@ -282,12 +278,10 @@ void gendlopen::clang_ast(FILE *fp)
 
     if (m_symbols.size() > 0 && m_prefix.size() > 0) {
         mode = M_PFX_LIST;
-        list = true;
     } else if (m_prefix.size() > 0) {
         mode = M_PREFIX;
     } else if (m_symbols.size() > 0) {
         mode = M_LIST;
-        list = true;
     }
 
     /* read lines */
@@ -296,18 +290,22 @@ void gendlopen::clang_ast(FILE *fp)
         while (clang_ast_line(fp, mode))
         {}
 
-        /* get_declarations() deletes found symbols,
-         * so stop if the vector is empty */
-        if (list && m_symbols.empty()) {
+        if (mode == M_LIST && m_symbols.empty()) {
+            /* nothing left to look for */
             break;
         }
     }
 
-    if (list && !m_symbols.empty()) {
+    if ((mode == M_LIST || mode == M_PFX_LIST) && !m_symbols.empty()) {
         std::string s;
 
+        /* sort list and remove duplicates */
+        std::sort(m_symbols.begin(), m_symbols.end());
+        auto last = std::unique(m_symbols.begin(), m_symbols.end());
+        m_symbols.erase(last, m_symbols.end());
+
         for (const auto &e : m_symbols) {
-            s = " " + e;
+            s += " " + e;
         }
 
         throw error("the following symbols were not found:" + s);

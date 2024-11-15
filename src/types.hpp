@@ -50,6 +50,12 @@ typedef struct _proto {
     std::string notype_args;
 } proto_t;
 
+typedef struct _decl {
+    proto::type prototype;
+    std::string symbol;
+    std::string type;
+} decl_t;
+
 using vproto_t = std::vector<proto_t>;
 using vstring_t = std::vector<std::string>;
 using list_t = std::list<const char *>;
