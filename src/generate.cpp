@@ -103,6 +103,24 @@ std::string convert_filename(std::string &str) {
 #endif // __MINGW32__
 
 
+/* simple getline() implementation */
+bool simple_getline(FILE *fp, std::string &line)
+{
+    int c;
+
+    line.clear();
+
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == '\n') {
+            break;
+        }
+        line.push_back(c);
+    }
+
+    return (line.size() > 0);
+}
+
+
 /* print note */
 void save_note(cio::ofstream &out, bool print_date)
 {
@@ -285,7 +303,7 @@ void gendlopen::read_custom_template()
 
     FILE *fp = file.file_pointer();
 
-    while (utils::getline(fp, buf)) {
+    while (simple_getline(fp, buf)) {
         /* concat lines ending on '@' */
         if (buf.back() == '@') {
             buf.pop_back();

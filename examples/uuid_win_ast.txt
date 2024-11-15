@@ -27,6 +27,18 @@
 [0;34m|         |-[0m[0;1;32mTypedef[0m[0;33m 0x55d653916008[0m[0;1;36m '__builtin_va_list'[0m
 [0;34m|         `-[0m[0;32mPointerType[0m[0;33m 0x55d653915f50[0m [0;32m'char *'[0m
 [0;34m|           `-[0m[0;32mBuiltinType[0m[0;33m 0x55d6539153d0[0m [0;32m'char'[0m
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfce28[0m <[0;33m<..>/include/stdlib.h:282:3[0m, [0;33m<scratch space>:34:1[0m> [0;33mcol:1[0m[0;1;36m __imp___argc[0m [0;32m'int *'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfceb0[0m <[0;33m<..>/include/stdlib.h:286:3[0m, [0;33m<scratch space>:35:1[0m> [0;33mcol:1[0m[0;1;36m __imp___argv[0m [0;32m'char ***'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfcfa0[0m <[0;33m<..>/include/stdlib.h:290:3[0m, [0;33m<scratch space>:36:1[0m> [0;33mcol:1[0m[0;1;36m __imp___wargv[0m [0;32m'wchar_t ***'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd028[0m <[0;33m<..>/include/stdlib.h:322:3[0m, [0;33m<scratch space>:37:1[0m> [0;33mcol:1[0m[0;1;36m __imp__environ[0m [0;32m'char ***'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd0b0[0m <[0;33m<..>/include/stdlib.h:327:3[0m, [0;33m<scratch space>:38:1[0m> [0;33mcol:1[0m[0;1;36m __imp__wenviron[0m [0;32m'wchar_t ***'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd130[0m <[0;33m<..>/include/stdlib.h:334:3[0m, [0;33m<scratch space>:39:1[0m> [0;33mcol:1[0m[0;1;36m __imp__pgmptr[0m [0;32m'char **'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd1b0[0m <[0;33m<..>/include/stdlib.h:339:3[0m, [0;33m<scratch space>:40:1[0m> [0;33mcol:1[0m[0;1;36m __imp__wpgmptr[0m [0;32m'wchar_t **'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd230[0m <[0;33m<..>/include/stdlib.h:344:3[0m, [0;33m<scratch space>:41:1[0m> [0;33mcol:1[0m[0;1;36m __imp__osplatform[0m [0;32m'unsigned int *'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd2b0[0m <[0;33m<..>/include/stdlib.h:349:3[0m, [0;33m<scratch space>:42:1[0m> [0;33mcol:1[0m[0;1;36m __imp__osver[0m [0;32m'unsigned int *'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd330[0m <[0;33m<..>/include/stdlib.h:354:3[0m, [0;33m<scratch space>:43:1[0m> [0;33mcol:1[0m[0;1;36m __imp__winver[0m [0;32m'unsigned int *'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd3b0[0m <[0;33m<..>/include/stdlib.h:359:3[0m, [0;33m<scratch space>:44:1[0m> [0;33mcol:1[0m[0;1;36m __imp__winmajor[0m [0;32m'unsigned int *'[0m extern
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x62bc38dfd430[0m <[0;33m<..>/include/stdlib.h:364:3[0m, [0;33m<scratch space>:45:1[0m> [0;33mcol:1[0m[0;1;36m __imp__winminor[0m [0;32m'unsigned int *'[0m extern
 [0;34m|-[0m[0;1;32mFunctionDecl[0m[0;33m 0x55d654f094e8[0m <[0;33m<built-in>:396:23[0m, [0;33m<..>/include/rpcdce.h:195:171[0m> [0;33mcol:33[0m[0;1;36m RpcStringBindingComposeA[0m [0;32m'RPC_STATUS (RPC_CSTR, RPC_CSTR, RPC_CSTR, RPC_CSTR, RPC_CSTR, RPC_CSTR *) __attribute__((stdcall))':'RPC_STATUS (RPC_CSTR, RPC_CSTR, RPC_CSTR, RPC_CSTR, RPC_CSTR, RPC_CSTR *)'[0m
 [0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f090a8[0m <[0;33mcol:58[0m, [0;33mcol:67[0m> [0;33mcol:67[0m[0;1;36m ObjUuid[0m [0;32m'RPC_CSTR':'unsigned char *'[0m
 [0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f09120[0m <[0;33mcol:75[0m, [0;33mcol:84[0m> [0;33mcol:84[0m[0;1;36m Protseq[0m [0;32m'RPC_CSTR':'unsigned char *'[0m
@@ -231,9 +243,9 @@
 [0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2ad88[0m <[0;33mcol:131[0m, [0;33mcol:137[0m> [0;33mcol:137[0m[0;1;36m ObjectUuid[0m [0;32m'UUID *'[0m
 [0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2ae08[0m <[0;33mcol:148[0m, [0;33mcol:158[0m> [0;33mcol:158[0m[0;1;36m Annotation[0m [0;32m'RPC_WSTR *'[0m
 [0;34m| `-[0m[0;1;34mDLLImportAttr[0m[0;33m 0x55d654f2b0a0[0m <[0;33m<..>/include/winnt.h:154:37[0m>
-[0;34m|-[0m[0;1;32mFunctionDecl[0m[0;33m 0x55d654f2b438[0m <[0;33m<built-in>:396:23[0m, [0;33m<..>/include/rpcdce.h:545:141[0m> [0;33mcol:33[0m[0;1;36m RpcMgmtEpUnregister[0m [0;32m'RPC_STATUS (RPC_BINDING_HANDLE, RPC_IF_ID *, RPC_BINDING_HANDLE, UUID *) __attribute__((stdcall))':'RPC_STATUS (RPC_BINDING_HANDLE, RPC_IF_ID *, RPC_BINDING_HANDLE, UUID *)'[0m
-[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b108[0m <[0;33mcol:53[0m, [0;33mcol:72[0m> [0;33mcol:72[0m[0;1;36m EpBinding[0m [0;32m'RPC_BINDING_HANDLE':'void *'[0m
-[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b188[0m <[0;33mcol:82[0m, [0;33mcol:93[0m> [0;33mcol:93[0m[0;1;36m IfId[0m [0;32m'RPC_IF_ID *'[0m
-[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b200[0m <[0;33mcol:98[0m, [0;33mcol:117[0m> [0;33mcol:117[0m[0;1;36m Binding[0m [0;32m'RPC_BINDING_HANDLE':'void *'[0m
-[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b280[0m <[0;33mcol:125[0m, [0;33mcol:131[0m> [0;33mcol:131[0m[0;1;36m ObjectUuid[0m [0;32m'UUID *'[0m
-[0;34m| `-[0m[0;1;34mDLLImportAttr[0m[0;33m 0x55d654f2b500[0m <[0;33m<..>/include/winnt.h:154:37[0m>
+[0;34m`-[0m[0;1;32mFunctionDecl[0m[0;33m 0x55d654f2b438[0m <[0;33m<built-in>:396:23[0m, [0;33m<..>/include/rpcdce.h:545:141[0m> [0;33mcol:33[0m[0;1;36m RpcMgmtEpUnregister[0m [0;32m'RPC_STATUS (RPC_BINDING_HANDLE, RPC_IF_ID *, RPC_BINDING_HANDLE, UUID *) __attribute__((stdcall))':'RPC_STATUS (RPC_BINDING_HANDLE, RPC_IF_ID *, RPC_BINDING_HANDLE, UUID *)'[0m
+[0;34m  |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b108[0m <[0;33mcol:53[0m, [0;33mcol:72[0m> [0;33mcol:72[0m[0;1;36m EpBinding[0m [0;32m'RPC_BINDING_HANDLE':'void *'[0m
+[0;34m  |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b188[0m <[0;33mcol:82[0m, [0;33mcol:93[0m> [0;33mcol:93[0m[0;1;36m IfId[0m [0;32m'RPC_IF_ID *'[0m
+[0;34m  |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b200[0m <[0;33mcol:98[0m, [0;33mcol:117[0m> [0;33mcol:117[0m[0;1;36m Binding[0m [0;32m'RPC_BINDING_HANDLE':'void *'[0m
+[0;34m  |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x55d654f2b280[0m <[0;33mcol:125[0m, [0;33mcol:131[0m> [0;33mcol:131[0m[0;1;36m ObjectUuid[0m [0;32m'UUID *'[0m
+[0;34m  `-[0m[0;1;34mDLLImportAttr[0m[0;33m 0x55d654f2b500[0m <[0;33m<..>/include/winnt.h:154:37[0m>

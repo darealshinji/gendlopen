@@ -49,20 +49,9 @@
 #define R_PARAM  "[a-zA-Z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
 #define R_ARRAY  "[a-zA-Z0-9_\\[\\] ]*?"
 
-/* lex.yy.c */
-extern "C" char *yytext;
-extern "C" int mylex(FILE *fp);
-extern "C" const char *mylex_lasterror();
-
 
 namespace /* anonymous */
 {
-
-enum {
-    MYLEX_ERROR     = -1,
-    MYLEX_OK        = 1,
-    MYLEX_CLANG_AST = 2
-};
 
 std::string concat_function_prototype(const proto_t &proto)
 {
@@ -135,9 +124,11 @@ int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
         }
     }
 
-    /* push back if last prototype didn't end on semicolon */
-    if (!tokens.empty()) {
-        vec.push_back(tokens);
+    if (rv != MYLEX_AST_BEGIN) {
+        /* push back if last prototype didn't end on semicolon */
+        if (!tokens.empty()) {
+            vec.push_back(tokens);
+        }
     }
 
     return rv;
@@ -664,7 +655,7 @@ void gendlopen::tokenize()
     int ret = tokenize_stream(file.file_pointer(), vec_tokens, poptions);
 
     /* input is a clang AST file */
-    if (ret == MYLEX_CLANG_AST) {
+    if (ret == MYLEX_AST_BEGIN) {
         clang_ast(file.file_pointer());
         return;
     }

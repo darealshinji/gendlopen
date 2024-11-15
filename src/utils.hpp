@@ -44,9 +44,6 @@ void format_libname(const std::string &str, std::string &lib_a, std::string &lib
 std::string format_inc(const std::string &inc);
 output::format format_enum(const char *in);
 
-/* simple getline() implementation */
-bool getline(FILE *fp, std::string &line);
-
 /* case-insensitive string comparison */
 bool eq_str_case(const std::string &str1, const std::string &str2);
 

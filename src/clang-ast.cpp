@@ -85,14 +85,15 @@ typedef struct decl {
 
 
 /* strip ANSI colors from line */
-void strip_ansi_colors(std::string &s)
+std::string strip_ansi_colors(const char *line)
 {
     const std::regex reg(R"(\x1B\[[0-9;]*m)");
-    s = std::regex_replace(s, reg, "");
+    std::string s = line;
+    return std::regex_replace(s, reg, "");
 }
 
 /* get function or variable declaration */
-bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t &prefix, vstring_t &list)
+bool get_declarations(decl_t &decl, int mode, const vstring_t &prefix, vstring_t &list)
 {
     std::smatch m;
 
@@ -102,7 +103,7 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
         "'(.*?)'.*"           /* type */
     );
 
-    strip_ansi_colors(line);
+    std::string line = strip_ansi_colors(yytext);
 
     if (!std::regex_match(line, m, reg) || m.size() != 4) {
         return false;
@@ -159,16 +160,16 @@ bool get_declarations(decl_t &decl, std::string &line, int mode, const vstring_t
 }
 
 /* get function parameter declaration */
-bool get_parameters(std::string &line, std::string &args, std::string &notype_args, char letter)
+bool get_parameters(std::string &args, std::string &notype_args, char letter)
 {
+    std::smatch m;
+
     const std::regex reg(
         "^.*?-ParmVarDecl 0x.*?"
         "'(.*?)'.*"  /* type */
     );
 
-    std::smatch m;
-
-    strip_ansi_colors(line);
+    std::string line = strip_ansi_colors(yytext);
 
     if (!std::regex_match(line, m, reg) || m.size() != 2) {
         return false;
@@ -203,11 +204,11 @@ bool get_parameters(std::string &line, std::string &args, std::string &notype_ar
 
 
 /* returns true if a function declaration was found */
-bool gendlopen::clang_ast_line(FILE *fp, std::string &line, int mode)
+bool gendlopen::clang_ast_line(FILE *fp, int mode)
 {
     decl_t decl;
 
-    if (!get_declarations(decl, line, mode, m_prefix, m_symbols)) {
+    if (!get_declarations(decl, mode, m_prefix, m_symbols)) {
         return false;
     }
 
@@ -215,14 +216,15 @@ bool gendlopen::clang_ast_line(FILE *fp, std::string &line, int mode)
         /* function */
         std::string args, notype_args;
         char letter = 'a';
+        int rv;
 
         /* read next lines for parameters */
-        while (utils::getline(fp, line)) {
+        while ((rv = mylex(fp)) == MYLEX_OK) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
             }
 
-            if (!get_parameters(line, args, notype_args, letter)) {
+            if (!get_parameters(args, notype_args, letter)) {
                 break;
             }
             letter++;
@@ -262,9 +264,9 @@ bool gendlopen::clang_ast_line(FILE *fp, std::string &line, int mode)
 /* read Clang AST */
 void gendlopen::clang_ast(FILE *fp)
 {
-    std::string line;
     int mode = M_ALL;
     bool list = false;
+    int rv;
 
     /* no symbols provided */
     if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
@@ -289,9 +291,9 @@ void gendlopen::clang_ast(FILE *fp)
     }
 
     /* read lines */
-    while (utils::getline(fp, line)) {
+    while ((rv = mylex(fp)) == MYLEX_OK) {
         /* inner loop to read parameters */
-        while (clang_ast_line(fp, line, mode) && !line.empty())
+        while (clang_ast_line(fp, mode))
         {}
 
         /* get_declarations() deletes found symbols,
@@ -299,6 +301,16 @@ void gendlopen::clang_ast(FILE *fp)
         if (list && m_symbols.empty()) {
             break;
         }
+    }
+
+    if (list && !m_symbols.empty()) {
+        std::string s;
+
+        for (const auto &e : m_symbols) {
+            s = " " + e;
+        }
+
+        throw error("the following symbols were not found:" + s);
     }
 
     if (m_prototypes.empty() && m_objects.empty()) {

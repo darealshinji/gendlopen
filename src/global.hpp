@@ -18,6 +18,16 @@
 #include "parse_args.hpp"
 #include "gendlopen.hpp"
 
+/* lex.yy.c */
+enum {
+    MYLEX_ERROR     = -1,
+    MYLEX_OK        =  1,
+    MYLEX_AST_BEGIN =  2
+};
+extern "C" char *yytext;
+extern "C" int mylex(FILE *fp);
+extern "C" const char *mylex_lasterror();
+
 /* help.cpp */
 namespace help {
     void print(const char *prog);

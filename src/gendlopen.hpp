@@ -69,7 +69,7 @@ private:
     bool m_print_date = true;
 
     /* clang-ast.cpp */
-    bool clang_ast_line(FILE *fp, std::string &line, int mode);
+    bool clang_ast_line(FILE *fp, int mode);
     void clang_ast(FILE *fp);
 
     /* tokenize.cpp */

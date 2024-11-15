@@ -31,14 +31,24 @@ static int token_count = 0;
 static char errbuf[128] = {0};
 static void illegal_char();
 
-#define MYLEX_ERROR     -1
-#define MYLEX_OK         1
-#define MYLEX_CLANG_AST  2
+enum {
+    MYLEX_ERROR     = -1,
+    MYLEX_OK        =  1,
+    MYLEX_AST_BEGIN =  2
+};
 %}
 
 color               [\x1B][\[][0-9;]*[m]
+
 ast                 ^"TranslationUnitDecl 0x".*
 ast_color           ^{color}"TranslationUnitDecl"{color}{color}" 0x".*
+
+funcvardecl         ^[|`]"-"("Function"|"Var")"Decl".*
+funcvardecl_color   ^{color}[|`]"-"{color}{color}("Function"|"Var")"Decl".*
+
+parmvardecl         ^[| ]" "[|`]"-ParmVarDecl".*
+parmvardecl_color   ^{color}[| ]" "[|`]"-"{color}{color}"ParmVarDecl".*
+
 option              ^"%option"[ \t].*
 utf8_bom            ^"\xEF\xBB\xBF"
 identifier          [a-zA-Z0-9_]+
@@ -47,17 +57,9 @@ other               [*,()\[\]]
 %option noinput nounput noyywrap yylineno nounistd never-interactive
 
 %x C_COMMENT
+%x CLANG_AST
 
 %%
-
-"/*"                { BEGIN(C_COMMENT); }
-<C_COMMENT>"*/"     { BEGIN(INITIAL); }
-<C_COMMENT>\n       { }
-<C_COMMENT>.        { }
-
-"//".*              { }
-
-[[:space:]]         { }
 
 {utf8_bom}          { /* ignore BOM at beginning of first line */
     if (yylineno != 1) {
@@ -68,15 +70,33 @@ other               [*,()\[\]]
 
 {ast}               { /* clang AST identifier in first line */
     if (yylineno == 1) {
-        return MYLEX_CLANG_AST;
+        BEGIN(CLANG_AST);
+        return MYLEX_AST_BEGIN;
     }
 }
 
 {ast_color}         {
     if (yylineno == 1) {
-        return MYLEX_CLANG_AST;
+        BEGIN(CLANG_AST);
+        return MYLEX_AST_BEGIN;
     }
 }
+
+<CLANG_AST>{funcvardecl_color}  { return MYLEX_OK; }
+<CLANG_AST>{funcvardecl}        { return MYLEX_OK; }
+<CLANG_AST>{parmvardecl_color}  { return MYLEX_OK; }
+<CLANG_AST>{parmvardecl}        { return MYLEX_OK; }
+<CLANG_AST>\n                   { }
+<CLANG_AST>.                    { }
+
+"/*"                { BEGIN(C_COMMENT); }
+<C_COMMENT>"*/"     { BEGIN(INITIAL); }
+<C_COMMENT>\n       { }
+<C_COMMENT>.        { }
+
+"//".*              { }
+
+[[:space:]]         { }
 
 {option}            { token_count = 0; return MYLEX_OK; }
 {identifier}        { token_count++; return MYLEX_OK; }
