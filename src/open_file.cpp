@@ -34,7 +34,14 @@ open_file::open_file(const std::string &path)
     if (path.empty() || path == "-") {
         m_fp = stdin;
     } else {
+#ifdef _MSC_VER
+        /* "secure" variant for MSVC */
+        if (fopen_s(&m_fp, path.c_str(), "rb") != 0) {
+            m_fp = NULL;
+        }
+#else
         m_fp = fopen(path.c_str(), "rb");
+#endif
     }
 }
 

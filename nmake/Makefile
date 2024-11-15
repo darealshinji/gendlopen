@@ -182,11 +182,11 @@ helloworld_example_dl.exe: libhelloworld_dl.lib
 
 
 # UUID example
-!IFDEF CLANG
 
+# uuid_win_ast.txt was created with the following command on Linux (and manually stripped):
+# clang -Xclang -ast-dump -DWIN32_LEAN_AND_MEAN --target=x86_64-mingw32 --sysroot=$PWD include/rpc.h
 uuid_win.exe:
-	$(CLANG) -Xclang -ast-dump $(s)\examples\uuid_win.h | \
-	  gendlopen.exe -force - -o uuid_win_dl.h -library rpcrt4.dll \
+	gendlopen.exe uuid_win_ast.txt -force -o uuid_win_dl.h -library rpcrt4.dll \
 	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA && \
 	$(CC) $(CFLAGS) $(CPPFLAGS) -I$(s)\examples $(s)\examples\$*.c -Fe$@ -link $(LFLAGS)
 

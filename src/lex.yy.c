@@ -1947,7 +1947,7 @@ static void illegal_char()
     const size_t buflen = sizeof(errbuf) - 1;
     unsigned char c = (unsigned char)*yytext;
 
-    if (!isprint(*yytext)) {
+    if (!isprint((int)*yytext)) {
         fmt = "illegal character [0x%02X] at line %d";
     }
 
