@@ -1,0 +1,3 @@
+
+@FILE@.o: @FILE@.cpp
+	$(cxx_v)$(CXX) $(CXXFLAGS) -c @FILE@.cpp -o $@

@@ -1,27 +1,5 @@
-OBJS = \
-	$(GETOPT_O) \
-	cio_ofstream.o \
-	clang-ast.o \
-	data.o \
-	gendlopen.o \
-	generate.o \
-	help.o \
-	main.o \
-	lex.yy.o \
-	open_file.o \
-	parse_args.o \
-	substitute.o \
-	tokenize.o \
-	utils.o \
-	$(NULL)
 
-HDRS = \
-	cio_ofstream.hpp \
-	gendlopen.hpp \
-	global.hpp \
-	types.hpp \
-	utils.hpp \
-	$(NULL)
+OBJS = $(CXX_OBJS) lex.yy.o
 
 TEMPLATES = \
 	templates/c.c \
@@ -34,7 +12,6 @@ TEMPLATES = \
 	templates/minimal_cxxeh.hpp \
 	templates/minimal.h \
 	$(NULL)
-
 
 
 .PHONY: all clean
@@ -50,48 +27,11 @@ template.h: $(TEMPLATES) gen_template_h.c
 gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
-$(OBJS): $(HDRS)
+$(OBJS): $(HEADERS)
+data.cpp: template.h
 
 lex.yy.c: mylex.l
 	$(gen_v)$(LEX) mylex.l
 
-cio_ofstream.o: cio_ofstream.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c cio_ofstream.cpp -o $@
-
-clang-ast.o: clang-ast.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c clang-ast.cpp -o $@
-
-data.o: data.cpp template.h
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c data.cpp -o $@
-
-gendlopen.o: gendlopen.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c gendlopen.cpp -o $@
-
-generate.o: generate.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c generate.cpp -o $@
-
-help.o: help.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c help.cpp -o $@
-
-main.o: main.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c main.cpp -o $@
-
 lex.yy.o: lex.yy.c
 	$(cc_v)$(CC) $(CFLAGS) -c lex.yy.c -o $@
-
-open_file.o: open_file.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c open_file.cpp -o $@
-
-parse_args.o: parse_args.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c parse_args.cpp -o $@
-
-substitute.o: substitute.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c substitute.cpp -o $@
-
-tokenize.o: tokenize.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c tokenize.cpp -o $@
-
-utils.o: utils.cpp
-	$(cxx_v)$(CXX) $(CXXFLAGS) -c utils.cpp -o $@
-
-

@@ -45,6 +45,27 @@ create_makefile()
 
     echo "create ${1}Makefile"
 
+    rm -f "${1}Makefile"
+
+    if [ -e "${1}/rules.in" ]; then
+        curdir="$PWD"
+        cd "${1}"
+
+        # C++ source files
+        echo "CXX_OBJS = \\" >> Makefile
+        ls -1 *.cpp | sed 's|^|\t|; s|cpp$|o \\|' >> Makefile
+        echo "\t\$(NULL)" >> Makefile
+        echo "" >> Makefile
+
+        # C++ headers
+        echo "HEADERS = \\" >> Makefile
+        ls -1 *.hpp | sed 's|^|\t|; s|$| \\|' >> Makefile
+        echo "\t\$(NULL)" >> Makefile
+        echo "" >> Makefile
+
+        cd "$curdir"
+    fi
+
     cat settings.mk rules.mk "${1}Makefile.in" | \
     sed -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
@@ -53,7 +74,20 @@ create_makefile()
         -e "s,@W32@,$xwin32,g" \
         -e "s,@MSVC@,$xmsvc,g" \
         -e "s,@NIX@,$xnix,g" \
-        > "${1}Makefile"
+        >> "${1}Makefile"
+
+    if [ -e "${1}/rules.in" ]; then
+        curdir="$PWD"
+        cd "${1}"
+
+        files="$(ls -1 *.cpp | sed 's|\.cpp$||')"
+
+        for f in $files ; do
+            sed "s|@FILE@|$f|g" rules.in >> Makefile
+        done
+
+        cd "$curdir"
+    fi
 }
 
 run_cmd()
