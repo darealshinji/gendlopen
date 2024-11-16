@@ -74,32 +74,50 @@ namespace /* anonymous */
         return NO_PARAM_SKIP_FOUND;
     }
 
-    /* return only the leading newlines from string s */
-    std::string get_leading_newlines(const std::string &s)
+    /* return only the leading newlines from string */
+    std::string get_leading_newlines(const std::string &in)
     {
-        size_t n = 0;
+        size_t i = 0;
 
-        for ( ; n < s.size(); n++) {
-            if (s[n] != '\n') {
+        for ( ; i < in.size(); ) {
+            if (in.at(i) == '\n') {
+                /* Unix newline */
+                i++;
+            } else if (in.compare(i, 2, "\r\n") == 0) {
+                /* Windows newline */
+                i += 2;
+            } else {
                 break;
             }
         }
 
-        return std::string(n, '\n');
+        return in.substr(0, i);
     }
 
-    /* return only the trailing newlines from string s */
-    std::string get_trailing_newlines(const std::string &s)
+    /* return only the trailing newlines from string */
+    const char *get_trailing_newlines(const std::string &in)
     {
         size_t n = 0;
 
-        for (auto it = s.rbegin(); it != s.rend(); it++, n++) {
+        for (auto it = in.rbegin(); it != in.rend(); ) {
             if (*it != '\n') {
                 break;
             }
+
+            auto next = it+1;
+
+            if (next != in.rend() && *next == '\r') {
+                /* Windows newline */
+                it += 2;
+                n += 2;
+            } else {
+                /* Unix newline */
+                it++;
+                n++;
+            }
         }
 
-        return std::string(n, '\n');
+        return in.c_str() + (in.size() - n);
     }
 
     /* loop and replace function prototypes, save to output stream */
@@ -115,14 +133,22 @@ namespace /* anonymous */
             }
         };
 
+        std::string nl_beg;
+        const char *nl_end = NULL;
+
         for (auto &e : vec) {
             /* we can't handle variable argument lists in wrapper functions */
             if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
+                if (!nl_end) {
+                    nl_beg = get_leading_newlines(line);
+                    nl_end = get_trailing_newlines(line);
+                }
+
                 /* print same amount of trailing and leading newlines */
-                ofs << get_leading_newlines(line);
+                ofs << nl_beg;
                 ofs << "/* can't handle variable argument lists in wrapper functions */\n";
                 ofs << "// " << e.type << ' ' << e.symbol << '(' << e.args << ");\n";
-                ofs << get_trailing_newlines(line);
+                ofs << nl_end;
                 continue;
             }
 
