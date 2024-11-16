@@ -79,7 +79,7 @@ namespace /* anonymous */
     {
         size_t i = 0;
 
-        for ( ; i < in.size(); ) {
+        while (i < in.size()) {
             if (in.at(i) == '\n') {
                 /* Unix newline */
                 i++;
@@ -97,27 +97,25 @@ namespace /* anonymous */
     /* return only the trailing newlines from string */
     const char *get_trailing_newlines(const std::string &in)
     {
-        size_t n = 0;
+        auto it = in.rbegin();
 
-        for (auto it = in.rbegin(); it != in.rend(); ) {
+        while (it != in.rend()) {
             if (*it != '\n') {
                 break;
             }
 
-            auto next = it+1;
+            auto next = it + 1;
 
             if (next != in.rend() && *next == '\r') {
                 /* Windows newline */
                 it += 2;
-                n += 2;
             } else {
                 /* Unix newline */
                 it++;
-                n++;
             }
         }
 
-        return in.c_str() + (in.size() - n);
+        return in.c_str() + (in.size() - std::distance(in.rbegin(), it));
     }
 
     /* loop and replace function prototypes, save to output stream */
@@ -133,18 +131,19 @@ namespace /* anonymous */
             }
         };
 
-        std::string nl_beg;
-        const char *nl_end = NULL;
+        std::string nl_beg;        /* copy of leading newlines */
+        const char *nl_end = NULL; /* pointer to begin of trailing newlines */
 
         for (auto &e : vec) {
             /* we can't handle variable argument lists in wrapper functions */
             if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
                 if (!nl_end) {
+                    /* do this only once */
                     nl_beg = get_leading_newlines(line);
                     nl_end = get_trailing_newlines(line);
                 }
 
-                /* print same amount of trailing and leading newlines */
+                /* print trailing and leading newlines from the template line */
                 ofs << nl_beg;
                 ofs << "/* can't handle variable argument lists in wrapper functions */\n";
                 ofs << "// " << e.type << ' ' << e.symbol << '(' << e.args << ");\n";
