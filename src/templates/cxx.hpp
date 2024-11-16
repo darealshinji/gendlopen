@@ -208,8 +208,12 @@ GDO_DISABLE_DLMOPEN
 namespace gdo
 {
 
-using UNUSED_REF = void;
-using UNUSED_RESULT = void;
+/* silence `unused' compiler warnings, basically
+ * the same as `#define UNUSED_VAL_(x) (void)x' */
+template<typename T>
+void UNUSED_VAL_(T val) {
+    static_cast<void>(val);
+}
 
 
 /*****************************************************************************/
@@ -518,7 +522,7 @@ private:
     void clear_error()
     {
         m_errmsg.clear();
-        (UNUSED_RESULT) ::dlerror();
+        ::dlerror();
     }
 
 
@@ -566,7 +570,7 @@ private:
         }
 #else
         /* no dlmopen() */
-        (UNUSED_REF) new_namespace;
+        UNUSED_VAL_(new_namespace);
         m_handle = ::dlopen(filename, m_flags);
 #endif
     }
@@ -662,10 +666,8 @@ public:
 
 #ifdef GDO_WINAPI
     /* load library (wide characters version) */
-    bool load(const std::wstring &filename, int flags=default_flags, bool unused=false)
+    bool load(const std::wstring &filename, int flags=default_flags, bool /*unused*/)
     {
-        (UNUSED_REF) unused;
-
         /* release old libhandle */
         if (lib_loaded() && !free()) {
             return false;
@@ -878,10 +880,10 @@ public:
 #elif defined(__APPLE__) && defined(__MACH__)
         return "lib" + name + '.' + std::to_string(api) + ".dylib";
 #elif defined(_AIX)
-        (UNUSED_REF) api;
+        UNUSED_VAL_(api);
         return "lib" + name + ".a";
 #elif defined(__ANDROID__)
-        (UNUSED_REF) api;
+        UNUSED_VAL_(api);
         return "lib" + name + ".so";
 #else
         return "lib" + name + ".so." + std::to_string(api);

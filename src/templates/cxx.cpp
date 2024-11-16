@@ -66,7 +66,7 @@ namespace gdo
             bool loaded = al.load_symbol(symbol_num);
 #else
             bool loaded = al.load_all_symbols();
-            (UNUSED_REF)symbol_num;
+            UNUSED_VAL_(symbol_num);
 #endif
 
             if (!loaded) {

@@ -90,7 +90,7 @@ void gendlopen::get_common_prefix()
     for (const auto &v : {m_prototypes, m_objects}) {
         for (const auto &e : v) {
             /* prevent `min()' macro expansion from Windows headers
-            * https://stackoverflow.com/a/30924806/5687704 */
+             * https://stackoverflow.com/a/30924806/5687704 */
             len = std::min<size_t>(len, e.symbol.size());
         }
     }
