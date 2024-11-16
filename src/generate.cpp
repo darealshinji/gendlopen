@@ -93,12 +93,12 @@ std::wstring convert_filename(const std::string &str)
     return ws;
 }
 
+#define CONVERT_FILENAME(x) convert_filename(x)
+
 #else
 
 /* dummy */
-std::string convert_filename(std::string &str) {
-    return str;
-}
+#define CONVERT_FILENAME(x) x
 
 #endif // __MINGW32__
 
@@ -333,6 +333,9 @@ void gendlopen::generate()
         return;
     }
 
+    /* look for a common symbol prefix */
+    get_common_prefix();
+
     /* use custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
         read_custom_template();
@@ -344,7 +347,7 @@ void gendlopen::generate()
     const bool use_stdout = (m_ofile == "-");
 
     if (!use_stdout) {
-        ofbody = ofhdr = convert_filename(m_ofile);
+        ofbody = ofhdr = CONVERT_FILENAME(m_ofile);
     }
 
     bool output_is_c = true;

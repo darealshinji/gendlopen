@@ -22,6 +22,10 @@
  * THE SOFTWARE
  */
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "global.hpp"
 
 
@@ -57,3 +61,64 @@ void gendlopen::default_lib(const std::string &lib_a, const std::string &lib_w)
     m_deflib_w = lib_w;
 }
 
+/**
+ * Look for a common symbol prefix.
+ * Many APIs share a common prefix among their symbols.
+ * If you want to load a specific symbol we can use this
+ * later for a faster lookup.
+ */
+void gendlopen::get_common_prefix()
+{
+    std::string pfx;
+    std::vector<const std::string *> v;
+    const std::string *ptr;
+
+    const size_t vlen = m_prototypes.size() + m_objects.size();
+
+    m_common_prefix.clear();
+
+    if (vlen < 2) {
+        return;
+    }
+
+    v.reserve(vlen);
+
+    /* add symbols to vector list */
+    for (const auto &e : m_prototypes) {
+        ptr = &e.symbol;
+        v.push_back(ptr);
+    }
+
+    for (const auto &e : m_objects) {
+        ptr = &e.symbol;
+        v.push_back(ptr);
+    }
+
+    /* get shortest symbol length */
+    size_t len = v.at(0)->size();
+
+    for (auto it = v.begin() + 1; it != v.end(); it++) {
+        /* prevent `min()' macro expansion from Windows headers
+         * https://stackoverflow.com/a/30924806/5687704 */
+        len = std::min<size_t>(len, (*it)->size());
+    }
+
+    /* compare symbol names */
+    for (size_t i = 0; i < len; i++) {
+        const char c = v.at(0)->at(i);
+
+        for (auto it = v.begin() + 1; it != v.end(); it++) {
+            if ((*it)->at(i) != c) {
+                /* common prefix found (can be empty) */
+                m_common_prefix = pfx;
+                return;
+            }
+        }
+
+        pfx.push_back(c);
+    }
+
+    /* shortest symbol name is prefix, i.e. if a symbol `foo'
+     * and `foobar' exist the prefix is `foo' */
+    m_common_prefix = pfx;
+}

@@ -78,6 +78,9 @@ private:
     void filter_and_copy_symbols(vproto_t &proto);
     void parse_options(const vstring_t &options);
 
+    /* gendlopen.cpp */
+    void get_common_prefix();
+
     /* generate.cpp */
     void open_ofstream(const std::filesystem::path &opath, cio::ofstream &ofs);
     void read_custom_template();
@@ -108,6 +111,7 @@ public:
     void read_options(bool b) { m_read_options = b; }
     void print_date(bool b) { m_print_date = b; }
 
+    /* gendlopen.cpp */
     void name(const std::string &s);
     void default_lib(const std::string &lib_a, const std::string &lib_w);
 

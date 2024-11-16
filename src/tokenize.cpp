@@ -393,62 +393,6 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
     return {};
 }
 
-/**
- * Look for a common symbol prefix.
- * Many APIs share a common prefix among their symbols.
- * If you want to load a specific symbol we can use this
- * later for a faster lookup.
- */
-std::string get_common_prefix(const vproto_t &proto, const vproto_t &obj)
-{
-    std::string pfx;
-    std::vector<const std::string *> v;
-    const std::string *ptr;
-
-    const size_t vlen = proto.size() + obj.size();
-
-    if (vlen < 2) {
-        return "";
-    }
-
-    v.reserve(vlen);
-
-    /* add symbols to vector list */
-    for (const auto &e : proto) {
-        ptr = &e.symbol;
-        v.push_back(ptr);
-    }
-
-    for (const auto &e : obj) {
-        ptr = &e.symbol;
-        v.push_back(ptr);
-    }
-
-    /* get shortest symbol length */
-    size_t len = v.at(0)->size();
-
-    for (auto it = v.begin() + 1; it != v.end(); it++) {
-        /* prevent `min()' macro expansion from Windows headers
-         * https://stackoverflow.com/a/30924806/5687704 */
-        len = std::min<size_t>(len, (*it)->size());
-    }
-
-    /* compare symbol names */
-    for (size_t i = 0; i < len; i++) {
-        const char c = v.at(0)->at(i);
-
-        for (auto it = v.begin() + 1; it != v.end(); it++) {
-            if ((*it)->at(i) != c) {
-                return pfx;
-            }
-        }
-
-        pfx.push_back(c);
-    }
-
-    return pfx;
-}
-
 /* format the text of the prototypes to make it look pretty */
 void format_prototypes(std::string &s)
 {
@@ -720,7 +664,4 @@ void gendlopen::tokenize()
 
     /* copy */
     filter_and_copy_symbols(vproto);
-
-    /* look for a common symbol prefix */
-    m_common_prefix = get_common_prefix(m_prototypes, m_objects);
 }
