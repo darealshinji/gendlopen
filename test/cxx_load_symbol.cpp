@@ -12,14 +12,11 @@ int main()
 
     /* load library and each individual symbol */
     if (!loader.load( gdo::dl::make_libname("helloworld", 0) ) ||
-        //!loader.load_symbol("helloworldinit") ||
-        //!loader.load_symbol("helloworl_init") ||
-        //!loader.load_symbol("xhelloworld_init") ||
-        !loader.load_symbol("helloworld_init") ||
-        !loader.load_symbol("helloworld_callback") ||
-        !loader.load_symbol("helloworld_hello") ||
-        !loader.load_symbol("helloworld_hello2") ||
-        !loader.load_symbol("helloworld_release"))
+        !loader.load_symbol(gdo::dl::LOAD_helloworld_init) ||
+        !loader.load_symbol(gdo::dl::LOAD_helloworld_callback) ||
+        !loader.load_symbol(gdo::dl::LOAD_helloworld_hello) ||
+        !loader.load_symbol(gdo::dl::LOAD_helloworld_hello2) ||
+        !loader.load_symbol(gdo::dl::LOAD_helloworld_release))
     {
         std::cerr << loader.error() << std::endl;
         return 1;

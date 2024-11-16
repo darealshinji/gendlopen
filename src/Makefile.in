@@ -28,7 +28,7 @@ gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS): $(HEADERS)
-data.cpp: template.h
+data.o: template.h
 
 lex.yy.c: mylex.l
 	$(gen_v)$(LEX) mylex.l

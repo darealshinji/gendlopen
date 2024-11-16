@@ -157,7 +157,7 @@ namespace help
             "    %%obj_symbol%%: object symbol name\n"
             "\n"
             "    %%sym_type%%: function or object symbol type\n"
-            "    %%symbol%: function or object symbol name\n"
+            "    %%symbol%%: function or object symbol name\n"
             "\n"
             "    If a line ends on `@' it will be processed together with the next line as if\n"
             "    there was no line break, but the line break will still appear in the output.\n"

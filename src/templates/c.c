@@ -553,51 +553,30 @@ GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 /*                                                                           */
 /* The main intention is to check if a certain symbol is present in a        */
 /* library so that you can conditionally enable or disable features.         */
+/* `symbol_num' is an enumeration value `GDO_LOAD_<symbol_name>'             */
 /*****************************************************************************/
-GDO_LINKAGE bool gdo_load_symbol(const char *symbol)
+GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
 {
     gdo_clear_errbuf();
 
-    /* no library was loaded */
-    if (!gdo_lib_is_loaded()) {
-        gdo_set_error_no_library_loaded();
-        return false;
-    }
-
-    /* empty symbol? */
-    if (!symbol) {
-        gdo_save_to_errbuf(_T("symbol == NULL"));
-        return false;
-    }
-
-    if (symbol[0] == 0) {
-        gdo_save_to_errbuf(_T("'symbol' is empty"));
-        return false;
-    }
-
-    /* opt out if symbol doesn't begin with prefix */
-    const char * const pfx = "%COMMON_PREFIX%";
-    const size_t len = sizeof(pfx) - 1;
-
-    if ((len == 1 && *symbol == *pfx) ||
-        (len > 1 && strncmp(symbol, pfx, len) == 0))
+    switch (symbol_num)
     {
-        const char *ptr = symbol + len;
-@
-        /* %%symbol%% */@
-        if (strcmp((const char *)"%%symbol%%" + len, ptr) == 0) {@
-            gdo_hndl.%%symbol%%_ptr_ =@
-                (%%sym_type%%)@
-                    gdo_sym("%%symbol%%", _T("%%symbol%%"));@
-            return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
-        }
+    /* %%symbol%% */@
+    case GDO_LOAD_%%symbol%%:@
+        gdo_hndl.%%symbol%%_ptr_ =@
+            (%%sym_type%%)@
+                gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+        return (gdo_hndl.%%symbol%%_ptr_ != NULL);@
+
+    default:
+        break;
     }
 
 #ifdef GDO_WINAPI
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
 #endif
 
-    GDO_SNPRINTF(gdo_hndl.buf, _T("symbol not among lookup list: ") GDO_XHS, symbol);
+    GDO_SNPRINTF(gdo_hndl.buf, _T("unknown number: %d"), symbol_num);
 
     return false;
 }
@@ -802,15 +781,15 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
 /* This function is used by the wrapper functions to perform the loading
  * and handle errors. */
-GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
+GDO_LINKAGE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 {
 #ifdef GDO_DELAYLOAD
     /* load library + requested symbol */
-    if (gdo_load_lib() && gdo_load_symbol(function)) {
+    if (gdo_load_lib() && gdo_load_symbol(symbol_num)) {
         return;
     }
 #else
-    (GDO_UNUSED_REF) function;
+    (GDO_UNUSED_REF) symbol_num;
 
     /* return immediately if everything is already loaded,
      * otherwise load library + all symbols */
@@ -843,7 +822,7 @@ GDO_LINKAGE void gdo_quick_load(const char *function, const gdo_char_t *symbol)
 /* autoload function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo_quick_load("%%func_symbol%%", _T("%%func_symbol%%"));@
+    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%"));@
     %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
 }
 

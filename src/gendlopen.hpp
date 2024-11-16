@@ -86,7 +86,7 @@ private:
     void read_custom_template();
 
     /* substitute.cpp */
-    void substitute_prepare();
+    void replace_symbol_names(const std::string &line, cio::ofstream &ofs);
     void substitute_line(const char *line, bool &skip_code, cio::ofstream &ofs);
     void substitute(const cstrList_t &data, cio::ofstream &ofs);
 

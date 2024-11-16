@@ -15,14 +15,11 @@ int main()
 {
     /* load library and each individual symbol */
     if (!gdo_load_lib_name(LIBNAME(helloworld,0)) ||
-        //!gdo_load_symbol("helloworldinit") ||
-        //!gdo_load_symbol("helloworl_init") ||
-        //!gdo_load_symbol("xhelloworld_init") ||
-        !gdo_load_symbol("helloworld_init") ||
-        !gdo_load_symbol("helloworld_callback") ||
-        !gdo_load_symbol("helloworld_hello") ||
-        !gdo_load_symbol("helloworld_hello2") ||
-        !gdo_load_symbol("helloworld_release"))
+        !gdo_load_symbol(GDO_LOAD_helloworld_init) ||
+        !gdo_load_symbol(GDO_LOAD_helloworld_callback) ||
+        !gdo_load_symbol(GDO_LOAD_helloworld_hello) ||
+        !gdo_load_symbol(GDO_LOAD_helloworld_hello2) ||
+        !gdo_load_symbol(GDO_LOAD_helloworld_release))
     {
         /* print the last saved error */
         fprintf(stderr, "%s\n", gdo_last_error());

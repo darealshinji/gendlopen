@@ -28,7 +28,7 @@ bool               gdo_all_symbols_loaded ();
 bool               gdo_no_symbols_loaded ();
 bool               gdo_any_symbol_loaded ();
 bool               gdo_load_all_symbols (bool ignore_errors);
-bool               gdo_load_symbol (const char *symbol);
+bool               gdo_load_symbol (int symbol_num);
 
 bool               gdo_all_symbols_loaded ();
 bool               gdo_no_symbols_loaded ();
@@ -88,9 +88,10 @@ bool gdo_load_symbols (bool ignore_errors);
     If one or more symbols weren't loaded the function returns false.
 
 
-bool gdo_load_symbol (const char *symbol);
+bool gdo_load_symbol (int symbol_num);
 
     Load a specific symbol.
+    `symbol_num' is an enumeration value: `GDO_LOAD_<symbol_name>'
 
 
 bool gdo_all_symbols_loaded ();
@@ -263,11 +264,21 @@ GDO_LINKAGE bool gdo_all_symbols_loaded(void);
 GDO_LINKAGE bool gdo_no_symbols_loaded(void);
 GDO_LINKAGE bool gdo_any_symbol_loaded(void);
 GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors);
-GDO_LINKAGE bool gdo_load_symbol(const char *symbol);
+GDO_LINKAGE bool gdo_load_symbol(int symbol_num);
 
 GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 
+
+/* enumeration values for gdo_load_symbol() */
+enum {
+    GDO_LOAD_%%symbol%%,
+    GDO_LOAD_COUNT
+};
+
+/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
+#define GDO_ALIAS_%%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_
+#define GDO_ALIAS_%%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)

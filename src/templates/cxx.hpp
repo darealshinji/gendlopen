@@ -1,5 +1,7 @@
 #if 0
 
+/* summary */
+
 namespace gdo
 {
 
@@ -70,8 +72,9 @@ public:
     bool load_all_symbols(bool ignore_errors=false);
 
 
-    /* load a specific symbol */
-    bool load_symbol(const std::string &symbol);
+    /* Load a specific symbol.
+     * `symbol_num' is an enumeration value: `gdo::dl::LOAD_<symbol_name>' */
+    bool load_symbol(int symbol_num);
 
 
     /* check if ALL symbols were loaded */
@@ -205,6 +208,10 @@ GDO_DISABLE_DLMOPEN
 namespace gdo
 {
 
+using UNUSED_REF = void;
+using UNUSED_RESULT = void;
+
+
 /*****************************************************************************/
 /*                          library loader class                             */
 /*****************************************************************************/
@@ -226,11 +233,14 @@ public:
     static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);
     static %%obj_type%% *m_ptr_%%obj_symbol%%;
 
+    /* enumeration values for `load_symbol()' method */
+    enum {
+        LOAD_%%symbol%%,
+        LOAD_COUNT
+    };
+
 
 private:
-
-    using UNUSED_REF = void;
-    using UNUSED_RESULT = void;
 
 #ifdef GDO_HAS_MSG_CB
     /* function pointer to error message callback */
@@ -395,7 +405,7 @@ private:
 
     /* load symbol address */
     template<typename T>
-    T sym(const char *symbol)
+    T sym_load(const char *symbol)
     {
         clear_error();
 
@@ -571,7 +581,7 @@ private:
 
     /* load symbol address */
     template<typename T>
-    T sym(const char *symbol)
+    T sym_load(const char *symbol)
     {
         clear_error();
 
@@ -745,7 +755,7 @@ public:
 @
         /* %%symbol%% */@
         m_ptr_%%symbol%% =@
-            sym<%%sym_type%%>@
+            sym_load<%%sym_type%%>@
                 ("%%symbol%%");@
         if (!m_ptr_%%symbol%% && !ignore_errors) {@
             return false;@
@@ -758,16 +768,8 @@ public:
 
 
     /* load a specific symbol */
-    bool load_symbol(const std::string &symbol)
+    bool load_symbol(int symbol_num)
     {
-        auto err_not_found = [&] ()
-        {
-# ifdef GDO_WINAPI
-            m_last_error = ERROR_NOT_FOUND;
-# endif
-            m_errmsg = "symbol not among lookup list: " + symbol;
-        };
-
         clear_error();
 
         if (!lib_loaded()) {
@@ -775,38 +777,23 @@ public:
             return false;
         }
 
-        /* empty symbol? */
-        if (symbol.empty()) {
-#ifdef GDO_WINAPI
-            m_last_error = ERROR_INVALID_PARAMETER;
-#endif
-            m_errmsg = "empty symbol name";
-            return false;
-        }
-
-        /* opt out if symbol doesn't begin with prefix */
-        const char * const pfx = "%COMMON_PREFIX%";
-        const size_t len = sizeof(pfx) - 1;
-
-        if (len == 0 || (len == 1 && symbol[0] != pfx[0]) ||
-            (len > 1 && strncmp(symbol.c_str(), pfx, len) != 0))
+        switch (symbol_num)
         {
-            //%DNL%// std::cerr << "DEBUG: not a common symbol prefix" << std::endl;
-            err_not_found();
-            return false;
-        }
-
-        /* get symbol address */
-        const char * const ptr = symbol.c_str() + len;
-@
-        if (strcmp(static_cast<const char *>("%%symbol%%") + len, ptr) == 0) {@
+        /* %%symbol%% */@
+        case gdo::dl::LOAD_%%symbol%%:@
             m_ptr_%%symbol%% =@
-                sym<%%sym_type%%>@
+                sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
             return (m_ptr_%%symbol%% != nullptr);@
+
+        default:
+            break;
         }
 
-        err_not_found();
+# ifdef GDO_WINAPI
+        m_last_error = ERROR_NOT_FOUND;
+# endif
+        m_errmsg = "unknown number: " + std::to_string(symbol_num);
 
         return false;
     }
@@ -1073,6 +1060,9 @@ public:
 } /* namespace gdo */
 
 
+/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
+#define GDO_ALIAS_%%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%
+#define GDO_ALIAS_%%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)

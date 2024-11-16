@@ -192,36 +192,36 @@ namespace /* anonymous */
         }
     }
 
-    /* loop and replace any symbol names */
-    void replace_symbol_names(const vproto_t &proto, const vproto_t &obj, const std::string &line, cio::ofstream &ofs)
-    {
-        std::string copy, type;
-
-        /* function pointer */
-        for (auto &e : proto) {
-            copy = line;
-
-            /* %%sym_type%% --> »%%type%% (*)(%%args%%)« */
-            type = e.type + " (*)(" + e.args + ")";
-            utils::replace("%%sym_type%%", type, copy);
-            utils::replace("%%symbol%%", e.symbol, copy);
-            ofs << copy << '\n';
-        }
-
-        /* object pointer */
-        for (auto &e : obj) {
-            copy = line;
-
-            /* %%sym_type%% --> »%%obj_type%% *« */
-            type = e.type + " *";
-            utils::replace("%%sym_type%%", type, copy);
-            utils::replace("%%symbol%%", e.symbol, copy);
-            ofs << copy << '\n';
-        }
-    }
-
 } /* end anonymous namespace */
 
+
+/* loop and replace any symbol names */
+void gendlopen::replace_symbol_names(const std::string &line, cio::ofstream &ofs)
+{
+    std::string copy, type;
+
+    /* function pointer */
+    for (auto &e : m_prototypes) {
+        copy = line;
+
+        /* %%sym_type%% --> »%%type%% (*)(%%args%%)« */
+        type = e.type + " (*)(" + e.args + ")";
+        utils::replace("%%sym_type%%", type, copy);
+        utils::replace("%%symbol%%", e.symbol, copy);
+        ofs << copy << '\n';
+    }
+
+    /* object pointer */
+    for (auto &e : m_objects) {
+        copy = line;
+
+        /* %%sym_type%% --> »%%obj_type%% *« */
+        type = e.type + " *";
+        utils::replace("%%sym_type%%", type, copy);
+        utils::replace("%%symbol%%", e.symbol, copy);
+        ofs << copy << '\n';
+    }
+}
 
 /* substitute placeholders in a single line */
 void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream &ofs)
@@ -301,14 +301,6 @@ void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream
         buf = std::regex_replace(buf, reg_namespace, m_fmt_namespace);
     }
 
-    if (maybe_keyword) {
-        /* insert common symbol prefix string */
-        utils::replace("%COMMON_PREFIX%", m_common_prefix, buf);
-
-        /* update value */
-        maybe_keyword = (buf.find('%') != std::string::npos);
-    }
-
     /* nothing to loop, just append */
     if (!maybe_keyword) {
         ofs << buf << '\n';
@@ -349,7 +341,7 @@ void gendlopen::substitute_line(const char *line, bool &skip_code, cio::ofstream
         replace_object_prototypes(m_objects, buf, ofs);
     } else if (has_sym == 1) {
         /* any symbol */
-        replace_symbol_names(m_prototypes, m_objects, buf, ofs);
+        replace_symbol_names(buf, ofs);
     } else {
         /* nothing to loop, just append */
         ofs << buf << '\n';
