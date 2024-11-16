@@ -57,21 +57,7 @@ cleanfiles_check = \
 	libhelloworld-0.* \
 	libhelloworld_dl.*
 
-sources = \
-	$(s)\src\cio_ofstream.cpp \
-	$(s)\src\clang-ast.cpp \
-	$(s)\src\data.cpp \
-	$(s)\src\gendlopen.cpp \
-	$(s)\src\generate.cpp \
-	$(s)\src\help.cpp \
-	$(s)\src\lex.yy.c \
-	$(s)\src\main.cpp \
-	$(s)\src\open_file.cpp \
-	$(s)\src\parse_args.cpp \
-	$(s)\src\substitute.cpp \
-	$(s)\src\tokenize.cpp \
-	$(s)\src\utils.cpp
-
+sources = $(s)\src\lex.yy.c $(s)\src\*.cpp
 
 gen_hdr  = gendlopen.exe $(s)\test\helloworld.txt -force -o
 gen_hdr2 = gendlopen.exe $(s)\test\helloworld2.txt -force -o
