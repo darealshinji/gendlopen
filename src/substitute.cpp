@@ -205,7 +205,11 @@ void gendlopen::replace_symbol_names(const std::string &line, cio::ofstream &ofs
         copy = line;
 
         /* %%sym_type%% --> »%%type%% (*)(%%args%%)« */
-        type = e.type + " (*)(" + e.args + ")";
+        if (e.type.back() == '*') {
+            type = e.type + "(*)(" + e.args + ")";
+        } else {
+            type = e.type + " (*)(" + e.args + ")";
+        }
         utils::replace("%%sym_type%%", type, copy);
         utils::replace("%%symbol%%", e.symbol, copy);
         ofs << copy << '\n';
@@ -216,7 +220,11 @@ void gendlopen::replace_symbol_names(const std::string &line, cio::ofstream &ofs
         copy = line;
 
         /* %%sym_type%% --> »%%obj_type%% *« */
-        type = e.type + " *";
+        if (e.type.back() == '*') {
+            type = e.type + '*';
+        } else {
+            type = e.type + " *";
+        }
         utils::replace("%%sym_type%%", type, copy);
         utils::replace("%%symbol%%", e.symbol, copy);
         ofs << copy << '\n';
