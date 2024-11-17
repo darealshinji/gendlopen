@@ -41,6 +41,20 @@
     gdo_strlcpy(dst, src, _countof(dst))
 
 
+/* silence warnings about unused functions if static linkage
+ * was enabled (you will almost never use ALL functions available) */
+#ifdef GDO_STATIC
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4507)
+# elif defined(__GNUC__)
+/* Clang seems to understand this too */
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-function"
+# endif
+#endif
+
+
 /* typedefs */
 typedef void GDO_UNUSED_REF;
 typedef void GDO_UNUSED_RESULT;
@@ -829,3 +843,13 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #endif //GDO_ENABLE_AUTOLOAD
 /***************************** end of wrap code ******************************/
 %PARAM_SKIP_END%
+
+
+/* pop pragma */
+#ifdef GDO_STATIC
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+# endif
+#endif

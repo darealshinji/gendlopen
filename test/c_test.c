@@ -2,6 +2,10 @@
 #define DLL_PUBLIC /**/
 #include "helloworld.h"
 
+/* use wrap functions that will warn and exit
+ * if the symbol wasn't loaded yet */
+#define GDO_WRAP_FUNCTIONS 1
+
 /* include generated header file */
 #include "c_test.h"
 

@@ -4,6 +4,9 @@
  * the atexit() function */
 #define GDO_AUTO_RELEASE 1
 
+/* use static linkage */
+#define GDO_STATIC 1
+
 /* include generated header file */
 #include "c_auto_free.h"
 
@@ -20,6 +23,7 @@ int main()
     /* libhelloworld fails to use the callback if we use dlmopen() */
     bool new_namespace = false;
 #else
+    /* this will be ignored on platforms without dlmopen() */
     bool new_namespace = true;
 #endif
 

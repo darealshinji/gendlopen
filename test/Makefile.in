@@ -166,7 +166,7 @@ libhelloworld_dl.c:
 	  -include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
 
 c_test.h:
-	$(gen_v)$(GENHDR) $@ -DGDO_WRAP_FUNCTIONS
+	$(gen_v)$(GENHDR) $@
 
 c_auto_free.h:
 	$(gen_v)$(GENHDR) $@ -param=skip
@@ -185,7 +185,7 @@ c_minimal.h:
 
 c_multi.h:
 	$(gen_v)$(GENHDR) $@ -separate -library=API:0:helloworld \
-	  -include=helloworld.h -DGDO_WRAP_FUNCTIONS -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
+	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
 
 cxx_test.hpp:
 	$(gen_v)$(GENHDR) $@ -format=C++ -param=skip

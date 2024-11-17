@@ -246,7 +246,9 @@ typedef struct gdo_handle
 
 } gdo_handle_t;
 
-extern GDO_LINKAGE gdo_handle_t gdo_hndl;
+#ifndef GDO_STATIC
+extern gdo_handle_t gdo_hndl;
+#endif
 
 
 #ifdef GDO_DEFAULT_LIB
