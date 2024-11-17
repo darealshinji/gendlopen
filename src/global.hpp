@@ -20,9 +20,13 @@
 
 /* lex.yy.c */
 enum {
-    MYLEX_ERROR     = -1,
-    MYLEX_OK        =  1,
-    MYLEX_AST_BEGIN =  2
+    //MYLEX_EOF = 0,
+    MYLEX_OK = 1,
+    MYLEX_AST_BEGIN,
+    MYLEX_OPTION,
+    MYLEX_TOKEN,
+    MYLEX_SEMICOLON,
+    MYLEX_ERROR
 };
 extern "C" char *yytext;
 extern "C" int mylex(FILE *fp);

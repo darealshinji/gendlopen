@@ -84,14 +84,13 @@ std::string strip_line(const char *line)
     const std::regex reg(R"(\x1B\[[0-9;]*m)");
 
     std::string s = line;
-    s = std::regex_replace(s, reg, "");
 
     /* remains of Windows line endings */
     if (s.back() == '\r') {
         s.pop_back();
     }
 
-    return s;
+    return std::regex_replace(s, reg, "");
 }
 
 /* get function parameter declaration */

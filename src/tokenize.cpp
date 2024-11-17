@@ -92,43 +92,76 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
+/* split `%option' line into strings */
+void tokenize_options_len(const char *str, const size_t len, vstring_t *options)
+{
+    /* `options' is set to NULL if reading option
+     * lines was disabled by the user */
+    if (!options || strncmp(yytext, str, len) != 0) {
+        return;
+    }
+
+    std::istringstream iss(yytext + len);
+    std::string s;
+
+    while (iss >> s) {
+        options->push_back(s);
+    }
+}
+
+template<size_t N>
+constexpr void tokenize_options(char const (&str)[N], vstring_t *options)
+{
+    tokenize_options_len(str, N-1, options);
+}
+
 /* tokenize stream into prototype tokens and options */
 int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
 {
     int rv = MYLEX_ERROR;
     vstring_t tokens;
+    bool loop = true;
 
-    const char opt_str[] = "%option";
-    const size_t opt_len = sizeof(opt_str) - 1;
-
-    while ((rv = mylex(fp)) == MYLEX_OK)
+    while (loop)
     {
-        if (yytext[0] == ';' && !tokens.empty()) {
-            /* semicolon found, save declaration */
-            vec.push_back(tokens);
-            tokens.clear();
-        } else if (strncmp(yytext, opt_str, opt_len) == 0) {
-            /* split `%option' line into strings;
-             * `options' is set to NULL if reading those lines was disabled by the user */
-            if (options) {
-                std::istringstream iss(yytext + opt_len);
-                std::string s;
+        rv = mylex(fp);
 
-                while (iss >> s) {
-                    options->push_back(s);
-                }
-            }
-        } else if (strcmp(yytext, "extern") != 0) {
+        switch (rv)
+        {
+        case MYLEX_TOKEN:
             /* don't add "extern" keyword */
-            tokens.push_back(yytext);
+            if (strcmp(yytext, "extern") != 0) {
+                tokens.push_back(yytext);
+            }
+            break;
+
+        case MYLEX_SEMICOLON:
+            if (!tokens.empty()) {
+                /* save declaration */
+                vec.push_back(tokens);
+                tokens.clear();
+            }
+            break;
+
+        case MYLEX_OPTION:
+            if (yytext[0] == '%') {
+                tokenize_options("%option", options);
+            } else {
+                tokenize_options("\xEF\xBB\xBF%option", options);
+            }
+            tokens.clear();
+            break;
+
+        default:
+            /* EOF, error, etc. */
+            loop = false;
+            break;
         }
     }
 
-    if (rv != MYLEX_AST_BEGIN) {
-        /* push back if last prototype didn't end on semicolon */
-        if (!tokens.empty()) {
-            vec.push_back(tokens);
-        }
+    /* push back if last prototype didn't end on semicolon */
+    if (!tokens.empty()) {
+        vec.push_back(tokens);
     }
 
     return rv;
