@@ -59,8 +59,6 @@ private:
     output::format m_format = output::c;
     param::names m_parameter_names = param::param_default;
 
-    cio::ofstream m_ofs, m_ofs_body;
-
     bool m_force = false;
     bool m_separate = false;
     bool m_ast_all_symbols = false;
