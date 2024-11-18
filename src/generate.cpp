@@ -302,6 +302,7 @@ void gendlopen::read_custom_template()
     open_ofstream(m_ofile, m_ofs);
 
     FILE *fp = file.file_pointer();
+    int line_number = 0;
 
     while (simple_getline(fp, buf)) {
         /* concat lines ending on '@' */
@@ -312,7 +313,7 @@ void gendlopen::read_custom_template()
         }
 
         line += buf;
-        substitute_line(line.c_str(), skip_code, m_ofs);
+        substitute_line(line.c_str(), line_number, skip_code, m_ofs);
         line.clear();
     }
 }

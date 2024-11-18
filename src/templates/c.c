@@ -1,3 +1,4 @@
+#line 2 "<built-in>/c.c"
 
 /*****************************************************************************/
 /*                           C API implementation                            */
@@ -511,14 +512,14 @@ GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
      * the first error it encounters. */
 
     /* get symbol addresses */
-@
+
     /* %%symbol%% */@
     gdo_hndl.%%symbol%%_ptr_ = @
         (%%sym_type%%)@
             gdo_sym("%%symbol%%", _T("%%symbol%%"));@
     if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {@
         return false;@
-    }
+    }@
 
     gdo_clear_errbuf();
 
@@ -760,13 +761,13 @@ GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)
 
 
 /* function wrappers */
-@
+
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     if (!gdo_hndl.%%func_symbol%%_ptr_) {@
         gdo_error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
     %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
-}
+}@
 
 
 #elif defined(GDO_ENABLE_AUTOLOAD)
@@ -834,11 +835,11 @@ GDO_LINKAGE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 
 
 /* autoload function wrappers */
-@
+
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%"));@
     %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);@
-}
+}@
 
 #endif //GDO_ENABLE_AUTOLOAD
 /***************************** end of wrap code ******************************/
@@ -853,3 +854,4 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #  pragma GCC diagnostic pop
 # endif
 #endif
+

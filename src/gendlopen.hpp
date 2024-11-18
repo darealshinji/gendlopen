@@ -67,6 +67,7 @@ private:
     bool m_print_symbols = false;
     bool m_read_options = true;
     bool m_print_date = true;
+    bool m_line_directive = false;
 
     /* clang-ast.cpp */
     bool get_declarations(decl_t &decl, int mode);
@@ -86,8 +87,10 @@ private:
     void read_custom_template();
 
     /* substitute.cpp */
-    void replace_symbol_names(const std::string &line, cio::ofstream &ofs);
-    void substitute_line(const char *line, bool &skip_code, cio::ofstream &ofs);
+    void replace_function_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
+    void replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
+    void replace_symbol_names(const int &line_number, const std::string &line, cio::ofstream &ofs);
+    void substitute_line(const char *line, int &line_number, bool &skip_code, cio::ofstream &ofs);
     void substitute(const cstrList_t &data, cio::ofstream &ofs);
 
 public:

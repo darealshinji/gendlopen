@@ -1,3 +1,5 @@
+#line 2 "<built-in>/cxx.hpp"
+
 #if 0
 
 /* summary */
@@ -754,14 +756,14 @@ public:
          * the first error it encounters. */
 
         /* get symbol addresses */
-@
+
         /* %%symbol%% */@
         m_ptr_%%symbol%% =@
             sym_load<%%sym_type%%>@
                 ("%%symbol%%");@
         if (!m_ptr_%%symbol%% && !ignore_errors) {@
             return false;@
-        }
+        }@
 
         clear_error();
 

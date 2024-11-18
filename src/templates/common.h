@@ -1,3 +1,4 @@
+#line 2 "<built-in>/common.h"
 
 /*****************************************************************************/
 /*                         common macros and headers                         */
@@ -170,3 +171,4 @@
 # error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "-param=skip"
 #endif
 %PARAM_SKIP_END%
+

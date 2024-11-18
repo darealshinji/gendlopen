@@ -1,3 +1,4 @@
+#line 2 "<built-in>/c.h"
 
 /***
 
@@ -291,3 +292,4 @@ enum {
 #if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_
 #endif
+

@@ -1,3 +1,5 @@
+#line 2 "<built-in>/cxx.cpp"
+
 #ifdef GDO_HAS_MSG_CB
 gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;
 #endif

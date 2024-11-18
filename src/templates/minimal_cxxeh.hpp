@@ -1,3 +1,5 @@
+#line 2 "<built-in>/minimal_cxxeh.hpp"
+
 /* whether to use WinAPI */
 #if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
 # define GDO_WINAPI

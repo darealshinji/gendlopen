@@ -5,6 +5,7 @@
 
 /* filename_macros.h */
 static const char *filename_macros[] = {
+  "#line 2 \"<built-in>/filename_macros.h\"",
   "",
   "/*****************************************************************************/",
   "/*                              filename macros                              */",
@@ -86,6 +87,7 @@ static const char *filename_macros[] = {
   "# define LIBEXT              LIBEXTA",
   "# define LIBNAME(NAME, API)  LIBNAMEA(NAME, API)",
   "#endif",
+  "",
   NULL
 };
 
@@ -119,6 +121,7 @@ static const char *license[] = {
 
 /* common.h */
 static const char *common_header[] = {
+  "#line 2 \"<built-in>/common.h\"",
   "",
   "/*****************************************************************************/",
   "/*                         common macros and headers                         */",
@@ -291,11 +294,13 @@ static const char *common_header[] = {
   "# error \"GDO_ENABLE_AUTOLOAD\" defined but wrapped functions were disabled with \"-param=skip\"",
   "#endif",
   "%PARAM_SKIP_END%",
+  "",
   NULL
 };
 
 /* c.h */
 static const char *c_header[] = {
+  "#line 2 \"<built-in>/c.h\"",
   "",
   "/***",
   "",
@@ -589,11 +594,13 @@ static const char *c_header[] = {
   "#if !defined(GDO_DISABLE_ALIASING)",
   "#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_",
   "#endif",
+  "",
   NULL
 };
 
 /* c.c */
 static const char *c_body[] = {
+  "#line 2 \"<built-in>/c.c\"",
   "",
   "/*****************************************************************************/",
   "/*                           C API implementation                            */",
@@ -1107,14 +1114,14 @@ static const char *c_body[] = {
   "     * the first error it encounters. */",
   "",
   "    /* get symbol addresses */",
-  "\n" /* multiline entry */
-  "    /* %%symbol%% */\n"
+  "",
+  "    /* %%symbol%% */\n" /* multiline entry */
   "    gdo_hndl.%%symbol%%_ptr_ = \n"
   "        (%%sym_type%%)\n"
   "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
   "    if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {\n"
   "        return false;\n"
-  "    }",
+  "    }\n"
   "",
   "    gdo_clear_errbuf();",
   "",
@@ -1356,13 +1363,13 @@ static const char *c_body[] = {
   "",
   "",
   "/* function wrappers */",
-  "\n" /* multiline entry */
-  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
+  "",
+  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
   "    if (!gdo_hndl.%%func_symbol%%_ptr_) {\n"
   "        gdo_error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
   "    }\n"
   "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
-  "}",
+  "}\n"
   "",
   "",
   "#elif defined(GDO_ENABLE_AUTOLOAD)",
@@ -1430,11 +1437,11 @@ static const char *c_body[] = {
   "",
   "",
   "/* autoload function wrappers */",
-  "\n" /* multiline entry */
-  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
+  "",
+  "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
   "    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T(\"%%func_symbol%%\"));\n"
   "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
-  "}",
+  "}\n"
   "",
   "#endif //GDO_ENABLE_AUTOLOAD",
   "/***************************** end of wrap code ******************************/",
@@ -1449,11 +1456,14 @@ static const char *c_body[] = {
   "#  pragma GCC diagnostic pop",
   "# endif",
   "#endif",
+  "",
   NULL
 };
 
 /* cxx.hpp */
 static const char *cxx_header[] = {
+  "#line 2 \"<built-in>/cxx.hpp\"",
+  "",
   "#if 0",
   "",
   "/* summary */",
@@ -2210,14 +2220,14 @@ static const char *cxx_header[] = {
   "         * the first error it encounters. */",
   "",
   "        /* get symbol addresses */",
-  "\n" /* multiline entry */
-  "        /* %%symbol%% */\n"
+  "",
+  "        /* %%symbol%% */\n" /* multiline entry */
   "        m_ptr_%%symbol%% =\n"
   "            sym_load<%%sym_type%%>\n"
   "                (\"%%symbol%%\");\n"
   "        if (!m_ptr_%%symbol%% && !ignore_errors) {\n"
   "            return false;\n"
-  "        }",
+  "        }\n"
   "",
   "        clear_error();",
   "",
@@ -2537,6 +2547,8 @@ static const char *cxx_header[] = {
 
 /* cxx.cpp */
 static const char *cxx_body[] = {
+  "#line 2 \"<built-in>/cxx.cpp\"",
+  "",
   "#ifdef GDO_HAS_MSG_CB",
   "gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;",
   "#endif",
@@ -2632,6 +2644,8 @@ static const char *cxx_body[] = {
 
 /* minimal.h */
 static const char *min_c_header[] = {
+  "#line 2 \"<built-in>/minimal.h\"",
+  "",
   "/* whether to use WinAPI */",
   "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)",
   "# define GDO_WINAPI",
@@ -2714,6 +2728,8 @@ static const char *min_c_header[] = {
 
 /* minimal_cxxeh.hpp */
 static const char *min_cxx_header[] = {
+  "#line 2 \"<built-in>/minimal_cxxeh.hpp\"",
+  "",
   "/* whether to use WinAPI */",
   "#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)",
   "# define GDO_WINAPI",

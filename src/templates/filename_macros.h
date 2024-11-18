@@ -1,3 +1,4 @@
+#line 2 "<built-in>/filename_macros.h"
 
 /*****************************************************************************/
 /*                              filename macros                              */
@@ -79,3 +80,4 @@
 # define LIBEXT              LIBEXTA
 # define LIBNAME(NAME, API)  LIBNAMEA(NAME, API)
 #endif
+
