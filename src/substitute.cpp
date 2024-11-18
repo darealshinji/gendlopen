@@ -243,7 +243,7 @@ void gendlopen::replace_symbol_names(const int &line_number, const std::string &
 }
 
 /* substitute placeholders in a single line */
-void gendlopen::substitute_line(const char *line, int &line_number, bool &skip_code, cio::ofstream &ofs)
+void gendlopen::substitute_line(const char *line, int &line_number, bool &param_skip_code, cio::ofstream &ofs)
 {
     const list_t function_keywords = {
         "%%return%%",
@@ -275,7 +275,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &skip_c
 
 
     auto print_lineno = [&] (bool line_directive) {
-        if (!skip_code && line_directive) {
+        if (!param_skip_code && line_directive) {
             /* +1 to compensate for the removed %PARAM_SKIP_* line */
             ofs << "#line " << (line_number + 1) << '\n';
         }
@@ -293,7 +293,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &skip_c
 
     /* empty line */
     if (line[0] == 0) {
-        if (!skip_code) {
+        if (!param_skip_code) {
             ofs << '\n';
         }
         return;
@@ -314,15 +314,15 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &skip_c
         switch (check_skip_keyword(line))
         {
         case PARAM_SKIP_REMOVE_BEGIN:
-            skip_code = (m_parameter_names == param::skip);
+            param_skip_code = (m_parameter_names == param::skip);
             print_lineno(m_line_directive);
             return;
         case PARAM_SKIP_USE_BEGIN:
-            skip_code = (m_parameter_names != param::skip);
+            param_skip_code = (m_parameter_names != param::skip);
             print_lineno(m_line_directive);
             return;
         case PARAM_SKIP_END:
-            skip_code = false;
+            param_skip_code = false;
             print_lineno(m_line_directive);
             return;
         default:
@@ -331,7 +331,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &skip_c
     }
 
     /* skip line */
-    if (skip_code) {
+    if (param_skip_code) {
         return;
     }
 
@@ -387,7 +387,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &skip_c
 /* substitute placeholders */
 void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
 {
-    bool skip_code = false;
+    bool param_skip_code = false;
 
     if (data.empty()) {
         return;
@@ -407,7 +407,7 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
 
         /* go through char** list */
         for ( ; list[i] != NULL; i++, line_number++) {
-            substitute_line(list[i], line_number, skip_code, ofs);
+            substitute_line(list[i], line_number, param_skip_code, ofs);
 
             if (!m_line_directive) {
                 continue;
