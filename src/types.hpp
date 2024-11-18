@@ -56,10 +56,16 @@ typedef struct _decl {
     std::string type;
 } decl_t;
 
+typedef struct _template {
+    const char *data;
+    int maybe_keyword;
+    int line_count;
+} template_t;
+
 using vproto_t = std::vector<proto_t>;
 using vstring_t = std::vector<std::string>;
 using list_t = std::list<const char *>;
-using cstrList_t = std::vector<const char **>;
+using vtemplate_t = std::vector<const template_t *>;
 
 
 /* enum for outout format */

@@ -243,7 +243,7 @@ void gendlopen::replace_symbol_names(const int &line_number, const std::string &
 }
 
 /* substitute placeholders in a single line */
-void gendlopen::substitute_line(const char *line, int &line_number, bool &param_skip_code, cio::ofstream &ofs)
+void gendlopen::substitute_line(const template_t &line, int &line_number, bool &param_skip_code, cio::ofstream &ofs)
 {
     const list_t function_keywords = {
         "%%return%%",
@@ -273,7 +273,6 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &param_
     int has_obj = 0;
     int has_sym = 0;
 
-
     auto print_lineno = [&] (bool line_directive) {
         if (!param_skip_code && line_directive) {
             /* +1 to compensate for the removed %PARAM_SKIP_* line */
@@ -292,26 +291,22 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &param_
 
 
     /* empty line */
-    if (line[0] == 0) {
+    if (line.data[0] == 0) {
         if (!param_skip_code) {
             ofs << '\n';
         }
         return;
     }
 
-    /* optimize search for potential keywords */
-    bool maybe_keyword = (strchr(line, '%') != NULL);
-
-    if (maybe_keyword) {
-        /* skip the whole line if it has the %DNL% (Do Not Lex) keyword */
-        if (strstr(line, "%DNL%") != NULL) {
+    if (line.maybe_keyword) {
+        if (strstr(line.data, "%DNL%") != NULL) {
             ofs << '\n';
             return;
         }
 
         /* check if we have to comment out lines between
         * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-        switch (check_skip_keyword(line))
+        switch (check_skip_keyword(line.data))
         {
         case PARAM_SKIP_REMOVE_BEGIN:
             param_skip_code = (m_parameter_names == param::skip);
@@ -335,7 +330,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &param_
         return;
     }
 
-    buf = line;
+    buf = line.data;
 
     /* replace prefixes */
     if (m_name_upper != "GDO") {
@@ -348,7 +343,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &param_
     }
 
     /* nothing to loop, just append */
-    if (!maybe_keyword) {
+    if (!line.maybe_keyword) {
         ofs << buf << '\n';
         return;
     }
@@ -365,7 +360,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &param_
     if (has_loop > 1) {
         /* error */
         throw error("cannot mix function, object and regular symbol"
-                    " placeholders:\n" + std::string{line});
+                    " placeholders:\n" + std::string{line.data});
     } else if (has_loop == 0) {
         /* nothing to loop, just append and return */
         ofs << buf << '\n';
@@ -385,7 +380,7 @@ void gendlopen::substitute_line(const char *line, int &line_number, bool &param_
 }
 
 /* substitute placeholders */
-void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
+void gendlopen::substitute(const vtemplate_t &data, cio::ofstream &ofs)
 {
     bool param_skip_code = false;
 
@@ -401,24 +396,13 @@ void gendlopen::substitute(const cstrList_t &data, cio::ofstream &ofs)
         int line_number = 1;
         int i = 0;
 
-        if (!m_line_directive && strncmp(list[0], "#line", 5) == 0) {
+        if (!m_line_directive && strncmp(list[0].data, "#line", 5) == 0) {
             i++;
         }
 
-        /* go through char** list */
-        for ( ; list[i] != NULL; i++, line_number++) {
+        for ( ; list[i].data != NULL; i++) {
             substitute_line(list[i], line_number, param_skip_code, ofs);
-
-            if (!m_line_directive) {
-                continue;
-            }
-
-            /* count newlines in case it was a multiline entry */
-            for (const char *p = list[i]; *p; p++) {
-                if (*p == '\n') {
-                    line_number++;
-                }
-            }
+            line_number += list[i].line_count;
         }
     }
 }

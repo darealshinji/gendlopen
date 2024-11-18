@@ -290,7 +290,9 @@ void gendlopen::read_custom_template()
 {
     cio::ofstream ofs;
     std::string buf, line;
-    bool skip_code = false;
+    bool param_skip_code = false;
+    int line_number = 1;
+    int line_count = 1;
 
     /* open file for reading */
     open_file file(m_custom_template);
@@ -303,19 +305,26 @@ void gendlopen::read_custom_template()
     open_ofstream(m_ofile, ofs);
 
     FILE *fp = file.file_pointer();
-    int line_number = 0;
 
     while (simple_getline(fp, buf)) {
         /* concat lines ending on '@' */
         if (buf.back() == '@') {
             buf.pop_back();
             line += buf + '\n';
+            line_count++;
             continue;
         }
 
         line += buf;
-        substitute_line(line.c_str(), line_number, skip_code, ofs);
+
+        int maybe_keyword = (line.find('%') == std::string::npos) ? 0 : 1;
+        template_t tmp = { line.c_str(), maybe_keyword, line_count };
+
+        substitute_line(tmp, line_number, param_skip_code, ofs);
+        line_number += line_count;
+
         line.clear();
+        line_count = 1;
     }
 }
 
@@ -325,7 +334,7 @@ void gendlopen::generate()
     cio::ofstream ofs, ofs_body;
     fs::path ofhdr, ofbody;
     std::string header_name;
-    cstrList_t header_data, body_data;
+    vtemplate_t header_data, body_data;
 
     /* tokenize strings from input */
     tokenize();

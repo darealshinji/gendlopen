@@ -30,15 +30,17 @@
 
 namespace /* anonymous */
 {
-    void save_data(cio::ofstream &ofs, bool line_directive, const char **data) {
-        int i = 0;
+    void save_data(cio::ofstream &ofs, bool line_directive, const char *data)
+    {
+        const char *ptr;
 
-        if (!line_directive && strncmp(data[0], "#line", 5) == 0) {
-            i++;
-        }
-
-        for ( ; data[i] != NULL; i++) {
-            ofs << data[i] << '\n';
+        if (!line_directive && strncmp(data, "#line", 5) == 0 &&
+            (ptr = strchr(data, '\n')) != NULL)
+        {
+            /* skip initial line directive */
+            ofs << ++ptr;
+        } else {
+            ofs << data;
         }
     }
 }
@@ -54,7 +56,7 @@ void gendlopen::save_license_data(cio::ofstream &ofs) {
 }
 
 /* create template data */
-void gendlopen::create_template_data_lists(cstrList_t &header, cstrList_t &body)
+void gendlopen::create_template_data_lists(vtemplate_t &header, vtemplate_t &body)
 {
     switch (m_format)
     {

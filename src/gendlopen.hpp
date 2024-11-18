@@ -80,7 +80,7 @@ private:
     /* data.cpp */
     void save_filename_macros_data(cio::ofstream &ofs);
     void save_license_data(cio::ofstream &ofs);
-    void create_template_data_lists(cstrList_t &header, cstrList_t &body);
+    void create_template_data_lists(vtemplate_t &header, vtemplate_t &body);
 
     /* gendlopen.cpp */
     void get_common_prefix();
@@ -93,8 +93,8 @@ private:
     void replace_function_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
     void replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
     void replace_symbol_names(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    void substitute_line(const char *line, int &line_number, bool &skip_code, cio::ofstream &ofs);
-    void substitute(const cstrList_t &data, cio::ofstream &ofs);
+    void substitute_line(const template_t &line, int &line_number, bool &skip_code, cio::ofstream &ofs);
+    void substitute(const vtemplate_t &data, cio::ofstream &ofs);
 
 public:
 

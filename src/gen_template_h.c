@@ -35,37 +35,43 @@
 #include <string.h>
 
 
-static void textdump(const char *in, const char *varName, FILE *fpOut)
+static FILE *open_file(const char *name)
 {
-    FILE *fp = NULL;
-    int c = 0;
-    bool multi_line = false;
-    bool new_line = true;
+    FILE *fp = fopen(name, "rb");
 
-    if ((fp = fopen(in, "rb")) == NULL) {
+    if (!fp) {
         perror("fopen()");
-        fprintf(stderr, "-> %s\n", in);
+        fprintf(stderr, "-> %s\n", name);
         exit(1);
     }
 
+    return fp;
+}
+
+static void textdump(const char *in, const char *varName, FILE *fpOut)
+{
+    int c = 0;
+    bool multi_line = false;
+    bool new_line = true;
+    int count = 0;
+    int percent = 0;
+
+    FILE *fp = open_file(in);
+
     fprintf(fpOut, "/* %s */\n", in);
-    fprintf(fpOut, "static const char *%s[] = {\n", varName);
+    fprintf(fpOut, "static const template_t %s[] = {\n", varName);
 
     while ((c = fgetc(fp)) != EOF)
     {
         if (new_line) {
-            fprintf(fpOut, "%s", "  \"");
+            fprintf(fpOut, "%s", "  { \"");
             new_line = false;
         }
 
-        switch (c) {
+        switch (c)
+        {
         case '\t':
             fprintf(fpOut, "%s", "\\t");
-            break;
-        case '\n':
-            fprintf(fpOut, "%s", "\",\n");
-            new_line = true;
-            multi_line = false;
             break;
         case '"':
             fprintf(fpOut, "%s", "\\\"");
@@ -73,6 +79,19 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
         case '\\':
             fprintf(fpOut, "%s", "\\\\");
             break;
+
+        case '%':
+            fprintf(fpOut, "%c", '%');
+            percent = 1;
+            break;
+
+        case '\n':
+            fprintf(fpOut, "\", %d, %d },\n", percent, ++count);
+            count = percent = 0;
+            new_line = true;
+            multi_line = false;
+            break;
+
         case '@':
             /* concatenate lines ending on »@\n« */
             if ((c = fgetc(fp)) == '\n' || c == EOF) {
@@ -82,12 +101,14 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
                 } else {
                     fprintf(fpOut, "%s", "\\n\"\n");
                 }
-                fprintf(fpOut, "%s", "  \"");
+                fprintf(fpOut, "%s", "    \"");
+                count++;
             } else {
                 fprintf(fpOut, "%c", '@');
                 ungetc(c, fp);
             }
             break;
+
         default:
             if (c < ' ' || c > '~') {
                 fprintf(fpOut, "\\x%02X", (unsigned char)c);
@@ -99,12 +120,59 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     }
 
     if (!new_line) {
-        fprintf(fpOut, "%s", "\",\n");
+        fprintf(fpOut, "\", %d, %d },\n", percent, ++count);
     }
 
-    fprintf(fpOut, "%s", "  NULL\n");
+    fprintf(fpOut, "%s", "  { NULL, 0, 0 }\n");
     fprintf(fpOut, "%s", "};\n\n");
+    fclose(fp);
+}
 
+static void textdump_simple(const char *in, const char *varName, FILE *fpOut)
+{
+    int c = 0;
+    bool new_line = true;
+
+    FILE *fp = open_file(in);
+
+    fprintf(fpOut, "/* %s */\n", in);
+    fprintf(fpOut, "static const char *%s =\n", varName);
+
+    while ((c = fgetc(fp)) != EOF)
+    {
+        if (new_line) {
+            fprintf(fpOut, "%s", "  \"");
+            new_line = false;
+        }
+
+        switch (c)
+        {
+        case '\t':
+            fprintf(fpOut, "%s", "\\t");
+            break;
+        case '"':
+            fprintf(fpOut, "%s", "\\\"");
+            break;
+        case '\\':
+            fprintf(fpOut, "%s", "\\\\");
+            break;
+
+        case '\n':
+            fprintf(fpOut, "%s", "\\n\"\n");
+            new_line = true;
+            break;
+
+        default:
+            if (c < ' ' || c > '~') {
+                fprintf(fpOut, "\\x%02X", (unsigned char)c);
+            } else {
+                fprintf(fpOut, "%c", (char)c);
+            }
+            break;
+        }
+    }
+
+    fprintf(fpOut, "%s", "  /**/;\n\n");
     fclose(fp);
 }
 
@@ -127,12 +195,14 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    fprintf(fp, "%s\n", "/* this file was automatically generated; do not edit! */\n");
-    fprintf(fp, "%s\n", "#ifndef TEMPLATE_H");
-    fprintf(fp, "%s\n", "#define TEMPLATE_H\n");
+    fprintf(fp, "%s\n",
+        "/* this file was automatically generated; do not edit! */\n"
+        "\n"
+        "#ifndef TEMPLATE_H\n"
+        "#define TEMPLATE_H\n");
 
-    textdump("filename_macros.h", "filename_macros", fp);
-    textdump("license.h",         "license",         fp);
+    textdump_simple("filename_macros.h", "filename_macros", fp);
+    textdump_simple("license.h",         "license",         fp);
     textdump("common.h",          "common_header",   fp);
     textdump("c.h",               "c_header",        fp);
     textdump("c.c",               "c_body",          fp);
