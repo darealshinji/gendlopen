@@ -38,11 +38,4 @@ namespace help {
     void print_full(const char *prog);
 }
 
-/* data.cpp */
-namespace data {
-    void save_filename_macros_data(cio::ofstream &ofs);
-    void save_license_data(cio::ofstream &ofs);
-    void create_template_data_lists(cstrList_t &header, cstrList_t &body, output::format format, bool separate);
-}
-
 #endif /* GLOBAL_HPP */

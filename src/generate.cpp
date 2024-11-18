@@ -398,16 +398,16 @@ void gendlopen::generate()
     }
 
     /* save pointers to template lines in header_data and body_data */
-    data::create_template_data_lists(header_data, body_data, m_format, m_separate);
+    create_template_data_lists(header_data, body_data);
 
 
     /*************** header data ***************/
     open_ofstream(ofhdr, ofs);                  /* open stream */
     save_note(ofs, m_print_date);               /* top note */
-    data::save_license_data(ofs);               /* license */
+    save_license_data(ofs);                     /* license */
     save_header_guard(ofs, header_name.c_str(), /* header guard begin */
         output_is_c, true);
-    data::save_filename_macros_data(ofs);       /* filename macros */
+    save_filename_macros_data(ofs);             /* filename macros */
     save_extra_defines(ofs, m_defines);         /* #defines */
     save_default_libname(ofs, m_name_upper,     /* default library name */
         m_deflib_a, m_deflib_w);
@@ -422,8 +422,7 @@ void gendlopen::generate()
     if (m_separate) {
         open_ofstream(ofbody, ofs_body);        /* open stream */
         save_note(ofs_body, m_print_date);      /* note */
-        data::save_license_data(ofs_body);      /* license */
-
+        save_license_data(ofs_body);            /* license */
         ofs_body << "#include \""               /* include header file */
             << header_name << "\"\n\n";
         substitute(body_data, ofs_body);        /* body template */

@@ -65,7 +65,7 @@ private:
     bool m_print_symbols = false;
     bool m_read_options = true;
     bool m_print_date = true;
-    bool m_line_directive = false;
+    bool m_line_directive = true;
 
     /* clang-ast.cpp */
     bool get_declarations(decl_t &decl, int mode);
@@ -76,6 +76,11 @@ private:
     void tokenize();
     void filter_and_copy_symbols(vproto_t &proto);
     void parse_options(const vstring_t &options);
+
+    /* data.cpp */
+    void save_filename_macros_data(cio::ofstream &ofs);
+    void save_license_data(cio::ofstream &ofs);
+    void create_template_data_lists(cstrList_t &header, cstrList_t &body);
 
     /* gendlopen.cpp */
     void get_common_prefix();
