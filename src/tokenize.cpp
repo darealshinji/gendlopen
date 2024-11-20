@@ -611,18 +611,18 @@ void gendlopen::tokenize()
 
     /* open input file */
 
-    if (m_ifile.empty()) {
+    if (m_input.empty()) {
         throw error("input file required");
     }
 
-    if (m_ifile == "-" && m_custom_template == "-") {
+    if (m_input == "-" && m_custom_template == "-") {
         throw error("cannot read input file and custom template both from STDIN");
     }
 
-    std::string file_or_stdin = (m_ifile == "-") ? "<STDIN>"
-        : "file: " + m_ifile;
+    std::string file_or_stdin = (m_input == "-") ? "<STDIN>"
+        : "file: " + m_input;
 
-    open_file file(m_ifile);
+    open_file file(m_input);
 
     if (!file.is_open()) {
         throw error(file_or_stdin + "\nfailed to open file for reading");

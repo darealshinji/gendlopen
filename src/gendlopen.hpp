@@ -25,6 +25,8 @@
 #ifndef GDO_GENDLOPEN_HPP
 #define GDO_GENDLOPEN_HPP
 
+#define SET(NAME, TYPE)  void NAME(TYPE var) { m_##NAME = var; }
+
 
 class gendlopen
 {
@@ -42,8 +44,8 @@ private:
     vstring_t m_includes, m_symbols, m_prefix, m_typedefs;
     vproto_t m_prototypes, m_objects;
 
-    std::string m_ifile;
-    std::string m_ofile = "-";
+    std::string m_input;
+    std::string m_output = "-";
 
     std::string m_name = "gdo";
     std::string m_name_upper = "GDO";
@@ -105,17 +107,18 @@ public:
     ~gendlopen();
 
     /* set options */
-    void input(const std::string &s) { m_ifile = s; }
-    void output(const std::string &s) { m_ofile = s; }
-    void format(output::format val) { m_format = val; }
-    void parameter_names(param::names val) { m_parameter_names = val; }
-    void custom_template(const std::string &s) { m_custom_template = s; }
-    void force(bool b) { m_force = b; }
-    void separate(bool b) { m_separate = b; }
-    void ast_all_symbols(bool b) { m_ast_all_symbols = b; }
-    void print_symbols(bool b) { m_print_symbols = b; }
-    void read_options(bool b) { m_read_options = b; }
-    void print_date(bool b) { m_print_date = b; }
+    SET(input, const std::string &)
+    SET(output, const std::string &)
+    SET(format, output::format)
+    SET(parameter_names, param::names)
+    SET(custom_template, const std::string&)
+    SET(force, bool)
+    SET(separate, bool)
+    SET(ast_all_symbols, bool)
+    SET(print_symbols, bool)
+    SET(read_options, bool)
+    SET(print_date, bool)
+    SET(line_directive, bool)
 
     /* gendlopen.cpp */
     void name(const std::string &s);
@@ -131,5 +134,7 @@ public:
     void generate();
 
 };
+
+#undef SET
 
 #endif /* GDO_GENDLOPEN_HPP */

@@ -302,7 +302,7 @@ void gendlopen::read_custom_template()
     }
 
     /* create output file */
-    open_ofstream(m_ofile, ofs);
+    open_ofstream(m_output, ofs);
 
     FILE *fp = file.file_pointer();
 
@@ -356,10 +356,10 @@ void gendlopen::generate()
 
     /* output filename */
 
-    const bool use_stdout = (m_ofile == "-");
+    const bool use_stdout = (m_output == "-");
 
     if (!use_stdout) {
-        ofbody = ofhdr = CONVERT_FILENAME(m_ofile);
+        ofbody = ofhdr = CONVERT_FILENAME(m_output);
     }
 
     bool output_is_c = true;
