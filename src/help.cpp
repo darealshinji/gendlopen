@@ -168,9 +168,6 @@ namespace help
             "    A line `%PARAM_SKIP_END%' will reset everything to default. This is used to\n"
             "    skip code that would otherwise require parameter names.\n"
             "\n"
-            "    Any line that contains `%DNL%' (\"Do Not Lex\") will be skipped entirely.\n"
-            "    This can be used for meta comments. This is done AFTER glueing lines that end on `@'.\n"
-            "\n"
 
 
             "  -library=[<mode>:]<lib>\n"

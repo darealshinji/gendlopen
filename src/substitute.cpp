@@ -299,11 +299,6 @@ void gendlopen::substitute_line(const template_t &line, int &line_number, bool &
     }
 
     if (line.maybe_keyword) {
-        if (strstr(line.data, "%DNL%") != NULL) {
-            ofs << '\n';
-            return;
-        }
-
         /* check if we have to comment out lines between
         * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
         switch (check_skip_keyword(line.data))

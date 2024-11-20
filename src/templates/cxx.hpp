@@ -1008,7 +1008,6 @@ public:
 
 #ifdef GDO_HAVE_DLINFO
         struct link_map *lm = nullptr;
-        //%DNL%// std::cerr << "DEBUG: using dlinfo()" << std::endl;
 
         int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
         save_error();
@@ -1017,7 +1016,6 @@ public:
 #else
         /* use dladdr() to get the library path from a symbol pointer */
         std::string fname;
-        //%DNL%// std::cerr << "DEBUG: using dladdr()" << std::endl;
 
         if (no_symbols_loaded()) {
             m_errmsg = "no symbols were loaded";
