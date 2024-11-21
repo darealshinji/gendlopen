@@ -554,6 +554,12 @@ void gendlopen::parse_options(const vstring_t &options)
             if ( (p = get_arg(e, "name=")) != NULL ) {
                 name(p);
                 continue;
+            } else if (e == "no-date") {
+                print_date(false);
+                continue;
+            } else if (e == "no-line") {
+                line_directive(false);
+                continue;
             }
             break;
 

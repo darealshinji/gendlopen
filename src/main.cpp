@@ -121,6 +121,9 @@ namespace
                 } else if ( args.get_noarg("no-date") ) {
                     gdo.print_date(false);
                     continue;
+                } else if ( args.get_noarg("no-line") ) {
+                    gdo.line_directive(false);
+                    continue;
                 }
                 break;
 
