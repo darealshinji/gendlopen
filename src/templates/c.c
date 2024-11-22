@@ -45,13 +45,12 @@
 /* silence warnings about unused functions if static linkage
  * was enabled (you will almost never use ALL functions available) */
 #ifdef GDO_STATIC
-# ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable: 4507)
-# elif defined(__GNUC__)
-/* Clang seems to understand this too */
+# if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-function"
+# elif defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable: 4507)
 # endif
 #endif
 
@@ -846,10 +845,10 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 
 /* pop pragma */
 #ifdef GDO_STATIC
-# ifdef _MSC_VER
-#  pragma warning(pop)
-# elif defined(__GNUC__)
+# if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic pop
+# elif defined(_MSC_VER)
+#  pragma warning(pop)
 # endif
 #endif
 
