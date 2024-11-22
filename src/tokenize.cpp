@@ -53,15 +53,6 @@
 namespace /* anonymous */
 {
 
-std::string concat_function_prototype(const proto_t &proto)
-{
-    if (proto.type.ends_with(" *")) {
-        return proto.type + proto.symbol + '(' + proto.args + ')';
-    }
-
-    return proto.type + ' ' + proto.symbol + '(' + proto.args + ')';
-}
-
 /* compare s against a list of very basic types and keywords that
  * may appear in parameter lists to guess if it could be a name */
 bool keyword_or_type(const std::string &s)
@@ -92,29 +83,6 @@ bool keyword_or_type(const std::string &s)
     return false;
 }
 
-/* split `%option' line into strings */
-void tokenize_options_len(const char *str, const size_t len, vstring_t *options)
-{
-    /* `options' is set to NULL if reading option
-     * lines was disabled by the user */
-    if (!options || strncmp(yytext, str, len) != 0) {
-        return;
-    }
-
-    std::istringstream iss(yytext + len);
-    std::string s;
-
-    while (iss >> s) {
-        options->push_back(s);
-    }
-}
-
-template<size_t N>
-constexpr void tokenize_options(char const (&str)[N], vstring_t *options)
-{
-    tokenize_options_len(str, N-1, options);
-}
-
 /* tokenize stream into prototype tokens and options */
 int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
 {
@@ -128,6 +96,7 @@ int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
 
         switch (rv)
         {
+        /* any regular token */
         case MYLEX_TOKEN:
             /* don't add "extern" keyword */
             if (strcmp(yytext, "extern") != 0) {
@@ -135,19 +104,22 @@ int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
             }
             break;
 
+        /* end of prototype declaration */
         case MYLEX_SEMICOLON:
             if (!tokens.empty()) {
-                /* save declaration */
                 vec.push_back(tokens);
                 tokens.clear();
             }
             break;
 
+        /* "%option" line */
         case MYLEX_OPTION:
-            if (yytext[0] == '%') {
-                tokenize_options("%option", options);
-            } else {
-                tokenize_options("\xEF\xBB\xBF%option", options);
+            if (options) {
+                if (yytext[0] == '%') {
+                    options->push_back(yytext + sizeof("%option")-1);
+                } else {
+                    options->push_back(yytext + sizeof("\xEF\xBB\xBF%option")-1);
+                }
             }
             tokens.clear();
             break;
@@ -165,28 +137,6 @@ int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
     }
 
     return rv;
-}
-
-/* get argument from an option string */
-const char *get_argx(const std::string &str, const char *opt, const size_t optlen)
-{
-    if (strncmp(str.c_str(), opt, optlen) != 0) {
-        /* not the argument we're looking for */
-        return NULL;
-    }
-
-    if (str.size() > optlen) {
-        return str.c_str() + optlen;
-    }
-
-    /* no argument */
-    return NULL;
-}
-
-template<size_t N>
-constexpr const char *get_arg(const std::string &str, char const (&opt)[N])
-{
-    return get_argx(str, opt, N-1);
 }
 
 /* extract a function parameter name */
@@ -332,6 +282,13 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
     std::string arg;
     int scope = 0;
 
+    auto pretty_function = [] (const proto_t &p) {
+        if (p.type.ends_with(" *")) {
+            return p.type + p.symbol + '(' + p.args + ')';
+        }
+        return p.type + ' ' + p.symbol + '(' + p.args + ')';
+    };
+
     /* split parameters, take care of paretheses */
     for (const char &c : proto.args) {
         switch (c)
@@ -410,7 +367,7 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 
                 if (name.empty() || keyword_or_type(name)) {
                     return "a parameter name is missing: " +
-                        concat_function_prototype(proto) + ";\n"
+                        pretty_function(proto) + ";\n"
                         "hint: try again with `-param=skip' or `-param=create'";
                 }
 
@@ -529,84 +486,6 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
     }
 }
 
-/* parse `%option' strings */
-void gendlopen::parse_options(const vstring_t &options)
-{
-    const char *p;
-
-    for (const auto &e : options)
-    {
-        switch (e[0])
-        {
-        case 'f':
-            if ( (p = get_arg(e, "format=")) != NULL ) {
-                output::format out = utils::format_enum(p);
-
-                if (out == output::error) {
-                    throw error("unknown output format: " + std::string(p));
-                }
-                format(out);
-                continue;
-            }
-            break;
-
-        case 'n':
-            if ( (p = get_arg(e, "name=")) != NULL ) {
-                name(p);
-                continue;
-            } else if (e == "no-date") {
-                print_date(false);
-                continue;
-            } else if (e == "no-line") {
-                line_directive(false);
-                continue;
-            }
-            break;
-
-        case 'l':
-            if ( (p = get_arg(e, "library=")) != NULL ) {
-                std::string lib_a, lib_w;
-                utils::format_libname(p, lib_a, lib_w);
-                default_lib(lib_a, lib_w);
-                continue;
-            }
-            break;
-
-        case 'i':
-            if ( (p = get_arg(e, "include=")) != NULL ) {
-                add_inc(utils::format_inc(p));
-                continue;
-            }
-            break;
-
-        case 'd':
-            if ( (p = get_arg(e, "define=")) != NULL ) {
-                add_def(utils::format_def(p));
-                continue;
-            }
-            break;
-
-        case 'p':
-            if ( (p = get_arg(e, "param=")) != NULL ) {
-                if (utils::eq_str_case(p, "skip")) {
-                    parameter_names(param::skip);
-                } else if (utils::eq_str_case(p, "create")) {
-                    parameter_names(param::create);
-                } else {
-                    throw error("unknown argument for option 'param': " + std::string(p));
-                }
-                continue;
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        throw error("unknown %option string: " + e);
-    }
-}
-
 /* read input and tokenize */
 void gendlopen::tokenize()
 {
@@ -658,9 +537,7 @@ void gendlopen::tokenize()
     }
 
     /* parse `%options' strings */
-    if (m_read_options) {
-        parse_options(options);
-    }
+    parse_options(options);
 
     /* get prototypes from tokens */
     if (!get_prototypes_from_tokens(vec_tokens, vproto)) {
