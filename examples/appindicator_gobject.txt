@@ -1,4 +1,4 @@
-﻿%option name=xgobject library="libgobject-2.0.so.0" include=<gtk/gtk.h>
+﻿%option   name=xgobject   library="libgobject-2.0.so.0"   include=<gtk/gtk.h>
 
 /* glib-2.0/gobject/gobject.h */
 void g_object_set_data (GObject        *object,

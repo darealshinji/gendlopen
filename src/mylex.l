@@ -22,7 +22,9 @@ ast_begin            ^({bom})?({col})?"TranslationUnitDecl"({col})?({col})?" 0x"
 funcvar              ^({col})?[|`]"-"({col})?({col})?("Function"|"Var")"Decl".*
 parmvar              ^({col})?[| ]" "[|`]"-"({col})?({col})?"ParmVarDecl".*
 
-option               ^({bom})?"%option"[ \t].*
+option               ^({bom})?"%option"[[:space:]]
+optstr               [^[:space:]]+
+
 identifier           [a-zA-Z0-9_]+
 other                [*,()\[\]]
 
@@ -30,6 +32,7 @@ other                [*,()\[\]]
 
 %x C_COMMENT
 %x CLANG_AST
+%x OPTION
 
 %%
 
@@ -50,7 +53,10 @@ other                [*,()\[\]]
 <C_COMMENT>\n        { }
 <C_COMMENT>.         { }
 
-{option}             { token_count = 0; return MYLEX_OPTION; }
+{option}             { BEGIN(OPTION); }
+<OPTION>\n           { BEGIN(INITIAL); }
+<OPTION>{optstr}     { token_count = 0; return MYLEX_OPTION; }
+<OPTION>.            { }
 
 "//".*               { /* single line comment */ }
 {bom}                { /* ignore byte order mark */ }

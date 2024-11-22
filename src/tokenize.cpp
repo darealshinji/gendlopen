@@ -115,11 +115,7 @@ int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
         /* "%option" line */
         case MYLEX_OPTION:
             if (options) {
-                if (yytext[0] == '%') {
-                    options->push_back(yytext + sizeof("%option")-1);
-                } else {
-                    options->push_back(yytext + sizeof("\xEF\xBB\xBF%option")-1);
-                }
+                options->push_back(yytext);
             }
             tokens.clear();
             break;
