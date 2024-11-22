@@ -138,23 +138,41 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
 
 
 /* get function or variable declaration */
-bool gendlopen::get_declarations(decl_t &decl, int mode)
+bool gendlopen::get_declarations(FILE *fp, int mode)
 {
+    decl_t decl;
     std::smatch m;
 
-    const std::regex reg(
-        "^[|`]-(Function|Var)Decl 0x.*?"
+    const std::regex reg_func(
+        "^[|`]-FunctionDecl 0x.*?"
         " ([A-Za-z0-9_]*?) "  /* symbol */
         "'(.*?)'.*"           /* type */
     );
 
-    std::string line = strip_line(yytext);
+    const std::regex reg_var(
+        "^[|`]-VarDecl 0x.*?"
+        " ([A-Za-z0-9_]*?) "  /* symbol */
+        "'(.*?)'.*"           /* type */
+    );
 
-    if (!std::regex_match(line, m, reg) || m.size() != 4) {
+    const std::string line = strip_line(yytext);
+    const bool function = (line[2] == 'F');
+
+    /* regex_match */
+    if (function) {
+        if (!std::regex_match(line, m, reg_func)) {
+            return false;
+        }
+    } else if (!std::regex_match(line, m, reg_var)) {
         return false;
     }
 
-    decl.symbol = m.str(2);
+    if (m.size() != 3) {
+        return false;
+    }
+
+    /* check symbol prefix or list */
+    decl.symbol = m.str(1);
 
     switch (mode)
     {
@@ -182,48 +200,24 @@ bool gendlopen::get_declarations(decl_t &decl, int mode)
         break;
     }
 
-    if (m.str(1).front() == 'F') {
+    if (function) {
         /* function declaration */
-        size_t pos = m.str(3).find('(');
-
-        if (pos == std::string::npos) {
-            return false;
-        }
-        decl.prototype = proto::function;
-        decl.type = m.str(3).substr(0, pos);
-    } else {
-        /* variable declaration */
-        decl.type = m.str(3);
-
-        if (m.str(3).find("(*)") != std::string::npos) {
-            decl.prototype = proto::function_pointer;
-        } else {
-            decl.prototype = proto::object;
-        }
-    }
-
-    utils::strip_spaces(decl.type);
-
-    return true;
-}
-
-/* returns true if a function declaration was found */
-bool gendlopen::clang_ast_line(FILE *fp, int mode)
-{
-    decl_t decl;
-
-    if (!get_declarations(decl, mode)) {
-        return false;
-    }
-
-    if (decl.prototype == proto::function) {
-        /* function */
         std::string args, notype_args;
         char letter = 'a';
         int rv;
 
+        size_t pos = m.str(2).find('(');
+
+        if (pos == std::string::npos) {
+            return false;
+        }
+
+        decl.prototype = proto::function;
+        decl.type = m.str(2).substr(0, pos);
+        utils::strip_spaces(decl.type);
+
         /* read next lines for parameters */
-        while ((rv = mylex(fp)) == MYLEX_OK) {
+        while ((rv = mylex(fp)) == MYLEX_AST_PARMVAR) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
             }
@@ -247,10 +241,19 @@ bool gendlopen::clang_ast_line(FILE *fp, int mode)
 
         m_prototypes.push_back(proto);
 
-        /* continue to analyze the current line stored in buffer */
+        /* continue to analyze the current line stored in yytext buffer */
         return true;
     } else {
-        /* variable */
+        /* variable declaration */
+        decl.type = m.str(2);
+        utils::strip_spaces(decl.type);
+
+        if (m.str(2).find("(*)") != std::string::npos) {
+            decl.prototype = proto::function_pointer;
+        } else {
+            decl.prototype = proto::object;
+        }
+
         proto_t proto = {
             decl.prototype,
             decl.type,
@@ -269,7 +272,6 @@ bool gendlopen::clang_ast_line(FILE *fp, int mode)
 void gendlopen::clang_ast(FILE *fp)
 {
     int mode = M_DEFAULT;
-    int rv;
 
     /* no symbols provided */
     if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
@@ -292,9 +294,19 @@ void gendlopen::clang_ast(FILE *fp)
     }
 
     /* read lines */
-    while ((rv = mylex(fp)) == MYLEX_OK) {
-        /* inner loop to read parameters */
-        while (clang_ast_line(fp, mode))
+    while (true) {
+        int rv = mylex(fp);
+
+        if (rv == MYLEX_AST_PARMVAR) {
+            /* ignore */
+            continue;
+        } else if (rv != MYLEX_OK) {
+            /* stop */
+            break;
+        }
+
+        /* uses an inner loop to read parameters */
+        while (get_declarations(fp, mode))
         {}
 
         if (mode == M_LIST && m_symbols.empty()) {
@@ -303,6 +315,7 @@ void gendlopen::clang_ast(FILE *fp)
         }
     }
 
+    /* throw an error if not all symbols on the list were found */
     if ((mode == M_LIST || mode == M_PFX_LIST) && !m_symbols.empty()) {
         std::string s;
 

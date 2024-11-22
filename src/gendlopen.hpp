@@ -70,8 +70,7 @@ private:
     bool m_line_directive = true;
 
     /* clang-ast.cpp */
-    bool get_declarations(decl_t &decl, int mode);
-    bool clang_ast_line(FILE *fp, int mode);
+    bool get_declarations(FILE *fp, int mode);
     void clang_ast(FILE *fp);
 
     /* tokenize.cpp */

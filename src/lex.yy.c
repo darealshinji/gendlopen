@@ -598,18 +598,20 @@ static char errbuf[128] = {0};
 static void illegal_char();
 
 enum {
+    //MYLEX_EOF = 0,
     MYLEX_OK = 1,
     MYLEX_AST_BEGIN,
+    MYLEX_AST_PARMVAR,
     MYLEX_OPTION,
     MYLEX_TOKEN,
     MYLEX_SEMICOLON,
     MYLEX_ERROR
 };
-#line 609 "lex.yy.c"
+#line 611 "lex.yy.c"
 #define YY_NO_INPUT 1
 #define YY_NO_UNISTD_H 1
 
-#line 613 "lex.yy.c"
+#line 615 "lex.yy.c"
 
 #define INITIAL 0
 #define C_COMMENT 1
@@ -830,10 +832,10 @@ YY_DECL
 		}
 
 	{
-#line 37 "mylex.l"
+#line 39 "mylex.l"
 
 
-#line 837 "lex.yy.c"
+#line 839 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -899,7 +901,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 39 "mylex.l"
+#line 41 "mylex.l"
 { /* clang AST identifier in first line */
     if (yylineno == 1) {
         BEGIN(CLANG_AST);
@@ -909,102 +911,102 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 46 "mylex.l"
+#line 48 "mylex.l"
 { return MYLEX_OK; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 47 "mylex.l"
-{ return MYLEX_OK; }
+#line 49 "mylex.l"
+{ return MYLEX_AST_PARMVAR; }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
 YY_RULE_SETUP
-#line 48 "mylex.l"
+#line 50 "mylex.l"
 { }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 49 "mylex.l"
+#line 51 "mylex.l"
 { }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 51 "mylex.l"
+#line 53 "mylex.l"
 { BEGIN(C_COMMENT); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 52 "mylex.l"
+#line 54 "mylex.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 8:
 /* rule 8 can match eol */
 YY_RULE_SETUP
-#line 53 "mylex.l"
+#line 55 "mylex.l"
 { }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 54 "mylex.l"
+#line 56 "mylex.l"
 { }
 	YY_BREAK
 case 10:
 /* rule 10 can match eol */
 YY_RULE_SETUP
-#line 56 "mylex.l"
+#line 58 "mylex.l"
 { BEGIN(OPTION); }
 	YY_BREAK
 case 11:
 /* rule 11 can match eol */
 YY_RULE_SETUP
-#line 57 "mylex.l"
+#line 59 "mylex.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 58 "mylex.l"
+#line 60 "mylex.l"
 { token_count = 0; return MYLEX_OPTION; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 59 "mylex.l"
+#line 61 "mylex.l"
 { }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 61 "mylex.l"
+#line 63 "mylex.l"
 { /* single line comment */ }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 62 "mylex.l"
+#line 64 "mylex.l"
 { /* ignore byte order mark */ }
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 63 "mylex.l"
+#line 65 "mylex.l"
 { }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 65 "mylex.l"
+#line 67 "mylex.l"
 { token_count++; return MYLEX_TOKEN; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 66 "mylex.l"
+#line 68 "mylex.l"
 { token_count++; return MYLEX_TOKEN; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 67 "mylex.l"
+#line 69 "mylex.l"
 { token_count++; return MYLEX_TOKEN; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 69 "mylex.l"
+#line 71 "mylex.l"
 { /* return if statement was not empty */
     if (token_count > 0) {
         token_count = 0;
@@ -1014,15 +1016,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 76 "mylex.l"
+#line 78 "mylex.l"
 { illegal_char(); return MYLEX_ERROR; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 78 "mylex.l"
+#line 80 "mylex.l"
 ECHO;
 	YY_BREAK
-#line 1026 "lex.yy.c"
+#line 1028 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(C_COMMENT):
 case YY_STATE_EOF(CLANG_AST):
@@ -2004,7 +2006,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 78 "mylex.l"
+#line 80 "mylex.l"
 
 
 /* save error message */

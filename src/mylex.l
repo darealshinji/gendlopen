@@ -6,8 +6,10 @@ static char errbuf[128] = {0};
 static void illegal_char();
 
 enum {
+    //MYLEX_EOF = 0,
     MYLEX_OK = 1,
     MYLEX_AST_BEGIN,
+    MYLEX_AST_PARMVAR,
     MYLEX_OPTION,
     MYLEX_TOKEN,
     MYLEX_SEMICOLON,
@@ -44,7 +46,7 @@ other                [*,()\[\]]
 }
 
 <CLANG_AST>{funcvar} { return MYLEX_OK; }
-<CLANG_AST>{parmvar} { return MYLEX_OK; }
+<CLANG_AST>{parmvar} { return MYLEX_AST_PARMVAR; }
 <CLANG_AST>\n        { }
 <CLANG_AST>.         { }
 
