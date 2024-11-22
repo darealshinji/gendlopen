@@ -392,8 +392,10 @@ private:
 
 
     /* load library */
-    void load_lib(const char *filename, int flags, bool /*unused*/)
+    void load_lib(const char *filename, int flags, bool new_namespace)
     {
+        UNUSED_VAL_(new_namespace);
+
         m_wfilename.clear();
         m_filename = filename;
         m_flags = flags;
@@ -668,8 +670,10 @@ public:
 
 #ifdef GDO_WINAPI
     /* load library (wide characters version) */
-    bool load(const std::wstring &filename, int flags=default_flags, bool /*unused*/)
+    bool load(const std::wstring &filename, int flags=default_flags, bool unused=true)
     {
+        UNUSED_VAL_(unused);
+
         /* release old libhandle */
         if (lib_loaded() && !free()) {
             return false;
