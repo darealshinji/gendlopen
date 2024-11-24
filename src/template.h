@@ -89,6 +89,7 @@ static const char *filename_macros =
   "#endif\n"
   "\n"
   /**/;
+static const int filename_macros_linecount = 83;
 
 /* license.h */
 static const char *license =
@@ -116,6 +117,7 @@ static const char *license =
   " SOFTWARE.\n"
   "**/\n"
   /**/;
+static const int license_linecount = 23;
 
 /* common.h */
 static const template_t common_header[] = {
@@ -1463,7 +1465,7 @@ static const template_t cxx_header[] = {
   { "", 0, 1 },
   { "/* summary */", 0, 1 },
   { "", 0, 1 },
-  { "namespace gdo", 0, 1 },
+  { "GDO_CXX_NAMESPACE", 0, 1 },
   { "{", 0, 1 },
   { "", 0, 1 },
   { "class dl", 0, 1 },
@@ -1666,7 +1668,7 @@ static const template_t cxx_header[] = {
   { "", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "namespace gdo", 0, 1 },
+  { "GDO_CXX_NAMESPACE", 0, 1 },
   { "{", 0, 1 },
   { "", 0, 1 },
   { "/* silence `unused' compiler warnings, basically", 0, 1 },
@@ -2522,7 +2524,7 @@ static const template_t cxx_header[] = {
   { "};", 0, 1 },
   { "/******************************* end of class ********************************/", 0, 1 },
   { "", 0, 1 },
-  { "} /* namespace gdo */", 0, 1 },
+  { "} /* GDO_CXX_NAMESPACE */", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */", 0, 1 },
@@ -2558,7 +2560,7 @@ static const template_t cxx_body[] = {
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* helpers used by function wrappers */", 0, 1 },
-  { "namespace gdo", 0, 1 },
+  { "GDO_CXX_NAMESPACE", 0, 1 },
   { "{", 0, 1 },
   { "    namespace helper", 0, 1 },
   { "    {", 0, 1 },
@@ -2596,7 +2598,7 @@ static const template_t cxx_body[] = {
   { "#elif defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "namespace gdo", 0, 1 },
+  { "GDO_CXX_NAMESPACE", 0, 1 },
   { "{", 0, 1 },
   { "    namespace helper", 0, 1 },
   { "    {", 0, 1 },
@@ -2765,7 +2767,7 @@ static const template_t min_cxx_header[] = {
   { "", 0, 1 },
   { "***/", 0, 1 },
   { "", 0, 1 },
-  { "namespace gdo", 0, 1 },
+  { "GDO_CXX_NAMESPACE", 0, 1 },
   { "{", 0, 1 },
   { "    /* symbol pointers */", 0, 1 },
   { "    namespace ptr", 0, 1 },

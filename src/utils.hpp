@@ -67,6 +67,9 @@ void strip_spaces(std::string &s);
 /* replace string "from" with string "to" in string "s" */
 void replace(const std::string &from, const std::string &to, std::string &s);
 
+/* count '\n' characters */
+int count_linefeed(const std::string &str);
+
 } /* namespace utils end */
 
 #endif /* GDO_UTILS_HPP */

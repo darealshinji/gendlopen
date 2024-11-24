@@ -132,6 +132,7 @@ static void textdump_simple(const char *in, const char *varName, FILE *fpOut)
 {
     int c = 0;
     bool new_line = true;
+    int lines = 0;
 
     FILE *fp = open_file(in);
 
@@ -160,6 +161,7 @@ static void textdump_simple(const char *in, const char *varName, FILE *fpOut)
         case '\n':
             fprintf(fpOut, "%s", "\\n\"\n");
             new_line = true;
+            lines++;
             break;
 
         default:
@@ -172,7 +174,14 @@ static void textdump_simple(const char *in, const char *varName, FILE *fpOut)
         }
     }
 
-    fprintf(fpOut, "%s", "  /**/;\n\n");
+    if (!new_line) {
+        fprintf(fpOut, "%s", "\\n\"\n");
+        lines++;
+    }
+
+    fprintf(fpOut, "%s", "  /**/;\n");
+    fprintf(fpOut, "static const int %s_linecount = %d;\n\n", varName, lines);
+
     fclose(fp);
 }
 

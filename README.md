@@ -30,7 +30,7 @@ Here's how the input text format must be:
  * all symbols that should be loaded must be listed as C-style prototypes, ending on semi-colon (;)
  * comments are ignored, line-breaks are treated as spaces
  * you can set some options on a line beginning with `%option`,
- for example `%option format=c++ name=mydl library=libfoo.so`
+ for example `%option format=c++ prefix=mydl library=libfoo.so`
 
 You can create such a file with GCC:
 `echo '#include "foobar.h"' | gcc -xc -c - -o /dev/null -aux-info aux.txt`

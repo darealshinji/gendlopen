@@ -4,7 +4,7 @@
 
 /* summary */
 
-namespace gdo
+GDO_CXX_NAMESPACE
 {
 
 class dl
@@ -207,7 +207,7 @@ GDO_DISABLE_DLMOPEN
 
 
 
-namespace gdo
+GDO_CXX_NAMESPACE
 {
 
 /* silence `unused' compiler warnings, basically
@@ -1063,7 +1063,7 @@ public:
 };
 /******************************* end of class ********************************/
 
-} /* namespace gdo */
+} /* GDO_CXX_NAMESPACE */
 
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */

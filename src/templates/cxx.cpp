@@ -12,7 +12,7 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 /* helpers used by function wrappers */
-namespace gdo
+GDO_CXX_NAMESPACE
 {
     namespace helper
     {
@@ -50,7 +50,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-namespace gdo
+GDO_CXX_NAMESPACE
 {
     namespace helper
     {

@@ -38,7 +38,8 @@ namespace /* anonymous */
             (ptr = strchr(data, '\n')) != NULL)
         {
             /* skip initial line directive */
-            ofs << ++ptr;
+            ptr++;
+            ofs << ptr;
         } else {
             ofs << data;
         }
@@ -46,13 +47,15 @@ namespace /* anonymous */
 }
 
 /* filename macros */
-void gendlopen::save_filename_macros_data(cio::ofstream &ofs) {
+int gendlopen::save_filename_macros_data(cio::ofstream &ofs) {
     save_data(ofs, m_line_directive, filename_macros);
+    return filename_macros_linecount;
 }
 
 /* license */
-void gendlopen::save_license_data(cio::ofstream &ofs) {
+int gendlopen::save_license_data(cio::ofstream &ofs) {
     save_data(ofs, m_line_directive, license);
+    return license_linecount;
 }
 
 /* create template data */

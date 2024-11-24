@@ -303,3 +303,17 @@ void utils::replace(const std::string &from, const std::string &to, std::string 
         s.replace(pos, len, to);
     }
 }
+
+/* count '\n' characters */
+int utils::count_linefeed(const std::string &str)
+{
+    int n = 0;
+
+    for (auto &c : str) {
+        if (c == '\n') {
+            n++;
+        }
+    }
+
+    return n;
+}

@@ -79,8 +79,8 @@ private:
     void parse_options(const vstring_t &options);
 
     /* data.cpp */
-    void save_filename_macros_data(cio::ofstream &ofs);
-    void save_license_data(cio::ofstream &ofs);
+    int save_filename_macros_data(cio::ofstream &ofs);
+    int save_license_data(cio::ofstream &ofs);
     void create_template_data_lists(vtemplate_t &header, vtemplate_t &body);
 
     /* gendlopen.cpp */
@@ -91,11 +91,11 @@ private:
     void read_custom_template();
 
     /* substitute.cpp */
-    void replace_function_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    void replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    void replace_symbol_names(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    void substitute_line(const template_t &line, int &line_number, bool &skip_code, cio::ofstream &ofs);
-    void substitute(const vtemplate_t &data, cio::ofstream &ofs);
+    int replace_function_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
+    int replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
+    int replace_symbol_names(const int &line_number, const std::string &line, cio::ofstream &ofs);
+    int substitute_line(const template_t &line, int &line_number, bool &skip_code, cio::ofstream &ofs);
+    int substitute(const vtemplate_t &data, cio::ofstream &ofs);
 
 public:
 
