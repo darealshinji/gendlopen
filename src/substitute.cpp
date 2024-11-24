@@ -425,6 +425,7 @@ int gendlopen::substitute(const vtemplate_t &data, cio::ofstream &ofs)
         int line_number = 1;
         int i = 0;
 
+        /* skip initial #line directive */
         if (!m_line_directive && strncmp(list[0].data, "#line", 5) == 0) {
             i++;
         }

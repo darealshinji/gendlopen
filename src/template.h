@@ -89,6 +89,7 @@ static const char *filename_macros =
   "#endif\n"
   "\n"
   /**/;
+
 static const int filename_macros_linecount = 83;
 
 /* license.h */
@@ -117,6 +118,7 @@ static const char *license =
   " SOFTWARE.\n"
   "**/\n"
   /**/;
+
 static const int license_linecount = 23;
 
 /* common.h */

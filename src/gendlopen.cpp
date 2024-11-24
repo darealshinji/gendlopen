@@ -116,3 +116,33 @@ void gendlopen::get_common_prefix()
      * and `foobar' exist the prefix is `foo' */
     m_common_prefix = pfx;
 }
+
+/* create typedefs for function pointers and arrays */
+void gendlopen::create_typedefs()
+{
+    for (auto &p : m_objects) {
+        auto pos = std::string::npos;
+        std::string new_type;
+
+        if (p.prototype == proto::function_pointer) {
+            pos = p.type.find("(*)") + 2;
+        } else if (p.prototype == proto::object_array) {
+            pos = p.type.find('[');
+            new_type += ' ';
+        } else {
+            continue;
+        }
+
+        if (pos != std::string::npos) {
+            new_type += m_pfx_lower + "_" + p.symbol + "_t";
+
+            /* typedef */
+            std::string tmp = p.type;
+            tmp.insert(pos, new_type);
+            m_typedefs.push_back(tmp);
+
+            /* replace old type */
+            p.type = new_type;
+        }
+    }
+}

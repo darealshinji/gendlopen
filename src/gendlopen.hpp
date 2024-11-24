@@ -84,6 +84,7 @@ private:
     void create_template_data_lists(vtemplate_t &header, vtemplate_t &body);
 
     /* gendlopen.cpp */
+    void create_typedefs();
     void get_common_prefix();
 
     /* generate.cpp */

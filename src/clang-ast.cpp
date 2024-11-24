@@ -250,6 +250,8 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
 
         if (m.str(2).find("(*)") != std::string::npos) {
             decl.prototype = proto::function_pointer;
+        } else if (m.str(2).find('[') != std::string::npos) {
+            decl.prototype = proto::object_array;
         } else {
             decl.prototype = proto::object;
         }
@@ -334,5 +336,7 @@ void gendlopen::clang_ast(FILE *fp)
     if (m_prototypes.empty() && m_objects.empty()) {
         throw error("no function or object prototypes found in file: " + m_input);
     }
+
+    create_typedefs();
 }
 

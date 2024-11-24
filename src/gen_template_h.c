@@ -179,7 +179,7 @@ static void textdump_simple(const char *in, const char *varName, FILE *fpOut)
         lines++;
     }
 
-    fprintf(fpOut, "%s", "  /**/;\n");
+    fprintf(fpOut, "%s", "  /**/;\n\n");
     fprintf(fpOut, "static const int %s_linecount = %d;\n\n", varName, lines);
 
     fclose(fp);
