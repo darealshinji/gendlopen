@@ -41,16 +41,16 @@ gendlopen::~gendlopen()
 void gendlopen::prefix(const std::string &s)
 {
     /* set name */
-    m_name = s;
+    m_pfx = s;
 
     /* set uppercase/lowercase name */
-    m_name_upper = utils::convert_to_upper(m_name);
-    m_name_lower = utils::convert_to_lower(m_name);
+    m_pfx_upper = utils::convert_to_upper(m_pfx);
+    m_pfx_lower = utils::convert_to_lower(m_pfx);
 
     /* set regex format string */
-    m_fmt_upper = "$1" + m_name_upper + '_';
-    m_fmt_lower = "$1" + m_name_lower + '_';
-    m_fmt_namespace = "$1" + m_name_lower + "::";
+    m_fmt_upper = "$1" + m_pfx_upper + '_';
+    m_fmt_lower = "$1" + m_pfx_lower + '_';
+    m_fmt_namespace = "$1" + m_pfx_lower + "::";
 }
 
 /* set default library to load */

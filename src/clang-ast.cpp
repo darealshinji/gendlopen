@@ -177,13 +177,13 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
     switch (mode)
     {
     case M_PREFIX:
-        if (!utils::is_prefixed(decl.symbol, m_prefix)) {
+        if (!utils::is_prefixed(decl.symbol, m_prefix_list)) {
             return false; /* not prefixed */
         }
         break;
 
     case M_PFX_LIST:
-        if (utils::is_prefixed(decl.symbol, m_prefix)) {
+        if (utils::is_prefixed(decl.symbol, m_prefix_list)) {
             break; /* prefixed */
         }
         /* not prefixed */
@@ -191,7 +191,7 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
 
     case M_LIST:
         /* erase from list if found */
-        if (std::erase(m_symbols, decl.symbol) == 0) {
+        if (std::erase(m_symbol_list, decl.symbol) == 0) {
             return false; /* not in list */
         }
         break;
@@ -274,22 +274,22 @@ void gendlopen::clang_ast(FILE *fp)
     int mode = M_DEFAULT;
 
     /* no symbols provided */
-    if (m_symbols.empty() && m_prefix.empty() && !m_ast_all_symbols) {
+    if (m_symbol_list.empty() && m_prefix_list.empty() && !m_ast_all_symbols) {
         throw error("Clang AST: no symbols provided to look for\n"
                     "use `-S', `-P' or `-ast-all-symbols'");
     }
 
     /* ignore symbols provided with `-S' or `-P' if `-ast-all-symbols' was given */
-    if (m_ast_all_symbols && (m_symbols.size() > 0 || m_prefix.size() > 0)) {
-        m_symbols.clear();
-        m_prefix.clear();
+    if (m_ast_all_symbols && (m_symbol_list.size() > 0 || m_prefix_list.size() > 0)) {
+        m_symbol_list.clear();
+        m_prefix_list.clear();
     }
 
-    if (m_symbols.size() > 0 && m_prefix.size() > 0) {
+    if (m_symbol_list.size() > 0 && m_prefix_list.size() > 0) {
         mode = M_PFX_LIST;
-    } else if (m_prefix.size() > 0) {
+    } else if (m_prefix_list.size() > 0) {
         mode = M_PREFIX;
-    } else if (m_symbols.size() > 0) {
+    } else if (m_symbol_list.size() > 0) {
         mode = M_LIST;
     }
 
@@ -309,22 +309,22 @@ void gendlopen::clang_ast(FILE *fp)
         while (get_declarations(fp, mode))
         {}
 
-        if (mode == M_LIST && m_symbols.empty()) {
+        if (mode == M_LIST && m_symbol_list.empty()) {
             /* nothing left to look for */
             break;
         }
     }
 
     /* throw an error if not all symbols on the list were found */
-    if ((mode == M_LIST || mode == M_PFX_LIST) && !m_symbols.empty()) {
+    if ((mode == M_LIST || mode == M_PFX_LIST) && !m_symbol_list.empty()) {
         std::string s;
 
         /* sort list and remove duplicates */
-        std::sort(m_symbols.begin(), m_symbols.end());
-        auto last = std::unique(m_symbols.begin(), m_symbols.end());
-        m_symbols.erase(last, m_symbols.end());
+        std::sort(m_symbol_list.begin(), m_symbol_list.end());
+        auto last = std::unique(m_symbol_list.begin(), m_symbol_list.end());
+        m_symbol_list.erase(last, m_symbol_list.end());
 
-        for (const auto &e : m_symbols) {
+        for (const auto &e : m_symbol_list) {
             s += " " + e;
         }
 

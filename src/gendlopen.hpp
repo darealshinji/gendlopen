@@ -41,18 +41,18 @@ public:
 
 private:
 
-    vstring_t m_includes, m_symbols, m_prefix, m_typedefs;
+    vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;
     vproto_t m_prototypes, m_objects;
 
     std::string m_input;
     std::string m_output = "-";
 
-    std::string m_name = "gdo";
-    std::string m_name_upper = "GDO";
-    std::string m_name_lower = "gdo";
-    std::string m_fmt_upper; // = "$1" + m_name_upper + '_';
-    std::string m_fmt_lower; // = "$1" + m_name_lower + '_';
-    std::string m_fmt_namespace; // = "$1" + m_name_lower + "::";
+    std::string m_pfx = "gdo";
+    std::string m_pfx_upper = "GDO";
+    std::string m_pfx_lower = "gdo";
+    std::string m_fmt_upper; // = "$1" + m_pfx_upper + '_';
+    std::string m_fmt_lower; // = "$1" + m_pfx_lower + '_';
+    std::string m_fmt_namespace; // = "$1" + m_pfx_lower + "::";
 
     std::string m_defines, m_custom_template;
     std::string m_deflib_a, m_deflib_w;
@@ -126,8 +126,8 @@ public:
     /* add code */
     void add_def(const std::string &s) { m_defines += s; }
     void add_inc(const std::string &s) { m_includes.push_back(s); }
-    void add_pfx(const std::string &s) { m_prefix.push_back(s); }
-    void add_sym(const std::string &s) { m_symbols.push_back(s); }
+    void add_pfx(const std::string &s) { m_prefix_list.push_back(s); }
+    void add_sym(const std::string &s) { m_symbol_list.push_back(s); }
 
     /* generate output */
     void generate();

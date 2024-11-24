@@ -328,10 +328,10 @@ void gendlopen::substitute_line(const template_t &line, int &line_number, bool &
     buf = line.data;
 
     /* replace prefixes */
-    if (m_name_upper != "GDO") {
-        //m_fmt_upper = "$1" + m_name_upper + '_';
-        //m_fmt_lower = "$1" + m_name_lower + '_';
-        //m_fmt_namespace = "$1" + m_name_lower + "::";
+    if (m_pfx_upper != "GDO") {
+        //m_fmt_upper = "$1" + m_pfx_upper + '_';
+        //m_fmt_lower = "$1" + m_pfx_lower + '_';
+        //m_fmt_namespace = "$1" + m_pfx_lower + "::";
         buf = std::regex_replace(buf, reg_upper, m_fmt_upper);
         buf = std::regex_replace(buf, reg_lower, m_fmt_lower);
         buf = std::regex_replace(buf, reg_namespace, m_fmt_namespace);

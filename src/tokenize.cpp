@@ -411,28 +411,28 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         }
     };
 
-    if (m_prefix.empty() && m_symbols.empty()) {
+    if (m_prefix_list.empty() && m_symbol_list.empty()) {
         /* copy all symbols */
         for (const auto &e : vproto) {
             save_symbol(e);
         }
     } else {
         /* copy prefixed symbols */
-        if (!m_prefix.empty()) {
+        if (!m_prefix_list.empty()) {
             for (const auto &e : vproto) {
-                if (utils::is_prefixed(e.symbol, m_prefix)) {
+                if (utils::is_prefixed(e.symbol, m_prefix_list)) {
                     save_symbol(e);
                 }
             }
         }
 
         /* copy whitelisted symbols */
-        if (!m_symbols.empty()) {
-            auto it_beg = m_symbols.begin();
-            auto it_end = m_symbols.end();
+        if (!m_symbol_list.empty()) {
+            auto it_beg = m_symbol_list.begin();
+            auto it_end = m_symbol_list.end();
 
             for (const auto &e : vproto) {
-                /* look for item e.symbol in list m_symbols */
+                /* look for item e.symbol in list m_symbol_list */
                 if (std::find(it_beg, it_end, e.symbol) != it_end) {
                     save_symbol(e);
                 }
@@ -453,7 +453,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         }
 
         if (pos != std::string::npos) {
-            std::string new_type = m_name_lower + "_" + p.symbol + "_t";
+            std::string new_type = m_pfx_lower + "_" + p.symbol + "_t";
 
             /* typedef */
             std::string tmp = p.type;

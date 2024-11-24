@@ -400,7 +400,7 @@ void gendlopen::generate()
 
     /* create header filename */
     if (use_stdout) {
-        header_name = m_name;
+        header_name = m_pfx;
         header_name += output_is_c ? ".h" : ".hpp";
     } else {
         header_name = ofhdr.filename().string();
@@ -418,7 +418,7 @@ void gendlopen::generate()
         output_is_c, true);
     save_filename_macros_data(ofs);             /* filename macros */
     save_extra_defines(ofs, m_defines);         /* #defines */
-    save_default_libname(ofs, m_name_upper,     /* default library name */
+    save_default_libname(ofs, m_pfx_upper,      /* default library name */
         m_deflib_a, m_deflib_w);
     save_includes(ofs, m_includes);             /* #includes */
     save_typedefs(ofs, m_typedefs);             /* typedefs */
