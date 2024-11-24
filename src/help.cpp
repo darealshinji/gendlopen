@@ -42,7 +42,7 @@ namespace help
             "  -help             display this information\n"
             "  -full-help        show more detailed information\n"
             "  -o<file>          save to file instead of stdout\n"
-            "  -name=<string>    use <string> in names of functions, macros and C++ namespaces (default: gdo)\n"
+            "  -prefix=<string>  use <string> to prefix functions, macros and C++ namespaces (default: gdo)\n"
             "  -format=<string>  set output format: c (default), c++, minimal, minimal-c++\n"
             "  -template=<file>  use a custom template (`-format' is ignored)\n"
             "  -library=[<mode>:]<lib>    set a default library name to load; if <mode> is 'nq' no quotes are\n"
@@ -118,7 +118,7 @@ namespace help
             "\n"
 
 
-            "  -name=<string>\n"
+            "  -prefix=<string>\n"
             "    Use <string> as a prefix in names of functions and macros or as C++\n"
             "    namespace when generating output to avoid symbol clashes.\n"
             "    The default string is `gdo'.\n"

@@ -38,7 +38,7 @@ gendlopen::~gendlopen()
 {}
 
 /* set symbol prefix name */
-void gendlopen::name(const std::string &s)
+void gendlopen::prefix(const std::string &s)
 {
     /* set name */
     m_name = s;

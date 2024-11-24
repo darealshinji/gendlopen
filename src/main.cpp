@@ -33,17 +33,17 @@
 /* anonymous */
 namespace
 {
+    constexpr bool is_arg_prefix(const char &c)
+    {
+#ifdef _WIN32
+        return (c == '-' || c == '/');
+#else
+        return (c == '-');
+#endif
+    }
+
     bool parse_arguments(gendlopen &gdo, int argc, char **argv)
     {
-        auto is_arg_prefix = [] (const char &c) -> bool
-        {
-#ifdef _WIN32
-            return (c == '-' || c == '/');
-#else
-            return (c == '-');
-#endif
-        };
-
         struct parse_args args = {
             .argc = argc,
             .argv = argv
@@ -51,6 +51,36 @@ namespace
 
         const char *prog = parse_args::get_prog_name(argv[0]);
         const char *input = NULL;
+        const char *cur = NULL;
+
+        auto set_format = [&] ()
+        {
+            output::format out = utils::format_enum(args.opt);
+
+            if (out == output::error) {
+                std::cerr << prog << "unknown output format: " << args.opt << std::endl;
+                return false;
+            }
+
+            gdo.format(out);
+            return true;
+        };
+
+        auto set_parameter_names = [&] ()
+        {
+            if (utils::eq_str_case(args.opt, "skip")) {
+                gdo.parameter_names(param::skip);
+                return true;
+            } else if (utils::eq_str_case(args.opt, "create")) {
+                gdo.parameter_names(param::create);
+                return true;
+            }
+
+            std::cerr << prog << ": unknown argument for option '"
+                << *cur << "param': " << args.opt << std::endl;
+
+            return false;
+        };
 
         /* parse arguments */
         for (args.it = 1; args.it < argc; args.it++) {
@@ -66,7 +96,7 @@ namespace
                 continue;
             }
 
-            auto cur = args.cur;
+            cur = args.cur;
 
             /* skip prefix */
             args.cur++;
@@ -89,14 +119,9 @@ namespace
 
             case 'f':
                 if ( args.get_arg("format") ) {
-                    output::format out = utils::format_enum(args.opt);
-
-                    if (out == output::error) {
-                        std::cerr << prog << "unknown output format: "
-                            << args.opt << std::endl;
+                    if (!set_format()) {
                         return false;
                     }
-                    gdo.format(out);
                     continue;
                 } else if ( args.get_noarg("force") ) {
                     gdo.force(true);
@@ -115,10 +140,7 @@ namespace
                 break;
 
             case 'n':
-                if ( args.get_arg("name") ) {
-                    gdo.name(args.opt);
-                    continue;
-                } else if ( args.get_noarg("no-date") ) {
+                if ( args.get_noarg("no-date") ) {
                     gdo.print_date(false);
                     continue;
                 } else if ( args.get_noarg("no-line") ) {
@@ -175,14 +197,11 @@ namespace
                 break;
 
             case 'p':
-                if ( args.get_arg("param") ) {
-                    if (utils::eq_str_case(args.opt, "skip")) {
-                        gdo.parameter_names(param::skip);
-                    } else if (utils::eq_str_case(args.opt, "create")) {
-                        gdo.parameter_names(param::create);
-                    } else {
-                        std::cerr << prog << ": unknown argument for option '"
-                            << *cur << "param': " << args.opt << std::endl;
+                if ( args.get_arg("prefix") ) {
+                    gdo.prefix(args.opt);
+                    continue;
+                } else if ( args.get_arg("param") ) {
+                    if (!set_parameter_names()) {
                         return false;
                     }
                     continue;
@@ -213,12 +232,15 @@ namespace
                 }
                 break;
 
-            default:
+            case '-':
                 /* let's support a help option with two dashes too */
                 if (strcmp(cur, "--help") == 0) {
                     help::print(prog);
                     std::exit(0);
                 }
+                break;
+
+            default:
                 break;
             }
 

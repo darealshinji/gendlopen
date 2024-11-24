@@ -120,7 +120,7 @@ public:
     SET(line_directive, bool)
 
     /* gendlopen.cpp */
-    void name(const std::string &s);
+    void prefix(const std::string &s);
     void default_lib(const std::string &lib_a, const std::string &lib_w);
 
     /* add code */

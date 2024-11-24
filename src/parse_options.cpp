@@ -54,6 +54,17 @@ namespace /* anonymous */
 /* parse `%option' strings */
 void gendlopen::parse_options(const vstring_t &options)
 {
+    auto set_parameter_names = [this] (const char *opt)
+    {
+        if (utils::eq_str_case(opt, "skip")) {
+            parameter_names(param::skip);
+        } else if (utils::eq_str_case(opt, "create")) {
+            parameter_names(param::create);
+        } else {
+            throw error("unknown argument for option 'param': " + std::string(opt));
+        }
+    };
+
     std::string token;
     const char *p;
 
@@ -82,17 +93,12 @@ void gendlopen::parse_options(const vstring_t &options)
                 break;
 
             case 'n':
-                if (get_arg(token, p, "name=")) {
-                    name(p);
+                if (token == "no-date") {
+                    print_date(false);
                     continue;
-                } else if (token.size() == 7) {
-                    if (token == "no-date") {
-                        print_date(false);
-                        continue;
-                    } else if (token == "no-line") {
-                        line_directive(false);
-                        continue;
-                    }
+                } else if (token == "no-line") {
+                    line_directive(false);
+                    continue;
                 }
                 break;
 
@@ -120,14 +126,11 @@ void gendlopen::parse_options(const vstring_t &options)
                 break;
 
             case 'p':
-                if (get_arg(token, p, "param=")) {
-                    if (utils::eq_str_case(p, "skip")) {
-                        parameter_names(param::skip);
-                    } else if (utils::eq_str_case(p, "create")) {
-                        parameter_names(param::create);
-                    } else {
-                        throw error("unknown argument for option 'param': " + std::string(p));
-                    }
+                if (get_arg(token, p, "prefix=")) {
+                    prefix(p);
+                    continue;
+                } else if (get_arg(token, p, "param=")) {
+                    set_parameter_names(p);
                     continue;
                 }
                 break;
