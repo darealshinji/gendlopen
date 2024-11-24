@@ -1,0 +1,28 @@
+
+# static fake library test
+
+@AR@BINS_AR = main$(EXEEXT)
+
+
+all: $(BINS_AR)
+
+clean:
+	$(_v)-rm -f libhelloworld_dl.c libhelloworld_dl.h $(BINS_AR) $(DEL_EXTS)
+
+
+libhelloworld_dl.h: libhelloworld_dl.c
+
+libhelloworld_dl.c:
+	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ -separate -library=API:0:helloworld \
+	  -include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
+
+
+@AR@libhelloworld_dl.o: libhelloworld_dl.c
+@AR@	$(cc_v)$(CC) $(TEST_CFLAGS) -c libhelloworld_dl.c -o $@
+
+@AR@libhelloworld_dl.a: libhelloworld_dl.o
+@AR@	$(ar_v)$(AR) cr $@ libhelloworld_dl.o
+
+@AR@main$(EXEEXT): libhelloworld_dl.a main.c
+@AR@	$(cc_v)$(CC) $(TEST_CFLAGS) -DBUILDING_STATIC main.c -o $@ libhelloworld_dl.a $(TEST_LDFLAGS) $(LIBDL)
+

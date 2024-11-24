@@ -1,0 +1,39 @@
+[0;1;32mTranslationUnitDecl[0m[0;33m 0x593992a4cf98[0m <[0;33m<invalid sloc>[0m> [0;33m<invalid sloc>[0m
+[0;34m|-[0m[0;1;32mTypedefDecl[0m[0;33m 0x593992a4d7e8[0m <[0;33m<invalid sloc>[0m> [0;33m<invalid sloc>[0m implicit[0;1;36m __int128_t[0m [0;32m'__int128'[0m
+[0;34m| `-[0m[0;32mBuiltinType[0m[0;33m 0x593992a4d560[0m [0;32m'__int128'[0m
+[0;34m|-[0m[0;1;32mTypedefDecl[0m[0;33m 0x593992a4d858[0m <[0;33m<invalid sloc>[0m> [0;33m<invalid sloc>[0m implicit[0;1;36m __uint128_t[0m [0;32m'unsigned __int128'[0m
+[0;34m| `-[0m[0;32mBuiltinType[0m[0;33m 0x593992a4d580[0m [0;32m'unsigned __int128'[0m
+[0;34m|-[0m[0;1;32mTypedefDecl[0m[0;33m 0x593992a4db60[0m <[0;33m<invalid sloc>[0m> [0;33m<invalid sloc>[0m implicit[0;1;36m __NSConstantString[0m [0;32m'struct __NSConstantString_tag'[0m
+[0;34m| `-[0m[0;32mRecordType[0m[0;33m 0x593992a4d930[0m [0;32m'struct __NSConstantString_tag'[0m
+[0;34m|   `-[0m[0;1;32mRecord[0m[0;33m 0x593992a4d8b0[0m[0;1;36m '__NSConstantString_tag'[0m
+[0;34m|-[0m[0;1;32mTypedefDecl[0m[0;33m 0x593992a4dc08[0m <[0;33m<invalid sloc>[0m> [0;33m<invalid sloc>[0m implicit[0;1;36m __builtin_ms_va_list[0m [0;32m'char *'[0m
+[0;34m| `-[0m[0;32mPointerType[0m[0;33m 0x593992a4dbc0[0m [0;32m'char *'[0m
+[0;34m|   `-[0m[0;32mBuiltinType[0m[0;33m 0x593992a4d040[0m [0;32m'char'[0m
+[0;34m|-[0m[0;1;32mTypedefDecl[0m[0;33m 0x593992a4def0[0m <[0;33m<invalid sloc>[0m> [0;33m<invalid sloc>[0m implicit[0;1;36m __builtin_va_list[0m [0;32m'struct __va_list_tag[1]'[0m
+[0;34m| `-[0m[0;32mConstantArrayType[0m[0;33m 0x593992a4dea0[0m [0;32m'struct __va_list_tag[1]'[0m 1 
+[0;34m|   `-[0m[0;32mRecordType[0m[0;33m 0x593992a4dce0[0m [0;32m'struct __va_list_tag'[0m
+[0;34m|     `-[0m[0;1;32mRecord[0m[0;33m 0x593992a4dc60[0m[0;1;36m '__va_list_tag'[0m
+[0;34m|-[0m[0;1;32mRecordDecl[0m[0;33m 0x593992ab0640[0m <[0;33m../00_library/helloworld.h:29:9[0m, [0;33mcol:16[0m> [0;33mcol:16[0m struct[0;1;36m helloworld_[0m
+[0;34m|-[0m[0;1;32mTypedefDecl[0m[0;33m 0x593992ab0738[0m <[0;33mcol:1[0m, [0;33mcol:28[0m> [0;33mcol:28[0m referenced[0;1;36m helloworld[0m [0;32m'struct helloworld_'[0m
+[0;34m| `-[0m[0;32mElaboratedType[0m[0;33m 0x593992ab06e0[0m [0;32m'struct helloworld_'[0m sugar
+[0;34m|   `-[0m[0;32mRecordType[0m[0;33m 0x593992ab06c0[0m [0;32m'struct helloworld_'[0m
+[0;34m|     `-[0m[0;1;32mRecord[0m[0;33m 0x593992ab0640[0m[0;1;36m 'helloworld_'[0m
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x593992ab0938[0m <[0;33mline:36:1[0m, [0;33mcol:41[0m> [0;33mcol:8[0m[0;1;36m helloworld_callback[0m [0;32m'void (*)(const char *)'[0m
+[0;34m|-[0m[0;1;32mVarDecl[0m[0;33m 0x593992ab0aa0[0m <[0;33mline:42:1[0m, [0;33mcol:44[0m> [0;33mcol:24[0m[0;1;36m helloworld_buffer[0m [0;32m'char[64]'[0m extern
+[0;34m| `-[0m[0;1;34mVisibilityAttr[0m[0;33m 0x593992ab0b08[0m <[0;33mline:23:44[0m, [0;33mcol:65[0m> Default
+[0;34m|-[0m[0;1;32mFunctionDecl[0m[0;33m 0x593992ab0cc8[0m <[0;33mcol:28[0m, [0;33mline:45:40[0m> [0;33mcol:24[0m[0;1;36m helloworld_init[0m [0;32m'helloworld *()'[0m
+[0;34m| `-[0m[0;1;34mVisibilityAttr[0m[0;33m 0x593992ab0d70[0m <[0;33mline:23:44[0m, [0;33mcol:65[0m> Default
+[0;34m|-[0m[0;1;32mFunctionDecl[0m[0;33m 0x593992ab1058[0m <[0;33mcol:28[0m, [0;33mline:46:67[0m> [0;33mcol:24[0m[0;1;36m helloworld_init_argv[0m [0;32m'helloworld *(int, char **)'[0m
+[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x593992ab0e00[0m <[0;33mcol:45[0m, [0;33mcol:49[0m> [0;33mcol:49[0m[0;1;36m argc[0m [0;32m'int'[0m
+[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x593992ab0f30[0m <[0;33mcol:55[0m, [0;33mcol:66[0m> [0;33mcol:61[0m[0;1;36m argv[0m [0;32m'char **'[0m
+[0;34m| `-[0m[0;1;34mVisibilityAttr[0m[0;33m 0x593992ab1110[0m <[0;33mline:23:44[0m, [0;33mcol:65[0m> Default
+[0;34m|-[0m[0;1;32mFunctionDecl[0m[0;33m 0x593992ab12b0[0m <[0;33mcol:28[0m, [0;33mline:49:48[0m> [0;33mcol:17[0m[0;1;36m helloworld_hello[0m [0;32m'void (helloworld *)'[0m
+[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x593992ab11a0[0m <[0;33mcol:34[0m, [0;33mcol:46[0m> [0;33mcol:46[0m[0;1;36m hw[0m [0;32m'helloworld *'[0m
+[0;34m| `-[0m[0;1;34mVisibilityAttr[0m[0;33m 0x593992ab1360[0m <[0;33mline:23:44[0m, [0;33mcol:65[0m> Default
+[0;34m|-[0m[0;1;32mFunctionDecl[0m[0;33m 0x593992ab2660[0m <[0;33mcol:28[0m, [0;33mline:50:86[0m> [0;33mcol:17[0m[0;1;36m helloworld_hello2[0m [0;32m'void (helloworld *, void (*)(const char *))'[0m
+[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x593992ab13f0[0m <[0;33mcol:35[0m, [0;33mcol:47[0m> [0;33mcol:47[0m[0;1;36m hw[0m [0;32m'helloworld *'[0m
+[0;34m| |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x593992ab1510[0m <[0;33mcol:51[0m, [0;33mcol:85[0m> [0;33mcol:58[0m[0;1;36m helloworld_cb[0m [0;32m'void (*)(const char *)'[0m
+[0;34m| `-[0m[0;1;34mVisibilityAttr[0m[0;33m 0x593992ab2718[0m <[0;33mline:23:44[0m, [0;33mcol:65[0m> Default
+[0;34m`-[0m[0;1;32mFunctionDecl[0m[0;33m 0x593992ab2838[0m <[0;33mcol:28[0m, [0;33mline:53:50[0m> [0;33mcol:17[0m[0;1;36m helloworld_release[0m [0;32m'void (helloworld *)'[0m
+[0;34m  |-[0m[0;1;32mParmVarDecl[0m[0;33m 0x593992ab27a8[0m <[0;33mcol:36[0m, [0;33mcol:48[0m> [0;33mcol:48[0m[0;1;36m hw[0m [0;32m'helloworld *'[0m
+[0;34m  `-[0m[0;1;34mVisibilityAttr[0m[0;33m 0x593992ab28e8[0m <[0;33mline:23:44[0m, [0;33mcol:65[0m> Default

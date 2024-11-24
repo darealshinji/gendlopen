@@ -1,0 +1,11 @@
+
+all: main$(EXEEXT)
+
+clean:
+	$(_v)-rm -f cxx_test.hpp main$(EXEEXT) $(DEL_EXTS)
+
+main$(EXEEXT): cxx_test.hpp
+	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) main.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
+cxx_test.hpp:
+	$(gen_v)$(GENDLOPEN) helloworld.txt -format=C++ -force -o $@ -library=API:0:helloworld

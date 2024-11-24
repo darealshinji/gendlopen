@@ -2,7 +2,7 @@ AppIndicator *app_indicator_new        (const gchar*, const gchar*, AppIndicator
 void          app_indicator_set_status (AppIndicator*, AppIndicatorStatus);
 void          app_indicator_set_menu   (AppIndicator*, GtkMenu*);
 
-%option name=xappindicator library=api:1:appindicator param=create
+%option prefix=xappindicator library=api:1:appindicator param=create
 %option include=<libappindicator/app-indicator.h>
 
 /*

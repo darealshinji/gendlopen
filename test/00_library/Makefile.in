@@ -1,0 +1,9 @@
+
+all: $(DLL)
+
+clean:
+	$(_v)-rm -f $(DLL) $(DEL_EXTS)
+
+$(DLL): helloworld.c
+	$(ccld_v)$(CC) $(DLL_CFLAGS) $(CFLAGS) helloworld.c -o $@ $(TEST_LDFLAGS) $(DLL_LDFLAGS)
+

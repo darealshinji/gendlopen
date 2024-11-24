@@ -1,0 +1,8 @@
+helloworld *helloworld_init();
+helloworld *helloworld_init_argv(int, char**);
+helloworld_cb_t helloworld_callback;
+extern char helloworld_buffer[64];
+void helloworld_hello(helloworld*);
+void helloworld_hello2(helloworld*, void (*)(const char*));
+int helloworld_fprintf(FILE*, const char*, ...);
+void helloworld_release(helloworld*);

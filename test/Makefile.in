@@ -1,58 +1,40 @@
+@AR@AR_BINS = 00_static_library/main$(EXEEXT)
 
-BINS_ANY = \
-	c_test$(EXEEXT) \
-	c_auto_free$(EXEEXT) \
-	c_autoload$(EXEEXT) \
-	c_load_symbol$(EXEEXT) \
-	c_minimal$(EXEEXT) \
-	c_multi$(EXEEXT) \
-	cxx_test$(EXEEXT) \
-	cxx_autoload$(EXEEXT) \
-	cxx_list$(EXEEXT) \
-	cxx_load_symbol$(EXEEXT) \
-	cxx_minimal$(EXEEXT) \
-	cxx_multi$(EXEEXT)
+@W32@W32_BINS = \
+@W32@	c_win32_wide/main$(EXEEXT) \
+@W32@	cxx_win32_wide/main$(EXEEXT) \
+@W32@	$(NULL)
 
-@AR@BINS_AR = helloworld_example_dl$(EXEEXT)
-@W32@BINS_WIN32 = c_win32_wide$(EXEEXT) cxx_win32_wide$(EXEEXT)
-
-BINS = $(BINS_ANY) $(BINS_WIN32) $(BINS_AR)
-
-GEN_SOURCES_ANY = \
-	libhelloworld_dl.c \
-	libhelloworld_dl.h \
-	c_test.h \
-	c_auto_free.h \
-	c_autoload.h \
-	c_load_symbol.h \
-	c_minimal.h \
-	c_multi.h \
-	c_multi.c \
-	cxx_test.hpp \
-	cxx_autoload.hpp \
-	cxx_list.hpp \
-	cxx_load_symbol.hpp \
-	cxx_minimal.hpp \
-	cxx_multi.hpp \
-	cxx_multi.cpp
-
-_GEN_SOURCES_WIN32 = c_win32_wide.h cxx_win32_wide.hpp
-@W32@GEN_SOURCES_WIN32 = $(_GEN_SOURCES_WIN32)
-
-GEN_SOURCES = $(GEN_SOURCES_ANY) $(GEN_SOURCES_WIN32)
-
-GENHDR = $(GENDLOPEN) helloworld.txt -force -o
-GENHDR2 = $(GENDLOPEN) helloworld2.txt -force -o
-
+BINS = \
+	00_c/main$(EXEEXT) \
+	00_cxx/main$(EXEEXT) \
+	c_autoload/main$(EXEEXT) \
+	c_auto_release/main$(EXEEXT) \
+	c_clang_ast/main$(EXEEXT) \
+	c_load_symbol/main$(EXEEXT) \
+	c_minimal/main$(EXEEXT) \
+	c_multi/main$(EXEEXT) \
+	c_no_date/main$(EXEEXT) \
+	c_param_create/main$(EXEEXT) \
+	c_param_skip/main$(EXEEXT) \
+	c_prefix/main$(EXEEXT) \
+	c_static_linkage/main$(EXEEXT) \
+	c_wrapped_functions/main$(EXEEXT) \
+	cxx_autoload/main$(EXEEXT) \
+	cxx_minimal/main$(EXEEXT) \
+	cxx_multi/main$(EXEEXT) \
+	cxx_prefix/main$(EXEEXT) \
+	$(AR_BINS) \
+	$(W32_BINS) \
+	$(NULL)
 
 
 all: $(BINS)
 
-$(BINS): $(DLL) $(GEN_SOURCES)
+clean: $(clean_targets)
 
-clean:
-	$(_v)-rm -f $(DLL) $(BINS) *.exe *.o *.obj *.a *.lib *.dll *.so *.exp
-	$(_v)-rm -f $(GEN_SOURCES) $(_GEN_SOURCES_WIN32)
+distclean: clean
+	$(_v)-rm -f Makefile $(TEST_MAKEFILES)
 
 run-tests: $(BINS)
 	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests))
@@ -60,151 +42,8 @@ run-tests: $(BINS)
 @W32@run-tests-wine: $(BINS)
 @W32@	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests_wine))
 
+$(BINS): 00_library/$(DLL)
 
-# DLL
+00_library/$(DLL):
+	$(_v)cd 00_library && $(MAKE)
 
-$(DLL): helloworld.c
-	$(ccld_v)$(CC) $(DLL_CFLAGS) $(CFLAGS) helloworld.c -o $@ $(TEST_LDFLAGS) $(DLL_LDFLAGS)
-
-
-# C test files
-
-c_test$(EXEEXT): c_test.h
-	$(cc_v)$(CC) $(TEST_CFLAGS) c_test.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-c_auto_free$(EXEEXT): c_auto_free.h c_auto_free.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) c_auto_free.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-c_autoload$(EXEEXT): c_autoload.h c_autoload.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) c_autoload.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-c_load_symbol$(EXEEXT): c_load_symbol.h c_load_symbol.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) c_load_symbol.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-c_minimal$(EXEEXT): c_minimal.h c_minimal.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) c_minimal.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-@W32@c_win32_wide$(EXEEXT): c_win32_wide.h c_win32_wide.c
-@W32@	$(cc_v)$(CC) $(TEST_CFLAGS) $(UNICODE_FLAGS) c_win32_wide.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-
-# C multiple parts test
-
-c_multi_part1.c c_multi_part2.c c_multi.c: c_multi.h
-
-c_multi.o: c_multi.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) -c c_multi.c -o $@
-
-c_multi_part1.o: c_multi_part1.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) -c c_multi_part1.c -o $@
-
-c_multi_part2.o: c_multi_part2.c
-	$(cc_v)$(CC) $(TEST_CFLAGS) -c c_multi_part2.c -o $@
-
-c_multi$(EXEEXT): c_multi_part1.o c_multi_part2.o c_multi.o
-	$(ccld_v)$(CC) c_multi_part1.o c_multi_part2.o c_multi.o -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-
-# C++ test files
-
-cxx_test$(EXEEXT): cxx_test.hpp cxx_test.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_test.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-cxx_autoload$(EXEEXT): cxx_autoload.hpp cxx_autoload.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_autoload.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-cxx_list$(EXEEXT): cxx_list.hpp cxx_list.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_list.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-cxx_load_symbol$(EXEEXT): cxx_load_symbol.hpp cxx_load_symbol.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_load_symbol.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-cxx_minimal$(EXEEXT): cxx_minimal.hpp cxx_minimal.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_minimal.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-cxx_win32_wide$(EXEEXT): cxx_win32_wide.hpp cxx_win32_wide.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) cxx_win32_wide.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-
-# C++ multiple parts test
-
-cxx_multi_part1.cpp cxx_multi_part2.cpp cxx_multi.cpp: cxx_multi.hpp
-
-cxx_multi.o: cxx_multi.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) -c cxx_multi.cpp -o $@
-
-cxx_multi_part1.o: cxx_multi_part1.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) -c cxx_multi_part1.cpp -o $@
-
-cxx_multi_part2.o: cxx_multi_part2.cpp
-	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) -c cxx_multi_part2.cpp -o $@
-
-cxx_multi$(EXEEXT): cxx_multi_part1.o cxx_multi_part2.o cxx_multi.o
-	$(cxxld_v)$(CXX) cxx_multi_part1.o cxx_multi_part2.o cxx_multi.o -o $@ $(TEST_LDFLAGS) $(LIBDL)
-
-
-# static fake library test
-
-@AR@libhelloworld_dl.o: libhelloworld_dl.c
-@AR@	$(cc_v)$(CC) $(TEST_CFLAGS) -c libhelloworld_dl.c -o $@
-
-@AR@libhelloworld_dl.a: libhelloworld_dl.o
-@AR@	$(ar_v)$(AR) cr $@ libhelloworld_dl.o
-
-@AR@helloworld_example_dl$(EXEEXT): libhelloworld_dl.a helloworld_example.c
-@AR@	$(cc_v)$(CC) $(TEST_CFLAGS) -DBUILDING_STATIC helloworld_example.c -o $@ libhelloworld_dl.a $(TEST_LDFLAGS) $(LIBDL)
-
-
-# generate headers
-
-$(GEN_SOURCES): helloworld.txt
-
-libhelloworld_dl.h: libhelloworld_dl.c
-
-libhelloworld_dl.c:
-	$(gen_v)$(GENHDR) $@ -separate -library=API:0:helloworld \
-	  -include=helloworld.h -DBUILDING_STATIC -DGDO_ENABLE_AUTOLOAD
-
-c_test.h:
-	$(gen_v)$(GENHDR) $@
-
-c_auto_free.h:
-	$(gen_v)$(GENHDR) $@ -param=skip
-
-c_autoload.h:
-	$(gen_v)$(GENHDR) $@ -no-date
-
-c_load_symbol.h:
-	$(gen_v)$(GENHDR) $@
-
-c_minimal.h:
-	$(gen_v)$(GENHDR) $@ -format=minimal
-
-@W32@c_win32_wide.h:
-@W32@	$(gen_v)$(GENHDR) $@
-
-c_multi.h:
-	$(gen_v)$(GENHDR) $@ -separate -library=API:0:helloworld \
-	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
-
-cxx_test.hpp:
-	$(gen_v)$(GENHDR) $@ -format=C++ -param=skip
-
-cxx_autoload.hpp:
-	$(gen_v)$(GENHDR2) $@ -format=C++ -library=API:0:helloworld
-
-cxx_list.hpp:
-	$(gen_v)$(GENHDR) $@ -format=C++
-
-cxx_load_symbol.hpp:
-	$(gen_v)$(GENHDR) $@ -format=C++
-
-cxx_minimal.hpp:
-	$(gen_v)$(GENHDR) $@ -format=minimal-C++
-
-@W32@cxx_win32_wide.hpp:
-@W32@	$(gen_v)$(GENHDR) $@ -format=C++
-
-cxx_multi.hpp:
-	$(gen_v)$(GENHDR) $@ -format=C++ -separate -library=API:0:helloworld \
-	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC

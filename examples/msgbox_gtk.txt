@@ -1,4 +1,4 @@
-%option name=dl_gtk
+%option prefix=dl_gtk
 
 void
 gtk_init (int *argc,

@@ -1,0 +1,7 @@
+
+@DIR@/main$(EXEEXT):
+	$(v_)cd @DIR@ && $(MAKE)
+
+clean_@DIR@:
+	$(v_)cd @DIR@ && $(MAKE) clean
+

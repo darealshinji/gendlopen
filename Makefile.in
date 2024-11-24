@@ -14,7 +14,7 @@ clean-examples:
 	cd examples && $(MAKE) clean
 
 clean-test:
-	cd test && $(MAKE) clean
+	cd test && $(MAKE) clean $(devnull_v)
 
 clean-src:
 	cd src && $(MAKE) clean
@@ -22,7 +22,10 @@ clean-src:
 clean: clean-examples clean-test clean-src
 	$(_v)-rm -f settings.mk test.c test.h test.cpp test.o test.obj
 
-distclean: clean
+distclean-test:
+	cd test && $(MAKE) distclean $(devnull_v)
+
+distclean: clean distclean-test
 	$(_v)-rm -f $(clean_makefiles) config.h test.log
 	$(_v)-cd nmake && rm -f *.exe *.obj *.lib *.dll *.exp *.c *.h *.cpp *.hpp
 
@@ -32,7 +35,7 @@ $(DEF_GENDLOPEN):
 check: all-tests all-examples
 
 all-tests: $(GENDLOPEN)
-	cd test && $(MAKE)
+	cd test && $(MAKE) all
 
 all-examples: $(GENDLOPEN)
 	cd examples && $(MAKE)

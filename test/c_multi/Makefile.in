@@ -1,0 +1,16 @@
+
+all: main$(EXEEXT)
+
+clean:
+	$(_v)-rm -f c_test.h c_test.c main$(EXEEXT) $(DEL_EXTS)
+
+main$(EXEEXT): c_test.h c_test.c
+	$(cc_v)$(CC) $(TEST_CFLAGS) main.c cb.c call2.c c_test.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
+c_test.c: c_test.h
+
+c_test.h:
+	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ \
+	  -separate -library=API:0:helloworld \
+	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
+

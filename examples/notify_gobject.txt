@@ -1,4 +1,4 @@
-%option name=xgobject library=api:0:gobject-2.0
+%option prefix=xgobject library=api:0:gobject-2.0
 
 /* glib-2.0/gobject/gobject.h */
 void        g_object_unref                    (gpointer        object);

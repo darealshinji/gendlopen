@@ -1,4 +1,4 @@
-%option name=xgtk library=libgtk-x11-2.0.so.0 include=<gtk/gtk.h>
+%option prefix=xgtk library=libgtk-x11-2.0.so.0 include=<gtk/gtk.h>
 
 void
 gtk_main_quit (

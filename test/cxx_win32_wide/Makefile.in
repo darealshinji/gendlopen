@@ -1,0 +1,14 @@
+@W32@BIN = main$(EXEEXT)
+
+
+all: $(BIN)
+
+clean:
+	$(_v)-rm -f cxx_test.hpp main$(EXEEXT) $(DEL_EXTS)
+
+@W32@main$(EXEEXT): cxx_test.hpp
+@W32@	$(cxx_v)$(CXX) $(TEST_CXXFLAGS) $(UNICODE_FLAGS) main.cpp -o $@ $(TEST_LDFLAGS) $(LIBDL)
+
+@W32@c_test.h:
+@W32@	$(gen_v)$(GENDLOPEN) ../helloworld.txt -format=C++ -force -o $@
+

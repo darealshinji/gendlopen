@@ -28,8 +28,14 @@ ar_v      = $(ar_v_$(V))
 gen_v_    = @echo "  GEN     $@";
 gen_v_0   = $(gen_v_)
 gen_v     = $(gen_v_$(V))
+
+devnull_v_  = >/dev/null
+devnull_v_0 = $(devnull_v_)
+devnull_v   = $(devnull_v_$(V))
 #################################
 
+
+DEL_EXTS = *.exe *.o *.obj *.a *.lib *.dll *.so *.exp
 
 run_tests = for x in $$bins ; do \
 	  echo $$x ; $(TEST_LIBPATH) ./$$x ; \
@@ -37,6 +43,6 @@ run_tests = for x in $$bins ; do \
 	done
 
 run_tests_wine = for x in $$bins ; do \
-	  echo $$x ; WINEDEBUG="-all" wine ./$$x ; \
+	  echo $$x ; $(TEST_LIBPATH) WINEDEBUG="-all" wine ./$$x ; \
 	  echo "return value: $$?" ; echo ; \
 	done

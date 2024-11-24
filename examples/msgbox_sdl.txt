@@ -1,2 +1,2 @@
-%option name=dl_sdl
+%option prefix=dl_sdl
 int SDL_ShowSimpleMessageBox(Uint32 flags, const char *title, const char *message, SDL_Window *window);

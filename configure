@@ -43,12 +43,12 @@ create_makefile()
     if [ "x$nix"         != "xyes" ]; then xnix="#"; fi
     if [ "x$ar"           = "x"    ]; then xar="#"; fi
 
-    echo "create ${1}Makefile"
+    #echo "create ${1}/Makefile"
 
-    rm -f "${1}Makefile"
+    rm -f "${1}/Makefile"
+    top="$PWD"
 
-    if [ -e "${1}/rules.in" ]; then
-        curdir="$PWD"
+    if [ "x${1}" = "xsrc" ]; then
         cd "${1}"
 
         # C++ source files
@@ -63,10 +63,10 @@ create_makefile()
         echo "\t\$(NULL)" >> Makefile
         echo "" >> Makefile
 
-        cd "$curdir"
+        cd "$top"
     fi
 
-    cat settings.mk rules.mk "${1}Makefile.in" | \
+    cat settings.mk rules.mk "${1}/Makefile.in" | \
     sed -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
         -e "s,@MSGBOX@,$xmsgbox,g" \
@@ -74,10 +74,9 @@ create_makefile()
         -e "s,@W32@,$xwin32,g" \
         -e "s,@MSVC@,$xmsvc,g" \
         -e "s,@NIX@,$xnix,g" \
-        >> "${1}Makefile"
+        >> "${1}/Makefile"
 
-    if [ -e "${1}/rules.in" ]; then
-        curdir="$PWD"
+    if [ "x${1}" = "xsrc" ]; then
         cd "${1}"
 
         files="$(ls -1 *.cpp | sed 's|\.cpp$||')"
@@ -86,8 +85,62 @@ create_makefile()
             sed "s|@FILE@|$f|g" rules.in >> Makefile
         done
 
-        cd "$curdir"
+        cd "$top"
     fi
+}
+
+create_test_makefiles()
+{
+    top="$PWD"
+
+    cd test
+    testdirs="$(ls -d 00_* c_* cxx_*)"
+
+    cat ../settings.mk ../rules.mk > Makefile
+
+    # clean_targets
+    echo "" >> Makefile
+    echo "clean_targets = \\" >> Makefile
+    for d in $testdirs ; do
+        echo "\tclean_$d \\" >> Makefile
+    done
+    echo "\t\$(NULL)" >> Makefile
+
+    # BINS
+    #echo "" >> Makefile
+    #echo "BINS = \\" >> Makefile
+    #for d in $testdirs ; do
+    #    echo "\t$d/main\$(EXEEXT) \\" >> Makefile
+    #done
+    #echo "\t\$(NULL)" >> Makefile
+
+    # TEST_MAKEFILES
+    echo "" >> Makefile
+    echo "TEST_MAKEFILES = \\" >> Makefile
+    for d in $testdirs ; do
+        echo "\t$d/Makefile \\" >> Makefile
+    done
+    echo "\t\$(NULL)" >> Makefile
+
+    # rules
+    for d in $testdirs ; do
+        sed "s|@DIR@|$d|g" rules.in >> Makefile
+    done
+
+    sed -e "s,@APPIND@,$xappind,g" \
+        -e "s,@NOTIFY@,$xnotify,g" \
+        -e "s,@MSGBOX@,$xmsgbox,g" \
+        -e "s,@AR@,$xar,g" \
+        -e "s,@W32@,$xwin32,g" \
+        -e "s,@MSVC@,$xmsvc,g" \
+        -e "s,@NIX@,$xnix,g" \
+        Makefile.in >> Makefile
+
+    cd "$top"
+    for d in $testdirs ; do
+        create_makefile "test/$d"
+    done
+    cd "$top"
 }
 
 run_cmd()
@@ -533,7 +586,7 @@ else
     # GCC / Clang
 
     dll="libhelloworld.so.0"
-    ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test:\$\$LD_LIBRARY_PATH\""
+    ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test/00_library:\$\$LD_LIBRARY_PATH\""
 
     case $cc_triple in
         *-linux-*|*-linux|*-gnu)
@@ -542,7 +595,7 @@ else
         *-mingw*)
             target="mingw"
             dll="libhelloworld-0.dll"
-            ld_library_path_test="" # not needed
+            ld_library_path_test="PATH=\"\$\$PWD/../test/00_library:\$\$PATH\""
             ;;
         *-darwin)
             dll="libhelloworld.0.dylib"
@@ -550,10 +603,10 @@ else
             # LD_LIBRARY_PATH works too
             ;;
         *-netbsd)
-            ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test:/usr/pkg/lib:\$\$LD_LIBRARY_PATH\""
+            ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test/00_library:/usr/pkg/lib:\$\$LD_LIBRARY_PATH\""
             ;;
         *-haiku)
-            ld_library_path_test="LIBRARY_PATH=\"\$\$PWD/../test:\$\$LIBRARY_PATH\""
+            ld_library_path_test="LIBRARY_PATH=\"\$\$PWD/../test/00_library:\$\$LIBRARY_PATH\""
             ;;
         *-aix)
             dll="libhelloworld.a"
@@ -707,6 +760,8 @@ fi
 echo ""
 echo "build appindicator example: $with_appind"
 echo "build notify example: $with_notify"
+echo "build msgbox example: $with_msgbox"
+echo ""
 
 # output
 
@@ -732,8 +787,8 @@ DLL           = $dll
 DLL_CFLAGS    = $dll_cflags
 DLL_LDFLAGS   = $dll_ldflags
 
-TEST_CFLAGS   = \$(CFLAGS) $dlmopen_cppflags
-TEST_CXXFLAGS = \$(CXXFLAGS) $test_cxx11 $dlmopen_cppflags
+TEST_CFLAGS   = \$(CFLAGS) $dlmopen_cppflags -I../00_library
+TEST_CXXFLAGS = \$(CXXFLAGS) $test_cxx11 $dlmopen_cppflags -I../00_library
 TEST_LDFLAGS  = \$(LDFLAGS)
 TEST_LIBPATH  = $ld_library_path_test
 UNICODE_FLAGS = $unicode_flags
@@ -747,8 +802,8 @@ X11_CFLAGS    = $x11_cflags
 
 EOF
 
-echo ""
-create_makefile
-create_makefile "src/"
-create_makefile "test/"
-create_makefile "examples/"
+create_makefile "."
+create_makefile "src"
+create_makefile "examples"
+create_test_makefiles
+
