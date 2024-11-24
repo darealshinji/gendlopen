@@ -347,11 +347,8 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
             }
 
             proto.args += e + ", ";
-            proto.notype_args += ", ";
+            proto.notype_args += ',';
         }
-
-        utils::delete_suffix(proto.args, ", ");
-        utils::delete_suffix(proto.notype_args, ", ");
     } else {
         /* get parameter names */
         for (auto &e : vec) {
@@ -372,9 +369,12 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 
             proto.notype_args += ", ";
         }
-
-        utils::delete_suffix(proto.notype_args, ", ");
     }
+
+    utils::strip_spaces(proto.args);
+    utils::strip_spaces(proto.notype_args);
+    utils::delete_suffix(proto.args, ',');
+    utils::delete_suffix(proto.notype_args, ',');
 
     return {};
 }

@@ -272,6 +272,13 @@ void utils::delete_suffix(std::string &str, const std::string &suffix)
     }
 }
 
+void utils::delete_suffix(std::string &str, const char suffix)
+{
+    if (str.back() == suffix) {
+        str.pop_back();
+    }
+}
+
 /* strip ANSI white-space characters from front and back */
 void utils::strip_spaces(std::string &s)
 {

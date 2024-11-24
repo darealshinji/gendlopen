@@ -59,6 +59,7 @@ bool is_prefixed(const std::string &s, const vstring_t &list);
 
 /* delete suffix from string */
 void delete_suffix(std::string &str, const std::string &suffix);
+void delete_suffix(std::string &str, const char suffix);
 
 /* strip ANSI white-space characters from front and back */
 void strip_spaces(std::string &s);
