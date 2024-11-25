@@ -122,27 +122,38 @@ void gendlopen::create_typedefs()
 {
     for (auto &p : m_objects) {
         auto pos = std::string::npos;
-        std::string new_type;
+        std::string name;
 
         if (p.prototype == proto::function_pointer) {
+            /* 'void (*)()' => 'void (*name)()' */
             pos = p.type.find("(*)") + 2;
         } else if (p.prototype == proto::object_array) {
+            /* 'char[32]' => 'char name[32]' */
             pos = p.type.find('[');
-            new_type += ' ';
         } else {
             continue;
         }
 
-        if (pos != std::string::npos) {
-            new_type += m_pfx_lower + "_" + p.symbol + "_t";
-
-            /* typedef */
-            std::string tmp = p.type;
-            tmp.insert(pos, new_type);
-            m_typedefs.push_back(tmp);
-
-            /* replace old type */
-            p.type = new_type;
+        /* unlikely */
+        if (pos == std::string::npos) {
+            continue;
         }
+
+        /* if needed add extra space in array type */
+        if (p.prototype == proto::object_array &&
+            pos > 0 && p.type.at(pos-1) != ' ')
+        {
+            name = ' ';
+        }
+
+        name += m_pfx_lower + '_' + p.symbol + "_t";
+
+        /* insert typename, save as typedef */
+        std::string def = p.type;
+        def.insert(pos, name);
+        m_typedefs.push_back(def);
+
+        /* replace old type */
+        p.type = name;
     }
 }
