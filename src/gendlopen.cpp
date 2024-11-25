@@ -29,13 +29,55 @@
 #include "global.hpp"
 
 
+namespace /* anonymous */
+{
+    /* 'void (*)()'  ==>  'void (*name)()' */
+    std::string fptr_typedef(const std::string &type, const std::string &name)
+    {
+        auto pos = type.find("(*)");
+
+        if (pos == std::string::npos) {
+            return {};
+        }
+
+        std::string s = type;
+        pos += 2; /* insert after '*' */
+
+        return s.insert(pos, name);
+    }
+
+    /* 'char[32]'  ==>  'char name[32]' */
+    std::string array_typedef(std::string &type, const std::string &name)
+    {
+        auto pos = type.find('[');
+
+        if (pos == std::string::npos) {
+            return {};
+        }
+
+        std::string s = type;
+
+        /* insert space if needed */
+        if (pos > 0 && type.at(pos-1) != ' ') {
+            s.insert(pos, 1, ' ');
+            pos++;
+        }
+
+        return s.insert(pos, name);
+    }
+
+} /* end anonymous namespace */
+
+
 /* c'tor */
 gendlopen::gendlopen()
 {}
 
+
 /* d'tor */
 gendlopen::~gendlopen()
 {}
+
 
 /* set symbol prefix name */
 void gendlopen::prefix(const std::string &s)
@@ -47,11 +89,12 @@ void gendlopen::prefix(const std::string &s)
     m_pfx_upper = utils::convert_to_upper(m_pfx);
     m_pfx_lower = utils::convert_to_lower(m_pfx);
 
-    /* set regex format string */
+    /* set regex format string (used in substitute.cpp) */
     m_fmt_upper = "$1" + m_pfx_upper + '_';
     m_fmt_lower = "$1" + m_pfx_lower + '_';
     m_fmt_namespace = "$1" + m_pfx_lower + "::";
 }
+
 
 /* set default library to load */
 void gendlopen::default_lib(const std::string &lib_a, const std::string &lib_w)
@@ -60,6 +103,7 @@ void gendlopen::default_lib(const std::string &lib_a, const std::string &lib_w)
     m_deflib_a = lib_a;
     m_deflib_w = lib_w;
 }
+
 
 /**
  * Look for a common symbol prefix.
@@ -73,6 +117,7 @@ void gendlopen::get_common_prefix()
 
     m_common_prefix.clear();
 
+    /* need at least 2 symbols */
     if ((m_prototypes.size() + m_objects.size()) < 2) {
         return;
     }
@@ -117,43 +162,33 @@ void gendlopen::get_common_prefix()
     m_common_prefix = pfx;
 }
 
+
 /* create typedefs for function pointers and arrays */
 void gendlopen::create_typedefs()
 {
+    /* create typename */
+    auto mk_name = [this] (const std::string &symbol) {
+        return m_pfx_lower + '_' + symbol + "_t";
+    };
+
     for (auto &p : m_objects) {
-        auto pos = std::string::npos;
-        std::string name;
+        std::string def, name;
 
         if (p.prototype == proto::function_pointer) {
-            /* 'void (*)()' => 'void (*name)()' */
-            pos = p.type.find("(*)") + 2;
+            /* function pointer */
+            name = mk_name(p.symbol);
+            def = fptr_typedef(p.type, name);
         } else if (p.prototype == proto::object_array) {
-            /* 'char[32]' => 'char name[32]' */
-            pos = p.type.find('[');
+            /* array type */
+            name = mk_name(p.symbol);
+            def = array_typedef(p.type, name);
         } else {
             continue;
         }
 
-        /* unlikely */
-        if (pos == std::string::npos) {
-            continue;
+        if (!def.empty()) {
+            m_typedefs.push_back(def); /* add to typedefs */
+            p.type = name; /* replace old type */
         }
-
-        /* if needed add extra space in array type */
-        if (p.prototype == proto::object_array &&
-            pos > 0 && p.type.at(pos-1) != ' ')
-        {
-            name = ' ';
-        }
-
-        name += m_pfx_lower + '_' + p.symbol + "_t";
-
-        /* insert typename, save as typedef */
-        std::string def = p.type;
-        def.insert(pos, name);
-        m_typedefs.push_back(def);
-
-        /* replace old type */
-        p.type = name;
     }
 }
