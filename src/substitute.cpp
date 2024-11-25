@@ -291,11 +291,6 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
         "%%symbol%%"
     };
 
-    /* regex for prefixes: [_]GDO_ / [_]gdo_ / gdo:: */
-    const std::regex reg_upper("([^A-Za-z0-9_]?[_]?)(GDO_)");
-    const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)");
-    const std::regex reg_namespace("([^A-Za-z0-9_]?)(gdo::)");
-
     std::string buf;
     int has_func = 0;
     int has_obj = 0;
@@ -360,9 +355,11 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
 
     /* replace prefixes */
     if (m_pfx_upper != "GDO") {
-        //m_fmt_upper = "$1" + m_pfx_upper + '_';
-        //m_fmt_lower = "$1" + m_pfx_lower + '_';
-        //m_fmt_namespace = "$1" + m_pfx_lower + "::";
+        /* regex for prefixes: [_]GDO_ / [_]gdo_ / gdo:: */
+        const std::regex reg_upper("([^A-Za-z0-9_]?[_]?)(GDO_)");
+        const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)");
+        const std::regex reg_namespace("([^A-Za-z0-9_]?)(gdo::)");
+
         buf = std::regex_replace(buf, reg_upper, m_fmt_upper);
         buf = std::regex_replace(buf, reg_lower, m_fmt_lower);
         buf = std::regex_replace(buf, reg_namespace, m_fmt_namespace);

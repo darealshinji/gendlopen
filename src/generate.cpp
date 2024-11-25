@@ -161,50 +161,46 @@ int save_default_libname(
     const std::string &lib_a,
     const std::string &lib_w)
 {
-    std::stringstream strm;
+    std::string str;
 
     if (lib_a.empty() || lib_w.empty()) {
         return 0;
     }
 
-    strm << "/* default library */\n"
-        "#ifndef "  << pfx << "_DEFAULT_LIBA\n"
-        "# define " << pfx << "_DEFAULT_LIBA " << lib_a << "\n"
+    str = "/* default library */\n"
+        "#ifndef "  + pfx + "_DEFAULT_LIBA\n"
+        "# define " + pfx + "_DEFAULT_LIBA " + lib_a + "\n"
         "#endif\n"
-        "#ifndef "  << pfx << "_DEFAULT_LIBW\n"
-        "# define " << pfx << "_DEFAULT_LIBW " << lib_w << "\n"
+        "#ifndef "  + pfx + "_DEFAULT_LIBW\n"
+        "# define " + pfx + "_DEFAULT_LIBW " + lib_w + "\n"
         "#endif\n\n";
-    out << strm.str();
+    out << str;
 
-    return utils::count_linefeed(strm.str());
+    return utils::count_linefeed(str);
 }
 
 /* extra defines */
 int save_extra_defines(cio::ofstream &out, const std::string &defs)
 {
-    std::stringstream strm;
-
     if (defs.empty()) {
         return 0;
     }
 
-    strm << "/* extra defines */\n";
-    strm << defs << '\n';
-    out << strm.str();
+    std::string str = "/* extra defines */\n";
+    str += defs + '\n';
+    out << str;
 
-    return utils::count_linefeed(strm.str());
+    return utils::count_linefeed(str);
 }
 
 /* typedefs for function pointers */
 int save_typedefs(cio::ofstream &out, const vstring_t &tdefs)
 {
-    std::string str;
-
     if (tdefs.empty()) {
         return 0;
     }
 
-    str = "/* typedefs */\n";
+    std::string str = "/* typedefs */\n";
 
     for (auto &e : tdefs) {
         str += "typedef " + e + ";\n";
@@ -217,47 +213,48 @@ int save_typedefs(cio::ofstream &out, const vstring_t &tdefs)
 }
 
 /* extra includes */
-int save_includes(cio::ofstream &out, const vstring_t &includes)
+int save_includes(cio::ofstream &out, const vstring_t &includes, bool is_cxx)
 {
-    std::stringstream strm;
+    std::string str = "/* extra headers */\n";
 
-    if (includes.empty()) {
-        return 0;
+    /* always include stddef.h */
+    if (is_cxx) {
+        str += "#include <cstddef>\n";
+    } else {
+        str += "#include <stddef.h>\n";
     }
-
-    strm << "/* extra headers */\n";
 
     for (auto &e : includes) {
-        strm << "#include " << e << '\n';
+        str += "#include " + e + '\n';
     }
 
-    strm << '\n';
-    out << strm.str();
+    str += '\n';
+    out << str;
 
-    return utils::count_linefeed(strm.str());
+    return utils::count_linefeed(str);
 }
 
 int save_header_guard_begin(cio::ofstream &out, const char *header_name, bool is_cxx)
 {
     const std::string header_guard = utils::convert_to_upper(header_name);
-    std::stringstream strm;
 
-    strm << "\n"
-        "#ifndef _" << header_guard << "_\n"
-        "#define _" << header_guard << "_\n\n";
+    std::string str = "\n"
+        "#ifndef _" + header_guard + "_\n"
+        "#define _" + header_guard + "_\n\n";
 
     if (!is_cxx) {
         /* extern C begin */
-        strm << "#ifdef __cplusplus\n"
+        str += "#ifdef __cplusplus\n"
             "extern \"C\" {\n"
             "#endif\n\n";
     }
 
-    out << strm.str();
+    out << str;
 
-    return utils::count_linefeed(strm.str());
+    return utils::count_linefeed(str);
 }
 
+/* don't need to count lines anymore */
 void save_header_guard_end(cio::ofstream &out, const char *header_name, bool is_cxx)
 {
     if (!is_cxx) {
@@ -482,11 +479,11 @@ void gendlopen::generate()
 
     /* extra data */
     print_lineno();
-    lines += save_extra_defines(ofs, m_defines);    /* #defines */
-    lines += save_default_libname(ofs, m_pfx_upper, /* default library name */
+    lines += save_extra_defines(ofs, m_defines);     /* #defines */
+    lines += save_default_libname(ofs, m_pfx_upper,  /* default library name */
         m_deflib_a, m_deflib_w);
-    lines += save_includes(ofs, m_includes);        /* #includes */
-    lines += save_typedefs(ofs, m_typedefs);        /* typedefs */
+    lines += save_includes(ofs, m_includes, is_cxx); /* #includes */
+    lines += save_typedefs(ofs, m_typedefs);         /* typedefs */
 
     /* header template */
     lines += substitute(header_data, ofs);

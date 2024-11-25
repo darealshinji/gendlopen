@@ -47,16 +47,15 @@ private:
     std::string m_input;
     std::string m_output = "-";
 
-    std::string m_pfx = "gdo";
+    std::string m_pfx = "gdo"; /* can be mixed case, used to create header name on STDOUT */
     std::string m_pfx_upper = "GDO";
     std::string m_pfx_lower = "gdo";
-    std::string m_fmt_upper; // = "$1" + m_pfx_upper + '_';
-    std::string m_fmt_lower; // = "$1" + m_pfx_lower + '_';
-    std::string m_fmt_namespace; // = "$1" + m_pfx_lower + "::";
 
-    std::string m_defines, m_custom_template;
+    /* used by std::regex_replace() */
+    std::string m_fmt_upper, m_fmt_lower, m_fmt_namespace;
+
+    std::string m_defines, m_custom_template, m_common_prefix;
     std::string m_deflib_a, m_deflib_w;
-    std::string m_common_prefix;
 
     output::format m_format = output::c;
     param::names m_parameter_names = param::param_default;
