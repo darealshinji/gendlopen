@@ -15,6 +15,7 @@ BINS = \
 	c_minimal/main$(EXEEXT) \
 	c_multi/main$(EXEEXT) \
 	c_no_date/main$(EXEEXT) \
+	c_no_line/main$(EXEEXT) \
 	c_param_create/main$(EXEEXT) \
 	c_param_skip/main$(EXEEXT) \
 	c_prefix/main$(EXEEXT) \
