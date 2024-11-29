@@ -22,35 +22,24 @@
  * THE SOFTWARE
  */
 
-/* Small helper to parse arguments. */
-
 #ifndef PARSE_ARGS_HPP
 #define PARSE_ARGS_HPP
 
-/* hold infos to parse command line arguments */
-struct parse_args
+namespace parse_args
 {
-    int         argc = 0;     /* argument count */
-    char      **argv = NULL;  /* argument vector */
-    int         it   = 0;     /* current argc iterator */
-    const char *cur  = NULL;  /* current argv[] element */
-    const char *opt  = NULL;  /* current argument's option */
-
-    static const char *get_prog_name(const char *prog);
-    bool get_arg_len(const char *str, const size_t len);
-    bool get_noarg_len(const char *str, const size_t len);
-
-    template<size_t N>
-    constexpr bool get_arg(char const (&str)[N])
+    typedef struct _optstr
     {
-        return get_arg_len(str, N-1);
-    }
+        const char * const string;
+        const size_t size;
+    } optstr_t;
 
-    template<size_t N>
-    constexpr bool get_noarg(char const (&str)[N])
-    {
-        return get_noarg_len(str, N-1);
-    }
-};
+    /* length of command line argument prefix */
+    inline constexpr int pfxlen = 1;
+
+    const char *get_prog_name(const char *prog);
+
+    const char *get_arg_len(const char *str, const size_t &len, const int &argc, char ** const &argv, int &it);
+    bool get_noarg_len(const char *str, const size_t &len, char ** const &argv, const int &it);
+}
 
 #endif /* PARSE_ARGS_HPP */

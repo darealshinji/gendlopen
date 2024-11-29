@@ -23,8 +23,6 @@
  */
 
 #include <iostream>
-#include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "parse_args.hpp"
@@ -41,9 +39,9 @@
 #endif
 
 
+/* get program name without full path */
 const char *parse_args::get_prog_name(const char *prog)
 {
-    /* get program name without full path */
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
     prog = program_invocation_short_name;
 #elif defined(HAVE_GETPROGNAME)
@@ -69,7 +67,7 @@ const char *parse_args::get_prog_name(const char *prog)
 }
 
 /* get argument from an option string */
-bool parse_args::get_arg_len(const char *str, const size_t len)
+const char *parse_args::get_arg_len(const char *str, const size_t &len, const int &argc, char ** const &argv, int &it)
 {
     auto err_noarg = [&] () {
         std::cerr << get_prog_name(argv[0]) << ": option requires an argument: "
@@ -77,28 +75,28 @@ bool parse_args::get_arg_len(const char *str, const size_t len)
         std::exit(1);
     };
 
-    assert(argc > 0 && argv != NULL);
-
-    opt = NULL;
+    const char *cur = argv[it] + pfxlen;
 
     if (strncmp(cur, str, len) != 0) {
         /* not the argument we're looking for */
-        return false;
+        return NULL;
     }
 
     /* "-foo bar" --> get next item */
     if (strcmp(cur, str) == 0) {
-        if ((it + 1) >= argc) {
+        int next = it + 1;
+
+        if (next >= argc || !argv[next] || !*argv[next]) {
             err_noarg();
         }
 
-        opt = argv[++it];
-
-        return true;
+        return argv[++it];
     }
 
     /* -foo=bar, -Dfoo --> get substring */
     if (strlen(cur) > len) {
+        const char *opt = NULL;
+
         if (len == 1) {
             /* -Dfoo */
             opt = cur + 1;
@@ -111,16 +109,16 @@ bool parse_args::get_arg_len(const char *str, const size_t len)
             err_noarg();
         }
 
-        return true;
+        return opt;
     }
 
-    return false;
+    return NULL;
 }
 
 /* option without argument */
-bool parse_args::get_noarg_len(const char *str, const size_t len)
+bool parse_args::get_noarg_len(const char *str, const size_t &len, char ** const &argv, const int &it)
 {
-    assert(argc > 0 && argv != NULL);
+    const char *cur = argv[it] + pfxlen;
 
     /* -foo */
     if (strcmp(cur, str) == 0) {

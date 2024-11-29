@@ -33,6 +33,7 @@
 /* anonymous */
 namespace
 {
+    /* whether 'c' is an argument prefix */
     constexpr bool is_arg_prefix(const char &c)
     {
 #ifdef _WIN32
@@ -42,191 +43,210 @@ namespace
 #endif
     }
 
-    bool parse_arguments(gendlopen &gdo, int argc, char **argv)
+    /* return string + constant string length */
+    template<size_t N>
+    constexpr parse_args::optstr_t str(char const (&in)[N])
     {
-        struct parse_args args = {
-            .argc = argc,
-            .argv = argv
-        };
+        return { in, N-1 };
+    }
 
+    /* -format=... */
+    bool set_format(gendlopen &gdo, const char *prog, const char *opt)
+    {
+        output::format out = utils::format_enum(opt);
+
+        if (out == output::error) {
+            std::cerr << prog << "unknown output format: " << opt << std::endl;
+            return false;
+        }
+
+        gdo.format(out);
+        return true;
+    }
+
+    /* -param=... */
+    bool set_parameter_names(gendlopen &gdo, const char *prog, const char *opt, const char &optpfx)
+    {
+        if (utils::eq_str_case(opt, "skip")) {
+            gdo.parameter_names(param::skip);
+            return true;
+        } else if (utils::eq_str_case(opt, "create")) {
+            gdo.parameter_names(param::create);
+            return true;
+        }
+
+        std::cerr << prog << ": unknown argument for option '"
+            << optpfx << "param': " << opt << std::endl;
+
+        return false;
+    }
+
+    /* parse argv[] and set options in 'gdo' object */
+    bool parse_arguments(gendlopen &gdo, const int &argc, char ** const &argv)
+    {
         const char *prog = parse_args::get_prog_name(argv[0]);
         const char *input = NULL;
         const char *cur = NULL;
+        const char *cur_save = NULL;
+        const char *opt = NULL;
+        int it = 1;
 
-        auto set_format = [&] ()
-        {
-            output::format out = utils::format_enum(args.opt);
-
-            if (out == output::error) {
-                std::cerr << prog << "unknown output format: " << args.opt << std::endl;
-                return false;
-            }
-
-            gdo.format(out);
-            return true;
+        /* get option argument */
+        auto get_arg = [&] (const parse_args::optstr_t &str) {
+            opt = parse_args::get_arg_len(str.string, str.size, argc, argv, it);
+            return (opt != NULL);
         };
 
-        auto set_parameter_names = [&] ()
-        {
-            if (utils::eq_str_case(args.opt, "skip")) {
-                gdo.parameter_names(param::skip);
-                return true;
-            } else if (utils::eq_str_case(args.opt, "create")) {
-                gdo.parameter_names(param::create);
-                return true;
-            }
-
-            std::cerr << prog << ": unknown argument for option '"
-                << *cur << "param': " << args.opt << std::endl;
-
-            return false;
+        /* verify option without an argument */
+        auto get_noarg = [&] (const parse_args::optstr_t &str) {
+            return parse_args::get_noarg_len(str.string, str.size, argv, it);
         };
 
         /* parse arguments */
-        for (args.it = 1; args.it < argc; args.it++) {
-            args.cur = argv[args.it];
+        for ( ; it < argc; it++) {
+            cur = argv[it];
 
             /* non-option argument --> input */
-            if (!is_arg_prefix(args.cur[0]) || strcmp(args.cur, "-") == 0) {
+            if (!is_arg_prefix(*cur) || strcmp(cur, "-") == 0) {
                 if (!input) {
-                    input = args.cur;
+                    input = cur;
                 } else {
-                    std::cerr << "warning: non-option argument ignored: " << args.cur << std::endl;
+                    std::cerr << "warning: non-option argument ignored: " << cur << std::endl;
                 }
                 continue;
             }
 
-            cur = args.cur;
+            cur_save = cur;
 
             /* skip prefix */
-            args.cur++;
+            cur += parse_args::pfxlen;
 
-            switch(*args.cur)
+            switch(*cur)
             {
             case '?':
-                if ( args.get_noarg("?") ) {
+                if ( get_noarg(str("?")) ) {
                     help::print(prog);
                     std::exit(0);
                 }
                 break;
 
             case 'h':
-                if ( args.get_noarg("help") ) {
+                if ( get_noarg(str("help")) ) {
                     help::print(prog);
                     std::exit(0);
                 }
                 break;
 
             case 'f':
-                if ( args.get_arg("format") ) {
-                    if (!set_format()) {
+                if ( get_arg(str("format")) ) {
+                    if (!set_format(gdo, prog, opt)) {
                         return false;
                     }
                     continue;
-                } else if ( args.get_noarg("force") ) {
+                } else if ( get_noarg(str("force")) ) {
                     gdo.force(true);
                     continue;
-                } else if ( args.get_noarg("full-help") ) {
+                } else if ( get_noarg(str("full-help")) ) {
                     help::print_full(prog);
                     std::exit(0);
                 }
                 break;
 
             case 'o':
-                if ( args.get_arg("o") ) {
-                    gdo.output(args.opt);
+                if ( get_arg(str("o")) ) {
+                    gdo.output(opt);
                     continue;
                 }
                 break;
 
             case 'n':
-                if ( args.get_noarg("no-date") ) {
+                if ( get_noarg(str("no-date")) ) {
                     gdo.print_date(false);
                     continue;
-                } else if ( args.get_noarg("no-line") ) {
+                } else if ( get_noarg(str("no-line")) ) {
                     gdo.line_directive(false);
                     continue;
                 }
                 break;
 
             case 't':
-                if ( args.get_arg("template") ) {
-                    gdo.custom_template(args.opt);
+                if ( get_arg(str("template")) ) {
+                    gdo.custom_template(opt);
                     continue;
                 }
                 break;
 
             case 'l':
-                if ( args.get_arg("library") ) {
+                if ( get_arg(str("library")) ) {
                     std::string lib_a, lib_w;
-                    utils::format_libname(args.opt, lib_a, lib_w);
+                    utils::format_libname(opt, lib_a, lib_w);
                     gdo.default_lib(lib_a, lib_w);
                     continue;
                 }
                 break;
 
             case 'i':
-                if ( args.get_arg("include") ) {
-                    gdo.add_inc(utils::format_inc(args.opt));
+                if ( get_arg(str("include")) ) {
+                    gdo.add_inc(utils::format_inc(opt));
                     continue;
-                } else if ( args.get_noarg("ignore-options") ) {
+                } else if ( get_noarg(str("ignore-options")) ) {
                     gdo.read_options(false);
                     continue;
                 }
                 break;
 
             case 'd':
-                if ( args.get_arg("define") ) {
-                    gdo.add_def(utils::format_def(args.opt));
+                if ( get_arg(str("define")) ) {
+                    gdo.add_def(utils::format_def(opt));
                     continue;
                 }
                 break;
 
             case 'D':
-                if ( args.get_arg("D") ) {
-                    gdo.add_def(utils::format_def(args.opt));
+                if ( get_arg(str("D")) ) {
+                    gdo.add_def(utils::format_def(opt));
                     continue;
                 }
                 break;
 
             case 'P':
-                if ( args.get_arg("P") ) {
-                    gdo.add_pfx(args.opt);
+                if ( get_arg(str("P")) ) {
+                    gdo.add_pfx(opt);
                     continue;
                 }
                 break;
 
             case 'p':
-                if ( args.get_arg("prefix") ) {
-                    gdo.prefix(args.opt);
+                if ( get_arg(str("prefix")) ) {
+                    gdo.prefix(opt);
                     continue;
-                } else if ( args.get_arg("param") ) {
-                    if (!set_parameter_names()) {
+                } else if ( get_arg(str("param")) ) {
+                    if (!set_parameter_names(gdo, prog, opt, *cur_save)) {
                         return false;
                     }
                     continue;
-                } else if ( args.get_noarg("print-symbols") ) {
+                } else if ( get_noarg(str("print-symbols")) ) {
                     gdo.print_symbols(true);
                     continue;
                 }
                 break;
 
             case 'S':
-                if ( args.get_arg("S") ) {
-                    gdo.add_sym(args.opt);
+                if ( get_arg(str("S")) ) {
+                    gdo.add_sym(opt);
                     continue;
                 }
                 break;
 
             case 's':
-                if ( args.get_noarg("separate") ) {
+                if ( get_noarg(str("separate")) ) {
                     gdo.separate(true);
                     continue;
                 }
                 break;
 
             case 'a':
-                if ( args.get_noarg("ast-all-symbols") ) {
+                if ( get_noarg(str("ast-all-symbols")) ) {
                     gdo.ast_all_symbols(true);
                     continue;
                 }
@@ -234,7 +254,7 @@ namespace
 
             case '-':
                 /* let's support a help option with two dashes too */
-                if (strcmp(cur, "--help") == 0) {
+                if (strcmp(cur_save, "--help") == 0) {
                     help::print(prog);
                     std::exit(0);
                 }
@@ -244,7 +264,7 @@ namespace
                 break;
             }
 
-            std::cerr << prog << ": unknown option: " << cur << std::endl;
+            std::cerr << prog << ": unknown option: " << cur_save << std::endl;
             return false;
         }
 
