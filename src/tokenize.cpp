@@ -53,6 +53,13 @@
 namespace /* anonymous */
 {
 
+enum {
+    E_TYPE   = 1,
+    E_SYMBOL = 2,
+    E_PARAM  = 3,
+    E_ARRAY  = 3
+};
+
 /* compare s against a list of very basic types and keywords that
  * may appear in parameter lists to guess if it could be a name */
 bool keyword_or_type(const std::string &s)
@@ -139,30 +146,30 @@ std::string get_param_name(const std::string &element)
 {
     /* regular parameter type */
     const std::regex reg_object(
-        "^" R_TYPE " "
+        "^(" R_TYPE ") "
 
         "(" R_SYMBOL ")"
 
         "("
-            " \\[ \\]"             "|"
-            " \\[ " R_ARRAY " \\]" "|"
-            /* empty */
+            " \\[ \\]"             "|"  /* empty array */
+            " \\[ " R_ARRAY " \\]" "|"  /* array */
+            /**/                        /* no array */
         ")"
     );
 
     /* function pointer */
     const std::regex reg_fptr(
-        "^" R_TYPE " "
+        "^(" R_TYPE ") "
         "\\( \\* (" R_SYMBOL ") \\) "
         "\\( " R_PARAM "\\)"
     );
 
     std::smatch m;
 
-    if ((std::regex_match(element, m, reg_object) && m.size() == 3) ||
-        (std::regex_match(element, m, reg_fptr) && m.size() == 2))
+    if ((std::regex_match(element, m, reg_object) && m.size() == 4) ||
+        (std::regex_match(element, m, reg_fptr) && m.size() == 3))
     {
-        return m.str(1);
+        return m.str(E_SYMBOL);
     }
 
     return {};
@@ -177,9 +184,9 @@ bool is_object(const std::string &line, proto_t &proto)
         "(" R_SYMBOL ")"
 
         "("
-            " \\[ \\]"             "|"
-            " \\[ " R_ARRAY " \\]" "|"
-            /* empty */
+            " \\[ \\]"             "|"  /* empty array */
+            " \\[ " R_ARRAY " \\]" "|"  /* array */
+            /**/                        /* no array */
         ") "
     );
 
@@ -189,14 +196,14 @@ bool is_object(const std::string &line, proto_t &proto)
         return false;
     }
 
-    proto.type = m.str(1);
-    proto.symbol = m.str(2);
+    proto.type = m.str(E_TYPE);
+    proto.symbol = m.str(E_SYMBOL);
 
-    if (m.str(3).empty()) {
+    if (m.str(E_ARRAY).empty()) {
         proto.prototype = proto::object;
     } else {
         proto.prototype = proto::object_array;
-        proto.type += m.str(3);
+        proto.type += m.str(E_ARRAY);
     }
 
     return true;
@@ -223,21 +230,21 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
         return false;
     }
 
-    if (m.str(2).starts_with("( *")) {
+    if (m.str(E_SYMBOL).starts_with("( *")) {
         /* funtion pointer */
         proto.prototype = proto::function_pointer;
-        proto.type = m.str(1) + " (*)(" + m.str(3) + ")";
-        proto.symbol = m.str(2).substr(4, m.str(2).size() - 6);  /* "( * symbol )" */
+        proto.type = m.str(E_TYPE) + " (*)(" + m.str(E_PARAM) + ")";
+        proto.symbol = m.str(E_SYMBOL).substr(4, m.str(E_SYMBOL).size() - 6);  /* "( * symbol )" */
     } else {
         /* function */
         proto.prototype = proto::function;
-        proto.type = m.str(1);
-        proto.args = m.str(3);
+        proto.type = m.str(E_TYPE);
+        proto.args = m.str(E_PARAM);
 
-        if (m.str(2).starts_with('(')) {
-            proto.symbol = m.str(2).substr(2, m.str(2).size() - 4);  /* "( symbol )" */
+        if (m.str(E_SYMBOL).starts_with('(')) {
+            proto.symbol = m.str(E_SYMBOL).substr(2, m.str(E_SYMBOL).size() - 4);  /* "( symbol )" */
         } else {
-            proto.symbol = m.str(2);
+            proto.symbol = m.str(E_SYMBOL);
         }
     }
 
@@ -270,6 +277,46 @@ bool get_prototypes_from_tokens(const std::vector<vstring_t> &vec_tokens, vproto
     return true;
 }
 
+/* add parameter names 'a' to 'z' */
+bool add_parameter_names(const vstring_t &tokens, proto_t &proto)
+{
+    char name[] = " a";
+
+    proto.args.clear();
+    proto.notype_args.clear();
+
+    for (auto e : tokens) {
+        if (name[1] > 'z') {
+            return false;
+        }
+
+        if (e == "...") {
+            /* va_list */
+            proto.args += "..., ";
+            proto.notype_args += "...,";
+            continue;
+        }
+
+        auto pos = e.find("( * ");
+
+        if (pos != std::string::npos && e.find('(') == pos) {
+            /* function pointer */
+            e.insert(pos + 3, name);
+        } else {
+            /* object */
+            e += name;
+        }
+
+        proto.args += e + ", ";
+        proto.notype_args += name;
+        proto.notype_args += ',';
+
+        name[1]++;
+    }
+
+    return true;
+}
+
 /* extract argument names from args list */
 std::string read_parameter_names(proto_t &proto, param::names parameter_names)
 {
@@ -284,7 +331,7 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
         return p.type + ' ' + p.symbol + '(' + p.args + ')';
     };
 
-    /* split parameters, take care of paretheses */
+    /* split parameters, take care of parentheses */
     for (const char &c : proto.args) {
         switch (c)
         {
@@ -315,38 +362,8 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
     }
 
     if (parameter_names == param::create) {
-        /* always add parameter names */
-        std::string name = " a";
-
-        proto.args.clear();
-        proto.notype_args.clear();
-
-        for (auto &e : vec) {
-            if (name[1] > 'z') {
-                return proto.symbol + ": too many parameters to handle";
-            }
-
-            if (e == "...") {
-                /* va_list */
-                proto.notype_args += "...";
-            } else {
-                /* add parameter name */
-                const size_t pos = e.find('(');
-
-                if (pos != std::string::npos && e.find("( * ") == pos) {
-                    /* function pointer */
-                    e.insert(pos + 3, name);
-                } else {
-                    /* object */
-                    e += name;
-                }
-
-                proto.notype_args += name;
-                name[1]++;
-            }
-
-            proto.args += e + ", ";
-            proto.notype_args += ',';
+        if (!add_parameter_names(vec, proto)) {
+            return proto.symbol + ": too many parameters to handle";
         }
     } else {
         /* get parameter names */
