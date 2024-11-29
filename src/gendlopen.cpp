@@ -36,7 +36,7 @@ namespace /* anonymous */
     {
         auto pos = type.find("(*)");
 
-        if (pos == std::string::npos) {
+        if (pos == std::string::npos || type.find('(') != pos) {
             return {};
         }
 
