@@ -117,7 +117,6 @@ int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
             if (options) {
                 options->push_back(yytext);
             }
-            tokens.clear();
             break;
 
         default:

@@ -1,0 +1,18 @@
+helloworld_cb_t helloworld_callback;
+helloworld *helloworld_init();
+void helloworld_hello(helloworld *hw);
+
+
+void helloworld_release(
+
+/* helloworld_release() will still be read properly */
+%option format=C
+%option prefix=mydl
+%option include=helloworld.h
+%option library=api:0:helloworld
+%option define=HELLOWORLD_TEST
+%option param=skip
+%option no-date
+%option no-line
+
+helloworld *hw);

@@ -1,7 +1,7 @@
 %{
 #include <ctype.h>
 
-static int token_count = 0;
+static int tokens_read = 0;
 static char errbuf[128] = {0};
 static void illegal_char();
 
@@ -57,20 +57,20 @@ other                [*,()\[\]]
 
 {option}             { BEGIN(OPTION); }
 <OPTION>\n           { BEGIN(INITIAL); }
-<OPTION>{optstr}     { token_count = 0; return MYLEX_OPTION; }
+<OPTION>{optstr}     { return MYLEX_OPTION; }
 <OPTION>.            { }
 
 "//".*               { /* single line comment */ }
 {bom}                { /* ignore byte order mark */ }
 [[:space:]]          { }
 
-{identifier}         { token_count++; return MYLEX_TOKEN; }
-"..."                { token_count++; return MYLEX_TOKEN; }
-{other}              { token_count++; return MYLEX_TOKEN; }
+{identifier}         { tokens_read = 1; return MYLEX_TOKEN; }
+"..."                { tokens_read = 1; return MYLEX_TOKEN; }
+{other}              { tokens_read = 1; return MYLEX_TOKEN; }
 
 ";"                  { /* return if statement was not empty */
-    if (token_count > 0) {
-        token_count = 0;
+    if (tokens_read) {
+        tokens_read = 0;
         return MYLEX_SEMICOLON;
     }
 }

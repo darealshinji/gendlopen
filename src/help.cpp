@@ -87,7 +87,7 @@ namespace help
             "\n"
             /* see gendlopen::parse_options() in tokenize.cpp */
             "    Some options can be set on a line beginning with `%option':\n"
-            "    %option format=<string> name=<string> library=[<mode>:]<lib>\n"
+            "    %option format=<string> prefix=<string> library=[<mode>:]<lib>\n"
             "    %option include=[nq:]<file> define=<string> param=[skip|create]\n"
             "    %option no-date no-line\n"
             "\n"

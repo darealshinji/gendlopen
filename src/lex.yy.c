@@ -593,7 +593,7 @@ char *yytext;
 #line 2 "mylex.l"
 #include <ctype.h>
 
-static int token_count = 0;
+static int tokens_read = 0;
 static char errbuf[128] = {0};
 static void illegal_char();
 
@@ -966,7 +966,7 @@ YY_RULE_SETUP
 case 12:
 YY_RULE_SETUP
 #line 60 "mylex.l"
-{ token_count = 0; return MYLEX_OPTION; }
+{ return MYLEX_OPTION; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
@@ -992,24 +992,24 @@ YY_RULE_SETUP
 case 17:
 YY_RULE_SETUP
 #line 67 "mylex.l"
-{ token_count++; return MYLEX_TOKEN; }
+{ tokens_read = 1; return MYLEX_TOKEN; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 68 "mylex.l"
-{ token_count++; return MYLEX_TOKEN; }
+{ tokens_read = 1; return MYLEX_TOKEN; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 69 "mylex.l"
-{ token_count++; return MYLEX_TOKEN; }
+{ tokens_read = 1; return MYLEX_TOKEN; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 71 "mylex.l"
 { /* return if statement was not empty */
-    if (token_count > 0) {
-        token_count = 0;
+    if (tokens_read) {
+        tokens_read = 0;
         return MYLEX_SEMICOLON;
     }
 }
