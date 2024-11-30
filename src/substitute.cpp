@@ -138,9 +138,17 @@ int gendlopen::replace_function_prototypes(const int &line_number, const std::st
     const char *nl_end = NULL; /* pointer to begin of trailing newlines */
 
     int line_count = 0;
-    const int intputline_count = utils::count_linefeed(line);
     int nl_beg_count = 0;
     int nl_end_count = 0;
+    const int inputline_count = utils::count_linefeed(line);
+
+    /* print #line directive to make sure the line count is on par */
+    if (m_prototypes.empty()) {
+        if (m_line_directive) {
+            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+        }
+        return inputline_count;
+    }
 
     for (auto &e : m_prototypes) {
         if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
@@ -186,7 +194,7 @@ int gendlopen::replace_function_prototypes(const int &line_number, const std::st
             }
 
             ofs << copy << '\n';
-            line_count += intputline_count + 1;
+            line_count += inputline_count + 1;
         }
     }
 
@@ -197,7 +205,15 @@ int gendlopen::replace_function_prototypes(const int &line_number, const std::st
 int gendlopen::replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs)
 {
     int line_count = 0;
-    const int intputline_count = utils::count_linefeed(line);
+    const int inputline_count = utils::count_linefeed(line);
+
+    /* print #line directive to make sure the line count is on par */
+    if (m_objects.empty()) {
+        if (m_line_directive) {
+            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+        }
+        return inputline_count;
+    }
 
     for (auto &e : m_objects) {
         std::string copy = line;
@@ -215,7 +231,7 @@ int gendlopen::replace_object_prototypes(const int &line_number, const std::stri
         }
 
         ofs << copy << '\n';
-        line_count += intputline_count + 1;
+        line_count += inputline_count + 1;
     }
 
     return line_count;
@@ -226,7 +242,7 @@ int gendlopen::replace_symbol_names(const int &line_number, const std::string &l
 {
     std::string type;
     int line_count = 0;
-    const int intputline_count = utils::count_linefeed(line);
+    const int inputline_count = utils::count_linefeed(line);
 
     auto replace_and_print = [&] (const std::string &symbol, bool line_directive)
     {
@@ -240,8 +256,16 @@ int gendlopen::replace_symbol_names(const int &line_number, const std::string &l
         }
 
         ofs << copy << '\n';
-        line_count += intputline_count + 1;
+        line_count += inputline_count + 1;
     };
+
+    /* print #line directive to make sure the line count is on par */
+    if (m_prototypes.empty() && m_objects.empty()) {
+        if (m_line_directive) {
+            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+        }
+        return inputline_count;
+    }
 
     /* function pointer */
     for (auto &e : m_prototypes) {
@@ -296,8 +320,20 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
     int has_obj = 0;
     int has_sym = 0;
 
-    auto print_lineno = [&] (bool line_directive) -> int {
-        if (!param_skip_code && line_directive) {
+    /* print #line directive to make sure the line count is on par */
+    auto print_lineno = [&, this] () -> int
+    {
+        const int inputline_count = utils::count_linefeed(buf);
+
+        if (m_line_directive) {
+            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+        }
+
+        return inputline_count;
+    };
+
+    auto param_print_lineno = [&, this] () -> int {
+        if (!param_skip_code && m_line_directive) {
             /* +1 to compensate for the removed %PARAM_SKIP_* line */
             ofs << "#line " << (line_number + 1) << '\n';
             return 1; /* 1 line */
@@ -331,15 +367,15 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
         {
         case PARAM_SKIP_REMOVE_BEGIN:
             param_skip_code = (m_parameter_names == param::skip);
-            return print_lineno(m_line_directive);
+            return param_print_lineno();
 
         case PARAM_SKIP_USE_BEGIN:
             param_skip_code = (m_parameter_names != param::skip);
-            return print_lineno(m_line_directive);
+            return param_print_lineno();
 
         case PARAM_SKIP_END:
             param_skip_code = false;
-            return print_lineno(m_line_directive);
+            return param_print_lineno();
 
         default:
             break;
@@ -392,12 +428,21 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
 
     if (has_func == 1) {
         /* function prototypes */
+        if (m_prototypes.empty()) {
+            return print_lineno();
+        }
         return replace_function_prototypes(line_number, buf, ofs);
     } else if (has_obj == 1) {
         /* object prototypes */
+        if (m_objects.empty()) {
+            return print_lineno();
+        }
         return replace_object_prototypes(line_number, buf, ofs);
     } else if (has_sym == 1) {
         /* any symbol */
+        if (m_prototypes.empty() && m_objects.empty()) {
+            return print_lineno();
+        }
         return replace_symbol_names(line_number, buf, ofs);
     }
 

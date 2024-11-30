@@ -139,7 +139,8 @@
 #define LOAD_LIBRARY_SAFE_CURRENT_DIRS 0
 #endif
 
-/* symbol visibility */
+/* symbol visibility, i.e. __declspec(dllexport)
+ * or __attribute__((visibility("default"))) */
 #ifndef GDO_VISIBILITY
 # define GDO_VISIBILITY
 #endif

@@ -103,21 +103,43 @@ std::wstring convert_filename(const std::string &str)
 #endif // __MINGW32__
 
 
-/* simple getline() implementation */
-bool simple_getline(FILE *fp, std::string &line)
+/* read input lines */
+bool get_lines(FILE *fp, std::string &line, int &line_count)
 {
-    int c;
+    int c = EOF;
+    bool loop = true;
 
     line.clear();
+    line_count = 1;
 
-    while ((c = fgetc(fp)) != EOF) {
-        if (c == '\n') {
+    while (loop)
+    {
+        c = fgetc(fp);
+
+        switch (c)
+        {
+        case '\n':
+            /* concatenate lines ending on '@' */
+            if (line.back() == '@') {
+                line.back() = '\n';
+                line_count++;
+                continue;
+            }
+            return true;
+
+        case EOF:
+            if (line.back() == '@') {
+                line.pop_back();
+            }
+            return false;
+
+        default:
+            line.push_back(c);
             break;
         }
-        line.push_back(c);
     }
 
-    return (line.size() > 0);
+    return (c != EOF);
 }
 
 
@@ -346,16 +368,9 @@ void gendlopen::read_custom_template()
 
     FILE *fp = file.file_pointer();
 
-    while (simple_getline(fp, buf)) {
-        /* concat lines ending on '@' */
-        if (buf.back() == '@') {
-            buf.pop_back();
-            line += buf + '\n';
-            line_count++;
-            continue;
-        }
-
-        line += buf;
+    while (true)
+    {
+        bool rv = get_lines(fp, line, line_count);
 
         int maybe_keyword = (line.find('%') == std::string::npos) ? 0 : 1;
         template_t tmp = { line.c_str(), maybe_keyword, line_count };
@@ -363,8 +378,9 @@ void gendlopen::read_custom_template()
         substitute_line(tmp, line_number, param_skip_code, ofs);
         line_number += line_count;
 
-        line.clear();
-        line_count = 1;
+        if (!rv) {
+            return;
+        }
     }
 }
 
