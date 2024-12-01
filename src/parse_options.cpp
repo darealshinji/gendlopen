@@ -22,6 +22,7 @@
  * THE SOFTWARE
  */
 
+#include <sstream>
 #include <string>
 #include "global.hpp"
 
