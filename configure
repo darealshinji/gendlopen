@@ -53,14 +53,14 @@ create_makefile()
 
         # C++ source files
         echo "CXX_OBJS = \\" >> Makefile
-        ls -1 *.cpp | sed 's|^|\t|; s|cpp$|o \\|' >> Makefile
-        echo "\t\$(NULL)" >> Makefile
+        ls -1 *.cpp | sed 's|^|    |; s|cpp$|o \\|' >> Makefile
+        echo "    \$(NULL)" >> Makefile
         echo "" >> Makefile
 
         # C++ headers
         echo "HEADERS = \\" >> Makefile
-        ls -1 *.hpp | sed 's|^|\t|; s|$| \\|' >> Makefile
-        echo "\t\$(NULL)" >> Makefile
+        ls -1 *.hpp | sed 's|^|    |; s|$| \\|' >> Makefile
+        echo "    \$(NULL)" >> Makefile
         echo "" >> Makefile
 
         cd "$top"
@@ -102,25 +102,25 @@ create_test_makefiles()
     echo "" >> Makefile
     echo "clean_targets = \\" >> Makefile
     for d in $testdirs ; do
-        echo "\tclean_$d \\" >> Makefile
+        echo "    clean_$d \\" >> Makefile
     done
-    echo "\t\$(NULL)" >> Makefile
+    echo "    \$(NULL)" >> Makefile
 
     # BINS
     #echo "" >> Makefile
     #echo "BINS = \\" >> Makefile
     #for d in $testdirs ; do
-    #    echo "\t$d/main\$(EXEEXT) \\" >> Makefile
+    #    echo "    $d/main\$(EXEEXT) \\" >> Makefile
     #done
-    #echo "\t\$(NULL)" >> Makefile
+    #echo "    \$(NULL)" >> Makefile
 
     # TEST_MAKEFILES
     echo "" >> Makefile
     echo "TEST_MAKEFILES = \\" >> Makefile
     for d in $testdirs ; do
-        echo "\t$d/Makefile \\" >> Makefile
+        echo "    $d/Makefile \\" >> Makefile
     done
-    echo "\t\$(NULL)" >> Makefile
+    echo "    \$(NULL)" >> Makefile
 
     # rules
     for d in $testdirs ; do
