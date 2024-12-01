@@ -365,9 +365,18 @@ void gendlopen::read_custom_template()
 
     /* create output file */
     open_ofstream(m_output, ofs);
-
     FILE *fp = file.file_pointer();
 
+    /* write initial #line directive */
+    if (m_line_directive) {
+        if (fp == stdin) {
+            ofs << "#line 1 \"<STDIN>\"\n";
+        } else {
+            ofs << "#line 1 \"" << m_custom_template << "\"\n";
+        }
+    }
+
+    /* parse lines */
     while (true)
     {
         bool rv = get_lines(fp, line, line_count);
