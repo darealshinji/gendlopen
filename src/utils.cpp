@@ -31,6 +31,13 @@
 
 namespace /* anonymous */
 {
+    /* whether "c" is within the range of "beg" and "end" */
+    template<typename T=char>
+    bool range(T c, T beg, T end)
+    {
+        return (c >= beg && c <= end);
+    }
+
     /* quote library name */
     std::string quote_lib(const std::string &lib, bool wide)
     {
@@ -94,7 +101,24 @@ std::string utils::convert_to_upper(const std::string &str, bool underscores)
 {
     std::string out;
 
-    for (const char &c : str) {
+    for (const char &c : str)
+    {
+#ifdef __GNUC__
+        switch (c)
+        {
+        case 'a'...'z':
+            out += c - 32;
+            break;
+        case 'A'...'Z':
+        case '0'...'9':
+        case '_':
+            out += c;
+            break;
+        default:
+            out += underscores ? '_' : c;
+            break;
+        }
+#else
         if (range(c, 'a','z')) {
             out += c - 32;
         } else if (!underscores || range(c, 'A','Z') || range(c, '0','9')) {
@@ -102,6 +126,7 @@ std::string utils::convert_to_upper(const std::string &str, bool underscores)
         } else {
             out += '_';
         }
+#endif
     }
 
     return out;
@@ -112,7 +137,24 @@ std::string utils::convert_to_lower(const std::string &str, bool underscores)
 {
     std::string out;
 
-    for (const char &c : str) {
+    for (const char &c : str)
+    {
+#ifdef __GNUC__
+        switch (c)
+        {
+        case 'A'...'Z':
+            out += c + 32;
+            break;
+        case 'a'...'z':
+        case '0'...'9':
+        case '_':
+            out += c;
+            break;
+        default:
+            out += underscores ? '_' : c;
+            break;
+        }
+#else
         if (range(c, 'A','Z')) {
             out += c + 32;
         } else if (!underscores || range(c, 'a','z') || range(c, '0','9')) {
@@ -120,6 +162,7 @@ std::string utils::convert_to_lower(const std::string &str, bool underscores)
         } else {
             out += '_';
         }
+#endif
     }
 
     return out;

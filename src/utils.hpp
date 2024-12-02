@@ -31,13 +31,6 @@
 namespace utils
 {
 
-/* whether "c" is within the range of "beg" and "end" */
-template<typename T=char>
-bool range(T c, T beg, T end)
-{
-    return (c >= beg && c <= end);
-}
-
 /* originally in main.cpp */
 std::string format_def(std::string def);
 void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w);
