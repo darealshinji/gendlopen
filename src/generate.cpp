@@ -107,12 +107,11 @@ std::wstring convert_filename(const std::string &str)
 bool get_lines(FILE *fp, std::string &line, int &line_count)
 {
     int c = EOF;
-    bool loop = true;
 
     line.clear();
     line_count = 1;
 
-    while (loop)
+    while (true)
     {
         c = fgetc(fp);
 
@@ -377,8 +376,7 @@ void gendlopen::read_custom_template()
     }
 
     /* parse lines */
-    while (true)
-    {
+    while (true) {
         bool rv = get_lines(fp, line, line_count);
 
         int maybe_keyword = (line.find('%') == std::string::npos) ? 0 : 1;

@@ -46,8 +46,8 @@
 /* regex macros */
 #define R_TYPE   "[a-zA-Z_][a-zA-Z0-9_ \\*]*?"
 #define R_SYMBOL "[a-zA-Z_][a-zA-Z0-9_]*?"
-#define R_PARAM  "[a-zA-Z0-9_ \\.\\*,\\(\\)\\[\\]]*?"
-#define R_ARRAY  "[a-zA-Z0-9_\\[\\] ]*?"
+#define R_PARAM  "[a-zA-Z0-9_ \\.\\*,\\(\\)\\[\\]]*?" /* dot is for "..." */
+#define R_ARRAY  "[a-zA-Z0-9_ \\[\\]]*?"
 
 
 namespace /* anonymous */
@@ -59,6 +59,12 @@ enum {
     E_PARAM  = 3,
     E_ARRAY  = 3
 };
+
+/* cut bytes from left and right of string */
+template<typename T=std::string>
+T cut_lr(const T &str, const size_t &left, const size_t &right) {
+    return str.substr(left, str.size() - (left + right));
+}
 
 /* compare s against a list of very basic types and keywords that
  * may appear in parameter lists to guess if it could be a name */
@@ -187,7 +193,7 @@ bool is_object(const std::string &line, proto_t &proto)
             " \\[ \\]"             "|"  /* empty array */
             " \\[ " R_ARRAY " \\]" "|"  /* array */
             /**/                        /* no array */
-        ") "
+        ")"
     );
 
     std::smatch m;
@@ -221,7 +227,7 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
             "\\( "     R_SYMBOL " \\)"      /* function with parentheses */
         ") "
 
-        "\\( (" R_PARAM ")\\) "
+        "\\( (" R_PARAM ")\\)"
     );
 
     std::smatch m;
@@ -234,7 +240,7 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
         /* funtion pointer */
         proto.prototype = proto::function_pointer;
         proto.type = m.str(E_TYPE) + " (*)(" + m.str(E_PARAM) + ")";
-        proto.symbol = m.str(E_SYMBOL).substr(4, m.str(E_SYMBOL).size() - 6);  /* "( * symbol )" */
+        proto.symbol = cut_lr(m.str(E_SYMBOL), 4, 2); /* "( * symbol )" */
     } else {
         /* function */
         proto.prototype = proto::function;
@@ -242,7 +248,7 @@ bool is_function_or_function_pointer(const std::string &line, proto_t &proto)
         proto.args = m.str(E_PARAM);
 
         if (m.str(E_SYMBOL).starts_with('(')) {
-            proto.symbol = m.str(E_SYMBOL).substr(2, m.str(E_SYMBOL).size() - 4);  /* "( symbol )" */
+            proto.symbol = cut_lr(m.str(E_SYMBOL), 2, 2); /* "( symbol )" */
         } else {
             proto.symbol = m.str(E_SYMBOL);
         }
@@ -258,9 +264,11 @@ bool get_prototypes_from_tokens(const std::vector<vstring_t> &vec_tokens, vproto
         proto_t proto;
         std::string line;
 
+        /* write tokens back into a space separated line */
         for (const auto &e : tokens) {
             line += e + ' ';
         }
+        utils::strip_spaces(line);
 
         if (tokens.size() > 1 && (is_object(line, proto) ||
             is_function_or_function_pointer(line, proto)))
