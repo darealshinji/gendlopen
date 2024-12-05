@@ -62,7 +62,7 @@ namespace help
             "  -print-symbols    print list of found symbols and exit\n"
             "  -ignore-options   ignore `%option' lines from input file\n"
             "  -no-date          don't show current date in output\n"
-            "  -no-line          suppress #line directives\n"
+            "  -line             add #line directives to output\n"
             "\n"
             "  * option may be passed multiple times" << std::endl;
     }
@@ -89,7 +89,7 @@ namespace help
             "    Some options can be set on a line beginning with `%option':\n"
             "    %option format=<string> prefix=<string> library=[<mode>:]<lib>\n"
             "    %option include=[nq:]<file> define=<string> param=[skip|create]\n"
-            "    %option no-date no-line\n"
+            "    %option no-date line\n"
             "\n"
             "    See the corresponding command line options for details.\n"
             "\n"
@@ -281,8 +281,9 @@ namespace help
             "\n"
 
 
-            "  -no-line\n"
-            "    Suppress #line directives in output.\n"
+            "  -line\n"
+            "    Add #line directives to the output that will refer to the original template\n"
+            "    files.\n"
             "\n"
 
             << std::endl;

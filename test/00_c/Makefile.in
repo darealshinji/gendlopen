@@ -8,4 +8,4 @@ main$(EXEEXT): c_test.h
 	$(cc_v)$(CC) $(TEST_CFLAGS) main.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 c_test.h:
-	$(gen_v)$(GENDLOPEN) ../helloworld.txt -no-line -force -o $@
+	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@

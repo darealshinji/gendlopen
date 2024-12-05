@@ -1,4 +1,4 @@
-# testing command line option "-no-line"
+# testing command line option "-line"
 
 all: main$(EXEEXT)
 
@@ -9,4 +9,4 @@ main$(EXEEXT): c_test.h
 	$(cc_v)$(CC) $(TEST_CFLAGS) main.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 c_test.h:
-	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ -no-line
+	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ -line

@@ -66,7 +66,7 @@ private:
     bool m_print_symbols = false;
     bool m_read_options = true;
     bool m_print_date = true;
-    bool m_line_directive = true;
+    bool m_line_directive = false;
 
     /* clang-ast.cpp */
     bool get_declarations(FILE *fp, int mode);

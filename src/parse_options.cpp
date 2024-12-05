@@ -97,9 +97,6 @@ void gendlopen::parse_options(const vstring_t &options)
                 if (token == "no-date") {
                     print_date(false);
                     continue;
-                } else if (token == "no-line") {
-                    line_directive(false);
-                    continue;
                 }
                 break;
 
@@ -108,6 +105,9 @@ void gendlopen::parse_options(const vstring_t &options)
                     std::string lib_a, lib_w;
                     utils::format_libname(p, lib_a, lib_w);
                     default_lib(lib_a, lib_w);
+                    continue;
+                } else if (token == "line") {
+                    line_directive(true);
                     continue;
                 }
                 break;

@@ -11,11 +11,11 @@ BINS = \
 	c_autoload/main$(EXEEXT) \
 	c_auto_release/main$(EXEEXT) \
 	c_clang_ast/main$(EXEEXT) \
+	c_line/main$(EXEEXT) \
 	c_load_symbol/main$(EXEEXT) \
 	c_minimal/main$(EXEEXT) \
 	c_multi/main$(EXEEXT) \
 	c_no_date/main$(EXEEXT) \
-	c_no_line/main$(EXEEXT) \
 	c_option/main$(EXEEXT) \
 	c_param_create/main$(EXEEXT) \
 	c_param_skip/main$(EXEEXT) \

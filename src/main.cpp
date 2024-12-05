@@ -163,9 +163,6 @@ namespace
                 if ( get_noarg(str("no-date")) ) {
                     gdo.print_date(false);
                     continue;
-                } else if ( get_noarg(str("no-line")) ) {
-                    gdo.line_directive(false);
-                    continue;
                 }
                 break;
 
@@ -181,6 +178,9 @@ namespace
                     std::string lib_a, lib_w;
                     utils::format_libname(opt, lib_a, lib_w);
                     gdo.default_lib(lib_a, lib_w);
+                    continue;
+                } else if ( get_noarg(str("line")) ) {
+                    gdo.line_directive(true);
                     continue;
                 }
                 break;
