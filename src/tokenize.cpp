@@ -47,7 +47,7 @@
 #define R_TYPE   "[a-zA-Z_][a-zA-Z0-9_ \\*]*?"
 #define R_SYMBOL "[a-zA-Z_][a-zA-Z0-9_]*?"
 #define R_PARAM  "[a-zA-Z0-9_ \\.\\*,\\(\\)\\[\\]]*?" /* dot is for "..." */
-#define R_ARRAY  "[a-zA-Z0-9_ \\[\\]]*?"
+#define R_ARRAY  "[a-zA-Z0-9_ \\[\\]]*?" /* array size can be a macro */
 
 
 namespace /* anonymous */
@@ -268,8 +268,10 @@ bool get_prototypes_from_tokens(const std::vector<vstring_t> &vec_tokens, vproto
         for (const auto &e : tokens) {
             line += e + ' ';
         }
+
         utils::strip_spaces(line);
 
+        /* prototype check */
         if (tokens.size() > 1 && (is_object(line, proto) ||
             is_function_or_function_pointer(line, proto)))
         {
@@ -331,6 +333,7 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
     vstring_t vec;
     std::string arg;
     int scope = 0;
+    bool mismatch = false;
 
     auto pretty_function = [] (const proto_t &p) {
         if (p.type.ends_with(" *")) {
@@ -340,8 +343,9 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
     };
 
     /* split parameters, take care of parentheses */
-    for (const char &c : proto.args) {
-        switch (c)
+    for (auto it = proto.args.begin(); it != proto.args.end() && !mismatch; it++)
+    {
+        switch (*it)
         {
         case ',':
             if (scope == 0) {
@@ -355,13 +359,26 @@ std::string read_parameter_names(proto_t &proto, param::names parameter_names)
             scope++;
             break;
         case ')':
-            scope--;
+            if (--scope < 0) {
+                mismatch = true;
+                continue;
+            }
             break;
         default:
             break;
         }
 
-        arg += c;
+        arg += *it;
+    }
+
+    if (scope != 0) {
+        /* mismatching parentheses! */
+        std::string msg = "mismatching parentheses in parameter list of function ";
+
+        if (proto.prototype == proto::function_pointer) {
+            msg += "pointer ";
+        }
+        return msg + "`" + proto.symbol + "': " + proto.args;
     }
 
     if (!arg.empty()) {
@@ -419,6 +436,21 @@ void format_prototypes(std::string &s)
     utils::replace(" ]", "]", s);
 
     utils::strip_spaces(s);
+}
+
+/* check for multiple definitions of a symbol */
+std::string multi_def(const vproto_t &vproto)
+{
+    /* https://stackoverflow.com/a/72800146/5687704 */
+    for (auto i = vproto.begin(); i != vproto.end(); ++i) {
+        for (auto j = vproto.begin(); i != j; ++j) {
+            if ((*i).symbol == (*j).symbol) {
+                return (*i).symbol;
+            }
+        }
+    }
+
+    return {};
 }
 
 } /* end anonymous namespace */
@@ -501,7 +533,8 @@ void gendlopen::tokenize()
         throw error("cannot read input file and custom template both from STDIN");
     }
 
-    std::string file_or_stdin = (m_input == "-") ? "<STDIN>"
+    std::string file_or_stdin = (m_input == "-")
+        ? "<STDIN>"
         : "file: " + m_input;
 
     open_file file(m_input);
@@ -546,14 +579,12 @@ void gendlopen::tokenize()
         throw error("no function or object prototypes found in " + file_or_stdin);
     }
 
-    /* check for duplicates (https://stackoverflow.com/a/72800146/5687704) */
-    for (auto i = vproto.begin(); i != vproto.end(); ++i) {
-        for (auto j = vproto.begin(); i != j; ++j) {
-            if ((*i).symbol == (*j).symbol) {
-                throw error("multiple definitions of symbol "
-                    "`" + (*i).symbol + "' found in " + file_or_stdin);
-            }
-        }
+    /* check for multiple definitions of a symbol */
+    auto dup = multi_def(vproto);
+
+    if (!dup.empty()) {
+        throw error("multiple definitions of symbol "
+            "`" + dup + "' found in " + file_or_stdin);
     }
 
     /* get parameter names */
