@@ -91,10 +91,10 @@ private:
     void read_custom_template();
 
     /* substitute.cpp */
-    int replace_function_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    int replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    int replace_symbol_names(const int &line_number, const std::string &line, cio::ofstream &ofs);
-    int substitute_line(const template_t &line, int &line_number, bool &skip_code, cio::ofstream &ofs);
+    int replace_function_prototypes(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs);
+    int replace_object_prototypes(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs);
+    int replace_symbol_names(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs);
+    int substitute_line(const template_t &line, int &templ_lineno, bool &skip_code, cio::ofstream &ofs);
     int substitute(const vtemplate_t &data, cio::ofstream &ofs);
 
 public:

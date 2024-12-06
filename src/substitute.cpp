@@ -38,13 +38,6 @@
 
 namespace /* anonymous */
 {
-    enum {
-        NO_PARAM_SKIP_FOUND,
-        PARAM_SKIP_REMOVE_BEGIN,
-        PARAM_SKIP_USE_BEGIN,
-        PARAM_SKIP_END
-    };
-
     namespace fmt {
         std::string upper;
         std::string lower;
@@ -52,26 +45,32 @@ namespace /* anonymous */
     }
 
     /* check for a "%PARAM_SKIP_*%" line */
-    int check_skip_keyword(const char *ptr)
+    bool check_skip_keyword(const char *ptr, bool &param_skip_code, param::names parameter_names)
     {
         const char str[] = "%PARAM_SKIP_";
         const size_t len = sizeof(str) - 1;
 
         if (strncmp(ptr, str, len) != 0) {
-            return NO_PARAM_SKIP_FOUND;
+            return false;
         }
 
         ptr += len;
 
         if (strcmp(ptr, "REMOVE_BEGIN%") == 0) {
-            return PARAM_SKIP_REMOVE_BEGIN;
+            /* PARAM_SKIP_REMOVE_BEGIN */
+            param_skip_code = (parameter_names == param::skip);
+            return true;
         } else if (strcmp(ptr, "USE_BEGIN%") == 0) {
-            return PARAM_SKIP_USE_BEGIN;
+            /* PARAM_SKIP_USE_BEGIN */
+            param_skip_code = (parameter_names != param::skip);
+            return true;
         } else if (strcmp(ptr, "END%") == 0) {
-            return PARAM_SKIP_END;
+            /* PARAM_SKIP_END */
+            param_skip_code = false;
+            return true;
         }
 
-        return NO_PARAM_SKIP_FOUND;
+        return false;
     }
 
     /* return only the leading newlines from string */
@@ -122,9 +121,9 @@ namespace /* anonymous */
 
 
 /* loop and replace function prototypes, save to output stream */
-int gendlopen::replace_function_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs)
+int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs)
 {
-    auto erase_token = [] (const std::string &token, std::string &s)
+    auto erase_string = [] (const std::string &token, std::string &s)
     {
         size_t pos = 0;
         const size_t len = token.size();
@@ -140,41 +139,47 @@ int gendlopen::replace_function_prototypes(const int &line_number, const std::st
     int line_count = 0;
     int nl_beg_count = 0;
     int nl_end_count = 0;
-    const int inputline_count = utils::count_linefeed(line);
+    const int entry_lines = utils::count_linefeed(entry);
 
     /* print #line directive to make sure the line count is on par */
     if (m_prototypes.empty()) {
         if (m_line_directive) {
-            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+            ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
         }
-        return inputline_count;
+        return entry_lines;
     }
 
     for (auto &e : m_prototypes) {
-        if (e.args.ends_with("...") && line.find("%%return%%") != std::string::npos) {
+        if (e.args.ends_with("...") && /* VA_ARGS */
+            entry.find("%%return%%") != std::string::npos) /* wrapper function */
+        {
             /* we can't handle variable argument lists in wrapper functions */
             if (!nl_end) {
                 /* do this only once */
-                nl_beg = get_leading_newlines(line);
-                nl_end = get_trailing_newlines(line);
+                nl_beg = get_leading_newlines(entry);
+                nl_end = get_trailing_newlines(entry);
                 nl_beg_count = utils::count_linefeed(nl_beg);
                 nl_end_count = utils::count_linefeed(nl_end);
             }
 
+            const char *space = (e.type.back() == '*') ? "" : " ";
+
             /* print trailing and leading newlines from the template line */
             ofs << nl_beg;
             ofs << "/* can't handle variable argument lists in wrapper functions */\n";
-            ofs << "// " << e.type << ' ' << e.symbol << '(' << e.args << ");\n";
+            ofs << "// " << e.type << space << e.symbol << '(' << e.args << ");\n";
             ofs << nl_end;
+
             line_count += nl_beg_count + 2 + nl_end_count;
         } else {
-            std::string copy = line;
+            /* regular entry */
+            std::string copy = entry;
 
             /* don't "return" on "void" functions */
             if (utils::eq_str_case(e.type, "void")) {
                 /* keep the indentation pretty */
-                erase_token("%%return%% ", copy);
-                erase_token("%%return%%", copy);
+                erase_string("%%return%% ", copy);
+                erase_string("%%return%%", copy);
             } else {
                 utils::replace("%%return%%", "return", copy);
             }
@@ -189,12 +194,12 @@ int gendlopen::replace_function_prototypes(const int &line_number, const std::st
             utils::replace("%%notype_args%%", e.notype_args, copy);
 
             if (m_line_directive) {
-                ofs << "#line " << line_number << '\n';
+                ofs << "#line " << templ_lineno << '\n';
                 line_count++;
             }
 
             ofs << copy << '\n';
-            line_count += inputline_count + 1;
+            line_count += entry_lines + 1;
         }
     }
 
@@ -202,21 +207,21 @@ int gendlopen::replace_function_prototypes(const int &line_number, const std::st
 }
 
 /* loop and replace object prototypes */
-int gendlopen::replace_object_prototypes(const int &line_number, const std::string &line, cio::ofstream &ofs)
+int gendlopen::replace_object_prototypes(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs)
 {
     int line_count = 0;
-    const int inputline_count = utils::count_linefeed(line);
+    const int entry_lines = utils::count_linefeed(entry);
 
     /* print #line directive to make sure the line count is on par */
     if (m_objects.empty()) {
         if (m_line_directive) {
-            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+            ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
         }
-        return inputline_count;
+        return entry_lines;
     }
 
     for (auto &e : m_objects) {
-        std::string copy = line;
+        std::string copy = entry;
 
         if (e.type.back() == '*') {
             /* »char * x«  -->  »char *x« */
@@ -226,45 +231,45 @@ int gendlopen::replace_object_prototypes(const int &line_number, const std::stri
         utils::replace("%%obj_symbol%%", e.symbol, copy);
 
         if (m_line_directive) {
-            ofs << "#line " << line_number << '\n';
+            ofs << "#line " << templ_lineno << '\n';
             line_count++;
         }
 
         ofs << copy << '\n';
-        line_count += inputline_count + 1;
+        line_count += entry_lines + 1;
     }
 
     return line_count;
 }
 
 /* loop and replace any symbol names */
-int gendlopen::replace_symbol_names(const int &line_number, const std::string &line, cio::ofstream &ofs)
+int gendlopen::replace_symbol_names(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs)
 {
     std::string type;
     int line_count = 0;
-    const int inputline_count = utils::count_linefeed(line);
+    const int entry_lines = utils::count_linefeed(entry);
 
-    auto replace_and_print = [&] (const std::string &symbol, bool line_directive)
+    auto replace_and_print = [&, this] (const std::string &symbol)
     {
-        std::string copy = line;
+        std::string copy = entry;
         utils::replace("%%sym_type%%", type, copy);
         utils::replace("%%symbol%%", symbol, copy);
 
-        if (line_directive) {
-            ofs << "#line " << line_number << '\n';
+        if (m_line_directive) {
+            ofs << "#line " << templ_lineno << '\n';
             line_count++;
         }
 
         ofs << copy << '\n';
-        line_count += inputline_count + 1;
+        line_count += entry_lines + 1;
     };
 
     /* print #line directive to make sure the line count is on par */
     if (m_prototypes.empty() && m_objects.empty()) {
         if (m_line_directive) {
-            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+            ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
         }
-        return inputline_count;
+        return entry_lines;
     }
 
     /* function pointer */
@@ -276,7 +281,7 @@ int gendlopen::replace_symbol_names(const int &line_number, const std::string &l
             type = e.type + " (*)(" + e.args + ")";
         }
 
-        replace_and_print(e.symbol, m_line_directive);
+        replace_and_print(e.symbol);
     }
 
     /* object pointer */
@@ -288,14 +293,14 @@ int gendlopen::replace_symbol_names(const int &line_number, const std::string &l
             type = e.type + " *";
         }
 
-        replace_and_print(e.symbol, m_line_directive);
+        replace_and_print(e.symbol);
     }
 
     return line_count;
 }
 
-/* substitute placeholders in a single line */
-int gendlopen::substitute_line(const template_t &line, int &line_number, bool &param_skip_code, cio::ofstream &ofs)
+/* substitute placeholders in a single line/entry */
+int gendlopen::substitute_line(const template_t &line, int &templ_lineno, bool &param_skip_code, cio::ofstream &ofs)
 {
     const list_t function_keywords = {
         "%%return%%",
@@ -323,22 +328,13 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
     /* print #line directive to make sure the line count is on par */
     auto print_lineno = [&, this] () -> int
     {
-        const int inputline_count = utils::count_linefeed(buf);
+        const int entry_lines = utils::count_linefeed(buf);
 
         if (m_line_directive) {
-            ofs << "#line " << (line_number + inputline_count + 1) << '\n';
+            ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
         }
 
-        return inputline_count;
-    };
-
-    auto param_print_lineno = [&, this] () -> int {
-        if (!param_skip_code && m_line_directive) {
-            /* +1 to compensate for the removed %PARAM_SKIP_* line */
-            ofs << "#line " << (line_number + 1) << '\n';
-            return 1; /* 1 line */
-        }
-        return 0; /* 0 lines */
+        return entry_lines;
     };
 
     auto find_keyword = [&buf] (const list_t &list) -> int {
@@ -357,29 +353,18 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
             ofs << '\n';
             return 1; /* 1 line */
         }
-        return 0; /* 0 lines */
+        return 0; /* no line */
     }
 
-    if (line.maybe_keyword) {
-        /* check if we have to comment out lines between
-        * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-        switch (check_skip_keyword(line.data))
-        {
-        case PARAM_SKIP_REMOVE_BEGIN:
-            param_skip_code = (m_parameter_names == param::skip);
-            return param_print_lineno();
-
-        case PARAM_SKIP_USE_BEGIN:
-            param_skip_code = (m_parameter_names != param::skip);
-            return param_print_lineno();
-
-        case PARAM_SKIP_END:
-            param_skip_code = false;
-            return param_print_lineno();
-
-        default:
-            break;
+    /* check if we have to comment out lines between
+     * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
+    if (line.maybe_keyword && check_skip_keyword(line.data, param_skip_code, m_parameter_names)) {
+        if (!param_skip_code && m_line_directive) {
+            /* +1 to compensate for the removed %PARAM_SKIP_* line */
+            ofs << "#line " << (templ_lineno + 1) << '\n';
+            return 1; /* 1 line */
         }
+        return 0; /* no line */
     }
 
     /* skip line */
@@ -414,45 +399,40 @@ int gendlopen::substitute_line(const template_t &line, int &line_number, bool &p
         has_sym = find_keyword(symbol_keywords);
     }
 
-    int has_loop = has_func + has_obj + has_sym;
-
-    if (has_loop > 1) {
+    if ((has_func + has_obj + has_sym) > 1) {
         /* error */
         throw error("cannot mix function, object and regular symbol"
                     " placeholders:\n" + std::string{line.data});
-    } else if (has_loop == 0) {
-        /* nothing to loop, just append and return */
-        ofs << buf << '\n';
-        return utils::count_linefeed(buf) + 1;
-    }
-
-    if (has_func == 1) {
+    } else if (has_func == 1) {
         /* function prototypes */
         if (m_prototypes.empty()) {
             return print_lineno();
         }
-        return replace_function_prototypes(line_number, buf, ofs);
+        return replace_function_prototypes(templ_lineno, buf, ofs);
     } else if (has_obj == 1) {
         /* object prototypes */
         if (m_objects.empty()) {
             return print_lineno();
         }
-        return replace_object_prototypes(line_number, buf, ofs);
+        return replace_object_prototypes(templ_lineno, buf, ofs);
     } else if (has_sym == 1) {
         /* any symbol */
         if (m_prototypes.empty() && m_objects.empty()) {
             return print_lineno();
         }
-        return replace_symbol_names(line_number, buf, ofs);
+        return replace_symbol_names(templ_lineno, buf, ofs);
     }
 
-    return 0;
+    /* nothing to loop, just append and return */
+    ofs << buf << '\n';
+
+    return utils::count_linefeed(buf) + 1;
 }
 
 /* substitute placeholders */
 int gendlopen::substitute(const vtemplate_t &data, cio::ofstream &ofs)
 {
-    int lines = 0;
+    int total_lines = 0;
     bool param_skip_code = false;
 
     if (data.empty()) {
@@ -464,7 +444,7 @@ int gendlopen::substitute(const vtemplate_t &data, cio::ofstream &ofs)
     }
 
     for (const auto &list : data) {
-        int line_number = 1;
+        int templ_lineno = 1; /* input template line count */
         int i = 0;
 
         /* skip initial #line directive */
@@ -473,10 +453,10 @@ int gendlopen::substitute(const vtemplate_t &data, cio::ofstream &ofs)
         }
 
         for ( ; list[i].data != NULL; i++) {
-            lines += substitute_line(list[i], line_number, param_skip_code, ofs);
-            line_number += list[i].line_count;
+            total_lines += substitute_line(list[i], templ_lineno, param_skip_code, ofs);
+            templ_lineno += list[i].line_count;
         }
     }
 
-    return lines;
+    return total_lines;
 }

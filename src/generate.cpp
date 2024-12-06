@@ -350,10 +350,9 @@ void gendlopen::open_ofstream(const fs::path &opath, cio::ofstream &ofs)
 void gendlopen::read_custom_template()
 {
     cio::ofstream ofs;
-    std::string buf, line;
+    std::string buf;
     bool param_skip_code = false;
-    int line_number = 1;
-    int line_count = 1;
+    int templ_lineno = 1; /* input template line count */
 
     /* open file for reading */
     open_file file(m_custom_template);
@@ -377,13 +376,14 @@ void gendlopen::read_custom_template()
 
     /* parse lines */
     while (true) {
-        bool rv = get_lines(fp, line, line_count);
+        int entry_lines = 0;
+        bool rv = get_lines(fp, buf, entry_lines);
 
-        int maybe_keyword = (line.find('%') == std::string::npos) ? 0 : 1;
-        template_t tmp = { line.c_str(), maybe_keyword, line_count };
+        int maybe_keyword = (buf.find('%') == std::string::npos) ? 0 : 1;
+        template_t entry = { buf.c_str(), maybe_keyword, entry_lines };
 
-        substitute_line(tmp, line_number, param_skip_code, ofs);
-        line_number += line_count;
+        substitute_line(entry, templ_lineno, param_skip_code, ofs);
+        templ_lineno += entry_lines;
 
         if (!rv) {
             return;
