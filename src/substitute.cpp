@@ -176,7 +176,7 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
             std::string copy = entry;
 
             /* don't "return" on "void" functions */
-            if (utils::eq_str_case(e.type, "void")) {
+            if (strcasecmp(e.type.c_str(), "void") == 0) {
                 /* keep the indentation pretty */
                 erase_string("%%return%% ", copy);
                 erase_string("%%return%%", copy);

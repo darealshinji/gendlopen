@@ -67,10 +67,10 @@ namespace
     /* -param=... */
     bool set_parameter_names(gendlopen &gdo, const char *prog, const char *opt, const char &optpfx)
     {
-        if (utils::eq_str_case(opt, "skip")) {
+        if (strcasecmp(opt, "skip") == 0) {
             gdo.parameter_names(param::skip);
             return true;
-        } else if (utils::eq_str_case(opt, "create")) {
+        } else if (strcasecmp(opt, "create") == 0) {
             gdo.parameter_names(param::create);
             return true;
         }

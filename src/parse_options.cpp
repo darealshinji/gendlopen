@@ -30,7 +30,7 @@
 namespace /* anonymous */
 {
     /* get argument from an option string */
-    const char *get_argx(const std::string &str, const char *opt, const size_t optlen)
+    const char *get_arg_len(const std::string &str, const char *opt, const size_t optlen)
     {
         if (strncmp(str.c_str(), opt, optlen) != 0) {
             /* not the argument we're looking for */
@@ -48,7 +48,7 @@ namespace /* anonymous */
     template<size_t N>
     constexpr bool get_arg(const std::string &str, const char *&ptr, char const (&opt)[N])
     {
-        return ((ptr = get_argx(str, opt, N-1)) != NULL);
+        return ((ptr = get_arg_len(str, opt, N-1)) != NULL);
     }
 }
 
@@ -57,9 +57,9 @@ void gendlopen::parse_options(const vstring_t &options)
 {
     auto set_parameter_names = [this] (const char *opt)
     {
-        if (utils::eq_str_case(opt, "skip")) {
+        if (strcasecmp(opt, "skip") == 0) {
             parameter_names(param::skip);
-        } else if (utils::eq_str_case(opt, "create")) {
+        } else if (strcasecmp(opt, "create") == 0) {
             parameter_names(param::create);
         } else {
             throw error("unknown argument for option 'param': " + std::string(opt));

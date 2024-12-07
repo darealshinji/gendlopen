@@ -24,6 +24,7 @@
 
 #include <filesystem>
 #include <string>
+#include <ctype.h>
 #include <stdio.h>
 
 #include "global.hpp"
@@ -31,13 +32,6 @@
 
 namespace /* anonymous */
 {
-    /* whether "c" is within the range of "beg" and "end" */
-    template<typename T=char>
-    bool range(T c, T beg, T end)
-    {
-        return (c >= beg && c <= end);
-    }
-
     /* quote library name */
     std::string quote_lib(const std::string &lib, bool wide)
     {
@@ -62,71 +56,40 @@ namespace /* anonymous */
     }
 
     /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
-    bool prefixed_case(const std::string &str, const std::string &pfx)
+    bool prefixed_case_len(const std::string &str, const char *pfx, const size_t &pfxlen)
     {
-        return (str.size() > pfx.size() && utils::eq_str_case(str.substr(0, pfx.size()), pfx));
-    }
-}
-
-
-/* case-insensitive string comparison (ignoring current locale) */
-bool utils::eq_str_case(const std::string &str1, const std::string &str2)
-{
-    auto to_C_lower = [] (char c) -> char {
-        if (range(c, 'A', 'Z')) {
-            c += 32;  /* A-Z -> a-z */
+        if (str.size() > pfxlen) {
+            auto tmp = str.substr(0, pfxlen);
+            return (strcasecmp(tmp.c_str(), pfx) == 0);
         }
-        return c;
-    };
-
-    /* different size means not equal */
-    if (str1.size() != str2.size()) {
         return false;
     }
 
-    auto it1 = str1.cbegin();
-    auto it2 = str2.cbegin();
-
-    for ( ; it1 != str1.cend(); it1++, it2++) {
-        if (to_C_lower(*it1) != to_C_lower(*it2)) {
-            return false;
-        }
+    template<size_t N>
+    constexpr bool prefixed_case(const std::string &str, char const (&pfx)[N])
+    {
+        return prefixed_case_len(str, pfx, N-1);
     }
-
-    return true;
 }
+
 
 /* convert string to uppercase */
 std::string utils::convert_to_upper(const std::string &str, bool underscores)
 {
     std::string out;
 
-    for (const char &c : str)
-    {
-#ifdef __GNUC__
-        switch (c)
-        {
-        case 'a'...'z':
-            out += c - 32;
-            break;
-        case 'A'...'Z':
-        case '0'...'9':
-        case '_':
-            out += c;
-            break;
-        default:
-            out += underscores ? '_' : c;
-            break;
+    if (underscores) {
+        for (const char &c : str) {
+            if (isalnum(c)) {
+                out += toupper(c);
+            } else {
+                out += '_';
+            }
         }
-#else
-        if (range(c, 'a','z')) {
-            out += c - 32;
-        } else if (!underscores || range(c, 'A','Z') || range(c, '0','9')) {
-            out += c;
-        } else {
-            out += '_';
+    } else {
+        for (const char &c : str) {
+            out += toupper(c);
         }
-#endif
     }
 
     return out;
@@ -137,32 +100,18 @@ std::string utils::convert_to_lower(const std::string &str, bool underscores)
 {
     std::string out;
 
-    for (const char &c : str)
-    {
-#ifdef __GNUC__
-        switch (c)
-        {
-        case 'A'...'Z':
-            out += c + 32;
-            break;
-        case 'a'...'z':
-        case '0'...'9':
-        case '_':
-            out += c;
-            break;
-        default:
-            out += underscores ? '_' : c;
-            break;
+    if (underscores) {
+        for (const char &c : str) {
+            if (isalnum(c)) {
+                out += tolower(c);
+            } else {
+                out += '_';
+            }
         }
-#else
-        if (range(c, 'A','Z')) {
-            out += c + 32;
-        } else if (!underscores || range(c, 'a','z') || range(c, '0','9')) {
-            out += c;
-        } else {
-            out += '_';
+    } else {
+        for (const char &c : str) {
+            out += tolower(c);
         }
-#endif
     }
 
     return out;
@@ -326,12 +275,12 @@ void utils::delete_suffix(std::string &str, const char suffix)
 void utils::strip_spaces(std::string &s)
 {
     /* remove from back */
-    while (!s.empty() && std::strchr(" \t\n\r", s.back())) {
+    while (!s.empty() && isspace(s.back())) {
         s.pop_back();
     }
 
     /* remove from front */
-    while (!s.empty() && std::strchr(" \t\n\r", s.front())) {
+    while (!s.empty() && isspace(s.front())) {
         s.erase(0, 1);
     }
 }

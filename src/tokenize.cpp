@@ -88,7 +88,7 @@ bool keyword_or_type(const std::string &s)
     }
 
     for (const auto &e : keywords) {
-        if (utils::eq_str_case(s, e)) {
+        if (strcasecmp(s.c_str(), e) == 0) {
             return true;
         }
     }
@@ -592,7 +592,7 @@ void gendlopen::tokenize()
         for (auto &e : vproto) {
             if (e.prototype != proto::function ||
                 e.args.empty() ||
-                utils::eq_str_case(e.args, "void"))
+                strcasecmp(e.args.c_str(), "void") == 0)
             {
                 /* not a function or a function without parameters */
                 continue;

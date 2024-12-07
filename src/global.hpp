@@ -8,8 +8,8 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include <cassert>
-#include <cstring>
+#include <assert.h>
+#include <string.h>
 
 #include "types.hpp"
 #include "utils.hpp"
@@ -17,6 +17,14 @@
 #include "open_file.hpp"
 #include "parse_args.hpp"
 #include "gendlopen.hpp"
+
+#ifdef _MSC_VER
+inline int strcasecmp(const char *a, const char *b) {
+    return _stricmp(a, b);
+}
+#else
+#include <strings.h>
+#endif
 
 /* lex.yy.c */
 enum {
