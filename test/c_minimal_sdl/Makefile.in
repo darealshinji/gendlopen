@@ -1,0 +1,11 @@
+
+all: main$(EXEEXT)
+
+clean:
+	$(_v)-rm -f c_test.h main$(EXEEXT) $(DEL_EXTS)
+
+main$(EXEEXT): c_test.h
+	$(cc_v)$(CC) $(TEST_CFLAGS) $(SDL_CFLAGS) main.c -o $@ $(TEST_LDFLAGS) $(SDL_LDFLAGS) $(LIBDL)
+
+c_test.h:
+	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ -format=minimal

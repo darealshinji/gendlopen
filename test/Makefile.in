@@ -5,6 +5,11 @@
 @W32@	cxx_win32_wide/main$(EXEEXT) \
 @W32@	$(NULL)
 
+@SDL@SDL_BINS = \
+@SDL@	c_minimal_sdl/main$(EXEEXT) \
+@SDL@	cxx_minimal_sdl/main$(EXEEXT) \
+@SDL@	$(NULL)
+
 BINS = \
 	00_c/main$(EXEEXT) \
 	00_cxx/main$(EXEEXT) \
@@ -28,6 +33,7 @@ BINS = \
 	cxx_prefix/main$(EXEEXT) \
 	$(AR_BINS) \
 	$(W32_BINS) \
+	$(SDL_BINS) \
 	$(NULL)
 
 

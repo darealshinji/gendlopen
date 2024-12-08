@@ -13,6 +13,8 @@ cppflags=":"
 ldflags=":"
 gtk_cflags=":"
 glib_cflags=":"
+sdl_cflags=":"
+sdl_ldflags=":"
 pkgconfig=":"
 ld=":"
 opt=":"
@@ -21,6 +23,7 @@ check_std="yes"
 win32="no"
 msvc="no"
 nix="yes"
+with_sdl="no"
 with_notify="no"
 with_appind="no"
 with_msgbox="no"
@@ -35,6 +38,7 @@ testfiles="test.c test.cpp test.h test.hpp test.o test.obj test.exe a.out a.exe"
 
 create_makefile()
 {
+    if [ "x$with_sdl"    != "xyes" ]; then xsdl="#"; fi
     if [ "x$with_appind" != "xyes" ]; then xappind="#"; fi
     if [ "x$with_notify" != "xyes" ]; then xnotify="#"; fi
     if [ "x$with_msgbox" != "xyes" ]; then xmsgbox="#"; fi
@@ -67,7 +71,8 @@ create_makefile()
     fi
 
     cat settings.mk rules.mk "${1}/Makefile.in" | \
-    sed -e "s,@APPIND@,$xappind,g" \
+    sed -e "s,@SDL@,$xsdl,g" \
+        -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
         -e "s,@MSGBOX@,$xmsgbox,g" \
         -e "s,@AR@,$xar,g" \
@@ -127,7 +132,8 @@ create_test_makefiles()
         sed "s|@DIR@|$d|g" rules.in >> Makefile
     done
 
-    sed -e "s,@APPIND@,$xappind,g" \
+    sed -e "s,@SDL@,$xsdl,g" \
+        -e "s,@APPIND@,$xappind,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
         -e "s,@MSGBOX@,$xmsgbox,g" \
         -e "s,@AR@,$xar,g" \
@@ -371,6 +377,9 @@ append extra flags:
 set flags for GTK2 and GLib headers (ignored for win32):
     gtk-cflags=..  glib-cflags=..
 
+set flags for SDL headers and libraries:
+    sdl-cflags=..  sdl-libs=..
+
 optimizing build type:
     opt=[release|debug|minsize|noopt]
 
@@ -413,6 +422,8 @@ EOL
     opt=*)          opt="${i#*=}";;
     gtk-cflags=*)   gtk_cflags="${i#*=}";;
     glib-cflags=*)  glib_cflags="${i#*=}";;
+    sdl-cflags=*)   sdl_cflags="${i#*=}";;
+    sdl-libs=*)     sdl_ldflags="${i#*=}";;
     x11-cflags=*)   x11_cflags="${i#*=}";;
 
     -no-std-checks)
@@ -750,6 +761,47 @@ else
     fi
 fi
 
+# SDL
+if [ "x$sdl_cflags" = "x:" ] || [ "x$sdl_ldflags" = "x:" ]; then
+    if [ "x$pkgconfig" = "x" ]; then
+        sdl_cflags=""
+        sdl_ldflags=""
+    else
+        # SDL 3
+        sdl_cflags="$("$pkgconfig" --cflags sdl3 2>/dev/null)"
+        sdl_ldflags="$("$pkgconfig" --libs sdl3 2>/dev/null)"
+
+        # SDL 2
+        if [ "x$sdl_ldflags" = "x" ]; then
+            sdl_cflags="$("$pkgconfig" --cflags sdl2 2>/dev/null)"
+            sdl_ldflags="$("$pkgconfig" --libs sdl2 2>/dev/null)"
+        fi
+
+        # SDL 1.2 compat
+        if [ "x$sdl_ldflags" = "x" ]; then
+            sdl_cflags="$("$pkgconfig" --cflags sdl12_compat 2>/dev/null)"
+            sdl_ldflags="$("$pkgconfig" --libs sdl12_compat 2>/dev/null)"
+        fi
+
+        # SDL 1
+        if [ "x$sdl_ldflags" = "x" ]; then
+            sdl_cflags="$("$pkgconfig" --cflags sdl 2>/dev/null)"
+            sdl_ldflags="$("$pkgconfig" --libs sdl 2>/dev/null)"
+        fi
+    fi
+
+    # fallback
+    if [ "x$sdl_ldflags" = "x" ]; then
+        sdl_ldflags="-lSDL"
+    fi
+fi
+
+CFLAGS="$sdl_cflags"
+check_header "SDL_loadso.h"
+
+if [ "x$header" != "x" ]; then
+    with_sdl="yes"
+fi
 
 
 ###############################################################################
@@ -761,6 +813,7 @@ echo ""
 echo "build appindicator example: $with_appind"
 echo "build notify example: $with_notify"
 echo "build msgbox example: $with_msgbox"
+echo "build SDL_loadso tests: $with_sdl"
 echo ""
 
 # output
@@ -799,6 +852,9 @@ GLIB_CFLAGS   = $glib_cflags
 GTK_CFLAGS    = $gtk_cflags
 
 X11_CFLAGS    = $x11_cflags
+
+SDL_CFLAGS    = $sdl_cflags
+SDL_LDFLAGS   = $sdl_ldflags
 
 EOF
 

@@ -1,13 +1,12 @@
 #line 2 "<built-in>/minimal_cxxeh.hpp"
 
-/* whether to use WinAPI */
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
-# define GDO_WINAPI
-#endif
-
 #include <stdexcept>
 #include <string>
-#ifdef GDO_WINAPI
+
+#ifdef GDO_USE_SDL
+# include <SDL_loadso.h>
+#elif defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+# define GDO_WINAPI
 # include <windows.h>
 #else
 # include <dlfcn.h>
@@ -47,48 +46,56 @@ GDO_CXX_NAMESPACE
         %%obj_type%% *%%obj_symbol%% = nullptr;
     }
 
-#ifdef GDO_WINAPI
+#if defined(GDO_USE_SDL) || defined(GDO_WINAPI)
+    const int default_flags = 0;
+#else
+    const int default_flags = RTLD_LAZY;
+#endif
 
-    /* library handle */
-    HMODULE handle = nullptr;
-
-    /* load library */
-    HMODULE load_lib(const char *filename, int flags=0) {
-        return ::LoadLibraryExA(filename, nullptr, flags);
-    }
-
-    /* free library */
-    bool free_lib(HMODULE handle) {
-        return (::FreeLibrary(handle) == TRUE);
-    }
-
-    /* get symbol */
-    void *get_symbol(HMODULE handle, const char *symbol) {
-        /* cast to void* to avoid warnings such as [-Wcast-function-type] */
-        return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));
-    }
-
-#else /* dlfcn */
 
     /* library handle */
     void *handle = nullptr;
 
+
     /* load library */
-    void *load_lib(const char *filename, int flags=RTLD_LAZY) {
+    void *load_lib(const char *filename, int flags=default_flags)
+    {
+#ifdef GDO_USE_SDL
+        static_cast<void>(flags);
+        return SDL_LoadObject(filename);
+#elif defined(GDO_WINAPI)
+        return reinterpret_cast<void *>(::LoadLibraryExA(filename, nullptr, flags));
+#else
         return ::dlopen(filename, flags);
+#endif
     }
 
-    /* free library */
-    bool free_lib(void *handle) {
-        return (::dlclose(handle) == 0);
+
+    /* free library (no error checks) */
+    void free_lib(void *handle)
+    {
+#ifdef GDO_USE_SDL
+        SDL_UnloadObject(handle);
+#elif defined(GDO_WINAPI)
+        ::FreeLibrary(reinterpret_cast<HMODULE>(handle));
+#else
+        ::dlclose(handle);
+#endif
     }
+
 
     /* get symbol */
-    void *get_symbol(void *handle, const char *symbol) {
+    void *get_symbol(void *handle, const char *symbol)
+    {
+#ifdef GDO_USE_SDL
+        return SDL_LoadFunction(handle, symbol);
+#elif defined(GDO_WINAPI)
+        return reinterpret_cast<void *>(::GetProcAddress(
+            reinterpret_cast<HMODULE>(handle), symbol));
+#else
         return ::dlsym(handle, symbol);
+#endif
     }
-
-#endif //GDO_WINAPI
 
 
     /* base error class */

@@ -1,17 +1,19 @@
 #line 2 "<built-in>/minimal.h"
 
-/* whether to use WinAPI */
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
-# define GDO_WINAPI
-#endif
-
-#ifdef GDO_WINAPI
+#ifdef GDO_USE_SDL
+/* SDL API */
+# include <SDL_loadso.h>
+# define GDO_LOAD_LIB(filename)       SDL_LoadObject(filename)
+# define GDO_FREE_LIB(handle)         SDL_UnloadObject(handle)
+# define GDO_GET_SYM(handle, symbol)  SDL_LoadFunction(handle, symbol)
+#elif defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+/* WinAPI */
 # include <windows.h>
-# define GDO_LOAD_LIB(filename)       LoadLibraryExA(filename, NULL, 0)
+# define GDO_LOAD_LIB(filename)       (void *)LoadLibraryExA(filename, NULL, 0)
 # define GDO_FREE_LIB(handle)         FreeLibrary(handle)
-/* cast to void* to avoid compiler warnings */
 # define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)
 #else
+/* POSIX */
 # include <dlfcn.h>
 # define GDO_LOAD_LIB(filename)       dlopen(filename, RTLD_LAZY)
 # define GDO_FREE_LIB(handle)         dlclose(handle)
@@ -28,11 +30,7 @@
 /* Our library and symbols handle */
 typedef struct gdo_handle
 {
-#ifdef GDO_WINAPI
-    HMODULE handle;
-#else
     void *handle;
-#endif
 
     %%type%% (*%%func_symbol%%)(%%args%%);
     %%obj_type%% *%%obj_symbol%%;
