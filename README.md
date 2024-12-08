@@ -28,7 +28,8 @@ Input format
 Here's how the input text format must be:
 
  * all symbols that should be loaded must be listed as C-style prototypes, ending on semi-colon (;)
- * comments are ignored, line-breaks are treated as spaces
+ * comments and preprocessor lines are ignored
+ * line-breaks are treated as spaces
  * you can set some options on a line beginning with `%option`,
  for example `%option format=c++ prefix=mydl library=libfoo.so`
 

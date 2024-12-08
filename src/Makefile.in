@@ -31,7 +31,7 @@ $(OBJS): $(HEADERS)
 data.o: template.h
 
 lex.yy.c: mylex.l
-	$(gen_v)$(LEX) mylex.l
+	$(gen_v)$(LEX) --noline mylex.l
 
 lex.yy.o: lex.yy.c
 	$(cc_v)$(CC) $(CFLAGS) -c lex.yy.c -o $@

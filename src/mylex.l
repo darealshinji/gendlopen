@@ -27,13 +27,17 @@ parmvar              ^({col})?[| ]" "[|`]"-"({col})?({col})?"ParmVarDecl".*
 option               ^({bom})?"%option"[[:space:]]
 optstr               [^[:space:]]+
 
+preproc              ^({bom})?[[:space:]]*?"#"
+linewrap             "\\"[[:space:]]*?"\n"
+
 identifier           [a-zA-Z0-9_]+
 other                [*,()\[\]]
 
 %option noinput nounput noyywrap yylineno nounistd never-interactive
 
-%x C_COMMENT
 %x CLANG_AST
+%x C_COMMENT
+%x PREPROC
 %x OPTION
 
 %%
@@ -54,6 +58,11 @@ other                [*,()\[\]]
 <C_COMMENT>"*/"      { BEGIN(INITIAL); }
 <C_COMMENT>\n        { }
 <C_COMMENT>.         { }
+
+{preproc}            { BEGIN(PREPROC); }
+<PREPROC>{linewrap}  { }
+<PREPROC>\n          { BEGIN(INITIAL); }
+<PREPROC>.           { /* ignore preprocessor lines */ }
 
 {option}             { BEGIN(OPTION); }
 <OPTION>\n           { BEGIN(INITIAL); }
