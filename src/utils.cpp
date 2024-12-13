@@ -81,14 +81,14 @@ std::string utils::convert_to_upper(const std::string &str, bool underscores)
     if (underscores) {
         for (const char &c : str) {
             if (isalnum(c)) {
-                out += toupper(c);
+                out += static_cast<char>(toupper(c));
             } else {
                 out += '_';
             }
         }
     } else {
         for (const char &c : str) {
-            out += toupper(c);
+            out += static_cast<char>(toupper(c));
         }
     }
 
@@ -103,14 +103,14 @@ std::string utils::convert_to_lower(const std::string &str, bool underscores)
     if (underscores) {
         for (const char &c : str) {
             if (isalnum(c)) {
-                out += tolower(c);
+                out += static_cast<char>(tolower(c));
             } else {
                 out += '_';
             }
         }
     } else {
         for (const char &c : str) {
-            out += tolower(c);
+            out += static_cast<char>(tolower(c));
         }
     }
 

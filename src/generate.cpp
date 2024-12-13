@@ -133,7 +133,7 @@ bool get_lines(FILE *fp, std::string &line, int &line_count)
             return false;
 
         default:
-            line.push_back(c);
+            line.push_back(static_cast<char>(c));
             break;
         }
     }
