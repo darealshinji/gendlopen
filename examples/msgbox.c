@@ -27,12 +27,11 @@
  * First we try Gtk+, then SDL and then fall back to X11.
  */
 
-//#define TEST_SDL
-//#define TEST_X11
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include <gtk/gtk.h>
@@ -40,25 +39,37 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+/* generated header files */
 #include "example_msgbox_gtk.h"
 #include "example_msgbox_sdl.h"
 #include "example_msgbox_x11.h"
 
-#ifdef __APPLE__
-# define ESCAPE_KEY 61
-#else
-# define ESCAPE_KEY 9
-#endif
+
+enum {
+    TK_GTK = 1,
+    TK_SDL = 2,
+    TK_X11 = 3
+};
 
 
-inline void print_error(const char *msg)
+void show_gtk_message_box(const char *msg); /* Gtk+ */
+void show_sdl_message_box(const char *msg); /* SDL */
+void show_x11_message_box(const char *msg); /* X11 */
+
+/* load libraries and symbols */
+bool load_gtk();
+bool load_sdl();
+bool load_x11();
+
+/* load libraries and show message box window */
+void show_message_box(const char *msg, int tk);
+
+
+
+void show_gtk_message_box(const char *msg)
 {
-    fprintf(stderr, "error: %s\n", msg);
-}
+    const char *title = "Gtk+ Info";
 
-/* Gtk+ */
-void show_gtk_message_box(const char *msg, const char *title)
-{
     gtk_init(NULL, NULL);
 
     GtkWidget *dialog = gtk_message_dialog_new(
@@ -74,15 +85,15 @@ void show_gtk_message_box(const char *msg, const char *title)
     gtk_widget_destroy(dialog);
 }
 
-/* SDL */
-void show_sdl_message_box(const char *msg, const char *title)
+void show_sdl_message_box(const char *msg)
 {
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title, msg, NULL);
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "SDL Info", msg, NULL);
 }
 
-/* X11 */
-void show_x11_message_box(const char *msg, const char *title)
+void show_x11_message_box(const char *msg)
 {
+    const char *title = "X11 Info";
+
     Display *display = XOpenDisplay(NULL);
 
     if (!display) {
@@ -91,14 +102,15 @@ void show_x11_message_box(const char *msg, const char *title)
 
     const int w = 240, h = 100;
 
-    XTextItem items[] = {
+    XTextItem items[1] = {
         { (char *)msg, strlen(msg), 0, None }
     };
 
-    XSetWindowAttributes attributes = {
-        .background_pixel = 0x333333, /* dark grey */
-        .event_mask = ExposureMask | KeyPressMask
-    };
+    XSetWindowAttributes attributes;
+
+    memset(&attributes, 0, sizeof(XSetWindowAttributes));
+    attributes.background_pixel = 0x333333; /* dark grey */
+    attributes.event_mask = ExposureMask | KeyPressMask;
 
     /* create window */
     int screen = DefaultScreen(display);
@@ -131,8 +143,16 @@ void show_x11_message_box(const char *msg, const char *title)
     XMoveWindow(display, window, x, y);
 
     /* event loop */
+#ifdef __APPLE__
+    const int ESCAPE_KEY = 61;
+#else
+    const int ESCAPE_KEY = 9;
+#endif
+
     bool loop = true;
     XEvent event;
+
+    memset(&event, 0, sizeof(XEvent));
 
     while (loop)
     {
@@ -141,7 +161,9 @@ void show_x11_message_box(const char *msg, const char *title)
         switch (event.type)
         {
         case Expose:
-            XDrawText(display, window, gc, 12, 22, items, 1);
+            x = 16; //12;
+            y = h/2; //22;
+            XDrawText(display, window, gc, x, y, items, _countof(items));
             break;
 
         case ClientMessage:
@@ -174,7 +196,8 @@ bool load_gtk()
         return true;
     }
 
-    print_error(dl_gtk_last_error());
+    fprintf(stderr, "error: %s\n", dl_gtk_last_error());
+
     return false;
 }
 
@@ -184,7 +207,8 @@ bool load_sdl()
         return true;
     }
 
-    print_error(dl_sdl_last_error());
+    fprintf(stderr, "error: %s\n", dl_sdl_last_error());
+
     return false;
 }
 
@@ -194,61 +218,78 @@ bool load_x11()
         return true;
     }
 
-    print_error(dl_x11_last_error());
+    fprintf(stderr, "error: %s\n", dl_x11_last_error());
+
     return false;
 }
 
-/* load libraries and show message box window */
-void show_message_box(const char *msg)
+void show_message_box(const char *msg, int tk)
 {
-#ifdef TEST_SDL
-    goto JMP_SDL;
-#endif
-#ifdef TEST_X11
-    goto JMP_X11;
-#endif
+    switch (tk)
+    {
+    case TK_GTK:
+        if (load_gtk()) {
+            show_gtk_message_box(msg);
+        }
+        return;
+    case TK_SDL:
+        if (load_sdl()) {
+            show_sdl_message_box(msg);
+        }
+        return;
+    case TK_X11:
+        if (load_x11()) {
+            show_x11_message_box(msg);
+        }
+        return;
+
+    default:
+        /* try them all */
+        break;
+    }
 
     /* Gtk+ has a nice looking message box window
      * that we want to try first */
     if (load_gtk()) {
-        show_gtk_message_box(msg, "Gtk+ Info");
+        show_gtk_message_box(msg);
         return;
     }
-
-    goto JMP_SDL; /* silence [-Wunused-label] */
-JMP_SDL:
 
     /* try out SDL next */
     if (load_sdl()) {
-        show_sdl_message_box(msg, "SDL Info");
+        show_sdl_message_box(msg);
         return;
     }
 
-    goto JMP_X11; /* silence [-Wunused-label] */
-JMP_X11:
-
     /* fall back to plain low level X11 API */
     if (load_x11()) {
-        show_x11_message_box(msg, "X11 Info");
+        show_x11_message_box(msg);
     }
 }
 
-/* can safely be called even if nothing was loaded */
-void free_libraries()
+int main(int argc, char **argv)
 {
+    const char *msg = "Very important information!";
+    int tk = -1;
+
+    /* test a specific toolkit */
+    if (argc > 1) {
+        if (strcasecmp(argv[1], "gtk") == 0) {
+            tk = TK_GTK;
+        } else if (strcasecmp(argv[1], "sdl") == 0) {
+            tk = TK_SDL;
+        } else if (strcasecmp(argv[1], "x11") == 0) {
+            tk = TK_X11;
+        }
+    }
+
+    printf("Message: %s\n", msg);
+    show_message_box(msg, tk);
+
+    /* can safely be called even if nothing was loaded */
     dl_gtk_free_lib();
     dl_sdl_free_lib();
     dl_x11_free_lib();
-}
-
-
-int main()
-{
-    const char *msg = "Very important information!";
-
-    printf("Message >>> %s\n", msg);
-    show_message_box(msg);
-    free_libraries();
 
     return 0;
 }
