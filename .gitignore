@@ -24,14 +24,13 @@ lib*.so.*
 src/gendlopen
 src/gen_template_h
 
-Makefile
+/Makefile
 settings.mk
 examples/Makefile
 src/Makefile
 test/Makefile
 
-nmake/*.[ch]
-nmake/*.[ch]pp
+nmake/template.h
 
 examples/*.h
 examples/appindicator

@@ -26,8 +26,8 @@ distclean-test:
 	cd test && $(MAKE) distclean $(devnull_v)
 
 distclean: clean distclean-test
-	$(_v)-rm -f $(clean_makefiles) config.h test.log
-	$(_v)-cd nmake && rm -f *.exe *.obj *.lib *.dll *.exp *.c *.h *.cpp *.hpp
+	$(_v)-rm -f $(clean_makefiles) test.log
+	$(_v)-cd msvc && rm -f *.exe *.obj template.h
 
 $(DEF_GENDLOPEN):
 	cd src && $(MAKE)

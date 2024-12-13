@@ -102,7 +102,7 @@ Compiling
 
 `./configure && make && make test`
 
-On Windows (MSVC) you can run `nmake` inside the `nmake` directory.
+On Windows (MSVC) you can run `nmake` or `make` inside the `msvc` directory.
 
 Cross-compiling with MinGW and clang-cl:
 ``` sh
