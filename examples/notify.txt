@@ -1,16 +1,15 @@
-%option prefix=xnotify library=api:4:notify
+%option prefix=xnotify \
+        library=api:4:notify \
+        param=create
 
 /* libnotify/notify.h */
-gboolean        notify_init (const char *app_name);
+gboolean        notify_init (const char *);
 void            notify_uninit (void);
 gboolean        notify_is_initted (void);
 
 /* libnotify/notification.h */
-NotifyNotification *notify_notification_new                  (const char         *summary,
-                                                              const char         *body,
-                                                              const char         *icon);
-gboolean            notify_notification_show                  (NotifyNotification *notification,
-                                                               GError            **error);
+NotifyNotification *notify_notification_new(const char *, const char *, const char *);
+gboolean            notify_notification_show(NotifyNotification *, GError **);
 
 /* uncomment to test if gendlopen will find duplicate symbol names */
 //int notify_uninit;

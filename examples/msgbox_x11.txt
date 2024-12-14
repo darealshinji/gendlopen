@@ -1,4 +1,5 @@
-%option prefix=dl_x11 param=skip
+%option prefix=dl_x11 \
+        param=skip
 
 extern Display *XOpenDisplay(
     _Xconst char*	/* display_name */

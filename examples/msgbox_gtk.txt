@@ -1,5 +1,9 @@
 %option prefix=dl_gtk
 
+/* preprocessor tokens are ignored */
+#define IGNORE_ME \
+    ignored
+
 void
 gtk_init (int *argc,
           char ***argv);

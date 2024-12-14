@@ -19,6 +19,7 @@ enum {
 
 bom                  "\xEF\xBB\xBF"
 col                  [\x1B][\[][0-9;]*[m]
+linewrap             "\\"[[:space:]]*?"\n"
 
 ast_begin            ^({bom})?({col})?"TranslationUnitDecl"({col})?({col})?" 0x".*
 funcvar              ^({col})?[|`]"-"({col})?({col})?("Function"|"Var")"Decl".*
@@ -28,7 +29,6 @@ option               ^({bom})?"%option"[[:space:]]
 optstr               [^[:space:]]+
 
 preproc              ^({bom})?[[:space:]]*?"#"
-linewrap             "\\"[[:space:]]*?"\n"
 
 identifier           [a-zA-Z0-9_]+
 other                [*,()\[\]]
@@ -60,13 +60,14 @@ other                [*,()\[\]]
 <C_COMMENT>.         { }
 
 {preproc}            { BEGIN(PREPROC); }
-<PREPROC>{linewrap}  { }
+<PREPROC>{linewrap}  { /* continue to next line */ }
 <PREPROC>\n          { BEGIN(INITIAL); }
 <PREPROC>.           { /* ignore preprocessor lines */ }
 
 {option}             { BEGIN(OPTION); }
-<OPTION>\n           { BEGIN(INITIAL); }
+<OPTION>{linewrap}   { /* continue to next line */ }
 <OPTION>{optstr}     { return MYLEX_OPTION; }
+<OPTION>\n           { BEGIN(INITIAL); }
 <OPTION>.            { }
 
 "//".*               { /* single line comment */ }
