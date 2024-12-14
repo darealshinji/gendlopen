@@ -33,7 +33,6 @@ test/Makefile
 nmake/template.h
 
 examples/*.h
-examples/appindicator
 examples/msgbox
 examples/notify
 examples/uuid_nix

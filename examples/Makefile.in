@@ -1,12 +1,11 @@
 
-@APPIND@BIN_APPIND = appindicator$(EXEEXT)
 @NOTIFY@BIN_NOTIFY = notify$(EXEEXT)
 @MSGBOX@BIN_MSGBOX = msgbox$(EXEEXT)
 
 @NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
 @W32@BIN_UUIDWIN = uuid_win$(EXEEXT)
 
-BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
+BINS = $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
 
 .PHONY: all clean
@@ -14,7 +13,7 @@ BINS = $(BIN_APPIND) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 all: $(BINS)
 
 clean:
-	$(_v)-rm -f appindicator notify msgbox uuid_nix
+	$(_v)-rm -f notify msgbox uuid_nix
 	$(_v)-rm -f *.exe *.o *.obj example_*.h uuid_nix_dl.h uuid_win_dl.h
 
 run-examples: $(BINS)
@@ -22,21 +21,6 @@ run-examples: $(BINS)
 
 @W32@run-examples-wine: $(BINS)
 @W32@	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests_wine))
-
-
-# appindicator
-
-@APPIND@example_appindicator.h: appindicator.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator.txt > $@
-
-@APPIND@example_appindicator_gtk.h: appindicator_gtk.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator_gtk.txt > $@
-
-@APPIND@example_appindicator_gobject.h: appindicator_gobject.txt
-@APPIND@	$(gen_v)$(GENDLOPEN) - < appindicator_gobject.txt > $@
-
-@APPIND@appindicator: example_appindicator.h example_appindicator_gobject.h example_appindicator_gtk.h appindicator.c
-@APPIND@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) $(GTK_CFLAGS) appindicator.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
 # libnotify
