@@ -24,7 +24,7 @@
 
 /**
  * This example should illustrate how to use dynamic loading to show a message window.
- * First we try Gtk+, then SDL and then fall back to X11.
+ * We try Gtk+, SDL, FLTK and X11 in that order.
  */
 
 
@@ -39,26 +39,39 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+/* GNU name mangling scheme */
+#define fl_message_MANGLED        _Z10fl_messagePKcz
+#define fl_message_title_MANGLED  _Z16fl_message_titlePKc
+
+/* <FL/fl_ask.H> */
+extern void fl_message_MANGLED(const char *format, const char *message);
+extern void fl_message_title_MANGLED(const char *title);
+
 /* generated header files */
 #include "example_msgbox_gtk.h"
 #include "example_msgbox_sdl.h"
+#include "example_msgbox_fltk.h"
 #include "example_msgbox_x11.h"
 
 
 enum {
-    TK_GTK = 1,
-    TK_SDL = 2,
-    TK_X11 = 3
+    TK_ALL  = 0,
+    TK_GTK  = 1,
+    TK_SDL  = 2,
+    TK_FLTK = 3,
+    TK_X11  = 4
 };
 
 
-void show_gtk_message_box(const char *msg); /* Gtk+ */
-void show_sdl_message_box(const char *msg); /* SDL */
-void show_x11_message_box(const char *msg); /* X11 */
+void show_gtk_message_box(const char *msg);  /* Gtk+ */
+void show_sdl_message_box(const char *msg);  /* SDL */
+void show_fltk_message_box(const char *msg); /* FLTK */
+void show_x11_message_box(const char *msg);  /* X11 */
 
 /* load libraries and symbols */
 bool load_gtk();
 bool load_sdl();
+bool load_fltk();
 bool load_x11();
 
 /* load libraries and show message box window */
@@ -88,6 +101,12 @@ void show_gtk_message_box(const char *msg)
 void show_sdl_message_box(const char *msg)
 {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "SDL Info", msg, NULL);
+}
+
+void show_fltk_message_box(const char *msg)
+{
+    fl_message_title_MANGLED("FLTK Info");
+    fl_message_MANGLED("%s", msg);
 }
 
 void show_x11_message_box(const char *msg)
@@ -212,6 +231,23 @@ bool load_sdl()
     return false;
 }
 
+bool load_fltk()
+{
+    /* try "libfltk.so.1.3" first, then "libfltk.so" */
+    if (!dl_fltk_load_lib_name( LIBNAME(fltk, 1.3) )) {
+        fprintf(stderr, "warning: %s\n", dl_fltk_last_error());
+        dl_fltk_load_lib_name( "libfltk" LIBEXTA );
+    }
+
+    if (dl_fltk_lib_is_loaded() && dl_fltk_load_all_symbols(false)) {
+        return true;
+    }
+
+    fprintf(stderr, "error: %s\n", dl_fltk_last_error());
+
+    return false;
+}
+
 bool load_x11()
 {
     if (dl_x11_load_lib_name_and_symbols( LIBNAME(X11, 6) )) {
@@ -227,50 +263,60 @@ void show_message_box(const char *msg, int tk)
 {
     switch (tk)
     {
+    /* try them all */
+    case TK_ALL:
+        /* FALLTHROUGH */
+
+    /* Gtk+ has a nice looking message box window
+     * that we want to try first */
     case TK_GTK:
         if (load_gtk()) {
             show_gtk_message_box(msg);
+            break;
         }
-        return;
+        if (tk != TK_ALL) {
+            break;
+        }
+        /* FALLTHROUGH */
+
+    /* try out SDL next */
     case TK_SDL:
         if (load_sdl()) {
             show_sdl_message_box(msg);
+            break;
         }
-        return;
+        if (tk != TK_ALL) {
+            break;
+        }
+        /* FALLTHROUGH */
+
+    /* try FLTK before we fall back to Xlib */
+    case TK_FLTK:
+        if (load_fltk()) {
+            show_fltk_message_box(msg);
+            break;
+        }
+        if (tk != TK_ALL) {
+            break;
+        }
+        /* FALLTHROUGH */
+
+    /* fall back to plain low level X11 API */
     case TK_X11:
         if (load_x11()) {
             show_x11_message_box(msg);
         }
-        return;
+        break;
 
     default:
-        /* try them all */
         break;
-    }
-
-    /* Gtk+ has a nice looking message box window
-     * that we want to try first */
-    if (load_gtk()) {
-        show_gtk_message_box(msg);
-        return;
-    }
-
-    /* try out SDL next */
-    if (load_sdl()) {
-        show_sdl_message_box(msg);
-        return;
-    }
-
-    /* fall back to plain low level X11 API */
-    if (load_x11()) {
-        show_x11_message_box(msg);
     }
 }
 
 int main(int argc, char **argv)
 {
     const char *msg = "Very important information!";
-    int tk = -1;
+    int tk = TK_ALL;
 
     /* test a specific toolkit */
     if (argc > 1) {
@@ -278,8 +324,12 @@ int main(int argc, char **argv)
             tk = TK_GTK;
         } else if (strcasecmp(argv[1], "sdl") == 0) {
             tk = TK_SDL;
+        } else if (strcasecmp(argv[1], "fltk") == 0) {
+            tk = TK_FLTK;
         } else if (strcasecmp(argv[1], "x11") == 0) {
             tk = TK_X11;
+        } else {
+            fprintf(stderr, "warning: command ignored: %s\n", argv[1]);
         }
     }
 
@@ -289,6 +339,7 @@ int main(int argc, char **argv)
     /* can safely be called even if nothing was loaded */
     dl_gtk_free_lib();
     dl_sdl_free_lib();
+    dl_fltk_free_lib();
     dl_x11_free_lib();
 
     return 0;

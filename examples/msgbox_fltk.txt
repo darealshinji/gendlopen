@@ -1,0 +1,7 @@
+%option prefix=dl_fltk
+
+// void fl_message(const char *,...);
+void _Z10fl_messagePKcz(const char *format, const char *message);
+
+// void fl_message_title(const char *title);
+void _Z16fl_message_titlePKc(const char *title);

@@ -5,6 +5,12 @@
 @NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
 @W32@BIN_UUIDWIN = uuid_win$(EXEEXT)
 
+MSGBOX_HEADERS = \
+	example_msgbox_gtk.h \
+	example_msgbox_sdl.h \
+	example_msgbox_fltk.h \
+	example_msgbox_x11.h
+
 BINS = $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
 
@@ -42,10 +48,13 @@ run-examples: $(BINS)
 @MSGBOX@example_msgbox_sdl.h: msgbox_sdl.txt
 @MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_sdl.txt -force -o $@
 
+@MSGBOX@example_msgbox_fltk.h: msgbox_fltk.txt
+@MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_fltk.txt -force -o $@
+
 @MSGBOX@example_msgbox_x11.h: msgbox_x11.txt
 @MSGBOX@	$(gen_v)$(GENDLOPEN) msgbox_x11.txt -force -o $@
 
-@MSGBOX@msgbox: example_msgbox_gtk.h example_msgbox_sdl.h example_msgbox_x11.h msgbox.c
+@MSGBOX@msgbox: $(MSGBOX_HEADERS) msgbox.c
 @MSGBOX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty -Ithirdparty/sdl $(GTK_CFLAGS) $(X11_CFLAGS) msgbox.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
