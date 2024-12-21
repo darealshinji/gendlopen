@@ -37,6 +37,7 @@ other                [*,()\[\]]
 
 %x CLANG_AST
 %x C_COMMENT
+%x LN_COMMENT
 %x PREPROC
 %x OPTION
 
@@ -59,6 +60,10 @@ other                [*,()\[\]]
 <C_COMMENT>\n        { }
 <C_COMMENT>.         { }
 
+"//"                 { BEGIN(LN_COMMENT); }
+<LN_COMMENT>\n       { BEGIN(INITIAL); }
+<LN_COMMENT>.        { }
+
 {preproc}            { BEGIN(PREPROC); }
 <PREPROC>{linewrap}  { /* continue to next line */ }
 <PREPROC>\n          { BEGIN(INITIAL); }
@@ -70,7 +75,6 @@ other                [*,()\[\]]
 <OPTION>\n           { BEGIN(INITIAL); }
 <OPTION>.            { }
 
-"//".*               { /* single line comment */ }
 {bom}                { /* ignore byte order mark */ }
 [[:space:]]          { }
 
