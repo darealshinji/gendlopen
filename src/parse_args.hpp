@@ -25,21 +25,52 @@
 #ifndef PARSE_ARGS_HPP
 #define PARSE_ARGS_HPP
 
-namespace parse_args
+#include <stdexcept>
+#include <string>
+
+
+class parse_args
 {
-    typedef struct _optstr
+public:
+
+    class error : public std::runtime_error
     {
-        const char * const string;
-        const size_t size;
-    } optstr_t;
+        public:
+            error(const std::string &message) : std::runtime_error(message) {}
+            virtual ~error() {}
+    };
 
-    /* length of command line argument prefix */
-    inline constexpr int pfxlen = 1;
+private:
 
-    const char *get_prog_name(const char *prog);
+    int m_argc;
+    char ** const m_argv;
+    int m_it = 1; /* skip argv[0] */
+    const char *m_opt = NULL;
 
-    const char *get_arg_len(const char *str, const size_t &len, const int &argc, char ** const &argv, int &it);
-    bool get_noarg_len(const char *str, const size_t &len, char ** const &argv, const int &it);
-}
+public:
+
+    parse_args(const int &argc, char ** const &argv);
+    ~parse_args();
+
+    const char *current() const;
+    const char *next();
+    const char *opt() const;
+    bool has_prefix() const;
+
+    bool get_arg(const char *str, const size_t &len);
+    bool get_noarg(const char *str, const size_t &len);
+
+    template<size_t N>
+    constexpr bool get_arg(char const (&str)[N]) {
+        return get_arg(str, N-1);
+    }
+
+    template<size_t N>
+    constexpr bool get_noarg(char const (&str)[N]) {
+        return get_noarg(str, N-1);
+    }
+
+    static const char *get_prog_name(const char *prog);
+};
 
 #endif /* PARSE_ARGS_HPP */

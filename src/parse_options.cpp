@@ -22,7 +22,6 @@
  * THE SOFTWARE
  */
 
-#include <sstream>
 #include <string>
 #include "global.hpp"
 
@@ -66,81 +65,68 @@ void gendlopen::parse_options(const vstring_t &options)
         }
     };
 
-    std::string token;
     const char *p;
 
     if (!m_read_options) {
         return; /* disabled by user */
     }
 
-    for (const auto &e : options)
+    for (const auto &token : options)
     {
-        std::istringstream iss(e);
-
-        while (iss >> token)
+        switch (token[0])
         {
-            switch (token[0])
-            {
-            case 'f':
-                if (get_arg(token, p, "format=")) {
-                    output::format out = utils::format_enum(p);
-
-                    if (out == output::error) {
-                        throw error("unknown output format: " + std::string(p));
-                    }
-                    format(out);
-                    continue;
-                }
-                break;
-
-            case 'n':
-                if (token == "no-date") {
-                    print_date(false);
-                    continue;
-                }
-                break;
-
-            case 'l':
-                if (get_arg(token, p, "library=")) {
-                    std::string lib_a, lib_w;
-                    utils::format_libname(p, lib_a, lib_w);
-                    default_lib(lib_a, lib_w);
-                    continue;
-                } else if (token == "line") {
-                    line_directive(true);
-                    continue;
-                }
-                break;
-
-            case 'i':
-                if (get_arg(token, p, "include=")) {
-                    add_inc(utils::format_inc(p));
-                    continue;
-                }
-                break;
-
-            case 'd':
-                if (get_arg(token, p, "define=")) {
-                    add_def(utils::format_def(p));
-                    continue;
-                }
-                break;
-
-            case 'p':
-                if (get_arg(token, p, "prefix=")) {
-                    prefix(p);
-                    continue;
-                } else if (get_arg(token, p, "param=")) {
-                    set_parameter_names(p);
-                    continue;
-                }
-                break;
-
-            default:
-                break;
+        case 'f':
+            if (get_arg(token, p, "format=")) {
+                format(p);
+                continue;
             }
+            break;
 
-            throw error("unknown %option string: " + token);
+        case 'n':
+            if (token == "no-date") {
+                print_date(false);
+                continue;
+            }
+            break;
+
+        case 'l':
+            if (get_arg(token, p, "library=")) {
+                default_lib(p);
+                continue;
+            } else if (token == "line") {
+                line_directive(true);
+                continue;
+            }
+            break;
+
+        case 'i':
+            if (get_arg(token, p, "include=")) {
+                add_inc(p);
+                continue;
+            }
+            break;
+
+        case 'd':
+            if (get_arg(token, p, "define=")) {
+                add_def(p);
+                continue;
+            }
+            break;
+
+        case 'p':
+            if (get_arg(token, p, "prefix=")) {
+                prefix(p);
+                continue;
+            } else if (get_arg(token, p, "param=")) {
+                set_parameter_names(p);
+                continue;
+            }
+            break;
+
+        default:
+            break;
         }
+
+        throw error("unknown %option string: " + token);
     }
 }

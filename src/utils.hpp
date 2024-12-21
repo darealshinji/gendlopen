@@ -30,13 +30,6 @@
 
 namespace utils
 {
-
-/* originally in main.cpp */
-std::string format_def(std::string def);
-void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w);
-std::string format_inc(const std::string &inc);
-output::format format_enum(const char *in);
-
 /* convert a string to uppercase or lowercase
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'

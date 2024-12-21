@@ -39,6 +39,49 @@
 #endif
 
 
+parse_args::parse_args(const int &argc, char ** const &argv)
+: m_argc(argc), m_argv(argv)
+{}
+
+parse_args::~parse_args()
+{}
+
+/* get current argument */
+const char *parse_args::current() const {
+    return (m_it < m_argc) ? m_argv[m_it] : NULL;
+}
+
+/* return option string (may be NULL) */
+const char *parse_args::opt() const {
+    return m_opt;
+}
+
+/* whether argument has a prefix */
+bool parse_args::has_prefix() const
+{
+    if (m_it >= m_argc) {
+        return false;
+    }
+
+    char c = m_argv[m_it][0];
+
+#ifdef _WIN32
+    return (c == '-' || c == '/');
+#else
+    return (c == '-');
+#endif
+}
+
+/* iterate to next item and return pointer to it */
+const char *parse_args::next()
+{
+    if (m_it < m_argc) {
+        m_it++;
+    }
+
+    return current();
+}
+
 /* get program name without full path */
 const char *parse_args::get_prog_name(const char *prog)
 {
@@ -67,58 +110,62 @@ const char *parse_args::get_prog_name(const char *prog)
 }
 
 /* get argument from an option string */
-const char *parse_args::get_arg_len(const char *str, const size_t &len, const int &argc, char ** const &argv, int &it)
+bool parse_args::get_arg(const char *str, const size_t &len)
 {
-    auto err_noarg = [&] () {
-        std::cerr << get_prog_name(argv[0]) << ": option requires an argument: "
-            << argv[it] << std::endl;
-        std::exit(1);
-    };
+    std::string msg;
+    const char *cur = m_argv[m_it] + 1; /* skip prefix */
 
-    const char *cur = argv[it] + pfxlen;
+    m_opt = NULL;
 
     if (strncmp(cur, str, len) != 0) {
         /* not the argument we're looking for */
-        return NULL;
+        return false;
     }
+
+    msg = "option requires an argument: ";
+    msg += m_argv[m_it];
 
     /* "-foo bar" --> get next item */
     if (strcmp(cur, str) == 0) {
-        int next = it + 1;
+        int next = m_it + 1;
 
-        if (next >= argc || !argv[next] || !*argv[next]) {
-            err_noarg();
+        if (next >= m_argc || !m_argv[next] || !*m_argv[next]) {
+            throw error(msg);
         }
 
-        return argv[++it];
+        m_opt = m_argv[++m_it];
+        return true;
     }
 
     /* -foo=bar, -Dfoo --> get substring */
     if (strlen(cur) > len) {
-        const char *opt = NULL;
-
         if (len == 1) {
             /* -Dfoo */
-            opt = cur + 1;
+            m_opt = cur + 1;
         } else if (cur[len] == '=') {
             /* -foo=bar */
-            opt = cur + len + 1;
+            m_opt = cur + len + 1;
+        } else {
+            /* could be -foobar instead of -foo */
+            return false;
         }
 
-        if (!opt || *opt == 0) {
-            err_noarg();
+        if (!m_opt || *m_opt == 0) {
+            throw error(msg);
         }
 
-        return opt;
+        return true;
     }
 
-    return NULL;
+    return false;
 }
 
 /* option without argument */
-bool parse_args::get_noarg_len(const char *str, const size_t &len, char ** const &argv, const int &it)
+bool parse_args::get_noarg(const char *str, const size_t &len)
 {
-    const char *cur = argv[it] + pfxlen;
+    const char *cur = m_argv[m_it] + 1; /* skip prefix */
+
+    m_opt = NULL;
 
     /* -foo */
     if (strcmp(cur, str) == 0) {
@@ -127,9 +174,10 @@ bool parse_args::get_noarg_len(const char *str, const size_t &len, char ** const
 
     /* -foo=bar */
     if (strncmp(cur, str, len) == 0 && cur[len] == '=') {
-        std::cerr << get_prog_name(argv[0]) << ": option does not take an argument: "
-            << *argv[it] << str << std::endl;
-        std::exit(1);
+        std::string msg = "option does not take an argument: ";
+        msg += *m_argv[m_it];
+        msg += str;
+        throw error(msg);
     }
 
     return false;

@@ -25,7 +25,11 @@
 #ifndef GDO_GENDLOPEN_HPP
 #define GDO_GENDLOPEN_HPP
 
-#define SET(NAME, TYPE)  void NAME(TYPE var) { m_##NAME = var; }
+#define SET(TYPE, NAME, DEFVAL) \
+    private: \
+        TYPE m_##NAME = DEFVAL; \
+    public: \
+        void NAME(const TYPE &var) { m_##NAME = var; }
 
 
 class gendlopen
@@ -44,9 +48,6 @@ private:
     vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;
     vproto_t m_prototypes, m_objects;
 
-    std::string m_input;
-    std::string m_output = "-";
-
     std::string m_pfx = "gdo"; /* can be mixed case, used to create header name on STDOUT */
     std::string m_pfx_upper = "GDO";
     std::string m_pfx_lower = "gdo";
@@ -54,19 +55,8 @@ private:
     /* used by std::regex_replace() */
     std::string m_fmt_upper, m_fmt_lower, m_fmt_namespace;
 
-    std::string m_defines, m_custom_template, m_common_prefix;
+    std::string m_defines, m_common_prefix;
     std::string m_deflib_a, m_deflib_w;
-
-    output::format m_format = output::c;
-    param::names m_parameter_names = param::param_default;
-
-    bool m_force = false;
-    bool m_separate = false;
-    bool m_ast_all_symbols = false;
-    bool m_print_symbols = false;
-    bool m_read_options = true;
-    bool m_print_date = true;
-    bool m_line_directive = false;
 
     /* clang-ast.cpp */
     bool get_declarations(FILE *fp, int mode);
@@ -106,26 +96,27 @@ public:
     ~gendlopen();
 
     /* set options */
-    SET(input, const std::string &)
-    SET(output, const std::string &)
-    SET(format, output::format)
-    SET(parameter_names, param::names)
-    SET(custom_template, const std::string&)
-    SET(force, bool)
-    SET(separate, bool)
-    SET(ast_all_symbols, bool)
-    SET(print_symbols, bool)
-    SET(read_options, bool)
-    SET(print_date, bool)
-    SET(line_directive, bool)
+    SET(std::string, input, {})
+    SET(std::string, output, "-")
+    SET(output::format, format, output::c)
+    SET(param::names, parameter_names, param::param_default)
+    SET(std::string, custom_template, {})
+    SET(bool, force, false)
+    SET(bool, separate, false)
+    SET(bool, ast_all_symbols, false)
+    SET(bool, print_symbols, false)
+    SET(bool, read_options, true)
+    SET(bool, print_date, true)
+    SET(bool, line_directive, false)
 
     /* gendlopen.cpp */
     void prefix(const std::string &s);
-    void default_lib(const std::string &lib_a, const std::string &lib_w);
+    void default_lib(const std::string &s);
+    void format(const std::string &s);
+    void add_inc(const std::string &s);
+    void add_def(const std::string &s);
 
     /* add code */
-    void add_def(const std::string &s) { m_defines += s; }
-    void add_inc(const std::string &s) { m_includes.push_back(s); }
     void add_pfx(const std::string &s) { m_prefix_list.push_back(s); }
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }
 

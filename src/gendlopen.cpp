@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <string>
+#include <regex>
 #include <vector>
 
 #include "global.hpp"
@@ -31,6 +32,121 @@
 
 namespace /* anonymous */
 {
+    /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
+    bool prefixed_case_len(const std::string &str, const char *pfx, const size_t &pfxlen)
+    {
+        if (str.size() > pfxlen) {
+            auto tmp = str.substr(0, pfxlen);
+            return (strcasecmp(tmp.c_str(), pfx) == 0);
+        }
+        return false;
+    }
+
+    template<size_t N>
+    constexpr bool prefixed_case(const std::string &str, char const (&pfx)[N])
+    {
+        return prefixed_case_len(str, pfx, N-1);
+    }
+
+    /* quote header name if needed */
+    std::string format_inc(const std::string &inc)
+    {
+        if (prefixed_case(inc, "nq:")) {
+            /* no quotes */
+            return inc.substr(3);
+        }
+
+        if ((inc.front() == '<' && inc.back() == '>') ||
+            (inc.front() == '"' && inc.back() == '"'))
+        {
+            /* already quoted */
+            return inc;
+        }
+
+        /* add quotes */
+        return '"' + inc + '"';
+    }
+
+    /* quote library name */
+    std::string quote_lib(const std::string &lib, bool wide)
+    {
+        if (wide) {
+            if (lib.starts_with("L\"") && lib.back() == '"') {
+                /* already quoted */
+                return lib;
+            } else if (lib.front() == '"' && lib.back() == '"') {
+                /* prepend 'L' */
+                return 'L' + lib;
+            }
+
+            return "L\"" + lib + '"';
+        }
+
+        if (lib.front() == '"' && lib.back() == '"') {
+            /* already quoted */
+            return lib;
+        }
+
+        return '"' + lib + '"';
+    }
+
+    /**
+     * format library name
+     * foo        ==>  "foo"
+     * nq:foo     ==>  foo
+     * ext:foo    ==>  "foo" LIBEXTA
+     * api:2:foo  ==>  LIBNAMEA(foo,2)
+     */
+    void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w)
+    {
+        switch(str.at(0))
+        {
+        case 'N':
+        case 'n':
+            /* no quotes */
+            if (prefixed_case(str, "nq:")) {
+                lib_a = lib_w = str.substr(3);
+                return;
+            }
+            break;
+
+        case 'E':
+        case 'e':
+            /* quotes + file extension macro */
+            if (prefixed_case(str, "ext:")) {
+                auto sub = str.substr(4);
+                lib_a = quote_lib(sub, false) + " LIBEXTA";
+                lib_w = quote_lib(sub, true) + " LIBEXTW";
+                return;
+            }
+            break;
+
+        case 'A':
+        case 'a':
+            /* no quotes, API libname macro */
+            if (prefixed_case(str, "api:")) {
+                const std::regex reg("(.*?):(.*)");
+                std::smatch m;
+                auto sub = str.substr(4);
+
+                if (std::regex_match(sub, m, reg) && m.size() == 3) {
+                    /* LIBNAMEA(xxx,0) */
+                    lib_w = lib_a = "LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
+                    lib_w[7] = 'W';
+                    return;
+                }
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        /* quote string */
+        lib_a = quote_lib(str, false);
+        lib_w = quote_lib(str, true);
+    }
+
     /* 'void (*)()'  ==>  'void (*name)()' */
     std::string fptr_typedef(const std::string &type, const std::string &name)
     {
@@ -97,11 +213,72 @@ void gendlopen::prefix(const std::string &s)
 
 
 /* set default library to load */
-void gendlopen::default_lib(const std::string &lib_a, const std::string &lib_w)
+void gendlopen::default_lib(const std::string &lib)
 {
-    assert(!lib_a.empty() && !lib_w.empty());
+    std::string lib_a, lib_w;
+    format_libname(lib, lib_a, lib_w);
     m_deflib_a = lib_a;
     m_deflib_w = lib_w;
+}
+
+
+/* add "#include" line */
+void gendlopen::add_inc(const std::string &inc)
+{
+    m_includes.push_back(format_inc(inc));
+}
+
+
+/* add "#define" line */
+void gendlopen::add_def(const std::string &def)
+{
+    std::string name, value, out;
+    const size_t pos = def.find('=');
+
+    if (pos == std::string::npos) {
+        name = def;
+    } else {
+        name = def.substr(0, pos);
+        value = ' ' + def.substr(pos + 1);
+    }
+
+    utils::strip_spaces(name);
+
+    if (!name.empty()) {
+        m_defines += "#ifndef "  + name + '\n';
+        m_defines += "# define " + name + value + '\n';
+        m_defines += "#endif\n";
+    }
+}
+
+
+/* set output format */
+void gendlopen::format(const std::string &in)
+{
+    output::format out = output::error;
+    std::string s = utils::convert_to_lower(in, false);
+
+    if (s.front() == 'c') {
+        if (s == "c") {
+            out = output::c;
+        } else if (s == "cxx" || s == "c++" || s == "cpp") {
+            out = output::cxx;
+        }
+    } else if (s.starts_with("minimal")) {
+        s.erase(0, 7);
+
+        if (s.empty() || s == "-c") {
+            out = output::minimal;
+        } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
+            out = output::minimal_cxx;
+        }
+    }
+
+    if (out == output::error) {
+        throw error("unknown output format: " + in);
+    }
+
+    format(out);
 }
 
 
