@@ -104,14 +104,16 @@ std::wstring convert_filename(const std::string &str)
 
 
 /* read input lines */
-bool get_lines(FILE *fp, std::string &line, int &line_count)
+bool get_lines(FILE *fp, std::string &line, template_t &entry)
 {
+    bool loop = true;
     int c = EOF;
 
     line.clear();
-    line_count = 1;
+    entry.maybe_keyword = 0;
+    entry.line_count = 1;
 
-    while (true)
+    while (loop)
     {
         c = fgetc(fp);
 
@@ -121,24 +123,32 @@ bool get_lines(FILE *fp, std::string &line, int &line_count)
             /* concatenate lines ending on '@' */
             if (line.back() == '@') {
                 line.back() = '\n';
-                line_count++;
+                entry.line_count++;
                 continue;
             }
-            return true;
+            loop = false;
+            break;
 
         case EOF:
             if (line.back() == '@') {
                 line.pop_back();
             }
-            return false;
+            loop = false;
+            break;
+
+        case '%':
+            entry.maybe_keyword = 1;
+            [[fallthrough]];
 
         default:
             line.push_back(static_cast<char>(c));
-            break;
+            continue;
         }
     }
 
-    return (c != EOF);
+    entry.data = line.c_str();
+
+    return (c == EOF);
 }
 
 
@@ -351,7 +361,9 @@ void gendlopen::read_custom_template()
 {
     cio::ofstream ofs;
     std::string buf;
+    template_t entry;
     bool param_skip_code = false;
+    bool eof = false;
     int templ_lineno = 1; /* input template line count */
 
     /* open file for reading */
@@ -375,19 +387,10 @@ void gendlopen::read_custom_template()
     }
 
     /* parse lines */
-    while (true) {
-        int entry_lines = 0;
-        bool rv = get_lines(fp, buf, entry_lines);
-
-        int maybe_keyword = (buf.find('%') == std::string::npos) ? 0 : 1;
-        template_t entry = { buf.c_str(), maybe_keyword, entry_lines };
-
+    while (!eof) {
+        eof = get_lines(fp, buf, entry);
         substitute_line(entry, templ_lineno, param_skip_code, ofs);
-        templ_lineno += entry_lines;
-
-        if (!rv) {
-            return;
-        }
+        templ_lineno += entry.line_count;
     }
 }
 
