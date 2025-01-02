@@ -1,5 +1,3 @@
-#line 2 "<built-in>/minimal_cxxeh.hpp"
-
 #include <stdexcept>
 #include <string>
 

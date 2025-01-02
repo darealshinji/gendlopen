@@ -4,127 +4,123 @@
 #define TEMPLATE_H
 
 /* filename_macros.h */
-static const char *filename_macros =
-  "#line 2 \"<built-in>/filename_macros.h\"\n"
-  "\n"
-  "/*****************************************************************************/\n"
-  "/*                              filename macros                              */\n"
-  "/*****************************************************************************/\n"
-  "\n"
-  "/* default library filename extension */\n"
-  "#ifdef LIBEXT\n"
-  "# undef LIBEXT\n"
-  "#endif\n"
-  "#ifdef LIBEXTA\n"
-  "# undef LIBEXTA\n"
-  "#endif\n"
-  "#ifdef LIBEXTW\n"
-  "# undef LIBEXTW\n"
-  "#endif\n"
-  "#ifdef _WIN32\n"
-  "# define LIBEXTA    \".dll\"\n"
-  "# define LIBEXTW   L\".dll\"\n"
-  "#elif defined(__APPLE__) && defined(__MACH__)\n"
-  "# define LIBEXTA    \".dylib\"\n"
-  "# define LIBEXTW   L\".dylib\"\n"
-  "#elif defined(_AIX)\n"
-  "# define LIBEXTA    \".a\"\n"
-  "# define LIBEXTW   L\".a\"\n"
-  "#else /* ELF */\n"
-  "# define LIBEXTA    \".so\"\n"
-  "# define LIBEXTW   L\".so\"\n"
-  "#endif\n"
-  "\n"
-  "/**\n"
-  " * library name with API number\n"
-  " *\n"
-  " * Examples using LIBNAME(foo, 1.2) macro:\n"
-  " *\n"
-  " * Windows: libfoo-1.2.dll\n"
-  " * De-facto standard when libraries are ported to Windows.\n"
-  " *\n"
-  " * macOS: libfoo.1.2.dylib\n"
-  " *\n"
-  " * AIX: libfoo.a\n"
-  " * AIX uses archive files without API number.\n"
-  " *\n"
-  " * Android: libfoo.so\n"
-  " * ELF format but without API number.\n"
-  " *\n"
-  " * ELF: libfoo.so.1.2\n"
-  " */\n"
-  "#ifdef LIBNAME\n"
-  "# undef LIBNAME\n"
-  "#endif\n"
-  "#ifdef LIBNAMEA\n"
-  "# undef LIBNAMEA\n"
-  "#endif\n"
-  "#ifdef LIBNAMEW\n"
-  "# undef LIBNAMEW\n"
-  "#endif\n"
-  "#ifdef _WIN32\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \"-\" #API \".dll\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \"-\" #API \".dll\"\n"
-  "#elif defined(__APPLE__) && defined(__MACH__)\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".\" #API \".dylib\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".\" #API \".dylib\"\n"
-  "#elif defined(_AIX)\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".a\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".a\"\n"
-  "#elif defined(__ANDROID__)\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so\"\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so\"\n"
-  "#else /* default ELF filename */\n"
-  "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so.\" #API\n"
-  "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so.\" #API\n"
-  "#endif\n"
-  "\n"
-  "/* Unicode/ANSI default macros */\n"
-  "#if defined(_WIN32) && defined(_UNICODE)\n"
-  "# define LIBEXT              LIBEXTW\n"
-  "# define LIBNAME(NAME, API)  LIBNAMEW(NAME, API)\n"
-  "#else\n"
-  "# define LIBEXT              LIBEXTA\n"
-  "# define LIBNAME(NAME, API)  LIBNAMEA(NAME, API)\n"
-  "#endif\n"
-  "\n"
-  /**/;
-
-static const int filename_macros_linecount = 83;
+static const template_t filename_macros[] = {
+  { "#line 2 \"<built-in>/filename_macros.h\"\n", 0, 2 },
+  { "/*****************************************************************************/", 0, 1 },
+  { "/*                              filename macros                              */", 0, 1 },
+  { "/*****************************************************************************/", 0, 1 },
+  { "", 0, 1 },
+  { "/* default library filename extension */", 0, 1 },
+  { "#ifdef LIBEXT", 0, 1 },
+  { "# undef LIBEXT", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#ifdef LIBEXTA", 0, 1 },
+  { "# undef LIBEXTA", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#ifdef LIBEXTW", 0, 1 },
+  { "# undef LIBEXTW", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#ifdef _WIN32", 0, 1 },
+  { "# define LIBEXTA    \".dll\"", 0, 1 },
+  { "# define LIBEXTW   L\".dll\"", 0, 1 },
+  { "#elif defined(__APPLE__) && defined(__MACH__)", 0, 1 },
+  { "# define LIBEXTA    \".dylib\"", 0, 1 },
+  { "# define LIBEXTW   L\".dylib\"", 0, 1 },
+  { "#elif defined(_AIX)", 0, 1 },
+  { "# define LIBEXTA    \".a\"", 0, 1 },
+  { "# define LIBEXTW   L\".a\"", 0, 1 },
+  { "#else /* ELF */", 0, 1 },
+  { "# define LIBEXTA    \".so\"", 0, 1 },
+  { "# define LIBEXTW   L\".so\"", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "/**", 0, 1 },
+  { " * library name with API number", 0, 1 },
+  { " *", 0, 1 },
+  { " * Examples using LIBNAME(foo, 1.2) macro:", 0, 1 },
+  { " *", 0, 1 },
+  { " * Windows: libfoo-1.2.dll", 0, 1 },
+  { " * De-facto standard when libraries are ported to Windows.", 0, 1 },
+  { " *", 0, 1 },
+  { " * macOS: libfoo.1.2.dylib", 0, 1 },
+  { " *", 0, 1 },
+  { " * AIX: libfoo.a", 0, 1 },
+  { " * AIX uses archive files without API number.", 0, 1 },
+  { " *", 0, 1 },
+  { " * Android: libfoo.so", 0, 1 },
+  { " * ELF format but without API number.", 0, 1 },
+  { " *", 0, 1 },
+  { " * ELF: libfoo.so.1.2", 0, 1 },
+  { " */", 0, 1 },
+  { "#ifdef LIBNAME", 0, 1 },
+  { "# undef LIBNAME", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#ifdef LIBNAMEA", 0, 1 },
+  { "# undef LIBNAMEA", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#ifdef LIBNAMEW", 0, 1 },
+  { "# undef LIBNAMEW", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#ifdef _WIN32", 0, 1 },
+  { "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \"-\" #API \".dll\"", 0, 1 },
+  { "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \"-\" #API \".dll\"", 0, 1 },
+  { "#elif defined(__APPLE__) && defined(__MACH__)", 0, 1 },
+  { "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".\" #API \".dylib\"", 0, 1 },
+  { "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".\" #API \".dylib\"", 0, 1 },
+  { "#elif defined(_AIX)", 0, 1 },
+  { "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".a\"", 0, 1 },
+  { "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".a\"", 0, 1 },
+  { "#elif defined(__ANDROID__)", 0, 1 },
+  { "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so\"", 0, 1 },
+  { "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so\"", 0, 1 },
+  { "#else /* default ELF filename */", 0, 1 },
+  { "# define LIBNAMEA(NAME, API)    \"lib\" #NAME \".so.\" #API", 0, 1 },
+  { "# define LIBNAMEW(NAME, API)   L\"lib\" #NAME \".so.\" #API", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "/* Unicode/ANSI default macros */", 0, 1 },
+  { "#if defined(_WIN32) && defined(_UNICODE)", 0, 1 },
+  { "# define LIBEXT              LIBEXTW", 0, 1 },
+  { "# define LIBNAME(NAME, API)  LIBNAMEW(NAME, API)", 0, 1 },
+  { "#else", 0, 1 },
+  { "# define LIBEXT              LIBEXTA", 0, 1 },
+  { "# define LIBNAME(NAME, API)  LIBNAMEA(NAME, API)", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { NULL, 0, 0 }
+};
 
 /* license.h */
-static const char *license =
-  "/**\n"
-  " Licensed under the MIT License <http://opensource.org/licenses/MIT>.\n"
-  " SPDX-License-Identifier: MIT\n"
-  " Copyright (c) 2023-2025 Carsten Janssen\n"
-  "\n"
-  " Permission is hereby  granted, free of charge, to any  person obtaining a copy\n"
-  " of this software and associated  documentation files (the \"Software\"), to deal\n"
-  " in the Software  without restriction, including without  limitation the rights\n"
-  " to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell\n"
-  " copies  of  the Software,  and  to  permit persons  to  whom  the Software  is\n"
-  " furnished to do so, subject to the following conditions:\n"
-  "\n"
-  " The above copyright notice and this permission notice shall be included in all\n"
-  " copies or substantial portions of the Software.\n"
-  "\n"
-  " THE SOFTWARE  IS PROVIDED \"AS  IS\", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR\n"
-  " IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,\n"
-  " FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE\n"
-  " AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER\n"
-  " LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
-  " OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE\n"
-  " SOFTWARE.\n"
-  "**/\n"
-  /**/;
-
-static const int license_linecount = 23;
+static const template_t license[] = {
+  { "/**", 0, 1 },
+  { " Licensed under the MIT License <http://opensource.org/licenses/MIT>.", 0, 1 },
+  { " SPDX-License-Identifier: MIT", 0, 1 },
+  { " Copyright (c) 2023-2025 Carsten Janssen", 0, 1 },
+  { "", 0, 1 },
+  { " Permission is hereby  granted, free of charge, to any  person obtaining a copy", 0, 1 },
+  { " of this software and associated  documentation files (the \"Software\"), to deal", 0, 1 },
+  { " in the Software  without restriction, including without  limitation the rights", 0, 1 },
+  { " to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell", 0, 1 },
+  { " copies  of  the Software,  and  to  permit persons  to  whom  the Software  is", 0, 1 },
+  { " furnished to do so, subject to the following conditions:", 0, 1 },
+  { "", 0, 1 },
+  { " The above copyright notice and this permission notice shall be included in all", 0, 1 },
+  { " copies or substantial portions of the Software.", 0, 1 },
+  { "", 0, 1 },
+  { " THE SOFTWARE  IS PROVIDED \"AS  IS\", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR", 0, 1 },
+  { " IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,", 0, 1 },
+  { " FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE", 0, 1 },
+  { " AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER", 0, 1 },
+  { " LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,", 0, 1 },
+  { " OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE", 0, 1 },
+  { " SOFTWARE.", 0, 1 },
+  { "**/", 0, 1 },
+  { NULL, 0, 0 }
+};
 
 /* common.h */
 static const template_t common_header[] = {
-  { "#line 2 \"<built-in>/common.h\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/common.h\"\n", 0, 2 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                         common macros and headers                         */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
@@ -303,8 +299,7 @@ static const template_t common_header[] = {
 
 /* c.h */
 static const template_t c_header[] = {
-  { "#line 2 \"<built-in>/c.h\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/c.h\"\n", 0, 2 },
   { "/***", 0, 1 },
   { "", 0, 1 },
   { "******************", 0, 1 },
@@ -603,8 +598,7 @@ static const template_t c_header[] = {
 
 /* c.c */
 static const template_t c_body[] = {
-  { "#line 2 \"<built-in>/c.c\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/c.c\"\n", 0, 2 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                           C API implementation                            */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
@@ -1462,8 +1456,7 @@ static const template_t c_body[] = {
 
 /* cxx.hpp */
 static const template_t cxx_header[] = {
-  { "#line 2 \"<built-in>/cxx.hpp\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/cxx.hpp\"\n", 0, 2 },
   { "#if 0", 0, 1 },
   { "", 0, 1 },
   { "/* summary */", 0, 1 },
@@ -2549,8 +2542,7 @@ static const template_t cxx_header[] = {
 
 /* cxx.cpp */
 static const template_t cxx_body[] = {
-  { "#line 2 \"<built-in>/cxx.cpp\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/cxx.cpp\"\n", 0, 2 },
   { "#ifdef GDO_HAS_MSG_CB", 0, 1 },
   { "gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;", 0, 1 },
   { "#endif", 0, 1 },
@@ -2646,8 +2638,7 @@ static const template_t cxx_body[] = {
 
 /* minimal.h */
 static const template_t min_c_header[] = {
-  { "#line 2 \"<built-in>/minimal.h\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/minimal.h\"\n", 0, 2 },
   { "#ifdef GDO_USE_SDL", 0, 1 },
   { "/* SDL API */", 0, 1 },
   { "# include <SDL_loadso.h>", 0, 1 },
@@ -2728,8 +2719,7 @@ static const template_t min_c_header[] = {
 
 /* minimal_cxxeh.hpp */
 static const template_t min_cxx_header[] = {
-  { "#line 2 \"<built-in>/minimal_cxxeh.hpp\"", 0, 1 },
-  { "", 0, 1 },
+  { "#line 2 \"<built-in>/minimal_cxxeh.hpp\"\n", 0, 2 },
   { "#include <stdexcept>", 0, 1 },
   { "#include <string>", 0, 1 },
   { "", 0, 1 },

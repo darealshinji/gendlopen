@@ -30,32 +30,33 @@
 
 namespace /* anonymous */
 {
-    void save_data(cio::ofstream &ofs, bool line_directive, const char *data)
+    constexpr int save_data(cio::ofstream &ofs, bool line_directive, const template_t *list)
     {
-        const char *ptr;
+        int total_lines = 0;
+        int i = 0;
 
-        if (!line_directive && strncmp(data, "#line", 5) == 0 &&
-            (ptr = strchr(data, '\n')) != NULL)
-        {
+        if (!line_directive && strncmp(list[0].data, "#line", 5) == 0) {
             /* skip initial line directive */
-            ptr++;
-            ofs << ptr;
-        } else {
-            ofs << data;
+            i++;
         }
+
+        for ( ; list[i].data != NULL; i++) {
+            ofs << list[i].data << '\n';
+            total_lines += list[i].line_count;
+        }
+
+        return total_lines;
     }
 }
 
 /* filename macros */
 int gendlopen::save_filename_macros_data(cio::ofstream &ofs) {
-    save_data(ofs, m_line_directive, filename_macros);
-    return filename_macros_linecount;
+    return save_data(ofs, m_line_directive, filename_macros);
 }
 
 /* license */
 int gendlopen::save_license_data(cio::ofstream &ofs) {
-    save_data(ofs, m_line_directive, license);
-    return license_linecount;
+    return save_data(ofs, m_line_directive, license);
 }
 
 /* create template data */

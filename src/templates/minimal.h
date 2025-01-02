@@ -1,5 +1,3 @@
-#line 2 "<built-in>/minimal.h"
-
 #ifdef GDO_USE_SDL
 /* SDL API */
 # include <SDL_loadso.h>

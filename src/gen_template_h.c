@@ -61,6 +61,11 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     fprintf(fpOut, "/* %s */\n", in);
     fprintf(fpOut, "static const template_t %s[] = {\n", varName);
 
+    if (strcmp(in, "license.h") != 0) {
+        // { "#line 2 \"<built-in>/common.h\"\n", 0, 2 },
+        fprintf(fpOut, "  { \"#line 2 \\\"<built-in>/%s\\\"\\n\", 0, 2 },\n", in);
+    }
+
     while ((c = fgetc(fp)) != EOF)
     {
         if (new_line) {
@@ -128,63 +133,6 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     fclose(fp);
 }
 
-static void textdump_simple(const char *in, const char *varName, FILE *fpOut)
-{
-    int c = 0;
-    bool new_line = true;
-    int lines = 0;
-
-    FILE *fp = open_file(in);
-
-    fprintf(fpOut, "/* %s */\n", in);
-    fprintf(fpOut, "static const char *%s =\n", varName);
-
-    while ((c = fgetc(fp)) != EOF)
-    {
-        if (new_line) {
-            fprintf(fpOut, "%s", "  \"");
-            new_line = false;
-        }
-
-        switch (c)
-        {
-        case '\t':
-            fprintf(fpOut, "%s", "\\t");
-            break;
-        case '"':
-            fprintf(fpOut, "%s", "\\\"");
-            break;
-        case '\\':
-            fprintf(fpOut, "%s", "\\\\");
-            break;
-
-        case '\n':
-            fprintf(fpOut, "%s", "\\n\"\n");
-            new_line = true;
-            lines++;
-            break;
-
-        default:
-            if (c < ' ' || c > '~') {
-                fprintf(fpOut, "\\x%02X", (unsigned char)c);
-            } else {
-                fprintf(fpOut, "%c", (char)c);
-            }
-            break;
-        }
-    }
-
-    if (!new_line) {
-        fprintf(fpOut, "%s", "\\n\"\n");
-        lines++;
-    }
-
-    fprintf(fpOut, "%s", "  /**/;\n\n");
-    fprintf(fpOut, "static const int %s_linecount = %d;\n\n", varName, lines);
-
-    fclose(fp);
-}
-
 /* optional argument provided: path to source directory,
  * used for out-of-tree builds */
 int main(int argc, char **argv)
@@ -210,8 +158,8 @@ int main(int argc, char **argv)
         "#ifndef TEMPLATE_H\n"
         "#define TEMPLATE_H\n");
 
-    textdump_simple("filename_macros.h", "filename_macros", fp);
-    textdump_simple("license.h",         "license",         fp);
+    textdump("filename_macros.h", "filename_macros", fp);
+    textdump("license.h",         "license",         fp);
     textdump("common.h",          "common_header",   fp);
     textdump("c.h",               "c_header",        fp);
     textdump("c.c",               "c_body",          fp);

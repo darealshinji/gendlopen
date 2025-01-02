@@ -1,5 +1,3 @@
-#line 2 "<built-in>/cxx.hpp"
-
 #if 0
 
 /* summary */
