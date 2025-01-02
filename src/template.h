@@ -97,7 +97,7 @@ static const char *license =
   "/**\n"
   " Licensed under the MIT License <http://opensource.org/licenses/MIT>.\n"
   " SPDX-License-Identifier: MIT\n"
-  " Copyright (c) 2023-2024 Carsten Janssen\n"
+  " Copyright (c) 2023-2025 Carsten Janssen\n"
   "\n"
   " Permission is hereby  granted, free of charge, to any  person obtaining a copy\n"
   " of this software and associated  documentation files (the \"Software\"), to deal\n"
