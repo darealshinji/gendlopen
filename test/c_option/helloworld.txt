@@ -11,9 +11,9 @@ void helloworld_release(
 %option include=helloworld.h
 %option library=api:0:helloworld
 %option define=HELLOWORLD_TEST
-%option param=skip
-%option no-date
-%option no-pragma-once
-%option line
+%option param=skip \
+        no-date \
+        no-pragma-once \
+        line
 
 helloworld *hw);
