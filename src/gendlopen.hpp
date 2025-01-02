@@ -108,6 +108,7 @@ public:
     SET(bool, read_options, true)
     SET(bool, print_date, true)
     SET(bool, line_directive, false)
+    SET(bool, pragma_once, true)
 
     /* gendlopen.cpp */
     void prefix(const std::string &s);

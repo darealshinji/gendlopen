@@ -115,6 +115,9 @@ namespace
                 if ( a.get_noarg("no-date") ) {
                     gdo.print_date(false);
                     continue;
+                } else if ( a.get_noarg("no-pragma-once") ) {
+                    gdo.pragma_once(false);
+                    continue;
                 }
                 break;
 

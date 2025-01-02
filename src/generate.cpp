@@ -265,13 +265,18 @@ int save_includes(cio::ofstream &out, const vstring_t &includes, bool is_cxx)
     return utils::count_linefeed(str);
 }
 
-int save_header_guard_begin(cio::ofstream &out, const char *header_name, bool is_cxx)
+int save_header_guard_begin(cio::ofstream &out, const std::string &header_guard, bool is_cxx)
 {
-    const std::string header_guard = utils::convert_to_upper(header_name);
+    std::string str;
 
-    std::string str = "\n"
-        "#ifndef _" + header_guard + "_\n"
-        "#define _" + header_guard + "_\n\n";
+    if (header_guard.empty()) {
+        str = "\n"
+            "#pragma once\n\n";
+    } else {
+        str = "\n"
+            "#ifndef " + header_guard + "\n"
+            "#define " + header_guard + "\n\n";
+    }
 
     if (!is_cxx) {
         /* extern C begin */
@@ -286,7 +291,7 @@ int save_header_guard_begin(cio::ofstream &out, const char *header_name, bool is
 }
 
 /* don't need to count lines anymore */
-void save_header_guard_end(cio::ofstream &out, const char *header_name, bool is_cxx)
+void save_header_guard_end(cio::ofstream &out, const std::string &header_guard, bool is_cxx)
 {
     if (!is_cxx) {
         /* extern C end */
@@ -295,7 +300,9 @@ void save_header_guard_end(cio::ofstream &out, const char *header_name, bool is_
             "#endif\n";
     }
 
-    out << "\n#endif //_" << utils::convert_to_upper(header_name) << "_\n";
+    if (!header_guard.empty()) {
+        out << "\n#endif //" << header_guard << "_\n";
+    }
 }
 
 /* print all found symbols to stdout */
@@ -399,8 +406,9 @@ void gendlopen::generate()
 {
     cio::ofstream ofs, ofs_body;
     fs::path ofhdr, ofbody;
-    std::string header_name;
+    std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
+    int lines;
 
     /* tokenize strings from input */
     tokenize();
@@ -484,8 +492,6 @@ void gendlopen::generate()
 
 
     /*************** header data ***************/
-    int lines;
-
     auto print_lineno = [&, this] ()
     {
         if (m_line_directive) {
@@ -494,11 +500,15 @@ void gendlopen::generate()
         }
     };
 
+    if (!m_pragma_once) {
+        header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
+    }
+
     open_ofstream(ofhdr, ofs);            /* open stream */
     lines = save_note(ofs, m_print_date); /* top note */
     lines += save_license_data(ofs);      /* license */
     lines += save_header_guard_begin(ofs, /* header guard begin */
-        header_name.c_str(), is_cxx);
+        header_guard, is_cxx);
 
     /* filename macros */
     lines += save_filename_macros_data(ofs);
@@ -516,7 +526,7 @@ void gendlopen::generate()
 
     /* header guard end */
     print_lineno();
-    save_header_guard_end(ofs, header_name.c_str(), is_cxx);
+    save_header_guard_end(ofs, header_guard, is_cxx);
 
     /* close stream */
     ofs.close();

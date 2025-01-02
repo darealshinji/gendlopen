@@ -86,6 +86,9 @@ void gendlopen::parse_options(const vstring_t &options)
             if (token == "no-date") {
                 print_date(false);
                 continue;
+            } else if (token == "no-pragma-once") {
+                pragma_once(false);
+                continue;
             }
             break;
 
