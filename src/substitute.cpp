@@ -374,12 +374,14 @@ int gendlopen::substitute_line(const template_t &line, int &templ_lineno, bool &
 
     buf = line.data;
 
+#define NOTALNUM "[^a-zA-Z0-9_]"
+
     /* replace prefixes */
     if (m_pfx_upper != "GDO") {
         /* regex for prefixes: [_]GDO_ / [_]gdo_ / gdo:: */
-        const std::regex reg_upper("([^A-Za-z0-9_]?[_]?)(GDO_)");
-        const std::regex reg_lower("([^A-Za-z0-9_]?[_]?)(gdo_)");
-        const std::regex reg_namespace("([^A-Za-z0-9_]?)(gdo::)");
+        const std::regex reg_upper("(" NOTALNUM "?[_]?)(GDO_)");
+        const std::regex reg_lower("(" NOTALNUM "?[_]?)(gdo_)");
+        const std::regex reg_namespace("(" NOTALNUM "?)(gdo::)");
 
         buf = std::regex_replace(buf, reg_upper, m_fmt_upper);
         buf = std::regex_replace(buf, reg_lower, m_fmt_lower);
@@ -407,20 +409,23 @@ int gendlopen::substitute_line(const template_t &line, int &templ_lineno, bool &
         /* function prototypes */
         if (m_prototypes.empty()) {
             return print_lineno();
+        } else {
+            return replace_function_prototypes(templ_lineno, buf, ofs);
         }
-        return replace_function_prototypes(templ_lineno, buf, ofs);
     } else if (has_obj == 1) {
         /* object prototypes */
         if (m_objects.empty()) {
             return print_lineno();
+        } else {
+            return replace_object_prototypes(templ_lineno, buf, ofs);
         }
-        return replace_object_prototypes(templ_lineno, buf, ofs);
     } else if (has_sym == 1) {
         /* any symbol */
         if (m_prototypes.empty() && m_objects.empty()) {
             return print_lineno();
+        } else {
+            return replace_symbol_names(templ_lineno, buf, ofs);
         }
-        return replace_symbol_names(templ_lineno, buf, ofs);
     }
 
     /* nothing to loop, just append and return */

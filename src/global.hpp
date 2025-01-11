@@ -42,13 +42,24 @@
 #include "parse_args.hpp"
 #include "gendlopen.hpp"
 
+
 #ifdef _MSC_VER
-inline int strcasecmp(const char *a, const char *b) {
+template<typename T=char>
+int strcasecmp(const T *a, const T *b) {
     return _stricmp(a, b);
 }
 #else
-#include <strings.h>
+# include <strings.h>
 #endif
+
+
+/* command line option strings used in error messages */
+#define OPT_SYMBOL_NAME     "-S"
+#define OPT_SYMBOL_PREFIX   "-P"
+#define OPT_AST_ALL_SYMBOLS "-ast-all-symbols"
+#define OPT_SKIP_PARAM      "-param=skip"
+#define OPT_CREATE_PARAM    "-param=create"
+
 
 /* lex.yy.c */
 enum {
@@ -57,18 +68,40 @@ enum {
     MYLEX_AST_BEGIN,
     MYLEX_AST_PARMVAR,
     MYLEX_OPTION,
-    MYLEX_TOKEN,
+    MYLEX_ID,
+    MYLEX_OTHER,
     MYLEX_SEMICOLON,
     MYLEX_ERROR
 };
+
 extern "C" char *yytext;
 extern "C" int mylex(FILE *fp);
 extern "C" const char *mylex_lasterror();
+
 
 /* help.cpp */
 namespace help {
     void print(const char *prog);
     void print_full(const char *prog);
+}
+
+
+namespace parse
+{
+    enum { ID = '$' };
+
+    /* parse.cpp */
+    void append_strings(std::string &buf, const iter_t &it_beg, const iter_t &it_end);
+    iter_t find_first_not_pointer_or_ident(vstring_t &v);
+    bool is_function_pointer(vstring_t &v, const iter_t &i);
+    bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
+    bool is_function_with_parentheses(vstring_t &v, const iter_t &i);
+    bool is_function(vstring_t &v, const iter_t &i);
+    bool is_array(vstring_t &v, const iter_t &i);
+
+    /* parameters.cpp */
+    bool read_and_copy_names(proto_t &proto, param::names &parameter_names);
+    bool create_names(proto_t &proto, std::string &msg);
 }
 
 #endif /* GLOBAL_HPP */

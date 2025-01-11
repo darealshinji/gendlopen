@@ -1,9 +1,9 @@
-helloworld *helloworld_init(  ); // init
+﻿helloworld *(helloworld_init) (  ); // init
 helloworld *helloworld_init_argv(int argc, char *argv[]); // testing arrays in parameters
 
 /* function pointer */
 //helloworld_cb_t helloworld_callback;
-extern void (*helloworld_callback) (const char*);
+void (*helloworld_callback) (const char*);
 
 /* array type */
 extern char helloworld_buffer[64];
@@ -11,8 +11,10 @@ extern char helloworld_buffer[64];
 /*
  * say hello
  */
-void helloworld_hello(helloworld *hw);
+void (helloworld_hello)(helloworld *hw);
 void helloworld_hello2(helloworld *hw,
+#define IGNORE_ME \
+  ignored
     void ( * helloworld_cb )
         (const char*)  /* testing non-typedef'd function pointer */
 );

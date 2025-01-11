@@ -639,7 +639,8 @@ enum {
     MYLEX_AST_BEGIN,
     MYLEX_AST_PARMVAR,
     MYLEX_OPTION,
-    MYLEX_TOKEN,
+    MYLEX_ID,
+    MYLEX_OTHER,
     MYLEX_SEMICOLON,
     MYLEX_ERROR
 };
@@ -1039,15 +1040,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-{ tokens_read = 1; return MYLEX_TOKEN; }
+{ tokens_read = 1; return MYLEX_ID; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-{ tokens_read = 1; return MYLEX_TOKEN; }
+{ tokens_read = 1; return MYLEX_OTHER; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-{ tokens_read = 1; return MYLEX_TOKEN; }
+{ tokens_read = 1; return MYLEX_OTHER; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP

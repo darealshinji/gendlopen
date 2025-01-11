@@ -36,7 +36,8 @@ enum {
     MYLEX_AST_BEGIN,
     MYLEX_AST_PARMVAR,
     MYLEX_OPTION,
-    MYLEX_TOKEN,
+    MYLEX_ID,
+    MYLEX_OTHER,
     MYLEX_SEMICOLON,
     MYLEX_ERROR
 };
@@ -103,9 +104,9 @@ other                [*,()\[\]]
 {bom}                { /* ignore byte order mark */ }
 [[:space:]]          { }
 
-{identifier}         { tokens_read = 1; return MYLEX_TOKEN; }
-"..."                { tokens_read = 1; return MYLEX_TOKEN; }
-{other}              { tokens_read = 1; return MYLEX_TOKEN; }
+{identifier}         { tokens_read = 1; return MYLEX_ID; }
+"..."                { tokens_read = 1; return MYLEX_OTHER; }
+{other}              { tokens_read = 1; return MYLEX_OTHER; }
 
 ";"                  { /* return if statement was not empty */
     if (tokens_read) {

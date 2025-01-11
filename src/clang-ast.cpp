@@ -141,6 +141,7 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
 bool gendlopen::get_declarations(FILE *fp, int mode)
 {
     decl_t decl;
+    proto_t proto;
     std::smatch m;
 
     const std::regex reg_func(
@@ -231,13 +232,11 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
         utils::delete_suffix(args, ", ");
         utils::delete_suffix(notype_args, ", ");
 
-        proto_t proto = {
-            proto::function,
-            decl.type,
-            decl.symbol,
-            args,
-            notype_args
-        };
+        proto.prototype   = proto::function;
+        proto.type        = decl.type;
+        proto.symbol      = decl.symbol,
+        proto.args        = args;
+        proto.notype_args = notype_args;
 
         m_prototypes.push_back(proto);
 
@@ -256,13 +255,9 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
             decl.prototype = proto::object;
         }
 
-        proto_t proto = {
-            decl.prototype,
-            decl.type,
-            decl.symbol,
-            {},
-            {}
-        };
+        proto.prototype = decl.prototype;
+        proto.type      = decl.type;
+        proto.symbol    = decl.symbol;
 
         m_objects.push_back(proto);
     }
@@ -278,10 +273,11 @@ void gendlopen::clang_ast(FILE *fp)
     /* no symbols provided */
     if (m_symbol_list.empty() && m_prefix_list.empty() && !m_ast_all_symbols) {
         throw error("Clang AST: no symbols provided to look for\n"
-                    "use `-S', `-P' or `-ast-all-symbols'");
+                    "use `" OPT_SYMBOL_NAME "', `" OPT_SYMBOL_PREFIX "' "
+                    "or `" OPT_AST_ALL_SYMBOLS "'");
     }
 
-    /* ignore symbols provided with `-S' or `-P' if `-ast-all-symbols' was given */
+    /* ignore symbol lists if m_ast_all_symbols was set */
     if (m_ast_all_symbols && (m_symbol_list.size() > 0 || m_prefix_list.size() > 0)) {
         m_symbol_list.clear();
         m_prefix_list.clear();

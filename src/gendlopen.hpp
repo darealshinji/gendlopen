@@ -64,7 +64,12 @@ private:
 
     /* tokenize.cpp */
     void tokenize();
+
+    /* parse.cpp */
+    void parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vproto_t &vproto, std::string &input_name);
     void filter_and_copy_symbols(vproto_t &proto);
+
+    /* parse_options.cpp */
     void parse_options(const vstring_t &options);
 
     /* data.cpp */

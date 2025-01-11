@@ -410,7 +410,7 @@ void gendlopen::generate()
     vtemplate_t header_data, body_data;
     int lines;
 
-    /* tokenize strings from input */
+    /* tokenize and parse strings from input */
     tokenize();
 
     /* print symbols and exit */

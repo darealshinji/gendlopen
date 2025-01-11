@@ -42,11 +42,16 @@ namespace proto
     } type;
 }
 
+using vstring_t = std::vector<std::string>;
+using iter_t = vstring_t::iterator;
+using list_t = std::list<const char *>;
+
 typedef struct _proto {
     proto::type prototype;
     std::string type;
     std::string symbol;
     std::string args;
+    std::vector<vstring_t> args_vec;
     std::string notype_args;
 } proto_t;
 
@@ -63,8 +68,6 @@ typedef struct _template {
 } template_t;
 
 using vproto_t = std::vector<proto_t>;
-using vstring_t = std::vector<std::string>;
-using list_t = std::list<const char *>;
 using vtemplate_t = std::vector<const template_t *>;
 
 
