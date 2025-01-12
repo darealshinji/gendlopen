@@ -22,12 +22,10 @@
  SOFTWARE.
 **/
 
-#include <filesystem>
-#include <string>
 #include <ctype.h>
-#include <stdio.h>
-
-#include "global.hpp"
+#include <stddef.h>
+#include <vector>
+#include "utils.hpp"
 
 
 /* convert string to uppercase */

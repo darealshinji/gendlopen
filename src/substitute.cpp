@@ -26,14 +26,23 @@
  * Substitute placeholders in embedded template data.
  */
 
-#include <iostream>
+#ifdef _MSC_VER
+# include "strcasecmp.hpp"
+#else
+# include <strings.h>
+#endif
+#include <string.h>
+#include <iterator>
 #include <list>
-#include <random>
+#include <ostream>
 #include <regex>
+#include <string>
 #include <vector>
-#include <cstdlib>
+#include "cio_ofstream.hpp"
+#include "gendlopen.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 
-#include "global.hpp"
 
 
 namespace /* anonymous */

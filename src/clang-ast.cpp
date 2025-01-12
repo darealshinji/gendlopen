@@ -55,16 +55,24 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 
 ***/
 
-#include <stdexcept>
+#include <stdio.h>
 #include <algorithm>
-#include <iostream>
-#include <fstream>
 #include <regex>
+#include <string>
 #include <vector>
-#include <cstdio>
-#include <cstring>
+#include "gendlopen.hpp"
+#include "lex.h"
+#include "types.hpp"
+#include "utils.hpp"
 
-#include "global.hpp"
+
+/* command line option strings used in error messages */
+#define OPT_SYMBOL_NAME     "-S"
+#define OPT_SYMBOL_PREFIX   "-P"
+#define OPT_AST_ALL_SYMBOLS "-ast-all-symbols"
+#define OPT_SKIP_PARAM      "-param=skip"
+#define OPT_CREATE_PARAM    "-param=create"
+
 
 
 namespace /* anonymous */

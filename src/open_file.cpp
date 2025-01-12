@@ -22,10 +22,6 @@
  SOFTWARE.
 **/
 
-#include <iostream>
-#include <string>
-#include <stdio.h>
-
 #include "open_file.hpp"
 
 

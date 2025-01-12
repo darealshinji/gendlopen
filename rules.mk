@@ -43,6 +43,6 @@ run_tests = for x in $$bins ; do \
 	done
 
 run_tests_wine = for x in $$bins ; do \
-	  echo $$x ; $(TEST_LIBPATH) WINEDEBUG="-all" wine ./$$x ; \
+	  echo $$x ; WINEDEBUG="-all" wine ./$$x ; \
 	  echo "return value: $$?" ; echo ; \
 	done

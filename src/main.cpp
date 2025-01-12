@@ -22,12 +22,24 @@
  SOFTWARE.
 **/
 
-#include <iostream>
-#include <list>
-#include <regex>
+#ifdef _MSC_VER
+# include "strcasecmp.hpp"
+#else
+# include <strings.h>
+#endif
 #include <string.h>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include "gendlopen.hpp"
+#include "parse_args.hpp"
+#include "types.hpp"
 
-#include "global.hpp"
+/* help.cpp */
+namespace help {
+    void print(const char *prog);
+    void print_full(const char *prog);
+}
 
 
 /* anonymous */

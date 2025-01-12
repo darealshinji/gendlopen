@@ -1,3 +1,6 @@
+/* disable [-Wattributes] warnings */
+#define DLL_PUBLIC /**/
+
 #include "helloworld.h"
 
 /* this is a win32 API example using wide characters */
@@ -6,7 +9,7 @@
 #define GDO_DEFAULT_LIB  L"libhelloworld-0.dll"
 
 /* include generated header file */
-#include "c_win32_wide.h"
+#include "c_test.h"
 
 
 void cb(const char *msg)

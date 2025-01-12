@@ -43,6 +43,7 @@ BINS = \
 all: $(BINS)
 
 clean: $(clean_targets)
+	$(_v)-rm -f $(DLL)
 
 distclean: clean
 	$(_v)-rm -f Makefile $(TEST_MAKEFILES)

@@ -22,8 +22,17 @@
  SOFTWARE.
 **/
 
-#ifndef GDO_GENDLOPEN_HPP
-#define GDO_GENDLOPEN_HPP
+#pragma once
+
+#include <stdio.h>
+#include <filesystem>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include "types.hpp"
+
+namespace cio { class ofstream; }
+
 
 #define SET(TYPE, NAME, DEFVAL) \
     private: \
@@ -133,4 +142,3 @@ public:
 
 #undef SET
 
-#endif /* GDO_GENDLOPEN_HPP */

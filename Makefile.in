@@ -50,9 +50,9 @@ run-examples:
 
 @W32@run-check-wine: run-tests-wine run-examples-wine
 
-@W32@run-tests-wine: test
-@W32@	cd test && $(MAKE) run-tests-wine
+@W32@run-tests-wine: all-tests
+@W32@	cd test && cp -f 00_library/$(DLL) . && $(MAKE) run-tests-wine
 
-@W32@run-examples-wine: examples
+@W32@run-examples-wine: all-examples
 @W32@	cd examples && $(MAKE) run-examples-wine
 

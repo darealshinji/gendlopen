@@ -197,11 +197,26 @@ GDO_DISABLE_DLMOPEN
 
 ***/
 
-#include <iostream>
+#ifdef _WIN32
+# include <windows.h>
+#else
+# include <features.h>
+# include <link.h>
+#endif
+
+#ifdef GDO_WINAPI
+# include <stdlib.h>
+# include <string.h>
+#else
+# include <dlfcn.h>
+#endif
+
+#ifdef _AIX
+# include <errno.h>
+# include <string.h>
+#endif
+
 #include <string>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
 
 
 

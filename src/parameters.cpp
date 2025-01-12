@@ -22,117 +22,117 @@
  SOFTWARE.
 **/
 
-#include <algorithm>
-#include <iostream>
-#include <iterator>
+#ifdef _MSC_VER
+# include "strcasecmp.hpp"
+#else
+# include <strings.h>
+#endif
+#include <string>
 #include <vector>
-#include "global.hpp"
+#include "parse.hpp"
+#include "types.hpp"
+#include "utils.hpp"
+
 
 
 namespace /* anonymous */
 {
+    /* check if prototype parameters are empty or of type "void"
+    * and save "void" parameter if true */
+    bool param_void_or_empty(proto_t &proto)
+    {
+        if (proto.args_vec.empty()) {
+            /* no parameters */
+            return true;
+        }
 
-/* check if prototype parameters are empty or of type "void"
- * and save "void" parameter if true */
-bool param_void_or_empty(proto_t &proto)
-{
-    if (proto.args_vec.empty()) {
-        /* no parameters */
-        return true;
-    }
+        /* check for "void" parameter */
+        if (proto.args_vec.size() == 1) {
+            /* only 1 parameter entry (token list) */
+            auto &v = proto.args_vec.at(0);
 
-    /* check for "void" parameter */
-    if (proto.args_vec.size() == 1) {
-        /* only 1 parameter entry (token list) */
-        auto &v = proto.args_vec.at(0);
+            if (v.size() == 1) {
+                /* only 1 token */
 
-        if (v.size() == 1) {
-            /* only 1 token */
+                if (v.at(0).empty()) {
+                    /* no parameters */
+                    return true;
+                }
 
-            if (v.at(0).empty()) {
-                /* no parameters */
-                return true;
-            }
+                const char *str = v.at(0).c_str();
 
-            const char *str = v.at(0).c_str();
-
-            if (*str == parse::ID && strcasecmp(str+1, "void") == 0) {
-                /* "void" parameter */
-                proto.args = v.at(0);
-                return true;
+                if (*str == parse::ID && strcasecmp(str+1, "void") == 0) {
+                    /* "void" parameter */
+                    proto.args = v.at(0);
+                    return true;
+                }
             }
         }
+
+        /* regular parameters */
+        return false;
     }
 
-    /* regular parameters */
-    return false;
-}
 
-
-void append_name(proto_t &proto, char &name)
-{
-    proto.args += name;
-    proto.args += ' ';
-    proto.notype_args += name;
-    proto.notype_args += ", ";
-    name++;
-}
-
-
-bool get_array_type(vstring_t &v, proto_t &proto, char &name)
-{
-    auto i = parse::find_first_not_pointer_or_ident(v);
-
-    if (parse::is_array(v, i)) {
-        /*  type [ ]  */
-        /*       ^i   */
-        parse::append_strings(proto.args, v.begin(), i);
-        append_name(proto, name);
-        parse::append_strings(proto.args, i, v.end());
-        proto.args += ", ";
-
-        return true;
+    void append_name(proto_t &proto, char &name)
+    {
+        proto.args += name;
+        proto.args += ' ';
+        proto.notype_args += name;
+        proto.notype_args += ", ";
+        name++;
     }
 
-    return false;
-}
 
+    bool get_array_type(vstring_t &v, proto_t &proto, char &name)
+    {
+        auto i = parse::find_first_not_pointer_or_ident(v);
 
-bool get_function_pointer_type(vstring_t &v, proto_t &proto, char &name)
-{
-    auto i = parse::find_first_not_pointer_or_ident(v);
+        if (parse::is_array(v, i)) {
+            /*  type [ ]  */
+            /*       ^i   */
+            parse::append_strings(proto.args, v.begin(), i);
+            append_name(proto, name);
+            parse::append_strings(proto.args, i, v.end());
+            proto.args += ", ";
 
-    if (parse::is_function_pointer(v, i)) {
-        /* guessing the name should be save */
-        /*  type ( * name ) ( )  */
-        /*       ^i              */
-        parse::append_strings(proto.args, v.begin(), i+2);
-        append_name(proto, name);
-        parse::append_strings(proto.args, i+3, v.end());
-        proto.args += ", ";
-        return true;
-    } else if (parse::is_function_pointer_no_name(v, i)) {
-        /*  type ( * ) ( )  */
-        /*       ^i         */
-        parse::append_strings(proto.args, v.begin(), i+1);
-        append_name(proto, name);
-        parse::append_strings(proto.args, i+2, v.end());
-        proto.args += ", ";
-        return true;
+            return true;
+        }
+
+        return false;
     }
 
-    return false;
-}
 
+    bool get_function_pointer_type(vstring_t &v, proto_t &proto, char &name)
+    {
+        auto i = parse::find_first_not_pointer_or_ident(v);
+
+        if (parse::is_function_pointer(v, i)) {
+            /* guessing the name should be save */
+            /*  type ( * name ) ( )  */
+            /*       ^i              */
+            parse::append_strings(proto.args, v.begin(), i+2);
+            append_name(proto, name);
+            parse::append_strings(proto.args, i+3, v.end());
+            proto.args += ", ";
+            return true;
+        } else if (parse::is_function_pointer_no_name(v, i)) {
+            /*  type ( * ) ( )  */
+            /*       ^i         */
+            parse::append_strings(proto.args, v.begin(), i+1);
+            append_name(proto, name);
+            parse::append_strings(proto.args, i+2, v.end());
+            proto.args += ", ";
+            return true;
+        }
+
+        return false;
+    }
 } /* end anonymous namespace */
 
 
-
-namespace parse
-{
-
 /* get parameter names from function parameter list */
-bool read_and_copy_names(proto_t &proto, param::names &parameter_names)
+bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
 {
     if (proto.prototype != proto::function || param_void_or_empty(proto)) {
         /* nothing to do */
@@ -215,7 +215,7 @@ bool read_and_copy_names(proto_t &proto, param::names &parameter_names)
 /* create parameter names `a-z'; */
 /* unless type is function pointer, don't make any assumptions on which
  * element could be the name (it could also be a keyword like `const') */
-bool create_names(proto_t &proto, std::string &msg)
+bool parse::create_names(proto_t &proto, std::string &msg)
 {
     char name = 'a';
 
@@ -275,5 +275,3 @@ bool create_names(proto_t &proto, std::string &msg)
 
     return true;
 }
-
-} /* end parameters namespace */

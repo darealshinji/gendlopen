@@ -25,22 +25,12 @@
 **/
 
 #include <ctype.h>
+#include "lex.h"
 
 static int tokens_read = 0;
 static char errbuf[128] = {0};
 static void illegal_char();
 
-enum {
-    //MYLEX_EOF = 0,
-    MYLEX_OK = 1,
-    MYLEX_AST_BEGIN,
-    MYLEX_AST_PARMVAR,
-    MYLEX_OPTION,
-    MYLEX_ID,
-    MYLEX_OTHER,
-    MYLEX_SEMICOLON,
-    MYLEX_ERROR
-};
 %}
 
 bom                  "\xEF\xBB\xBF"

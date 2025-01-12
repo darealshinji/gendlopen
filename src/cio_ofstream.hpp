@@ -22,8 +22,7 @@
  SOFTWARE.
 **/
 
-#ifndef GDO_CIO_OFSTREAM_HPP
-#define GDO_CIO_OFSTREAM_HPP
+#pragma once
 
 #include <filesystem>
 #include <fstream>
@@ -62,4 +61,3 @@ public:
 
 } /* namespace cio */
 
-#endif /* GDO_CIO_OFSTREAM_HPP */

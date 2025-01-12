@@ -24,7 +24,12 @@
 
 /* use a separate compilation unit for the template data */
 
-#include "global.hpp"
+#include <string.h>
+#include <ostream>
+#include "cio_ofstream.hpp"
+#include "gendlopen.hpp"
+#include "types.hpp"
+
 #include "template.h"
 
 

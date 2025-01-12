@@ -27,70 +27,79 @@
  * into vectors.
  */
 
-#include <iostream>
+#ifdef _MSC_VER
+# include "strcasecmp.hpp"
+#else
+# include <strings.h>
+#endif
+#include <stdio.h>
+#include <string>
 #include <vector>
-#include "global.hpp"
+#include "gendlopen.hpp"
+#include "lex.h"
+#include "open_file.hpp"
+#include "parse.hpp"
+#include "types.hpp"
+
 
 
 namespace /* anonymous */
 {
-
-/* tokenize stream into prototype tokens and options */
-int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
-{
-    int rv = MYLEX_ERROR;
-    vstring_t tokens;
-    bool loop = true;
-
-    while (loop)
+    /* tokenize stream into prototype tokens and options */
+    int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
     {
-        rv = mylex(fp);
+        int rv = MYLEX_ERROR;
+        vstring_t tokens;
+        bool loop = true;
 
-        switch (rv)
+        while (loop)
         {
-        /* identifier */
-        case MYLEX_ID:
-            /* don't add "extern" keyword */
-            if (strcasecmp(yytext, "extern") != 0) {
-                tokens.push_back(std::string(1, parse::ID) + yytext);
+            rv = mylex(fp);
+
+            switch (rv)
+            {
+            /* identifier */
+            case MYLEX_ID:
+                /* don't add "extern" keyword */
+                if (strcasecmp(yytext, "extern") != 0) {
+                    tokens.push_back(std::string(1, parse::ID) + yytext);
+                }
+                break;
+
+            /* other tokens */
+            case MYLEX_OTHER:
+                tokens.push_back(yytext);
+                break;
+
+            /* end of prototype declaration */
+            case MYLEX_SEMICOLON:
+                if (!tokens.empty()) {
+                    vec.push_back(tokens);
+                    tokens.clear();
+                }
+                break;
+
+            /* "%option" line */
+            case MYLEX_OPTION:
+                if (options) {
+                    options->push_back(yytext);
+                }
+                break;
+
+            default:
+                /* EOF, error, etc. */
+                loop = false;
+                break;
             }
-            break;
-
-        /* other tokens */
-        case MYLEX_OTHER:
-            tokens.push_back(yytext);
-            break;
-
-        /* end of prototype declaration */
-        case MYLEX_SEMICOLON:
-            if (!tokens.empty()) {
-                vec.push_back(tokens);
-                tokens.clear();
-            }
-            break;
-
-        /* "%option" line */
-        case MYLEX_OPTION:
-            if (options) {
-                options->push_back(yytext);
-            }
-            break;
-
-        default:
-            /* EOF, error, etc. */
-            loop = false;
-            break;
         }
+
+        /* push back if last prototype didn't end on semicolon */
+        if (!tokens.empty()) {
+            vec.push_back(tokens);
+        }
+
+        return rv;
     }
-
-    /* push back if last prototype didn't end on semicolon */
-    if (!tokens.empty()) {
-        vec.push_back(tokens);
-    }
-
-    return rv;
-}
-
 } /* end anonymous namespace */
 
 

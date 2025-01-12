@@ -26,20 +26,23 @@
  * Generate the output data (STDOUT or save to file).
  */
 
-#include <algorithm>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
+#ifdef __MINGW32__
+# include <stdlib.h>
+# include <wchar.h>
+#endif
+#include <stdio.h>
+#include <ctime>
 #include <filesystem>
+#include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <cwchar>
-
-#include "global.hpp"
+#include "cio_ofstream.hpp"
+#include "gendlopen.hpp"
+#include "open_file.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 
 
 namespace fs = std::filesystem;

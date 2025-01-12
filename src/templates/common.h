@@ -7,16 +7,14 @@
 # define GDO_WINAPI
 #endif
 
-/* default headers to include */
-#ifdef GDO_WINAPI
+#ifdef _WIN32
 # include <windows.h>
+# ifndef GDO_WINAPI
+#  include <dlfcn.h>
+# endif
 #else
-# include <sys/types.h>
-# include <link.h>
+# include <features.h>
 # include <dlfcn.h>
-#endif
-#ifndef __cplusplus
-# include <stdbool.h>
 #endif
 
 /* default library name */

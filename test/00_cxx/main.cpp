@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <string.h>
 #include "helloworld.h"
 
 /* include generated header file */

@@ -22,9 +22,9 @@
  SOFTWARE.
 **/
 
-#ifndef PARSE_ARGS_HPP
-#define PARSE_ARGS_HPP
+#pragma once
 
+#include <stddef.h>
 #include <stdexcept>
 #include <string>
 
@@ -73,4 +73,3 @@ public:
     static const char *get_prog_name(const char *prog);
 };
 
-#endif /* PARSE_ARGS_HPP */

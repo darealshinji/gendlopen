@@ -27,11 +27,10 @@
  * Main purpose is automatic stream closing through class destructor.
  */
 
-#ifndef OPEN_FILE_HPP
-#define OPEN_FILE_HPP
+#pragma once
 
-#include <string>
 #include <stdio.h>
+#include <string>
 
 
 class open_file
@@ -51,5 +50,3 @@ public:
     /* return raw FILE pointer */
     FILE *file_pointer() const;
 };
-
-#endif /* OPEN_FILE_HPP */

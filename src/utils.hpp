@@ -22,8 +22,10 @@
  SOFTWARE.
 **/
 
-#ifndef GDO_UTILS_HPP
-#define GDO_UTILS_HPP
+#pragma once
+
+#include <string>
+#include "types.hpp"
 
 
 /* common functions */
@@ -54,6 +56,4 @@ void replace(const std::string &from, const std::string &to, std::string &s);
 int count_linefeed(const std::string &str);
 
 } /* namespace utils end */
-
-#endif /* GDO_UTILS_HPP */
 

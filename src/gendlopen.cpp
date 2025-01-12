@@ -22,12 +22,16 @@
  SOFTWARE.
 **/
 
+#ifdef _MSC_VER
+# include "strcasecmp.hpp"
+#else
+# include <strings.h>
+#endif
 #include <algorithm>
-#include <string>
+#include <initializer_list>
 #include <regex>
-#include <vector>
-
-#include "global.hpp"
+#include "gendlopen.hpp"
+#include "utils.hpp"
 
 
 namespace /* anonymous */

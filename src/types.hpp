@@ -22,8 +22,7 @@
  SOFTWARE.
 **/
 
-#ifndef GDO_TYPES_HPP
-#define GDO_TYPES_HPP
+#pragma once
 
 #include <list>
 #include <string>
@@ -94,4 +93,3 @@ namespace param
     } names;
 }
 
-#endif /* GDO_TYPES_HPP */

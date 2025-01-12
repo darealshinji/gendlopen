@@ -8,6 +8,11 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 %PARAM_SKIP_REMOVE_BEGIN%
 
 
+#ifdef GDO_HAS_MSG_CB
+# include <iostream>
+# include <cstdlib>
+#endif
+
 
 /* helpers used by function wrappers */
 GDO_CXX_NAMESPACE

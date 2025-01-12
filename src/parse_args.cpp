@@ -22,9 +22,8 @@
  SOFTWARE.
 **/
 
-#include <iostream>
+#include <errno.h>
 #include <string.h>
-
 #include "parse_args.hpp"
 
 #if defined(__linux__)

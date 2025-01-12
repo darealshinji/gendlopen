@@ -602,7 +602,7 @@ else
         *-mingw*)
             target="mingw"
             dll="libhelloworld-0.dll"
-            ld_library_path_test="PATH=\"\$\$PWD/../test/00_library:\$\$PATH\""
+            #ld_library_path_test="WINEPATH=\"\$\$PWD/../test/00_library;%PATH%\""
             ;;
         *-darwin)
             dll="libhelloworld.0.dylib"

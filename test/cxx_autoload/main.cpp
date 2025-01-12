@@ -2,7 +2,9 @@
 #pragma comment(lib, "user32.lib")
 #endif
 
-#define BUILDING_STATIC
+/* disable [-Wattributes] warnings */
+#define DLL_PUBLIC /**/
+
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions */
@@ -14,6 +16,8 @@
 
 /* include generated header file */
 #include "cxx_test.hpp"
+
+#include <iostream>
 
 
 void print_error(const char *msg)

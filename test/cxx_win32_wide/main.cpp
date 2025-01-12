@@ -1,18 +1,22 @@
 #include <iostream>
 #include <string>
+
+/* disable [-Wattributes] warnings */
+#define DLL_PUBLIC /**/
+
 #include "helloworld.h"
 
 /* include generated header file */
 #include "cxx_test.hpp"
 
 
-int main()
+int wmain()
 {
     /* load library and symbols */
 
-    gdo::dl loader(L"libhelloworld-0.dll");
+    gdo::dl loader;
 
-    if (!loader.load_lib_and_symbols()) {
+    if (!loader.load(L"libhelloworld-0.dll") || !loader.load_all_symbols()) {
         std::wcerr << loader.error_w() << std::endl;
         return 1;
     }

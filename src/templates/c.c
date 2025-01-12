@@ -6,9 +6,31 @@
 # pragma comment(lib, "user32.lib")
 #endif
 
-#include <assert.h>
-#include <errno.h>
+/* default headers to include */
+
+#ifdef _WIN32
+# include <windows.h>
+# include <assert.h>
+# ifndef GDO_WINAPI
+#  include <dlfcn.h>
+# endif
+#else
+# include <features.h>
+# include <link.h>
+# include <dlfcn.h>
+#endif
+
+#ifdef _AIX
+# include <errno.h>
+#endif
+
+#ifndef __cplusplus
+# include <stdbool.h>
+#endif
+
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

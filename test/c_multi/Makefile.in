@@ -12,5 +12,5 @@ c_test.c: c_test.h
 c_test.h:
 	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ \
 	  -separate -library=API:0:helloworld \
-	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DBUILDING_STATIC
+	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DDLL_PUBLIC=''
 
