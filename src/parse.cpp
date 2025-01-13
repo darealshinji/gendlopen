@@ -22,7 +22,6 @@
  SOFTWARE.
 **/
 
-#include <string.h>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -32,7 +31,6 @@
 #include "types.hpp"
 #include "utils.hpp"
 #include "parse.hpp"
-
 
 
 namespace /* anonymous */
@@ -145,17 +143,12 @@ namespace /* anonymous */
 
 
     /* compare vector elements to pattern sequence */
-    bool check_pattern(vstring_t &v, iter_t i, const int &iter_pos,
-                        const char *seq, const char &end)
+    bool check_pattern(vstring_t &v, const long min_size, iter_t i, const int &iter_pos,
+                       const char *seq, const char &end)
     {
-        const long min_size = strlen(seq) + 2; /* + leading type + trailing end */
-
         /* check vector dimensions */
-        if (i == v.begin() || i == v.end() || iter_pos > min_size) {
-            return false;
-        }
-
-        if (static_cast<long>(v.size()) < min_size ||
+        if (i == v.begin() || i == v.end() ||
+            static_cast<long>(v.size()) < min_size ||
             std::distance(v.begin(), i) < iter_pos ||
             std::distance(i, v.end()) < (min_size - iter_pos))
         {
@@ -373,11 +366,18 @@ iter_t parse::find_first_not_pointer_or_ident(vstring_t &v)
 }
 
 
+/* sizeof(SEQ) == strlen(SEQ) + 1 (char END) */
+#define CHECK_PATTERN(ITER_POS, SEQ, END) \
+    static_assert(ITER_POS < sizeof(SEQ)); \
+    static_assert(SEQ[0] == 't'); \
+    return check_pattern(v, sizeof(SEQ), i, ITER_POS, SEQ+1 /* skip leading 't' */, END);
+
+
 bool parse::is_function_pointer(vstring_t &v, const iter_t &i)
 {
     /*  type ( * symbol ) ( )  */
     /*       ^i                */
-    return check_pattern(v, i, 1, "(*$)(", ')');
+    CHECK_PATTERN(1, "t(*$)(", ')');
 }
 
 
@@ -385,7 +385,7 @@ bool parse::is_function_pointer_no_name(vstring_t &v, const iter_t &i)
 {
     /*  type ( * ) ( )      */
     /*       ^i             */
-    return check_pattern(v, i, 1, "(*)(", ')');
+    CHECK_PATTERN(1, "t(*)(", ')');
 }
 
 
@@ -393,7 +393,7 @@ bool parse::is_function_with_parentheses(vstring_t &v, const iter_t &i)
 {
     /*  type ( symbol ) ( )  */
     /*       ^i              */
-    return check_pattern(v, i, 1, "($)(", ')');
+    CHECK_PATTERN(1, "t($)(", ')');
 }
 
 
@@ -401,7 +401,7 @@ bool parse::is_function(vstring_t &v, const iter_t &i)
 {
     /*  type symbol ( )     */
     /*              ^i      */
-    return check_pattern(v, i, 2, "$(", ')');
+    CHECK_PATTERN(2, "t$(", ')');
 }
 
 
@@ -409,7 +409,7 @@ bool parse::is_array(vstring_t &v, const iter_t &i)
 {
     /*  type symbol [ ]     */
     /*              ^i      */
-    return check_pattern(v, i, 2, "$[", ']');
+    CHECK_PATTERN(2, "t$[", ']');
 }
 
 
