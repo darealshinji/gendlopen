@@ -22,6 +22,7 @@
  SOFTWARE.
 **/
 
+#include <string.h>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -143,9 +144,13 @@ namespace /* anonymous */
     }
 
 
-    /* check vector dimensions */
-    bool check_bounds(vstring_t &v, const long &min_size, const iter_t &i, const long &iter_pos)
+    /* compare vector elements to pattern sequence */
+    bool check_pattern(vstring_t &v, iter_t i, const int &iter_pos,
+                        const char *seq, const char &end)
     {
+        const long min_size = strlen(seq) + 2; /* + leading type + trailing end */
+
+        /* check vector dimensions */
         if (i == v.begin() || i == v.end() || iter_pos > min_size) {
             return false;
         }
@@ -157,24 +162,14 @@ namespace /* anonymous */
             return false;
         }
 
-        return true;
-    }
-
-
-    /* compare vector elements to pattern sequence */
-    bool check_pattern(vstring_t &v, const int &min_size, iter_t i, const int &iter_pos,
-                        const char *seq, const char &end, int off = 0)
-    {
-        if (!check_bounds(v, min_size, i, iter_pos)) {
-            return false;
-        }
-
         /* check last element */
         if (v.back()[0] != end) {
             return false;
         }
 
-        i += off;
+        if (*seq == parse::ID && iter_pos == 2) {
+            --i; /* move iterator to symbol position */
+        }
 
         /* check rest of sequence */
         for (const char *p = seq; *p != 0; p++, i++) {
@@ -380,46 +375,41 @@ iter_t parse::find_first_not_pointer_or_ident(vstring_t &v)
 
 bool parse::is_function_pointer(vstring_t &v, const iter_t &i)
 {
-    /*  minimal size is 7:     */
     /*  type ( * symbol ) ( )  */
     /*       ^i                */
-    return check_pattern(v, 7, i, 1, "(*$)(", ')');
+    return check_pattern(v, i, 1, "(*$)(", ')');
 }
 
 
 bool parse::is_function_pointer_no_name(vstring_t &v, const iter_t &i)
 {
-    /*  minimal size is 6:  */
     /*  type ( * ) ( )      */
     /*       ^i             */
-    return check_pattern(v, 6, i, 1, "(*)(", ')');
+    return check_pattern(v, i, 1, "(*)(", ')');
 }
 
 
 bool parse::is_function_with_parentheses(vstring_t &v, const iter_t &i)
 {
-    /*  minimal size is 6:   */
     /*  type ( symbol ) ( )  */
     /*       ^i              */
-    return check_pattern(v, 6, i, 1, "($)(", ')');
+    return check_pattern(v, i, 1, "($)(", ')');
 }
 
 
 bool parse::is_function(vstring_t &v, const iter_t &i)
 {
-    /*  minimal size is 4:  */
     /*  type symbol ( )     */
     /*              ^i      */
-    return check_pattern(v, 4, i, 2, "$(", ')', -1);
+    return check_pattern(v, i, 2, "$(", ')');
 }
 
 
 bool parse::is_array(vstring_t &v, const iter_t &i)
 {
-    /*  minimal size is 4:  */
     /*  type symbol [ ]     */
     /*              ^i      */
-    return check_pattern(v, 4, i, 2, "$[", ']', -1);
+    return check_pattern(v, i, 2, "$[", ']');
 }
 
 
