@@ -33,8 +33,6 @@
 #include "parse.hpp"
 
 
-#define IT(OFFSET) (*(i + OFFSET)).front()
-
 
 namespace /* anonymous */
 {
@@ -115,7 +113,7 @@ namespace /* anonymous */
 
         for (auto i = it_beg; i != it_end; i++)
         {
-            switch (IT(0))
+            switch ((*i).front())
             {
             case '(':
                 scope++;
@@ -164,8 +162,8 @@ namespace /* anonymous */
 
 
     /* compare vector elements to pattern sequence */
-    bool check_pattern(vstring_t &v, const long &min_size, const iter_t &i, const long &iter_pos,
-                        const char *seq, const char &end, long off = 0)
+    bool check_pattern(vstring_t &v, const int &min_size, iter_t i, const int &iter_pos,
+                        const char *seq, const char &end, int off = 0)
     {
         if (!check_bounds(v, min_size, i, iter_pos)) {
             return false;
@@ -176,9 +174,11 @@ namespace /* anonymous */
             return false;
         }
 
+        i += off;
+
         /* check rest of sequence */
-        for (const char *p = seq; *p != 0; p++, off++) {
-            if (IT(off) != *p) {
+        for (const char *p = seq; *p != 0; p++, i++) {
+            if ((*i).front() != *p) {
                 return false;
             }
         }
@@ -369,7 +369,7 @@ iter_t parse::find_first_not_pointer_or_ident(vstring_t &v)
     auto i = v.begin();
 
     for ( ; i != v.end(); i++) {
-        if (IT(0) != '*' && IT(0) != ID) {
+        if ((*i).front() != '*' && (*i).front() != ID) {
             break;
         }
     }
