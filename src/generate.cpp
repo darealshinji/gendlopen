@@ -422,9 +422,6 @@ void gendlopen::generate()
         return;
     }
 
-    /* look for a common symbol prefix */
-    get_common_prefix();
-
     /* use custom template (`-format' will be ignored) */
     if (!m_custom_template.empty()) {
         read_custom_template();

@@ -286,64 +286,6 @@ void gendlopen::format(const std::string &in)
 }
 
 
-/**
- * Look for a common symbol prefix.
- * Many APIs share a common prefix among their symbols.
- * If you want to load a specific symbol we can use this
- * later for a faster lookup.
- */
-void gendlopen::get_common_prefix()
-{
-    std::string *symbol0, pfx;
-
-    m_common_prefix.clear();
-
-    /* need at least 2 symbols */
-    if ((m_prototypes.size() + m_objects.size()) < 2) {
-        return;
-    }
-
-    /* get first symbol */
-    if (!m_prototypes.empty()) {
-        symbol0 = &m_prototypes.at(0).symbol;
-    } else {
-        symbol0 = &m_objects.at(0).symbol;
-    }
-
-    /* get shortest symbol length */
-    size_t len = symbol0->size();
-
-    for (const auto &v : {m_prototypes, m_objects}) {
-        for (const auto &e : v) {
-            /* prevent `min()' macro expansion from Windows headers
-             * https://stackoverflow.com/a/30924806/5687704 */
-            len = std::min<size_t>(len, e.symbol.size());
-        }
-    }
-
-    /* compare symbol names */
-    for (size_t i = 0; i < len; i++) {
-        const char c = symbol0->at(i);
-
-        for (const auto &v : {m_prototypes, m_objects}) {
-            for (const auto &e : v) {
-                if (e.symbol.at(i) != c) {
-                    /* common prefix found (can be empty) */
-                    m_common_prefix = pfx;
-                    return;
-                }
-            }
-        }
-
-        pfx.push_back(c);
-    }
-
-    /* shortest symbol name is prefix, i.e. if a symbol `foo'
-     * and `foobar' exist the prefix is `foo' */
-    m_common_prefix = pfx;
-}
-
-
 /* create typedefs for function pointers and arrays */
 void gendlopen::create_typedefs()
 {

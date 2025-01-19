@@ -41,7 +41,7 @@
 #include <vector>
 #include <cstdint>
 
-#include "global.hpp"
+#include "gendlopen.hpp"
 
 /* regex macros */
 #define LPAREN   "\\("
