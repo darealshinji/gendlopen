@@ -383,6 +383,7 @@ GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 
 /* If registered with atexit() this function will be called at
  * the program's exit. Function must be of type "void (*)(void)". */
+#ifdef GDO_AUTO_RELEASE
 GDO_LINKAGE void gdo_call_free_lib(void)
 {
     if (gdo_lib_is_loaded()) {
@@ -393,6 +394,7 @@ GDO_LINKAGE void gdo_call_free_lib(void)
 #endif
     }
 }
+#endif //GDO_AUTO_RELEASE
 
 /* register our call to free the library handle with atexit()
  * so that the library will automatically be freed upon exit */

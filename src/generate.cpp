@@ -504,10 +504,11 @@ void gendlopen::generate()
         header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
     }
 
-    open_ofstream(ofhdr, ofs);            /* open stream */
-    lines = save_note(ofs, m_print_date); /* top note */
-    lines += save_license_data(ofs);      /* license */
-    lines += save_header_guard_begin(ofs, /* header guard begin */
+    open_ofstream(ofhdr, ofs);             /* open stream */
+
+    lines  = save_note(ofs, m_print_date); /* top note */
+    lines += save_license_data(ofs);       /* license */
+    lines += save_header_guard_begin(ofs,  /* header guard begin */
         header_guard, is_cxx);
 
     /* filename macros */

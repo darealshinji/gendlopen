@@ -55,10 +55,12 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 
 GDO_CXX_NAMESPACE
 {
+    namespace /* anonymous */ {
+        auto al = gdo::dl(GDO_DEFAULT_LIBA);
+    }
+
     namespace helper
     {
-        static auto al = gdo::dl(GDO_DEFAULT_LIBA);
-
         /* used internally by wrapper functions, symbol is never NULL */
         static void quick_load(int symbol_num, const char *symbol)
         {

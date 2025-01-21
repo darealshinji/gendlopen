@@ -19,11 +19,17 @@ public:
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
     static constexpr const char * const libext;
+#ifdef GDO_WINAPI
+    static constexpr const wchar_t * const libext_w;
+#endif
 
 
     /* c'tor */
     dl();
     dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);
+#ifdef GDO_WINAPI
+    dl(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
+#endif
 
 
     /* d'tor */
@@ -38,7 +44,7 @@ public:
      * LM_ID_NEWLM argument. */
     bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 #ifdef GDO_WINAPI
-    bool load(const std::wstring &filename, int flags=default_flags, bool unused=false);
+    bool load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
 #endif
 
 
@@ -97,12 +103,11 @@ public:
     void free_lib_in_dtor(bool b);
 
 
-
     /* Create versioned library names for DLLs, dylibs and DSOs.
      * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
-    static std::string make_libname(const std::string &name, unsigned int api);
+    static std::string make_libname(const std::string &name, const size_t api);
 #ifdef GDO_WINAPI
-    static std::wstring make_libname(const std::wstring &name, unsigned int api);
+    static std::wstring make_libname(const std::wstring &name, const size_t api);
 #endif
 
 
@@ -247,6 +252,9 @@ public:
     /* Shared library file extension without dot ("dll", "dylib" or "so").
      * Useful i.e. on plugins. */
     static constexpr const char * const libext = LIBEXTA;
+#ifdef GDO_WINAPI
+    static constexpr const wchar_t * const libext_w = LIBEXTW;
+#endif
 
     /* symbol pointers */
     static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);
@@ -267,6 +275,9 @@ private:
 #endif
 
     std::string m_filename;
+#ifdef GDO_WINAPI
+    std::wstring m_wfilename;
+#endif
     int m_flags = default_flags;
     bool m_new_namespace = false;
     bool m_free_lib_in_dtor = true;
@@ -287,7 +298,6 @@ private:
     DWORD m_last_error = 0;
     std::string m_errmsg;
     std::wstring m_werrmsg;
-    std::wstring m_wfilename;
 
 
     /* wstring to string */
@@ -405,7 +415,7 @@ private:
 
 
     /* load library */
-    void load_lib(const char *filename, int flags, bool new_namespace)
+    void load_lib(const std::string &filename, int flags, bool new_namespace)
     {
         UNUSED_VAL_(new_namespace);
 
@@ -413,7 +423,20 @@ private:
         m_filename = filename;
         m_flags = flags;
 
-        m_handle = ::LoadLibraryExA(filename, nullptr, m_flags);
+        m_handle = ::LoadLibraryExA(filename.c_str(), NULL, m_flags);
+    }
+
+
+    /* load library (wide character) */
+    void load_lib(const std::wstring &filename, int flags, bool new_namespace)
+    {
+        UNUSED_VAL_(new_namespace);
+
+        m_filename.clear();
+        m_wfilename = filename;
+        m_flags = flags;
+
+        m_handle = ::LoadLibraryExW(filename.c_str(), NULL, m_flags);
     }
 
 
@@ -573,7 +596,7 @@ private:
 
 
     /* load library */
-    void load_lib(const char *filename, int flags, bool new_namespace)
+    void load_lib(const std::string &filename, int flags, bool new_namespace)
     {
         m_flags = flags;
         m_filename = filename;
@@ -581,14 +604,14 @@ private:
 #ifdef GDO_HAVE_DLMOPEN
         /* dlmopen() for new namespace or dlopen() */
         if (new_namespace) {
-            m_handle = ::dlmopen(LM_ID_NEWLM, filename, m_flags);
+            m_handle = ::dlmopen(LM_ID_NEWLM, filename.c_str(), m_flags);
         } else {
-            m_handle = ::dlopen(filename, m_flags);
+            m_handle = ::dlopen(filename.c_str(), m_flags);
         }
 #else
         /* no dlmopen() */
         UNUSED_VAL_(new_namespace);
-        m_handle = ::dlopen(filename, m_flags);
+        m_handle = ::dlopen(filename.c_str(), m_flags);
 #endif
     }
 
@@ -624,32 +647,9 @@ private:
 #endif // !GDO_WINAPI
 
 
-public:
-
-    /* c'tor (empty) */
-    dl()
-    {}
-
-
-    /* c'tor (set filename) */
-    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false)
-      : m_filename(filename),
-        m_flags(flags),
-        m_new_namespace(new_namespace)
-    {}
-
-
-    /* d'tor */
-    virtual ~dl()
-    {
-        if (m_free_lib_in_dtor && lib_loaded()) {
-            free_lib();
-        }
-    }
-
-
-    /* load library */
-    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false)
+    /* load library by filename */
+    template<typename T>
+    bool load_filename(const T &filename, int flags, bool new_namespace)
     {
         /* release old libhandle */
         if (lib_loaded() && !free()) {
@@ -665,7 +665,7 @@ public:
 
 #ifdef _AIX
         errno = 0;
-        load_lib(filename.c_str(), flags, new_namespace);
+        load_lib(filename, flags, new_namespace);
         int errsav = errno;
 
         if (!lib_loaded()) {
@@ -673,7 +673,7 @@ public:
             m_errmsg = ptr ? ptr : "";
         }
 #else
-        load_lib(filename.c_str(), flags, new_namespace);
+        load_lib(filename, flags, new_namespace);
         save_error(filename);
 #endif //!_AIX
 
@@ -681,39 +681,65 @@ public:
     }
 
 
+public:
+
+    /* c'tor (empty) */
+    dl()
+    {}
+
+
+    /* c'tor (set filename) */
+    dl(const std::string &filename, int flags=default_flags, bool new_namespace=false)
+      : m_filename(filename),
+        m_flags(flags),
+        m_new_namespace(new_namespace)
+    {}
+
+
+#ifdef GDO_WINAPI
+    /* c'tor (set wide character filename) */
+    dl(const std::wstring &filename, int flags=default_flags, bool new_namespace=false)
+      : m_wfilename(filename),
+        m_flags(flags)
+    {
+        UNUSED_VAL_(new_namespace);
+    }
+#endif
+
+
+    /* d'tor */
+    ~dl()
+    {
+        if (m_free_lib_in_dtor && lib_loaded()) {
+            free_lib();
+        }
+    }
+
+
+    /* load library */
+    bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false)
+    {
+        return load_filename(filename, flags, new_namespace);
+    }
+
+
 #ifdef GDO_WINAPI
     /* load library (wide characters version) */
-    bool load(const std::wstring &filename, int flags=default_flags, bool unused=true)
+    bool load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false)
     {
-        UNUSED_VAL_(unused);
-
-        /* release old libhandle */
-        if (lib_loaded() && !free()) {
-            return false;
-        }
-
-        if (filename.empty()) {
-            set_error_empty_filename();
-            return false;
-        }
-
-        clear_error();
-
-        m_filename.clear();
-        m_wfilename = filename;
-        m_flags = flags;
-
-        m_handle = ::LoadLibraryExW(filename.c_str(), NULL, m_flags);
-        save_error(filename);
-
-        return lib_loaded();
+        return load_filename(filename, flags, new_namespace);
     }
-#endif //GDO_WINAPI
+#endif
 
 
     /* load library */
     bool load()
     {
+#ifdef GDO_WINAPI
+        if (m_filename.empty() && !m_wfilename.empty()) {
+            return load(m_wfilename, m_flags, m_new_namespace);
+        }
+#endif
         return load(m_filename, m_flags, m_new_namespace);
     }
 
@@ -801,7 +827,7 @@ public:
         switch (symbol_num)
         {
         /* %%symbol%% */@
-        case gdo::dl::LOAD_%%symbol%%:@
+        case LOAD_%%symbol%%:@
             m_ptr_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
@@ -892,7 +918,7 @@ public:
 
     /* Create versioned library names for DLLs, dylibs and DSOs.
      * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
-    static std::string make_libname(const std::string &name, unsigned int api)
+    static std::string make_libname(const std::string &name, const size_t api)
     {
 #ifdef _WIN32
         return "lib" + name + '-' + std::to_string(api) + ".dll";
@@ -910,7 +936,7 @@ public:
     }
 
 #ifdef GDO_WINAPI
-    static std::wstring make_libname(const std::wstring &name, unsigned int api)
+    static std::wstring make_libname(const std::wstring &name, const size_t api)
     {
         return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
     }
@@ -992,20 +1018,12 @@ public:
     /* get filename passed to load */
     std::string filename()
     {
-        if (m_filename.empty() && !m_wfilename.empty()) {
-            return wstr_to_str(m_wfilename);
-        }
-
-        return m_filename;
+        return m_filename.empty() ? wstr_to_str(m_wfilename) : m_filename;
     }
 
     std::wstring filename_w()
     {
-        if (m_wfilename.empty() && !m_filename.empty()) {
-            return str_to_wstr(m_filename);
-        }
-
-        return m_wfilename;
+        return m_wfilename.empty() ? str_to_wstr(m_filename) : m_wfilename;
     }
 
 

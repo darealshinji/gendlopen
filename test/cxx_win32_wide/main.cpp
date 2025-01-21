@@ -14,9 +14,11 @@ int wmain()
 {
     /* load library and symbols */
 
-    gdo::dl loader;
+    const std::wstring name = gdo::dl::make_libname(L"helloworld", 0);
 
-    if (!loader.load(L"libhelloworld-0.dll") || !loader.load_all_symbols()) {
+    gdo::dl loader(name);
+
+    if (!loader.load_lib_and_symbols()) {
         std::wcerr << loader.error_w() << std::endl;
         return 1;
     }
