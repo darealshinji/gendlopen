@@ -1098,16 +1098,16 @@ public:
 
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
-#define GDO_ALIAS_%%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%
-#define GDO_ALIAS_%%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%
+#define GDO_ALIAS_%%func_symbol_pad%% gdo::dl::m_ptr_%%func_symbol%%
+#define GDO_ALIAS_%%obj_symbol_pad%% *gdo::dl::m_ptr_%%obj_symbol%%
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-#define %%func_symbol%% gdo::dl::m_ptr_%%func_symbol%%
+#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol_pad%%
 #endif
 
 /* aliases to raw object pointers */
 #if !defined(GDO_DISABLE_ALIASING)
-#define %%obj_symbol%% *gdo::dl::m_ptr_%%obj_symbol%%
+#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol_pad%%
 #endif
 

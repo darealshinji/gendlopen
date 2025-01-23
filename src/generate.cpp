@@ -514,7 +514,8 @@ void gendlopen::generate()
     /* filename macros */
     lines += save_filename_macros_data(ofs);
 
-    /* extra data */
+    /* print extra data after filename macros as includes or defines
+     * might make use of it */
     print_lineno();
     lines += save_extra_defines(ofs, m_defines);     /* #defines */
     lines += save_default_libname(ofs, m_pfx_upper,  /* default library name */

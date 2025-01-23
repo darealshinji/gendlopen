@@ -232,7 +232,7 @@ LIBEXTW
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 typedef wchar_t gdo_char_t;
 #else
-typedef char gdo_char_t;
+typedef char    gdo_char_t;
 #endif
 
 
@@ -247,6 +247,7 @@ typedef struct gdo_handle
 #else
     void *handle;
 #endif
+
     bool call_free_lib_is_registered;
     gdo_char_t buf[8*1024];
 
@@ -255,10 +256,6 @@ typedef struct gdo_handle
     %%obj_type%% *%%obj_symbol%%_ptr_;
 
 } gdo_handle_t;
-
-#ifndef GDO_STATIC
-extern gdo_handle_t gdo_hndl;
-#endif
 
 
 #ifdef GDO_DEFAULT_LIB
@@ -285,20 +282,20 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 /* enumeration values for gdo_load_symbol() */
 enum {
     GDO_LOAD_%%symbol%%,
-    GDO_LOAD_COUNT
+    GDO_LOAD
 };
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
-#define GDO_ALIAS_%%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_
-#define GDO_ALIAS_%%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_
+#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.%%func_symbol%%_ptr_
+#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.%%obj_symbol%%_ptr_
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-#define %%func_symbol%% gdo_hndl.%%func_symbol%%_ptr_
+#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%
 #endif
 
 /* aliases to raw object pointers */
 #if !defined(GDO_DISABLE_ALIASING)
-#define %%obj_symbol%% *gdo_hndl.%%obj_symbol%%_ptr_
+#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
 #endif
 

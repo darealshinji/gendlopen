@@ -126,6 +126,18 @@ namespace /* anonymous */
         return in.c_str() + (in.size() - std::distance(in.rbegin(), it));
     }
 
+    /* get the length of the longest symbol */
+    size_t get_longest_symbol_size(const vproto_t &v)
+    {
+        auto comp = [] (const proto_t &a, const proto_t &b) {
+            return (a.symbol.size() < b.symbol.size());
+        };
+
+        auto it = std::max_element(v.begin(), v.end(), comp);
+
+        return (it == v.end()) ? 0 : (*it).symbol.size();
+    }
+
 } /* end anonymous namespace */
 
 
@@ -145,6 +157,8 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
     std::string nl_beg;        /* copy of leading newlines */
     const char *nl_end = NULL; /* pointer to begin of trailing newlines */
 
+    size_t longest = 0;
+
     int line_count = 0;
     int nl_beg_count = 0;
     int nl_end_count = 0;
@@ -156,6 +170,10 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
             ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
         }
         return entry_lines;
+    }
+
+    if (entry.find("%%func_symbol_pad%%") != std::string::npos) {
+        longest = get_longest_symbol_size(m_prototypes);
     }
 
     for (auto &e : m_prototypes) {
@@ -202,6 +220,13 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
             utils::replace("%%args%%", e.args, copy);
             utils::replace("%%notype_args%%", e.notype_args, copy);
 
+            /* symbol name with padding */
+            if (longest > 0) {
+                std::string s = e.symbol;
+                s.append(longest - e.symbol.size(), ' ');
+                utils::replace("%%func_symbol_pad%%", s, copy);
+            }
+
             if (m_line_directive) {
                 ofs << "#line " << templ_lineno << '\n';
                 line_count++;
@@ -220,6 +245,7 @@ int gendlopen::replace_object_prototypes(const int &templ_lineno, const std::str
 {
     int line_count = 0;
     const int entry_lines = utils::count_linefeed(entry);
+    size_t longest = 0;
 
     /* print #line directive to make sure the line count is on par */
     if (m_objects.empty()) {
@@ -227,6 +253,10 @@ int gendlopen::replace_object_prototypes(const int &templ_lineno, const std::str
             ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
         }
         return entry_lines;
+    }
+
+    if (entry.find("%%obj_symbol_pad%%") != std::string::npos) {
+        longest = get_longest_symbol_size(m_objects);
     }
 
     for (auto &e : m_objects) {
@@ -238,6 +268,13 @@ int gendlopen::replace_object_prototypes(const int &templ_lineno, const std::str
         }
         utils::replace("%%obj_type%%", e.type, copy);
         utils::replace("%%obj_symbol%%", e.symbol, copy);
+
+        /* symbol name with padding */
+        if (longest > 0) {
+            std::string s = e.symbol;
+            s.append(longest - e.symbol.size(), ' ');
+            utils::replace("%%obj_symbol_pad%%", s, copy);
+        }
 
         if (m_line_directive) {
             ofs << "#line " << templ_lineno << '\n';
@@ -315,13 +352,15 @@ int gendlopen::substitute_line(const template_t &line, int &templ_lineno, bool &
         "%%return%%",
         "%%type%%",
         "%%func_symbol%%",
+        "%%func_symbol_pad%%",
         "%%args%%",
         "%%notype_args%%"
     };
 
     const list_t object_keywords = {
         "%%obj_type%%",
-        "%%obj_symbol%%"
+        "%%obj_symbol%%",
+        "%%obj_symbol_pad%%"
     };
 
     const list_t symbol_keywords = {
