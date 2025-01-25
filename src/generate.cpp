@@ -31,6 +31,7 @@
 # include <wchar.h>
 #endif
 #include <stdio.h>
+#include <algorithm>
 #include <ctime>
 #include <filesystem>
 #include <iomanip>
@@ -251,11 +252,12 @@ int save_includes(cio::ofstream &out, const vstring_t &includes, bool is_cxx)
 {
     std::string str = "/* extra headers */\n";
 
-    /* always include stddef.h */
     if (is_cxx) {
-        str += "#include <cstddef>\n";
+        str += "#include <cstddef>\n"  /* size_t, NULL, ... */
+               "#include <cstring>\n"; /* strncmp() */
     } else {
-        str += "#include <stddef.h>\n";
+        str += "#include <stddef.h>\n"
+               "#include <string.h>\n";
     }
 
     for (auto &e : includes) {
@@ -336,6 +338,146 @@ void print_symbols_to_stdout(const vproto_t &objs, const vproto_t &funcs, const 
     }
 
     std::cout << "\n/***  " << (objs.size() + funcs.size()) << " matches  ***/" << std::endl;
+}
+
+/**
+ * Look for a common symbol prefix.
+ * Many APIs share a common prefix among their symbols.
+ * If you want to load a specific symbol we can use this
+ * later for a faster lookup.
+ */
+std::string get_common_prefix(vstring_t &vec)
+{
+    std::string *symbol0, pfx;
+
+    /* need at least 2 symbols */
+    if (vec.size() < 2) {
+        return {};
+    }
+
+    /* get first symbol */
+    symbol0 = &vec.at(0);
+
+    /* get shortest symbol length */
+    size_t len = symbol0->size();
+
+    for (const auto &e : vec) {
+        /* prevent `min()' macro expansion from Windows headers */
+        len = std::min<size_t>(len, e.size());
+    }
+
+    /* compare symbol names */
+    for (size_t i = 0; i < len; i++) {
+        const char c = symbol0->at(i);
+
+        for (const auto &e : vec) {
+            if (e.at(i) != c) {
+                /* common prefix found (can be empty) */
+                return pfx;
+            }
+        }
+
+        pfx.push_back(c);
+    }
+
+    /* shortest symbol name is prefix, i.e. if a symbol `foo'
+     * and `foobar' exist the prefix is `foo' */
+    return pfx;
+}
+
+/* create a macro that will do a slightly optimized lookup of a
+ * given symbol name */
+int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_upper,
+    const vproto_t &v_prototypes, const vproto_t &v_objects)
+{
+    vstring_t list;
+    std::string str;
+
+    for (const auto &e : v_prototypes) {
+        list.push_back(e.symbol);
+    }
+
+    for (const auto &e : v_objects) {
+        list.push_back(e.symbol);
+    }
+
+    std::sort(list.begin(), list.end());
+
+    /* macro name */
+    str = "/* symbol name lookup macro */\n"
+          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(STR, PFX) \\\n";
+
+    /* single symbol */
+    if (list.size() == 1) {
+        str += "  if (STR != NULL && strcmp(STR, \"" + list.at(0) + "\") == 0) { \\\n"
+               "    goto PFX##" + list.at(0) + ";\\\n"
+               "  }\n\n";
+
+        out << str;
+
+        return utils::count_linefeed(str);
+    }
+
+    /* multiple symbols */
+    std::string pfx = get_common_prefix(list);
+    std::string pfxlen = std::to_string(pfx.size());
+    size_t n = pfx.size() + 1;
+    std::string skip = std::to_string(n);
+    char last_case = 0;
+
+    if (pfx.size() == 0) {
+        /* no common prefix */
+        str += "  if (STR != NULL && *STR != 0)\\\n"
+               "  { \\\n"
+               "    switch (*STR) \\\n";
+    } else {
+        /* check common prefix */
+        str += "  if (STR != NULL && strncmp(STR, \"" + pfx + "\", " + pfxlen + ") == 0) \\\n"
+               "  { \\\n"
+               "    switch (*(STR+" + pfxlen + ")) \\\n";
+    }
+
+    str += "    { \\\n"
+           "    default:";
+
+    for (const auto &e : list)
+    {
+        if (pfx.size() > 0 && e == pfx) {
+            str += " \\\n"
+                   "      break; \\\n"
+                   "    case 0: \\\n"
+                   "      goto PFX##" + e + "; \\\n";
+            continue;
+        }
+
+        char c = *(e.c_str() + pfx.size());
+
+        if (c != last_case) {
+            last_case = c;
+
+            str += " \\\n"
+                   "      break; \\\n"
+                   "    case '"; str+=c; str+="': \\\n"
+                   "      if";
+        } else {
+            str += " else if";
+        }
+
+        const char *str2 = e.c_str() + pfx.size() + 1;
+
+        str += " (strcmp(STR+" + skip + ", \"" + str2 + "\") == 0) { \\\n"
+               "        goto PFX##" + e + "; \\\n"
+               "      }";
+    }
+
+    str += " \\\n"
+           "      break; \\\n"
+           "    } \\\n"
+           "  }\n\n";
+
+    out << str;
+
+    return utils::count_linefeed(str);
 }
 
 } /* end anonymous namespace */
@@ -522,6 +664,8 @@ void gendlopen::generate()
         m_deflib_a, m_deflib_w);
     lines += save_includes(ofs, m_includes, is_cxx); /* #includes */
     lines += save_typedefs(ofs, m_typedefs);         /* typedefs */
+    lines += save_check_symbol_name_macro(ofs,       /* GDO_CHECK_SYMBOL_NAME() */
+        m_pfx_upper, m_prototypes, m_objects);
 
     /* header template */
     lines += substitute(header_data, ofs);

@@ -63,6 +63,24 @@ static void empty_ctor_load()
     loader.free();
 }
 
+static void empty_ctor_load2()
+{
+    gdo::dl loader;
+
+    if (!loader.load( gdo::dl::make_libname("helloworld", 0) ) ||
+        !loader.load_symbol("helloworld_init") ||
+        !loader.load_symbol("helloworld_callback") ||
+        !loader.load_symbol("helloworld_hello") ||
+        !loader.load_symbol("helloworld_hello2") ||
+        !loader.load_symbol("helloworld_release"))
+    {
+        std::cerr << loader.error() << std::endl;
+        std::exit(1);
+    }
+
+    loader.free();
+}
+
 static void load_from_list(gdo::dl &loader)
 {
 #ifdef _WIN32
@@ -102,6 +120,7 @@ int main()
     ctor_load_lib_and_symbols();
     ctor_load();
     empty_ctor_load();
+    empty_ctor_load2();
 
     gdo::dl loader;
     load_from_list(loader);

@@ -88,7 +88,6 @@ private:
 
     /* gendlopen.cpp */
     void create_typedefs();
-    void get_common_prefix();
 
     /* generate.cpp */
     void open_ofstream(const std::filesystem::path &opath, cio::ofstream &ofs);

@@ -68,6 +68,25 @@ static void load_lib_name()
     }
 }
 
+static void load_lib_name2()
+{
+    const gdo_char_t *filename = LIBNAME(helloworld,0);
+
+    /* load library and each individual symbol */
+    if (!gdo_load_lib_name(filename) ||
+        !gdo_load_symbol_name("helloworld_init_argv") ||
+        !gdo_load_symbol_name("helloworld_callback") ||
+        !gdo_load_symbol_name("helloworld_buffer") ||
+        !gdo_load_symbol_name("helloworld_hello") ||
+        !gdo_load_symbol_name("helloworld_hello2") ||
+        !gdo_load_symbol_name("helloworld_release"))
+    {
+        fprintf(stderr, "%s\n", gdo_last_error());
+        gdo_free_lib();
+        exit(1);
+    }
+}
+
 static void load_lib()
 {
     const bool ignore_errors = true;
@@ -110,10 +129,14 @@ int main(int argc, char *argv[])
     gdo_free_lib();
 
     // #3
-    load_lib();
+    load_lib_name2();
     gdo_free_lib();
 
     // #4
+    load_lib();
+    gdo_free_lib();
+
+    // #5
     load_lib_and_symbols();
 
     print_lib_origin();

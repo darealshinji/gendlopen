@@ -39,6 +39,7 @@ bool               gdo_no_symbols_loaded ();
 bool               gdo_any_symbol_loaded ();
 bool               gdo_load_all_symbols (bool ignore_errors);
 bool               gdo_load_symbol (int symbol_num);
+bool               gdo_load_symbol_name (const char *symbol);
 
 bool               gdo_all_symbols_loaded ();
 bool               gdo_no_symbols_loaded ();
@@ -274,6 +275,7 @@ GDO_LINKAGE bool gdo_no_symbols_loaded(void);
 GDO_LINKAGE bool gdo_any_symbol_loaded(void);
 GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors);
 GDO_LINKAGE bool gdo_load_symbol(int symbol_num);
+GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol);
 
 GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
@@ -282,7 +284,6 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
 /* enumeration values for gdo_load_symbol() */
 enum {
     GDO_LOAD_%%symbol%%,
-    GDO_LOAD
 };
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */

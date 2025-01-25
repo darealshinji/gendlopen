@@ -263,7 +263,6 @@ public:
     /* enumeration values for `load_symbol()' method */
     enum {
         LOAD_%%symbol%%,
-        LOAD_COUNT
     };
 
 
@@ -840,9 +839,46 @@ public:
 # ifdef GDO_WINAPI
         m_last_error = ERROR_NOT_FOUND;
 # endif
-        m_errmsg = "unknown number: " + std::to_string(symbol_num);
+        m_errmsg = "unknown symbol number: " + std::to_string(symbol_num);
 
         return false;
+    }
+
+
+    /* load a specific symbol by name */
+    bool load_symbol(const char *symbol)
+    {
+        clear_error();
+
+        if (!lib_loaded()) {
+            set_error_invalid_handle();
+            return false;
+        }
+
+        if (!symbol || *symbol == 0) {
+#ifdef GDO_WINAPI
+            m_last_error = ERROR_INVALID_PARAMETER;
+#endif
+            m_errmsg = "empty symbol name";
+            return false;
+        }
+
+        GDO_CHECK_SYMBOL_NAME(symbol, GDO_JUMP_)
+
+#ifdef GDO_WINAPI
+        m_last_error = ERROR_NOT_FOUND;
+#endif
+        m_errmsg = "unknown symbol: ";
+        m_errmsg += symbol;
+
+        return false;
+@
+        /* %%symbol%% */@
+    GDO_JUMP_%%symbol%%:@
+        m_ptr_%%symbol%% =@
+            sym_load<%%sym_type%%>@
+                ("%%symbol%%");@
+        return (m_ptr_%%symbol%% != nullptr);
     }
 
 

@@ -595,6 +595,12 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
 {
     gdo_clear_errbuf();
 
+    /* no library was loaded */
+    if (!gdo_lib_is_loaded()) {
+        gdo_set_error_no_library_loaded();
+        return false;
+    }
+
     switch (symbol_num)
     {
     /* %%symbol%% */@
@@ -612,9 +618,53 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
 #endif
 
-    GDO_SNPRINTF(gdo_hndl.buf, _T("unknown number: %d"), symbol_num);
+    GDO_SNPRINTF(gdo_hndl.buf, _T("unknown symbol number: %d"), symbol_num);
 
     return false;
+}
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+/*                    load a specific symbol by name                         */
+/*                                                                           */
+/* The main intention is to check if a certain symbol is present in a        */
+/* library so that you can conditionally enable or disable features.         */
+/*****************************************************************************/
+GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
+{
+    /* no library was loaded */
+    if (!gdo_lib_is_loaded()) {
+        gdo_set_error_no_library_loaded();
+        return false;
+    }
+
+    if (!symbol || *symbol == 0) {
+        gdo_clear_errbuf();
+#ifdef GDO_WINAPI
+        gdo_hndl.last_errno = ERROR_INVALID_PARAMETER;
+#endif
+        gdo_save_to_errbuf(_T("empty symbol name"));
+        return false;
+    }
+
+    GDO_CHECK_SYMBOL_NAME(symbol, GDO_JUMP_)
+
+#ifdef GDO_WINAPI
+    gdo_hndl.last_errno = ERROR_NOT_FOUND;
+#endif
+
+    GDO_SNPRINTF(gdo_hndl.buf, _T("unknown symbol: %s"), symbol);
+
+    return false;
+@
+    /* %%symbol%% */@
+GDO_JUMP_%%symbol%%:@
+    gdo_hndl.%%symbol%%_ptr_ =@
+        (%%sym_type%%)@
+            gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+    return (gdo_hndl.%%symbol%%_ptr_ != NULL);
 }
 /*****************************************************************************/
 
