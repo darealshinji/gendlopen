@@ -337,37 +337,14 @@ namespace /* anonymous */
 
         return true;
     }
+
 } /* end anonymous namespace */
 
 
-
-/* append strings, separated by space */
-void parse::append_strings(std::string &buf, const iter_t &it_beg, const iter_t &it_end)
-{
-    for (auto i = it_beg; i != it_end; i++) {
-        buf += *i;
-        buf += ' ';
-    }
-}
-
-
-/* find first element that isn't an identifier or pointer */
-iter_t parse::find_first_not_pointer_or_ident(vstring_t &v)
-{
-    auto i = v.begin();
-
-    for ( ; i != v.end(); i++) {
-        if ((*i).front() != '*' && (*i).front() != ID) {
-            break;
-        }
-    }
-
-    return i;
-}
-
-
-/* sizeof(SEQ) == strlen(SEQ) + 1 (char END) */
+/* we cannot use a template here because then ITER_POS
+ * and SEQ won't be constant expressions */
 #define CHECK_PATTERN(ITER_POS, SEQ, END) \
+    /* sizeof(SEQ) == strlen(SEQ) + 1 (char END) */ \
     static_assert(ITER_POS < sizeof(SEQ)); \
     static_assert(SEQ[0] == 't'); \
     return check_pattern(v, sizeof(SEQ), i, ITER_POS, SEQ+1 /* skip leading 't' */, END);

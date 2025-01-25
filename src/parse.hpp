@@ -32,17 +32,35 @@ namespace parse
 {
     enum { ID = '$' };
 
-    /* parse.cpp */
-    void append_strings(std::string &buf, const iter_t &it_beg, const iter_t &it_end);
-    iter_t find_first_not_pointer_or_ident(vstring_t &v);
+    /* append strings, separated by space */
+    template <typename T>
+    void append_strings(std::string &buf, const T &it_beg, const T &it_end) {
+        for (auto it = it_beg; it != it_end; it++) {
+            buf += *it;
+            buf += ' ';
+        }
+    }
+
+    /* find first element that isn't an identifier or pointer */
+    template <typename T>
+    T::iterator find_first_not_pointer_or_ident(T &v) {
+        for (auto i = v.begin(); i != v.end(); i++) {
+            if ((*i).front() != '*' && (*i).front() != ID) {
+                return i;
+            }
+        }
+        return v.end();
+    }
+
+    /* parameters.cpp */
+    bool read_and_copy_names(proto_t &proto, param::names &parameter_names);
+    bool create_names(proto_t &proto, std::string &msg);
+
+    /* parse.cpp (these are used in parameters.cpp too) */
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
     bool is_function_with_parentheses(vstring_t &v, const iter_t &i);
     bool is_function(vstring_t &v, const iter_t &i);
     bool is_array(vstring_t &v, const iter_t &i);
-
-    /* parameters.cpp */
-    bool read_and_copy_names(proto_t &proto, param::names &parameter_names);
-    bool create_names(proto_t &proto, std::string &msg);
 }
 
