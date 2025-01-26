@@ -425,27 +425,25 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
     std::string skip = std::to_string(n);
     char last_case = 0;
 
+    /* prefix check */
     if (pfx.size() == 0) {
-        /* no common prefix */
-        str += "  if (STR != NULL && *STR != 0)\\\n"
-               "  { \\\n"
-               "    switch (*STR) \\\n";
+        str += "  if (STR != NULL && *STR != 0)\\\n";
+    } else if (pfx.size() == 1) {
+        str += "  if (STR != NULL && *STR == '" + pfx + "') \\\n";
     } else {
-        /* check common prefix */
-        str += "  if (STR != NULL && strncmp(STR, \"" + pfx + "\", " + pfxlen + ") == 0) \\\n"
-               "  { \\\n"
-               "    switch (*(STR+" + pfxlen + ")) \\\n";
+        str += "  if (STR != NULL && strncmp(STR, \"" + pfx + "\", " + pfxlen + ") == 0) \\\n";
     }
 
-    str += "    { \\\n"
-           "    default:";
+    str += "  { \\\n"
+           "    switch (*(STR+" + pfxlen + ")) \\\n"
+           "    { \\\n"
+           "    default: \\\n";
 
     for (const auto &e : list)
     {
-        if (pfx.size() > 0 && e == pfx) {
-            str += " \\\n"
-                   "      break; \\\n"
-                   "    case 0: \\\n"
+        if (e == pfx) {
+            str += "      break; \\\n"
+                   "    case 0: /* same as common symbol prefix */ \\\n"
                    "      goto PFX##" + e + "; \\\n";
             continue;
         }
@@ -455,23 +453,23 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
         if (c != last_case) {
             last_case = c;
 
-            str += " \\\n"
-                   "      break; \\\n"
+            str += "      break; \\\n"
                    "    case '"; str+=c; str+="': \\\n"
+                   "      /* " + e + " */ \\\n"
                    "      if";
         } else {
-            str += " else if";
+            str += "      /* " + e + " */ \\\n"
+                   "      else if";
         }
 
         const char *str2 = e.c_str() + pfx.size() + 1;
 
-        str += " (strcmp(STR+" + skip + ", \"" + str2 + "\") == 0) { \\\n"
+        str += /****/ " (strcmp(STR+" + skip + ", \"" + str2 + "\") == 0) { \\\n"
                "        goto PFX##" + e + "; \\\n"
-               "      }";
+               "      } \\\n";
     }
 
-    str += " \\\n"
-           "      break; \\\n"
+    str += "      break; \\\n"
            "    } \\\n"
            "  }\n\n";
 
