@@ -179,6 +179,8 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
             i = find_first_not_pointer_or_ident(v);
 
             if (is_function_pointer(v, i)) {
+                /* type (   * symbol ) ( ) */
+                /*      ^ + 1 2            */
                 proto.notype_args += *(i + 2);
                 break;
             }
