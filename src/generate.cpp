@@ -346,43 +346,39 @@ void print_symbols_to_stdout(const vproto_t &objs, const vproto_t &funcs, const 
  * If you want to load a specific symbol we can use this
  * later for a faster lookup.
  */
-std::string get_common_prefix(vstring_t &vec)
+size_t common_prefix_length(vstring_t &vec)
 {
-    std::string *symbol0, pfx;
-
     /* need at least 2 symbols */
     if (vec.size() < 2) {
         return {};
     }
 
-    /* get first symbol */
-    symbol0 = &vec.at(0);
-
     /* get shortest symbol length */
-    size_t len = symbol0->size();
+    size_t maxlen = vec.at(0).size();
 
     for (const auto &e : vec) {
         /* prevent `min()' macro expansion from Windows headers */
-        len = std::min<size_t>(len, e.size());
+        maxlen = std::min<size_t>(maxlen, e.size());
     }
 
-    /* compare symbol names */
-    for (size_t i = 0; i < len; i++) {
-        const char c = symbol0->at(i);
+    size_t pfxlen = 0;
+
+    for (size_t i = 0; i < maxlen; i++) {
+        const char c = vec.at(0).at(i);
 
         for (const auto &e : vec) {
             if (e.at(i) != c) {
                 /* common prefix found (can be empty) */
-                return pfx;
+                return pfxlen;
             }
         }
 
-        pfx.push_back(c);
+        pfxlen++;
     }
 
     /* shortest symbol name is prefix, i.e. if a symbol `foo'
      * and `foobar' exist the prefix is `foo' */
-    return pfx;
+    return pfxlen;
 }
 
 /* create a macro that will do a slightly optimized lookup of a
@@ -390,27 +386,28 @@ std::string get_common_prefix(vstring_t &vec)
 int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_upper,
     const vproto_t &v_prototypes, const vproto_t &v_objects)
 {
-    vstring_t list;
+    vstring_t symbols, temp;
+    std::vector<vstring_t> lists;
     std::string str;
 
     for (const auto &e : v_prototypes) {
-        list.push_back(e.symbol);
+        symbols.push_back(e.symbol);
     }
 
     for (const auto &e : v_objects) {
-        list.push_back(e.symbol);
+        symbols.push_back(e.symbol);
     }
 
-    std::sort(list.begin(), list.end());
+    std::sort(symbols.begin(), symbols.end());
 
-    /* macro name */
-    str = "/* symbol name lookup macro */\n"
-          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(STR, PFX) \\\n";
+    /* #define GDO_CHECK_SYMBOL_NAME() */
+    str = "/* symbol name check */\n"
+          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME() \\\n";
 
-    /* single symbol */
-    if (list.size() == 1) {
-        str += "  if (STR != NULL && strcmp(STR, \"" + list.at(0) + "\") == 0) { \\\n"
-               "    goto PFX##" + list.at(0) + ";\\\n"
+    /* only 1 symbol */
+    if (symbols.size() == 1) {
+        str += "  if (symbol != NULL && strcmp(symbol, \"" + symbols.at(0) + "\") == 0) { \\\n"
+               "    goto " + pfx_upper + "_JUMP_" + symbols.at(0) + "; \\\n"
                "  }\n\n";
 
         out << str;
@@ -419,63 +416,95 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
     }
 
     /* multiple symbols */
-    std::string pfx = get_common_prefix(list);
-    std::string pfxlen = std::to_string(pfx.size());
-    size_t n = pfx.size() + 1;
-    std::string skip = std::to_string(n);
-    char last_case = 0;
+
+    const size_t pfxlen = common_prefix_length(symbols); /* can be 0 */
+    const auto pfx = symbols.at(0).substr(0, pfxlen); /* can be empty string */
+    const auto str_pfxlen = std::to_string(pfxlen);
+    const auto jumplabel = pfx_upper + "_JUMP_" + pfx;
 
     /* prefix check */
-    if (pfx.size() == 0) {
-        str += "  if (STR != NULL && *STR != 0)\\\n";
-    } else if (pfx.size() == 1) {
-        str += "  if (STR != NULL && *STR == '" + pfx + "') \\\n";
+    if (pfxlen == 0) {
+        str += "  if (symbol != NULL && *symbol != 0) \\\n";
+    } else if (pfxlen == 1) {
+        str += "  if (symbol != NULL && *symbol == '" + pfx + "') \\\n";
     } else {
-        str += "  if (STR != NULL && strncmp(STR, \"" + pfx + "\", " + pfxlen + ") == 0) \\\n";
+        str += "  if (symbol != NULL && strncmp(symbol, \"" + pfx + "\", " + str_pfxlen + ") == 0) \\\n";
     }
 
+    /* only 2 symbols */
+    if (symbols.size() == 2) {
+        const auto e0 = symbols.at(0).substr(pfxlen);
+        const auto e1 = symbols.at(1).substr(pfxlen);
+
+        str += "  { \\\n"
+               "    if (strcmp(symbol + " + str_pfxlen + ", \"" + e0 + "\") == 0) { \\\n"
+               "      goto " + jumplabel + e0 + "; \\\n"
+               "    } else if (strcmp(symbol + " + str_pfxlen + ", \"" + e1 + "\") == 0) { \\\n"
+               "      goto " + jumplabel + e1 + "; \\\n"
+               "    } \\\n"
+               "  }\n\n";
+
+        out << str;
+
+        return utils::count_linefeed(str);
+    }
+
+    /* copy symbol names into alphabetically sorted lists */
+    for (const auto &e : symbols) {
+        if (!temp.empty() && temp.at(0).front() != e.at(pfxlen)) {
+            lists.push_back(temp);
+            temp.clear();
+        }
+        temp.push_back(e.substr(pfxlen));
+    }
+
+    if (!temp.empty()) {
+        lists.push_back(temp);
+    }
+
+    /* switch begin */
     str += "  { \\\n"
-           "    switch (*(STR+" + pfxlen + ")) \\\n"
-           "    { \\\n"
-           "    default: \\\n";
+           "    switch (*(symbol + " + str_pfxlen + ")) \\\n"
+           "    { \\\n";
 
-    for (const auto &e : list)
-    {
-        if (e == pfx) {
-            str += "      break; \\\n"
-                   "    case 0: /* same as common symbol prefix */ \\\n"
-                   "      goto PFX##" + e + "; \\\n";
-            continue;
-        }
+    /* switch entries */
+    for (const auto &v : lists) {
+        char c = v.at(0).front();
 
-        char c = *(e.c_str() + pfx.size());
-
-        if (c != last_case) {
-            last_case = c;
-
-            str += "      break; \\\n"
-                   "    case '"; str+=c; str+="': \\\n"
-                   "      /* " + e + " */ \\\n"
-                   "      if";
+        if (c == 0) {
+            str += "    case 0: /* same as common symbol prefix */ \\\n"
+                   "      goto " + jumplabel + "; \\\n";
         } else {
-            str += "      /* " + e + " */ \\\n"
-                   "      else if";
+            str += "    case '"; str+=c; str+="': \\\n";
+
+            for (const auto &sym_short : v) {
+                auto ptr = sym_short.c_str() + 1;
+
+                /* example: »      GDO_CHECK(helloworld_hello, "ello"); \« */
+                str += "      " + pfx_upper + "_CHECK(" + pfx + sym_short + ", \"" + ptr + "\"); \\\n";
+            }
         }
 
-        const char *str2 = e.c_str() + pfx.size() + 1;
-
-        str += /****/ " (strcmp(STR+" + skip + ", \"" + str2 + "\") == 0) { \\\n"
-               "        goto PFX##" + e + "; \\\n"
-               "      } \\\n";
+        str += "      break; \\\n";
     }
 
-    str += "      break; \\\n"
+    /* switch end */
+    str += "    default: \\\n"
+           "      break; \\\n"
            "    } \\\n"
            "  }\n\n";
 
-    out << str;
+    /* #define GDO_CHECK() */
+    const auto check_macro =
+        "#define " + pfx_upper + "_CHECK(LABEL, STR) \\\n"
+        "  if (strcmp(symbol + " + std::to_string(pfxlen+1) + ", STR) == 0) { \\\n"
+        "    goto " + pfx_upper + "_JUMP_##LABEL; \\\n"
+        "  }\n\n";
 
-    return utils::count_linefeed(str);
+    /* print */
+    out << check_macro << str;
+
+    return utils::count_linefeed(check_macro) + utils::count_linefeed(str);
 }
 
 } /* end anonymous namespace */

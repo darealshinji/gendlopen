@@ -649,7 +649,8 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
         return false;
     }
 
-    GDO_CHECK_SYMBOL_NAME(symbol, GDO_JUMP_)
+    /* jumps to `GDO_JUMP_<..>' label if symbol was found */
+    GDO_CHECK_SYMBOL_NAME();
 
 #ifdef GDO_WINAPI
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
