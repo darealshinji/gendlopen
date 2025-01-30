@@ -161,12 +161,7 @@ void show_x11_message_box(const char *msg)
     XMoveWindow(display, window, x, y);
 
     /* event loop */
-#ifdef __APPLE__
-    const int ESCAPE_KEY = 61;
-#else
-    const int ESCAPE_KEY = 9;
-#endif
-
+    const int ESCAPE_KEY = 9; /* Linux only? */
     bool loop = true;
     XEvent event;
 
@@ -179,8 +174,8 @@ void show_x11_message_box(const char *msg)
         switch (event.type)
         {
         case Expose:
-            x = 16; //12;
-            y = h/2; //22;
+            x = 16;
+            y = h/2;
             XDrawText(display, window, gc, x, y, items, _countof(items));
             break;
 
@@ -235,7 +230,7 @@ bool load_fltk()
     /* try "libfltk.so.1.3" first, then "libfltk.so" */
     if (!dl_fltk_load_lib_name( LIBNAME(fltk, 1.3) )) {
         fprintf(stderr, "warning: %s\n", dl_fltk_last_error());
-        dl_fltk_load_lib_name( "libfltk" LIBEXTA );
+        dl_fltk_load_lib_name( "libfltk" LIBEXT );
     }
 
     if (dl_fltk_lib_is_loaded() && dl_fltk_load_all_symbols(false)) {
@@ -317,8 +312,15 @@ int main(int argc, char **argv)
     const char *msg = "Very important information!";
     int tk = TK_ALL;
 
-    /* test a specific toolkit */
     if (argc > 1) {
+        if (strcmp(argv[1], "--help") == 0) {
+            printf("usage:\n"
+                " %s [gtk|sdl|fltk|x11]\n"
+                " %s --help\n", argv[0], argv[0]);
+            return 0;
+        }
+
+        /* test a specific toolkit */
         if (strcasecmp(argv[1], "gtk") == 0) {
             tk = TK_GTK;
         } else if (strcasecmp(argv[1], "sdl") == 0) {
