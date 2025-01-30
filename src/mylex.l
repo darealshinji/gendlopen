@@ -53,7 +53,6 @@ other                [*,()\[\]]
 
 %x CLANG_AST
 %x C_COMMENT
-%x LN_COMMENT
 %x PREPROC
 %x OPTION
 
@@ -76,14 +75,10 @@ other                [*,()\[\]]
 <C_COMMENT>\n        { }
 <C_COMMENT>.         { }
 
-"//"                 { BEGIN(LN_COMMENT); }
-<LN_COMMENT>\n       { BEGIN(INITIAL); }
-<LN_COMMENT>.        { }
-
 {preproc}            { BEGIN(PREPROC); }
 <PREPROC>{linewrap}  { /* continue to next line */ }
 <PREPROC>\n          { BEGIN(INITIAL); }
-<PREPROC>.           { /* ignore preprocessor lines */ }
+<PREPROC>.           { }
 
 {option}             { BEGIN(OPTION); }
 <OPTION>{linewrap}   { /* continue to next line */ }
@@ -91,7 +86,8 @@ other                [*,()\[\]]
 <OPTION>\n           { BEGIN(INITIAL); }
 <OPTION>.            { }
 
-{bom}                { /* ignore byte order mark */ }
+"//".*               { /* comment line */ }
+{bom}                { /* byte order mark */ }
 [[:space:]]          { }
 
 {identifier}         { tokens_read = 1; return MYLEX_ID; }
@@ -121,7 +117,7 @@ static void illegal_char()
     }
 
 #ifdef _WIN32
-    _snprintf_s(errbuf, sizeof(errbuf), buflen, fmt, c, yylineno);
+    _snprintf_s(errbuf, sizeof(errbuf), _TRUNCATE, fmt, c, yylineno);
 #else
     snprintf(errbuf, buflen, fmt, c, yylineno);
 #endif
