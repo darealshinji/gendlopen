@@ -132,22 +132,19 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
  */
 GDO_LINKAGE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *fmt, ...)
 {
-    /* max number of elements to write, not including the terminating NUL */
-    const size_t count = buflen - 1;
-
     va_list ap;
     va_start(ap, fmt);
 
 #ifdef GDO_WINAPI
-    _vsntprintf_s(str, buflen, count, fmt, ap);
+    _vsntprintf_s(str, buflen, _TRUNCATE, fmt, ap);
 #else
     vsnprintf(str, buflen, fmt, ap);
 #endif
 
     va_end(ap);
 
-    /* just in case */
-    str[count] = 0;
+    /* not needed but you never know */
+    str[buflen-1] = 0;
 }
 
 /* simplified implementation of strlcpy (based on NetBSD's version) */
@@ -689,9 +686,9 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 
     /* format the message */
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                    FORMAT_MESSAGE_FROM_SYSTEM |
-                    FORMAT_MESSAGE_MAX_WIDTH_MASK,
-                NULL, gdo_hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);
+                  FORMAT_MESSAGE_FROM_SYSTEM |
+                  FORMAT_MESSAGE_MAX_WIDTH_MASK,
+                  NULL, gdo_hndl.last_errno, 0, (LPTSTR)&buf, 0, NULL);
 
     if (buf) {
         /* put custom message in front of system error message */
