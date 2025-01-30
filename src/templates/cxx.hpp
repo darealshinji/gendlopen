@@ -210,15 +210,15 @@ GDO_DISABLE_DLMOPEN
 #endif
 
 #ifdef GDO_WINAPI
-# include <stdlib.h>
-# include <string.h>
+# include <cstdlib>
+# include <cstring>
 #else
 # include <dlfcn.h>
 #endif
 
 #ifdef _AIX
-# include <errno.h>
-# include <string.h>
+# include <cerrno>
+# include <cstring>
 #endif
 
 #include <string>
