@@ -70,7 +70,7 @@
 # define LIBNAMEW(NAME, API)   L"lib" #NAME ".so." #API
 #endif
 
-/* Unicode/ANSI default macros */
+/* wide/narrow char default macros */
 #if defined(_WIN32) && defined(_UNICODE)
 # define LIBEXT              LIBEXTW
 # define LIBNAME(NAME, API)  LIBNAMEW(NAME, API)

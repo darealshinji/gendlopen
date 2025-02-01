@@ -9,9 +9,9 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 #ifdef GDO_HAS_MSG_CB
-# include <iostream>
-# include <cstdlib>
-#endif
+
+#include <iostream>
+#include <cstdlib>
 
 
 /* helpers used by function wrappers */
@@ -19,7 +19,6 @@ GDO_CXX_NAMESPACE
 {
     namespace helper
     {
-#ifdef GDO_HAS_MSG_CB
         static void error_exit(const char *msg)
         {
             auto cb = gdo::dl::message_callback();
@@ -32,9 +31,10 @@ GDO_CXX_NAMESPACE
 
             std::exit(1);
         }
-#endif //GDO_HAS_MSG_CB
     }
 }
+
+#endif //GDO_HAS_MSG_CB
 
 
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)

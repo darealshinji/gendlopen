@@ -692,9 +692,7 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 
     if (buf) {
         /* put custom message in front of system error message */
-        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) <
-            _countof(gdo_hndl.buf_formatted))
-        {
+        if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) < _countof(gdo_hndl.buf_formatted)) {
             GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_XS _T(": ") GDO_XS, msg, buf);
         } else {
             GDO_STRLCPY(gdo_hndl.buf_formatted, buf);

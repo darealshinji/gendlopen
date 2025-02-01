@@ -223,6 +223,10 @@ GDO_DISABLE_DLMOPEN
 
 #include <string>
 
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+# define GDO_HAS_MSG_CB
+#endif
+
 
 
 GDO_CXX_NAMESPACE
