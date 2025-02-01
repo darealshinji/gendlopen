@@ -226,7 +226,7 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
         utils::strip_spaces(decl.type);
 
         /* read next lines for parameters */
-        while ((rv = mylex(fp)) == MYLEX_AST_PARMVAR) {
+        while ((rv = lex(fp)) == LEX_AST_PARMVAR) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
             }
@@ -301,12 +301,12 @@ void gendlopen::clang_ast(FILE *fp)
 
     /* read lines */
     while (true) {
-        int rv = mylex(fp);
+        int rv = lex(fp);
 
-        if (rv == MYLEX_AST_PARMVAR) {
+        if (rv == LEX_AST_PARMVAR) {
             /* ignore */
             continue;
-        } else if (rv != MYLEX_OK) {
+        } else if (rv != LEX_AST_FUNCVAR) {
             /* stop */
             break;
         }

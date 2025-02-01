@@ -8,21 +8,20 @@ extern "C"
 #endif
 
 enum {
-    //MYLEX_EOF = 0,
-    MYLEX_OK = 1,
-    MYLEX_AST_BEGIN,
-    MYLEX_AST_PARMVAR,
-    MYLEX_OPTION,
-    MYLEX_ID,
-    MYLEX_OTHER,
-    MYLEX_SEMICOLON,
-    MYLEX_ERROR
+    LEX_ERROR = -2,
+    LEX_AST_BEGIN = 258,
+    LEX_AST_FUNCVAR,
+    LEX_AST_PARMVAR,
+    LEX_OPTION,
+    LEX_ID,
+    LEX_OTHER,
+    LEX_SEMICOLON
 };
 
 extern char *yytext;
 
-int mylex(FILE *fp);
-const char *mylex_lasterror();
+int lex(FILE *fp);
+const char *lex_lasterr();
 
 #ifdef __cplusplus
 }

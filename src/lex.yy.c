@@ -383,12 +383,12 @@ struct yy_trans_info
 static const flex_int16_t yy_accept[177] =
     {   0,
         0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-       28,   26,   21,   21,   24,   26,   26,   22,   25,   26,
+       28,   26,   21,   21,   23,   26,   26,   22,   25,   26,
        21,   21,   26,   10,   26,   22,   26,    5,    4,    5,
         5,    5,    5,    9,    8,    9,   13,   12,   13,   16,
        18,   17,   16,    0,    6,   19,   22,    0,    0,   10,
         0,    0,   22,    0,    0,    0,    0,    7,    0,   11,
-       16,    0,   15,   23,   19,   20,    0,    0,    0,   22,
+       16,    0,   15,   24,   19,   20,    0,    0,    0,   22,
        20,    0,    0,    0,    0,    0,    0,    0,    0,   22,
         0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
         0,   22,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -630,7 +630,6 @@ char *yytext;
 #include <ctype.h>
 #include "lex.h"
 
-static int tokens_read = 0;
 static char errbuf[128] = {0};
 static void illegal_char();
 
@@ -925,17 +924,17 @@ YY_RULE_SETUP
 { /* clang AST identifier in first line */
     if (yylineno == 1) {
         BEGIN(CLANG_AST);
-        return MYLEX_AST_BEGIN;
+        return LEX_AST_BEGIN;
     }
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-{ return MYLEX_OK; }
+{ return LEX_AST_FUNCVAR; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-{ return MYLEX_AST_PARMVAR; }
+{ return LEX_AST_PARMVAR; }
 	YY_BREAK
 case 4:
 /* rule 4 can match eol */
@@ -994,7 +993,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-{ return MYLEX_OPTION; }
+{ return LEX_OPTION; }
 	YY_BREAK
 case 17:
 /* rule 17 can match eol */
@@ -1020,28 +1019,23 @@ YY_RULE_SETUP
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-{ tokens_read = 1; return MYLEX_ID; }
+{ return LEX_ID; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-{ tokens_read = 1; return MYLEX_OTHER; }
+{ return LEX_OTHER; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-{ tokens_read = 1; return MYLEX_OTHER; }
+{ return LEX_OTHER; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-{ /* return if statement was not empty */
-    if (tokens_read) {
-        tokens_read = 0;
-        return MYLEX_SEMICOLON;
-    }
-}
+{ return LEX_SEMICOLON; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-{ illegal_char(); return MYLEX_ERROR; }
+{ illegal_char(); return LEX_ERROR; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
@@ -2036,7 +2030,7 @@ static void illegal_char()
     const size_t buflen = sizeof(errbuf) - 1;
     unsigned char c = (unsigned char)*yytext;
 
-    if (!isprint((int)*yytext)) {
+    if (!isgraph((int)*yytext)) {
         fmt = "illegal character [0x%02X] at line %d";
     }
 
@@ -2049,11 +2043,11 @@ static void illegal_char()
     errbuf[buflen] = 0;
 }
 
-const char *mylex_lasterror() {
+const char *lex_lasterr() {
     return (errbuf[0] == 0) ? NULL : errbuf;
 }
 
-int mylex(FILE *fp)
+int lex(FILE *fp)
 {
     if (fp && yyget_in() != fp) {
         yyset_in(fp);

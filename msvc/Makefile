@@ -40,7 +40,7 @@ clean:
 #template.h: gen_template_h.exe
 #	$** $(s)\src\templates
 
-#$(s)\src\lex.yy.c: $(s)\src\mylex.l
+#$(s)\src\lex.yy.c: $(s)\src\lex.l
 #	$(LEX) --noline $**
 
 #gen_template_h.exe: $(s)\src\gen_template_h.c

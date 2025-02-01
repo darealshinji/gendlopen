@@ -27,7 +27,6 @@
 #include <ctype.h>
 #include "lex.h"
 
-static int tokens_read = 0;
 static char errbuf[128] = {0};
 static void illegal_char();
 
@@ -61,12 +60,12 @@ other                [*,()\[\]]
 {ast_begin}          { /* clang AST identifier in first line */
     if (yylineno == 1) {
         BEGIN(CLANG_AST);
-        return MYLEX_AST_BEGIN;
+        return LEX_AST_BEGIN;
     }
 }
 
-<CLANG_AST>{funcvar} { return MYLEX_OK; }
-<CLANG_AST>{parmvar} { return MYLEX_AST_PARMVAR; }
+<CLANG_AST>{funcvar} { return LEX_AST_FUNCVAR; }
+<CLANG_AST>{parmvar} { return LEX_AST_PARMVAR; }
 <CLANG_AST>\n        { }
 <CLANG_AST>.         { }
 
@@ -82,7 +81,7 @@ other                [*,()\[\]]
 
 {option}             { BEGIN(OPTION); }
 <OPTION>{linewrap}   { /* continue to next line */ }
-<OPTION>{optstr}     { return MYLEX_OPTION; }
+<OPTION>{optstr}     { return LEX_OPTION; }
 <OPTION>\n           { BEGIN(INITIAL); }
 <OPTION>.            { }
 
@@ -90,18 +89,12 @@ other                [*,()\[\]]
 {bom}                { /* byte order mark */ }
 [[:space:]]          { }
 
-{identifier}         { tokens_read = 1; return MYLEX_ID; }
-"..."                { tokens_read = 1; return MYLEX_OTHER; }
-{other}              { tokens_read = 1; return MYLEX_OTHER; }
+{identifier}         { return LEX_ID; }
+{other}              { return LEX_OTHER; }
+"..."                { return LEX_OTHER; }
+";"                  { return LEX_SEMICOLON; }
 
-";"                  { /* return if statement was not empty */
-    if (tokens_read) {
-        tokens_read = 0;
-        return MYLEX_SEMICOLON;
-    }
-}
-
-.                    { illegal_char(); return MYLEX_ERROR; }
+.                    { illegal_char(); return LEX_ERROR; }
 
 %%
 
@@ -112,7 +105,7 @@ static void illegal_char()
     const size_t buflen = sizeof(errbuf) - 1;
     unsigned char c = (unsigned char)*yytext;
 
-    if (!isprint((int)*yytext)) {
+    if (!isgraph((int)*yytext)) {
         fmt = "illegal character [0x%02X] at line %d";
     }
 
@@ -125,11 +118,11 @@ static void illegal_char()
     errbuf[buflen] = 0;
 }
 
-const char *mylex_lasterror() {
+const char *lex_lasterr() {
     return (errbuf[0] == 0) ? NULL : errbuf;
 }
 
-int mylex(FILE *fp)
+int lex(FILE *fp)
 {
     if (fp && yyget_in() != fp) {
         yyset_in(fp);

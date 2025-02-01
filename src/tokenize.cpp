@@ -48,18 +48,18 @@ namespace /* anonymous */
     /* tokenize stream into prototype tokens and options */
     int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
     {
-        int rv = MYLEX_ERROR;
+        int rv = LEX_ERROR;
         vstring_t tokens;
         bool loop = true;
 
         while (loop)
         {
-            rv = mylex(fp);
+            rv = lex(fp);
 
             switch (rv)
             {
             /* identifier */
-            case MYLEX_ID:
+            case LEX_ID:
                 /* don't add "extern" keyword */
                 if (strcasecmp(yytext, "extern") != 0) {
                     tokens.push_back(std::string(1, parse::ID) + yytext);
@@ -67,12 +67,12 @@ namespace /* anonymous */
                 break;
 
             /* other tokens */
-            case MYLEX_OTHER:
+            case LEX_OTHER:
                 tokens.push_back(yytext);
                 break;
 
             /* end of prototype declaration */
-            case MYLEX_SEMICOLON:
+            case LEX_SEMICOLON:
                 if (!tokens.empty()) {
                     vec.push_back(tokens);
                     tokens.clear();
@@ -80,7 +80,7 @@ namespace /* anonymous */
                 break;
 
             /* "%option" line */
-            case MYLEX_OPTION:
+            case LEX_OPTION:
                 if (options) {
                     options->push_back(yytext);
                 }
@@ -134,15 +134,15 @@ void gendlopen::tokenize()
     /* read and tokenize input */
     int ret = tokenize_stream(file.file_pointer(), vec_tokens, poptions);
 
-    if (ret == MYLEX_ERROR) {
+    if (ret == LEX_ERROR) {
         /* lexer error */
-        const char *p = mylex_lasterror();
+        const char *p = lex_lasterr();
 
         if (p) {
             throw error(input_name + '\n' + p);
         }
         throw error(input_name);
-    } else if (ret == MYLEX_AST_BEGIN) {
+    } else if (ret == LEX_AST_BEGIN) {
         /* input is a clang AST file */
         clang_ast(file.file_pointer());
         return;
