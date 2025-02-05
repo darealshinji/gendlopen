@@ -631,31 +631,33 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
 {
+    gdo_clear_errbuf();
+
     /* no library was loaded */
     if (!gdo_lib_is_loaded()) {
         gdo_set_error_no_library_loaded();
         return false;
     }
 
+    /* jumps to `GDO_JUMP_<..>' label if symbol was found */
+    GDO_CHECK_SYMBOL_NAME(symbol);
+
+    /* error */
     if (!symbol || *symbol == 0) {
-        gdo_clear_errbuf();
 #ifdef GDO_WINAPI
         gdo_hndl.last_errno = ERROR_INVALID_PARAMETER;
 #endif
         gdo_save_to_errbuf(_T("empty symbol name"));
-        return false;
+    } else {
+#ifdef GDO_WINAPI
+        gdo_hndl.last_errno = ERROR_NOT_FOUND;
+#endif
+        GDO_SNPRINTF(gdo_hndl.buf, _T("unknown symbol: %s"), symbol);
     }
 
-    /* jumps to `GDO_JUMP_<..>' label if symbol was found */
-    GDO_CHECK_SYMBOL_NAME();
-
-#ifdef GDO_WINAPI
-    gdo_hndl.last_errno = ERROR_NOT_FOUND;
-#endif
-
-    GDO_SNPRINTF(gdo_hndl.buf, _T("unknown symbol: %s"), symbol);
-
     return false;
+
+    /* jump labels */
 @
     /* %%symbol%% */@
 GDO_JUMP_%%symbol%%:@

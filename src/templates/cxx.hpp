@@ -859,24 +859,26 @@ public:
             return false;
         }
 
+        /* jumps to `GDO_JUMP_<..>' label if symbol was found */
+        GDO_CHECK_SYMBOL_NAME(symbol);
+
+        /* error */
         if (!symbol || *symbol == 0) {
 #ifdef GDO_WINAPI
             m_last_error = ERROR_INVALID_PARAMETER;
 #endif
             m_errmsg = "empty symbol name";
-            return false;
+        } else {
+#ifdef GDO_WINAPI
+            m_last_error = ERROR_NOT_FOUND;
+#endif
+            m_errmsg = "unknown symbol: ";
+            m_errmsg += symbol;
         }
 
-        /* jumps to `GDO_JUMP_<..>' label if symbol was found */
-        GDO_CHECK_SYMBOL_NAME();
-
-#ifdef GDO_WINAPI
-        m_last_error = ERROR_NOT_FOUND;
-#endif
-        m_errmsg = "unknown symbol: ";
-        m_errmsg += symbol;
-
         return false;
+
+        /* jump labels */
 @
         /* %%symbol%% */@
     GDO_JUMP_%%symbol%%:@

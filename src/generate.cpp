@@ -390,6 +390,7 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
     std::vector<vstring_t> lists;
     std::string str;
 
+    /* copy symbol names */
     for (const auto &e : v_prototypes) {
         symbols.push_back(e.symbol);
     }
@@ -400,13 +401,13 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
 
     std::sort(symbols.begin(), symbols.end());
 
-    /* #define GDO_CHECK_SYMBOL_NAME() */
+    /* GDO_CHECK_SYMBOL_NAME */
     str = "/* symbol name check */\n"
-          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME() \\\n";
+          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(SYM) \\\n";
 
     /* only 1 symbol */
     if (symbols.size() == 1) {
-        str += "  if (symbol != NULL && strcmp(symbol, \"" + symbols.at(0) + "\") == 0) { \\\n"
+        str += "  if (SYM != NULL && strcmp(SYM, \"" + symbols.at(0) + "\") == 0) { \\\n"
                "    goto " + pfx_upper + "_JUMP_" + symbols.at(0) + "; \\\n"
                "  }\n\n";
 
@@ -420,42 +421,24 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
     const size_t pfxlen = common_prefix_length(symbols); /* can be 0 */
     const auto pfx = symbols.at(0).substr(0, pfxlen); /* can be empty string */
     const auto str_pfxlen = std::to_string(pfxlen);
-    const auto jumplabel = pfx_upper + "_JUMP_" + pfx;
+    const auto off = std::to_string(pfxlen + 1);
 
     /* prefix check */
     if (pfxlen == 0) {
-        str += "  if (symbol != NULL && *symbol != 0) \\\n";
+        str += "  if (SYM != NULL) \\\n";
     } else if (pfxlen == 1) {
-        str += "  if (symbol != NULL && *symbol == '" + pfx + "') \\\n";
+        str += "  if (SYM != NULL && *SYM == '" + pfx + "') \\\n";
     } else {
-        str += "  if (symbol != NULL && strncmp(symbol, \"" + pfx + "\", " + str_pfxlen + ") == 0) \\\n";
-    }
-
-    /* only 2 symbols */
-    if (symbols.size() == 2) {
-        const auto e0 = symbols.at(0).substr(pfxlen);
-        const auto e1 = symbols.at(1).substr(pfxlen);
-
-        str += "  { \\\n"
-               "    if (strcmp(symbol + " + str_pfxlen + ", \"" + e0 + "\") == 0) { \\\n"
-               "      goto " + jumplabel + e0 + "; \\\n"
-               "    } else if (strcmp(symbol + " + str_pfxlen + ", \"" + e1 + "\") == 0) { \\\n"
-               "      goto " + jumplabel + e1 + "; \\\n"
-               "    } \\\n"
-               "  }\n\n";
-
-        out << str;
-
-        return utils::count_linefeed(str);
+        str += "  if (SYM != NULL && strncmp(SYM, \"" + pfx + "\", " + str_pfxlen + ") == 0) \\\n";
     }
 
     /* copy symbol names into alphabetically sorted lists */
     for (const auto &e : symbols) {
-        if (!temp.empty() && temp.at(0).front() != e.at(pfxlen)) {
+        if (!temp.empty() && temp.front().at(pfxlen) != e.at(pfxlen)) {
             lists.push_back(temp);
             temp.clear();
         }
-        temp.push_back(e.substr(pfxlen));
+        temp.push_back(e);
     }
 
     if (!temp.empty()) {
@@ -464,28 +447,28 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
 
     /* switch begin */
     str += "  { \\\n"
-           "    switch (*(symbol + " + str_pfxlen + ")) \\\n"
+           "    switch (*(SYM+" + str_pfxlen + ")) \\\n"
            "    { \\\n";
 
     /* switch entries */
     for (const auto &v : lists) {
-        char c = v.at(0).front();
+        char c = v.front().at(pfxlen);
 
         if (c == 0) {
             str += "    case 0: /* same as common symbol prefix */ \\\n"
-                   "      goto " + jumplabel + "; \\\n";
+                   "      goto " + pfx_upper + "_JUMP_" + pfx + "; \\\n";
         } else {
             str += "    case '"; str+=c; str+="': \\\n";
 
-            for (const auto &sym_short : v) {
-                auto ptr = sym_short.c_str() + 1;
+            for (const auto &e : v) {
+                const char *short_name = e.c_str() + pfxlen + 1;
 
-                /* example: »      GDO_CHECK(helloworld_hello, "ello"); \« */
-                str += "      " + pfx_upper + "_CHECK(" + pfx + sym_short + ", \"" + ptr + "\"); \\\n";
+                str += "      if (strcmp(SYM+" + off + ", \"" + short_name + "\") == 0) /*" + e + "*/ \\\n"
+                       "        { goto " + pfx_upper + "_JUMP_" + e + "; } \\\n";
             }
-        }
 
-        str += "      break; \\\n";
+            str += "      break; \\\n";
+        }
     }
 
     /* switch end */
@@ -494,17 +477,9 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
            "    } \\\n"
            "  }\n\n";
 
-    /* #define GDO_CHECK() */
-    const auto check_macro =
-        "#define " + pfx_upper + "_CHECK(LABEL, STR) \\\n"
-        "  if (strcmp(symbol + " + std::to_string(pfxlen+1) + ", STR) == 0) { \\\n"
-        "    goto " + pfx_upper + "_JUMP_##LABEL; \\\n"
-        "  }\n\n";
+    out << str;
 
-    /* print */
-    out << check_macro << str;
-
-    return utils::count_linefeed(check_macro) + utils::count_linefeed(str);
+    return utils::count_linefeed(str);
 }
 
 } /* end anonymous namespace */
