@@ -56,11 +56,13 @@ namespace parse
     bool read_and_copy_names(proto_t &proto, param::names &parameter_names);
     bool create_names(proto_t &proto, std::string &msg);
 
-    /* parse.cpp (these are used in parameters.cpp too) */
+    /* parse.cpp */
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
     bool is_function_with_parentheses(vstring_t &v, const iter_t &i);
     bool is_function(vstring_t &v, const iter_t &i);
     bool is_array(vstring_t &v, const iter_t &i);
+    bool is_array_no_name(vstring_t &v, const iter_t &it);
+    bool is_object(vstring_t &v, const iter_t &it);
 }
 

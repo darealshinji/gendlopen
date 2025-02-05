@@ -33,6 +33,8 @@
 #include "types.hpp"
 #include "utils.hpp"
 
+#define POINTER    "*"
+#define TRIPLE_DOT "..."
 
 
 namespace /* anonymous */
@@ -46,27 +48,29 @@ namespace /* anonymous */
             return true;
         }
 
-        /* check for "void" parameter */
-        if (proto.args_vec.size() == 1) {
-            /* only 1 parameter entry (token list) */
-            auto &v = proto.args_vec.at(0);
+        /* must be 1 parameter */
+        if (proto.args_vec.size() != 1) {
+            return false;
+        }
 
-            if (v.size() == 1) {
-                /* only 1 token */
+        auto &v = proto.args_vec.at(0);
 
-                if (v.at(0).empty()) {
-                    /* no parameters */
-                    return true;
-                }
+        /* must be 1 token */
+        if (v.size() != 1) {
+            return false;
+        }
 
-                const char *str = v.at(0).c_str();
+        if (v.at(0).empty()) {
+            /* no parameters */
+            return true;
+        }
 
-                if (*str == parse::ID && strcasecmp(str+1, "void") == 0) {
-                    /* "void" parameter */
-                    proto.args = v.at(0);
-                    return true;
-                }
-            }
+        const char *str = v.at(0).c_str();
+
+        if (*str == parse::ID && strcasecmp(str+1, "void") == 0) {
+            /* "void" parameter */
+            proto.args = v.at(0);
+            return true;
         }
 
         /* regular parameters */
@@ -84,16 +88,14 @@ namespace /* anonymous */
     }
 
 
-    bool get_array_type(vstring_t &v, proto_t &proto, char &name)
+    bool get_array_type(vstring_t &v, iter_t &it, proto_t &proto, char &name)
     {
-        auto i = parse::find_first_not_pointer_or_ident(v);
-
-        if (parse::is_array(v, i)) {
-            /*  type [ ]  */
-            /*       ^i   */
-            parse::append_strings(proto.args, v.begin(), i);
+        if (parse::is_array_no_name(v, it)) {
+            /*  type [ ]   */
+            /*       ^iter */
+            parse::append_strings(proto.args, v.begin(), it);
             append_name(proto, name);
-            parse::append_strings(proto.args, i, v.end());
+            parse::append_strings(proto.args, it, v.end());
             proto.args += ", ";
 
             return true;
@@ -103,31 +105,30 @@ namespace /* anonymous */
     }
 
 
-    bool get_function_pointer_type(vstring_t &v, proto_t &proto, char &name)
+    bool get_function_pointer_type(vstring_t &v, iter_t &it, proto_t &proto, char &name)
     {
-        auto i = parse::find_first_not_pointer_or_ident(v);
-
-        if (parse::is_function_pointer(v, i)) {
+        if (parse::is_function_pointer(v, it)) {
             /* guessing the name should be save */
-            /*  type ( * name ) ( )  */
-            /*       ^i              */
-            parse::append_strings(proto.args, v.begin(), i+2);
+            /*  type (       * name ) ( )  */
+            /*       ^iter + 1 2    3      */
+            parse::append_strings(proto.args, v.begin(), it+2);
             append_name(proto, name);
-            parse::append_strings(proto.args, i+3, v.end());
+            parse::append_strings(proto.args, it+3, v.end());
             proto.args += ", ";
             return true;
-        } else if (parse::is_function_pointer_no_name(v, i)) {
-            /*  type ( * ) ( )  */
-            /*       ^i         */
-            parse::append_strings(proto.args, v.begin(), i+1);
+        } else if (parse::is_function_pointer_no_name(v, it)) {
+            /*  type (       * ) ( )  */
+            /*       ^iter + 1 2      */
+            parse::append_strings(proto.args, v.begin(), it+2);
             append_name(proto, name);
-            parse::append_strings(proto.args, i+2, v.end());
+            parse::append_strings(proto.args, it+2, v.end());
             proto.args += ", ";
             return true;
         }
 
         return false;
     }
+
 } /* end anonymous namespace */
 
 
@@ -154,58 +155,37 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
     }
 
     /* get parameter names */
-    for (auto &v : proto.args_vec) {
-        iter_t i;
-        char last = v.back()[0];
+    for (auto &v : proto.args_vec)
+    {
+        if (v.size() == 1) {
+            /* check for `...' */
+            if (v.back() == TRIPLE_DOT) {
+                proto.notype_args += TRIPLE_DOT ", ";
+                continue;
+            }
+            return false;  /* typename only or incorrect format */
+        }
 
-        if (v.size() == 1 && last != '.') {
-            /* typename only */
+        /* check if a parameter begins with `*' */
+        if (v.at(0) == POINTER) {
             return false;
         }
 
-        switch (last)
-        {
-        case ID:
-            /* identifier */
-            proto.notype_args += v.back();
-            break;
+        iter_t it = find_first_not_pointer_or_ident(v);
 
-        case '*':
-            /* pointer, no param name */
-            return false;
-
-        case ')':
-            /* function pointer */
-            i = find_first_not_pointer_or_ident(v);
-
-            if (is_function_pointer(v, i)) {
-                /* type (   * symbol ) ( ) */
-                /*      ^ + 1 2            */
-                proto.notype_args += *(i + 2);
-                break;
-            }
-            return false;
-
-        case ']':
-            /* array */
-            i = find_first_not_pointer_or_ident(v);
-
-            if (is_array(v, i)) {
-                proto.notype_args += *(i - 1);
-                break;
-            }
-            return false;
-
-        case '.':
-            /* `...' (single dots aren't lexed) */
-            proto.notype_args += v.back();
-            break;
-
-        default:
-            return false;
+        if (is_object(v, it)) {
+            proto.notype_args += v.back() + ", ";
         }
-
-        proto.notype_args += ", ";
+        else if (is_function_pointer(v, it)) {
+            /* type (     * symbol ) ( ) */
+            /*      ^it + 1 2            */
+            proto.notype_args += *(it + 2) + ", ";
+        }
+        else if (is_array(v, it)) {
+            /* type symbol [   ] */
+            /*      -1     ^it   */
+            proto.notype_args += *(it - 1) + ", ";
+        }
     }
 
     utils::delete_suffix(proto.notype_args, ", ");
@@ -233,35 +213,30 @@ bool parse::create_names(proto_t &proto, std::string &msg)
             return false;
         }
 
-        switch (v.back()[0])
-        {
-        case ')':
-            /* function pointer */
-            if (!get_function_pointer_type(v, proto, name)) {
-                msg = "failed to read function pointer type `" + proto.symbol + "'";
-                return false;
-            }
+        /* check if a parameter begins with `*' */
+        if (v.at(0) == POINTER) {
+            msg = "parameter in function `" + proto.symbol + "' begins with pointer";
+            return false;
+        }
+
+        /* don't append anything to `...' */
+        if (v.size() == 1 && v.back() == TRIPLE_DOT) {
+            proto.args += TRIPLE_DOT ", ";
+            proto.notype_args += TRIPLE_DOT ", ";
             continue;
-        case ']':
-            /* array */
-            if (!get_array_type(v, proto, name)) {
-                msg = "failed to read array type `" + proto.symbol + "'";
-                return false;
-            }
+        }
+
+        /* function pointer and array types */
+        iter_t it = parse::find_first_not_pointer_or_ident(v);
+
+        if (get_function_pointer_type(v, it, proto, name)) {
             continue;
-        default:
-            break;
+        } else if (get_array_type(v, it, proto, name)) {
+            continue;
         }
 
         /* copy parameters */
         append_strings(proto.args, v.begin(), v.end());
-
-        /* don't append anything to `...' */
-        if (v.size() == 1 && v.back() == "...") {
-            proto.args += ", ";
-            proto.notype_args += "... , ";
-            continue;
-        }
 
         /* add name */
         proto.args += name;

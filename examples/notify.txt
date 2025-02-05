@@ -3,7 +3,7 @@
         param=create
 
 /* libnotify/notify.h */
-gboolean        notify_init (const char *);
+gboolean        notify_init (const char[]);  // array without name
 void            notify_uninit (void);
 gboolean        notify_is_initted (void);
 
