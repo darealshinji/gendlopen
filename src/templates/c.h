@@ -253,8 +253,8 @@ typedef struct gdo_handle
     gdo_char_t buf[8*1024];
 
     /* symbols */
-    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);
-    %%obj_type%% *%%obj_symbol%%_ptr_;
+    %%type%% (*gdo_ptr_%%func_symbol%%)(%%args%%);
+    %%obj_type%% *gdo_ptr_%%obj_symbol%%;
 
 } gdo_handle_t;
 
@@ -287,8 +287,8 @@ enum {
 };
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
-#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.%%func_symbol%%_ptr_
-#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.%%obj_symbol%%_ptr_
+#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.gdo_ptr_%%func_symbol%%
+#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.gdo_ptr_%%obj_symbol%%
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)

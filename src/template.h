@@ -551,8 +551,8 @@ static const template_t c_header[] = {
   { "    gdo_char_t buf[8*1024];", 0, 1 },
   { "", 0, 1 },
   { "    /* symbols */", 0, 1 },
-  { "    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);", 1, 1 },
-  { "    %%obj_type%% *%%obj_symbol%%_ptr_;", 1, 1 },
+  { "    %%type%% (*gdo_ptr_%%func_symbol%%)(%%args%%);", 1, 1 },
+  { "    %%obj_type%% *gdo_ptr_%%obj_symbol%%;", 1, 1 },
   { "", 0, 1 },
   { "} gdo_handle_t;", 0, 1 },
   { "", 0, 1 },
@@ -585,8 +585,8 @@ static const template_t c_header[] = {
   { "};", 0, 1 },
   { "", 0, 1 },
   { "/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */", 0, 1 },
-  { "#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.%%func_symbol%%_ptr_", 1, 1 },
-  { "#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.%%obj_symbol%%_ptr_", 1, 1 },
+  { "#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.gdo_ptr_%%func_symbol%%", 1, 1 },
+  { "#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.gdo_ptr_%%obj_symbol%%", 1, 1 },
   { "", 0, 1 },
   { "/* aliases to raw function pointers */", 0, 1 },
   { "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
@@ -1051,7 +1051,7 @@ static const template_t c_body[] = {
   { "", 0, 1 },
   { "    /* set pointers back to NULL */", 0, 1 },
   { "    gdo_hndl.handle = NULL;", 0, 1 },
-  { "    gdo_hndl.%%symbol%%_ptr_ = NULL;", 1, 1 },
+  { "    gdo_hndl.gdo_ptr_%%symbol%% = NULL;", 1, 1 },
   { "", 0, 1 },
   { "    return true;", 0, 1 },
   { "}", 0, 1 },
@@ -1065,7 +1065,7 @@ static const template_t c_body[] = {
   { "GDO_LINKAGE bool gdo_all_symbols_loaded(void)", 0, 1 },
   { "{", 0, 1 },
   { "    if (true", 0, 1 },
-  { "        && gdo_hndl.%%symbol%%_ptr_ != NULL", 1, 1 },
+  { "        && gdo_hndl.gdo_ptr_%%symbol%% != NULL", 1, 1 },
   { "    ) {", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -1082,7 +1082,7 @@ static const template_t c_body[] = {
   { "GDO_LINKAGE bool gdo_no_symbols_loaded(void)", 0, 1 },
   { "{", 0, 1 },
   { "    if (true", 0, 1 },
-  { "        && gdo_hndl.%%symbol%%_ptr_ == NULL", 1, 1 },
+  { "        && gdo_hndl.gdo_ptr_%%symbol%% == NULL", 1, 1 },
   { "    ) {", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -1099,7 +1099,7 @@ static const template_t c_body[] = {
   { "GDO_LINKAGE bool gdo_any_symbol_loaded(void)", 0, 1 },
   { "{", 0, 1 },
   { "    if (false", 0, 1 },
-  { "        || gdo_hndl.%%symbol%%_ptr_ != NULL", 1, 1 },
+  { "        || gdo_hndl.gdo_ptr_%%symbol%% != NULL", 1, 1 },
   { "    ) {", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -1138,10 +1138,10 @@ static const template_t c_body[] = {
   { "    /* get symbol addresses */", 0, 1 },
   { "", 0, 1 },
   { "    /* %%symbol%% */\n" /* multiline entry */
-    "    gdo_hndl.%%symbol%%_ptr_ = \n"
+    "    gdo_hndl.gdo_ptr_%%symbol%% = \n"
     "        (%%sym_type%%)\n"
     "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "    if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {\n"
+    "    if (!gdo_hndl.gdo_ptr_%%symbol%%&& !ignore_errors) {\n"
     "        return false;\n"
     "    }\n"
     "", 1, 8 },
@@ -1208,10 +1208,10 @@ static const template_t c_body[] = {
   { "    {", 0, 1 },
   { "    /* %%symbol%% */\n" /* multiline entry */
     "    case GDO_LOAD_%%symbol%%:\n"
-    "        gdo_hndl.%%symbol%%_ptr_ =\n"
+    "        gdo_hndl.gdo_ptr_%%symbol%% =\n"
     "            (%%sym_type%%)\n"
     "                gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "        return (gdo_hndl.%%symbol%%_ptr_ != NULL);\n"
+    "        return (gdo_hndl.gdo_ptr_%%symbol%% != NULL);\n"
     "", 1, 7 },
   { "    default:", 0, 1 },
   { "        break;", 0, 1 },
@@ -1267,10 +1267,10 @@ static const template_t c_body[] = {
   { "\n" /* multiline entry */
     "    /* %%symbol%% */\n"
     "GDO_JUMP_%%symbol%%:\n"
-    "    gdo_hndl.%%symbol%%_ptr_ =\n"
+    "    gdo_hndl.gdo_ptr_%%symbol%% =\n"
     "        (%%sym_type%%)\n"
     "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "    return (gdo_hndl.%%symbol%%_ptr_ != NULL);", 1, 7 },
+    "    return (gdo_hndl.gdo_ptr_%%symbol%% != NULL);", 1, 7 },
   { "}", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
   { "", 0, 1 },
@@ -1386,7 +1386,7 @@ static const template_t c_body[] = {
   { "        return NULL;", 0, 1 },
   { "    }", 0, 1 },
   { "", 0, 1 },
-  { "    fname = gdo_dladdr_get_fname((void *)gdo_hndl.%%symbol%%_ptr_);\n" /* multiline entry */
+  { "    fname = gdo_dladdr_get_fname((void *)gdo_hndl.gdo_ptr_%%symbol%%);\n" /* multiline entry */
     "    if (fname) return fname;", 1, 2 },
   { "", 0, 1 },
   { "    gdo_save_to_errbuf(\"dladdr() failed to get library path\");", 0, 1 },
@@ -1436,10 +1436,10 @@ static const template_t c_body[] = {
   { "/* function wrappers */", 0, 1 },
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
-    "    if (!gdo_hndl.%%func_symbol%%_ptr_) {\n"
+    "    if (!gdo_hndl.gdo_ptr_%%func_symbol%%) {\n"
     "        gdo_error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
     "    }\n"
-    "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
+    "    %%return%% gdo_hndl.gdo_ptr_%%func_symbol%%(%%notype_args%%);\n"
     "}\n"
     "", 1, 7 },
   { "", 0, 1 },
@@ -1511,7 +1511,7 @@ static const template_t c_body[] = {
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
     "    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T(\"%%func_symbol%%\"));\n"
-    "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
+    "    %%return%% gdo_hndl.gdo_ptr_%%func_symbol%%(%%notype_args%%);\n"
     "}\n"
     "", 1, 5 },
   { "#endif //GDO_ENABLE_AUTOLOAD", 0, 1 },
