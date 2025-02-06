@@ -3,8 +3,35 @@ gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;
 #endif
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
-%%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;
-%%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;
+%%type%% (*gdo::gdo_%%func_symbol%%)(%%args%%) = nullptr;
+%%obj_type%% *gdo::gdo_%%obj_symbol%% = nullptr;
+
+
+/* Create versioned library names for DLLs, dylibs and DSOs.
+ * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+std::string gdo::make_libname(const std::string &name, const size_t api)
+{
+#ifdef _WIN32
+    return "lib" + name + '-' + std::to_string(api) + ".dll";
+#elif defined(__APPLE__) && defined(__MACH__)
+    return "lib" + name + '.' + std::to_string(api) + ".dylib";
+#elif defined(_AIX)
+    UNUSED_VAL_(api);
+    return "lib" + name + ".a";
+#elif defined(__ANDROID__)
+    UNUSED_VAL_(api);
+    return "lib" + name + ".so";
+#else
+    return "lib" + name + ".so." + std::to_string(api);
+#endif
+}
+
+#ifdef GDO_WINAPI
+std::wstring gdo::make_libname(const std::wstring &name, const size_t api);
+{
+    return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
+}
+#endif //GDO_WINAPI
 %PARAM_SKIP_REMOVE_BEGIN%
 
 
@@ -43,10 +70,10 @@ GDO_CXX_NAMESPACE
 /* function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    if (!gdo::dl::m_ptr_%%func_symbol%%) {@
+    if (!gdo::gdo_%%func_symbol%%) {@
         gdo::helper::error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
-    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@
+    %%return%% gdo::gdo_%%func_symbol%%(%%notype_args%%);@
 }
 
 
@@ -89,8 +116,8 @@ GDO_CXX_NAMESPACE
 /* autoload function wrappers */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo::helper::quick_load(gdo::dl::LOAD_%%func_symbol%%, "%%func_symbol%%");@
-    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);@
+    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
+    %%return%% gdo::gdo_%%func_symbol%%(%%notype_args%%);@
 }
 
 #endif //GDO_ENABLE_AUTOLOAD

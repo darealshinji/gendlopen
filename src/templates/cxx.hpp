@@ -5,23 +5,31 @@
 GDO_CXX_NAMESPACE
 {
 
+/* default flags */
+constexpr const int default_flags;
+
+
+/* Shared library file extension without dot ("dll", "dylib" or "so").
+ * Useful i.e. on plugins. */
+static constexpr const char * const libext;
+#ifdef GDO_WINAPI
+constexpr const wchar_t * const libext_w;
+#endif
+
+
+/* Create versioned library names for DLLs, dylibs and DSOs.
+ * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+std::string make_libname(const std::string &name, const size_t api);
+#ifdef GDO_WINAPI
+std::wstring make_libname(const std::wstring &name, const size_t api);
+#endif
+
+
 class dl
 {
 public:
 
     using message_callback_t = void (*)(const char *);
-
-
-    /* default flags */
-    static constexpr const int default_flags;
-
-
-    /* Shared library file extension without dot ("dll", "dylib" or "so").
-     * Useful i.e. on plugins. */
-    static constexpr const char * const libext;
-#ifdef GDO_WINAPI
-    static constexpr const wchar_t * const libext_w;
-#endif
 
 
     /* c'tor */
@@ -101,14 +109,6 @@ public:
 
     /* whether to free the library in the class destructor */
     void free_lib_in_dtor(bool b);
-
-
-    /* Create versioned library names for DLLs, dylibs and DSOs.
-     * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
-    static std::string make_libname(const std::string &name, const size_t api);
-#ifdef GDO_WINAPI
-    static std::wstring make_libname(const std::wstring &name, const size_t api);
-#endif
 
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
@@ -228,6 +228,11 @@ GDO_DISABLE_DLMOPEN
 #endif
 
 
+/* enumeration values for `load_symbol()' method */
+enum {
+    GDO_LOAD_%%symbol%%,
+};
+
 
 GDO_CXX_NAMESPACE
 {
@@ -240,6 +245,31 @@ void UNUSED_VAL_(T val) {
 }
 
 
+/* Create versioned library names for DLLs, dylibs and DSOs.
+ * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+std::string make_libname(const std::string &name, const size_t api);
+#ifdef GDO_WINAPI
+std::wstring make_libname(const std::wstring &name, const size_t api);
+#endif
+
+
+/* default flags */
+constexpr const int default_flags = GDO_DEFAULT_FLAGS;
+
+
+/* Shared library file extension without dot ("dll", "dylib" or "so").
+ * Useful i.e. on plugins. */
+constexpr const char * const libext = LIBEXTA;
+#ifdef GDO_WINAPI
+constexpr const wchar_t * const libext_w = LIBEXTW;
+#endif
+
+
+/* symbol pointers */
+extern %%type%% (*gdo_%%func_symbol%%)(%%args%%);
+extern %%obj_type%% *gdo_%%obj_symbol%%;
+
+
 /*****************************************************************************/
 /*                          library loader class                             */
 /*****************************************************************************/
@@ -248,27 +278,6 @@ class dl
 public:
 
     using message_callback_t = void (*)(const char *);
-
-
-    /* default flags */
-    static constexpr const int default_flags = GDO_DEFAULT_FLAGS;
-
-    /* Shared library file extension without dot ("dll", "dylib" or "so").
-     * Useful i.e. on plugins. */
-    static constexpr const char * const libext = LIBEXTA;
-#ifdef GDO_WINAPI
-    static constexpr const wchar_t * const libext_w = LIBEXTW;
-#endif
-
-    /* symbol pointers */
-    static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);
-    static %%obj_type%% *m_ptr_%%obj_symbol%%;
-
-    /* enumeration values for `load_symbol()' method */
-    enum {
-        LOAD_%%symbol%%,
-    };
-
 
 private:
 
@@ -804,10 +813,10 @@ public:
         /* get symbol addresses */
 
         /* %%symbol%% */@
-        m_ptr_%%symbol%% =@
+        gdo_%%symbol%% =@
             sym_load<%%sym_type%%>@
                 ("%%symbol%%");@
-        if (!m_ptr_%%symbol%% && !ignore_errors) {@
+        if (!gdo_%%symbol%% && !ignore_errors) {@
             return false;@
         }@
 
@@ -830,11 +839,11 @@ public:
         switch (symbol_num)
         {
         /* %%symbol%% */@
-        case LOAD_%%symbol%%:@
-            m_ptr_%%symbol%% =@
+        case GDO_LOAD_%%symbol%%:@
+            gdo_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
-            return (m_ptr_%%symbol%% != nullptr);@
+            return (gdo_%%symbol%% != nullptr);@
 
         default:
             break;
@@ -882,10 +891,10 @@ public:
 @
         /* %%symbol%% */@
     GDO_JUMP_%%symbol%%:@
-        m_ptr_%%symbol%% =@
+        gdo_%%symbol%% =@
             sym_load<%%sym_type%%>@
                 ("%%symbol%%");@
-        return (m_ptr_%%symbol%% != nullptr);
+        return (gdo_%%symbol%% != nullptr);
     }
 
 
@@ -893,7 +902,7 @@ public:
     bool all_symbols_loaded() const
     {
         if (true
-            && m_ptr_%%symbol%% != nullptr
+            && gdo_%%symbol%% != nullptr
         ) {
             return true;
         }
@@ -906,7 +915,7 @@ public:
     bool no_symbols_loaded() const
     {
         if (true
-            && m_ptr_%%symbol%% == nullptr
+            && gdo_%%symbol%% == nullptr
         ) {
             return true;
         }
@@ -919,7 +928,7 @@ public:
     bool any_symbol_loaded() const
     {
         if (false
-            || m_ptr_%%symbol%% != nullptr
+            || gdo_%%symbol%% != nullptr
         ) {
             return true;
         }
@@ -946,7 +955,7 @@ public:
 
         m_handle = nullptr;
 
-        m_ptr_%%symbol%% = nullptr;
+        gdo_%%symbol%% = nullptr;
 
         return true;
     }
@@ -957,33 +966,6 @@ public:
     {
         m_free_lib_in_dtor = b;
     }
-
-
-    /* Create versioned library names for DLLs, dylibs and DSOs.
-     * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
-    static std::string make_libname(const std::string &name, const size_t api)
-    {
-#ifdef _WIN32
-        return "lib" + name + '-' + std::to_string(api) + ".dll";
-#elif defined(__APPLE__) && defined(__MACH__)
-        return "lib" + name + '.' + std::to_string(api) + ".dylib";
-#elif defined(_AIX)
-        UNUSED_VAL_(api);
-        return "lib" + name + ".a";
-#elif defined(__ANDROID__)
-        UNUSED_VAL_(api);
-        return "lib" + name + ".so";
-#else
-        return "lib" + name + ".so." + std::to_string(api);
-#endif
-    }
-
-#ifdef GDO_WINAPI
-    static std::wstring make_libname(const std::wstring &name, const size_t api)
-    {
-        return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
-    }
-#endif //GDO_WINAPI
 
 
 #ifdef GDO_HAS_MSG_CB
@@ -1109,7 +1091,7 @@ public:
             }
         };
 
-        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%));@
+        get_fname(reinterpret_cast<void *>(gdo_%%symbol%%));@
         if (!fname.empty()) return fname;
 
         m_errmsg = "dladdr() failed to get library path";
@@ -1141,8 +1123,8 @@ public:
 
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
-#define GDO_ALIAS_%%func_symbol_pad%% gdo::dl::m_ptr_%%func_symbol%%
-#define GDO_ALIAS_%%obj_symbol_pad%% *gdo::dl::m_ptr_%%obj_symbol%%
+#define GDO_ALIAS_%%func_symbol_pad%% gdo::gdo_%%func_symbol%%
+#define GDO_ALIAS_%%obj_symbol_pad%% *gdo::gdo_%%obj_symbol%%
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)

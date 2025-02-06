@@ -14,7 +14,7 @@ int wmain()
 {
     /* load library and symbols */
 
-    const std::wstring name = gdo::dl::make_libname(L"helloworld", 0);
+    const std::wstring name = gdo::make_libname(L"helloworld", 0);
 
     gdo::dl loader(name);
 
