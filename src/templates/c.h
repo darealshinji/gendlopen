@@ -253,8 +253,10 @@ typedef struct gdo_handle
     gdo_char_t buf[8*1024];
 
     /* symbols */
-    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);
-    %%obj_type%% *%%obj_symbol%%_ptr_;
+    struct _gdo_ptr {
+        %%type%% (*%%func_symbol%%)(%%args%%);
+        %%obj_type%% *%%obj_symbol%%;
+    } ptr;
 
 } gdo_handle_t;
 
@@ -286,9 +288,15 @@ enum {
     GDO_LOAD_%%symbol%%,
 };
 
+
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
-#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.%%func_symbol%%_ptr_
-#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.%%obj_symbol%%_ptr_
+#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.ptr.%%func_symbol%%
+#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.ptr.%%obj_symbol%%
+
+
+/* disable aliasing if we saved into separate files and the
+ * header file was included from the body file */
+#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
 
 /* aliases to raw function pointers */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
@@ -299,4 +307,6 @@ enum {
 #if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
 #endif
+
+#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY
 

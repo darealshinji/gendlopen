@@ -18,6 +18,12 @@
 #endif
 
 /* default library name */
+#if !defined(GDO_DEFAULT_LIBA) && defined(GDO_HARDCODED_DEFAULT_LIBA)
+# define GDO_DEFAULT_LIBA  GDO_HARDCODED_DEFAULT_LIBA
+#endif
+#if !defined(GDO_DEFAULT_LIBW) && defined(GDO_HARDCODED_DEFAULT_LIBW)
+# define GDO_DEFAULT_LIBW  GDO_HARDCODED_DEFAULT_LIBW
+#endif
 #ifndef GDO_DEFAULT_LIB
 # if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)
 #  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW

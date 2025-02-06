@@ -140,6 +140,12 @@ static const template_t common_header[] = {
   { "#endif", 0, 1 },
   { "", 0, 1 },
   { "/* default library name */", 0, 1 },
+  { "#if !defined(GDO_DEFAULT_LIBA) && defined(GDO_HARDCODED_DEFAULT_LIBA)", 0, 1 },
+  { "# define GDO_DEFAULT_LIBA  GDO_HARDCODED_DEFAULT_LIBA", 0, 1 },
+  { "#endif", 0, 1 },
+  { "#if !defined(GDO_DEFAULT_LIBW) && defined(GDO_HARDCODED_DEFAULT_LIBW)", 0, 1 },
+  { "# define GDO_DEFAULT_LIBW  GDO_HARDCODED_DEFAULT_LIBW", 0, 1 },
+  { "#endif", 0, 1 },
   { "#ifndef GDO_DEFAULT_LIB", 0, 1 },
   { "# if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)", 0, 1 },
   { "#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW", 0, 1 },
@@ -551,8 +557,10 @@ static const template_t c_header[] = {
   { "    gdo_char_t buf[8*1024];", 0, 1 },
   { "", 0, 1 },
   { "    /* symbols */", 0, 1 },
-  { "    %%type%% (*%%func_symbol%%_ptr_)(%%args%%);", 1, 1 },
-  { "    %%obj_type%% *%%obj_symbol%%_ptr_;", 1, 1 },
+  { "    struct _gdo_ptr {", 0, 1 },
+  { "        %%type%% (*%%func_symbol%%)(%%args%%);", 1, 1 },
+  { "        %%obj_type%% *%%obj_symbol%%;", 1, 1 },
+  { "    } ptr;", 0, 1 },
   { "", 0, 1 },
   { "} gdo_handle_t;", 0, 1 },
   { "", 0, 1 },
@@ -584,9 +592,15 @@ static const template_t c_header[] = {
   { "    GDO_LOAD_%%symbol%%,", 1, 1 },
   { "};", 0, 1 },
   { "", 0, 1 },
+  { "", 0, 1 },
   { "/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */", 0, 1 },
-  { "#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.%%func_symbol%%_ptr_", 1, 1 },
-  { "#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.%%obj_symbol%%_ptr_", 1, 1 },
+  { "#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.ptr.%%func_symbol%%", 1, 1 },
+  { "#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.ptr.%%obj_symbol%%", 1, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* disable aliasing if we saved into separate files and the", 0, 1 },
+  { " * header file was included from the body file */", 0, 1 },
+  { "#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)", 0, 1 },
   { "", 0, 1 },
   { "/* aliases to raw function pointers */", 0, 1 },
   { "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
@@ -597,6 +611,8 @@ static const template_t c_header[] = {
   { "#if !defined(GDO_DISABLE_ALIASING)", 0, 1 },
   { "#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%", 1, 1 },
   { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY", 0, 1 },
   { "", 0, 1 },
   { NULL, 0, 0 }
 };
@@ -1051,7 +1067,7 @@ static const template_t c_body[] = {
   { "", 0, 1 },
   { "    /* set pointers back to NULL */", 0, 1 },
   { "    gdo_hndl.handle = NULL;", 0, 1 },
-  { "    gdo_hndl.%%symbol%%_ptr_ = NULL;", 1, 1 },
+  { "    gdo_hndl.ptr.%%symbol%% = NULL;", 1, 1 },
   { "", 0, 1 },
   { "    return true;", 0, 1 },
   { "}", 0, 1 },
@@ -1065,7 +1081,7 @@ static const template_t c_body[] = {
   { "GDO_LINKAGE bool gdo_all_symbols_loaded(void)", 0, 1 },
   { "{", 0, 1 },
   { "    if (true", 0, 1 },
-  { "        && gdo_hndl.%%symbol%%_ptr_ != NULL", 1, 1 },
+  { "        && gdo_hndl.ptr.%%symbol%% != NULL", 1, 1 },
   { "    ) {", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -1082,7 +1098,7 @@ static const template_t c_body[] = {
   { "GDO_LINKAGE bool gdo_no_symbols_loaded(void)", 0, 1 },
   { "{", 0, 1 },
   { "    if (true", 0, 1 },
-  { "        && gdo_hndl.%%symbol%%_ptr_ == NULL", 1, 1 },
+  { "        && gdo_hndl.ptr.%%symbol%% == NULL", 1, 1 },
   { "    ) {", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -1099,7 +1115,7 @@ static const template_t c_body[] = {
   { "GDO_LINKAGE bool gdo_any_symbol_loaded(void)", 0, 1 },
   { "{", 0, 1 },
   { "    if (false", 0, 1 },
-  { "        || gdo_hndl.%%symbol%%_ptr_ != NULL", 1, 1 },
+  { "        || gdo_hndl.ptr.%%symbol%% != NULL", 1, 1 },
   { "    ) {", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -1138,10 +1154,10 @@ static const template_t c_body[] = {
   { "    /* get symbol addresses */", 0, 1 },
   { "", 0, 1 },
   { "    /* %%symbol%% */\n" /* multiline entry */
-    "    gdo_hndl.%%symbol%%_ptr_ = \n"
+    "    gdo_hndl.ptr.%%symbol%% = \n"
     "        (%%sym_type%%)\n"
     "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "    if (!gdo_hndl.%%symbol%%_ptr_ && !ignore_errors) {\n"
+    "    if (!gdo_hndl.ptr.%%symbol%%&& !ignore_errors) {\n"
     "        return false;\n"
     "    }\n"
     "", 1, 8 },
@@ -1208,10 +1224,10 @@ static const template_t c_body[] = {
   { "    {", 0, 1 },
   { "    /* %%symbol%% */\n" /* multiline entry */
     "    case GDO_LOAD_%%symbol%%:\n"
-    "        gdo_hndl.%%symbol%%_ptr_ =\n"
+    "        gdo_hndl.ptr.%%symbol%% =\n"
     "            (%%sym_type%%)\n"
     "                gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "        return (gdo_hndl.%%symbol%%_ptr_ != NULL);\n"
+    "        return (gdo_hndl.ptr.%%symbol%% != NULL);\n"
     "", 1, 7 },
   { "    default:", 0, 1 },
   { "        break;", 0, 1 },
@@ -1267,10 +1283,10 @@ static const template_t c_body[] = {
   { "\n" /* multiline entry */
     "    /* %%symbol%% */\n"
     "GDO_JUMP_%%symbol%%:\n"
-    "    gdo_hndl.%%symbol%%_ptr_ =\n"
+    "    gdo_hndl.ptr.%%symbol%% =\n"
     "        (%%sym_type%%)\n"
     "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "    return (gdo_hndl.%%symbol%%_ptr_ != NULL);", 1, 7 },
+    "    return (gdo_hndl.ptr.%%symbol%% != NULL);", 1, 7 },
   { "}", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
   { "", 0, 1 },
@@ -1386,7 +1402,7 @@ static const template_t c_body[] = {
   { "        return NULL;", 0, 1 },
   { "    }", 0, 1 },
   { "", 0, 1 },
-  { "    fname = gdo_dladdr_get_fname((void *)gdo_hndl.%%symbol%%_ptr_);\n" /* multiline entry */
+  { "    fname = gdo_dladdr_get_fname((void *)gdo_hndl.ptr.%%symbol%%);\n" /* multiline entry */
     "    if (fname) return fname;", 1, 2 },
   { "", 0, 1 },
   { "    gdo_save_to_errbuf(\"dladdr() failed to get library path\");", 0, 1 },
@@ -1436,10 +1452,10 @@ static const template_t c_body[] = {
   { "/* function wrappers */", 0, 1 },
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
-    "    if (!gdo_hndl.%%func_symbol%%_ptr_) {\n"
+    "    if (!gdo_hndl.ptr.%%func_symbol%%) {\n"
     "        gdo_error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
     "    }\n"
-    "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
+    "    %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);\n"
     "}\n"
     "", 1, 7 },
   { "", 0, 1 },
@@ -1511,7 +1527,7 @@ static const template_t c_body[] = {
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
     "    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T(\"%%func_symbol%%\"));\n"
-    "    %%return%% gdo_hndl.%%func_symbol%%_ptr_(%%notype_args%%);\n"
+    "    %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);\n"
     "}\n"
     "", 1, 5 },
   { "#endif //GDO_ENABLE_AUTOLOAD", 0, 1 },
@@ -1528,6 +1544,21 @@ static const template_t c_body[] = {
   { "# endif", 0, 1 },
   { "#endif", 0, 1 },
   { "", 0, 1 },
+  { "", 0, 1 },
+  { "#if !defined(GDO_SEPARATE) /* single header file */", 0, 1 },
+  { "", 0, 1 },
+  { "/* aliases to raw function pointers */", 0, 1 },
+  { "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
+  { "#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%", 1, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "/* aliases to raw object pointers */", 0, 1 },
+  { "#if !defined(GDO_DISABLE_ALIASING)", 0, 1 },
+  { "#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%", 1, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "#endif //!GDO_SEPARATE", 0, 1 },
+  { "", 0, 1 },
   { NULL, 0, 0 }
 };
 
@@ -1538,26 +1569,34 @@ static const template_t cxx_header[] = {
   { "", 0, 1 },
   { "/* summary */", 0, 1 },
   { "", 0, 1 },
-  { "GDO_CXX_NAMESPACE", 0, 1 },
+  { "namespace gdo", 0, 1 },
   { "{", 0, 1 },
+  { "", 0, 1 },
+  { "/* default flags */", 0, 1 },
+  { "constexpr const int default_flags;", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").", 0, 1 },
+  { " * Useful i.e. on plugins. */", 0, 1 },
+  { "static constexpr const char * const libext;", 0, 1 },
+  { "#ifdef GDO_WINAPI", 0, 1 },
+  { "constexpr const wchar_t * const libext_w;", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* Create versioned library names for DLLs, dylibs and DSOs.", 0, 1 },
+  { " * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */", 0, 1 },
+  { "std::string make_libname(const std::string &name, const size_t api);", 0, 1 },
+  { "#ifdef GDO_WINAPI", 0, 1 },
+  { "std::wstring make_libname(const std::wstring &name, const size_t api);", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
   { "", 0, 1 },
   { "class dl", 0, 1 },
   { "{", 0, 1 },
   { "public:", 0, 1 },
   { "", 0, 1 },
   { "    using message_callback_t = void (*)(const char *);", 0, 1 },
-  { "", 0, 1 },
-  { "", 0, 1 },
-  { "    /* default flags */", 0, 1 },
-  { "    static constexpr const int default_flags;", 0, 1 },
-  { "", 0, 1 },
-  { "", 0, 1 },
-  { "    /* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").", 0, 1 },
-  { "     * Useful i.e. on plugins. */", 0, 1 },
-  { "    static constexpr const char * const libext;", 0, 1 },
-  { "#ifdef GDO_WINAPI", 0, 1 },
-  { "    static constexpr const wchar_t * const libext_w;", 0, 1 },
-  { "#endif", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "    /* c'tor */", 0, 1 },
@@ -1637,14 +1676,6 @@ static const template_t cxx_header[] = {
   { "", 0, 1 },
   { "    /* whether to free the library in the class destructor */", 0, 1 },
   { "    void free_lib_in_dtor(bool b);", 0, 1 },
-  { "", 0, 1 },
-  { "", 0, 1 },
-  { "    /* Create versioned library names for DLLs, dylibs and DSOs.", 0, 1 },
-  { "     * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */", 0, 1 },
-  { "    static std::string make_libname(const std::string &name, const size_t api);", 0, 1 },
-  { "#ifdef GDO_WINAPI", 0, 1 },
-  { "    static std::wstring make_libname(const std::wstring &name, const size_t api);", 0, 1 },
-  { "#endif", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
@@ -1764,8 +1795,13 @@ static const template_t cxx_header[] = {
   { "#endif", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
+  { "/* enumeration values for `load_symbol()' method */", 0, 1 },
+  { "enum {", 0, 1 },
+  { "    GDO_LOAD_%%symbol%%,", 1, 1 },
+  { "};", 0, 1 },
   { "", 0, 1 },
-  { "GDO_CXX_NAMESPACE", 0, 1 },
+  { "", 0, 1 },
+  { "namespace gdo", 0, 1 },
   { "{", 0, 1 },
   { "", 0, 1 },
   { "/* silence `unused' compiler warnings, basically", 0, 1 },
@@ -1776,6 +1812,33 @@ static const template_t cxx_header[] = {
   { "}", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
+  { "/* Create versioned library names for DLLs, dylibs and DSOs.", 0, 1 },
+  { " * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */", 0, 1 },
+  { "std::string make_libname(const std::string &name, const size_t api);", 0, 1 },
+  { "#ifdef GDO_WINAPI", 0, 1 },
+  { "std::wstring make_libname(const std::wstring &name, const size_t api);", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* default flags */", 0, 1 },
+  { "constexpr const int default_flags = GDO_DEFAULT_FLAGS;", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").", 0, 1 },
+  { " * Useful i.e. on plugins. */", 0, 1 },
+  { "constexpr const char * const libext = LIBEXTA;", 0, 1 },
+  { "#ifdef GDO_WINAPI", 0, 1 },
+  { "constexpr const wchar_t * const libext_w = LIBEXTW;", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* symbol pointers */", 0, 1 },
+  { "namespace ptr {", 0, 1 },
+  { "    extern %%type%% (*%%func_symbol%%)(%%args%%);", 1, 1 },
+  { "    extern %%obj_type%% *%%obj_symbol%%;", 1, 1 },
+  { "};", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                          library loader class                             */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
@@ -1784,27 +1847,6 @@ static const template_t cxx_header[] = {
   { "public:", 0, 1 },
   { "", 0, 1 },
   { "    using message_callback_t = void (*)(const char *);", 0, 1 },
-  { "", 0, 1 },
-  { "", 0, 1 },
-  { "    /* default flags */", 0, 1 },
-  { "    static constexpr const int default_flags = GDO_DEFAULT_FLAGS;", 0, 1 },
-  { "", 0, 1 },
-  { "    /* Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").", 0, 1 },
-  { "     * Useful i.e. on plugins. */", 0, 1 },
-  { "    static constexpr const char * const libext = LIBEXTA;", 0, 1 },
-  { "#ifdef GDO_WINAPI", 0, 1 },
-  { "    static constexpr const wchar_t * const libext_w = LIBEXTW;", 0, 1 },
-  { "#endif", 0, 1 },
-  { "", 0, 1 },
-  { "    /* symbol pointers */", 0, 1 },
-  { "    static %%type%% (*m_ptr_%%func_symbol%%)(%%args%%);", 1, 1 },
-  { "    static %%obj_type%% *m_ptr_%%obj_symbol%%;", 1, 1 },
-  { "", 0, 1 },
-  { "    /* enumeration values for `load_symbol()' method */", 0, 1 },
-  { "    enum {", 0, 1 },
-  { "        LOAD_%%symbol%%,", 1, 1 },
-  { "    };", 0, 1 },
-  { "", 0, 1 },
   { "", 0, 1 },
   { "private:", 0, 1 },
   { "", 0, 1 },
@@ -2340,10 +2382,10 @@ static const template_t cxx_header[] = {
   { "        /* get symbol addresses */", 0, 1 },
   { "", 0, 1 },
   { "        /* %%symbol%% */\n" /* multiline entry */
-    "        m_ptr_%%symbol%% =\n"
+    "        ptr::%%symbol%% =\n"
     "            sym_load<%%sym_type%%>\n"
     "                (\"%%symbol%%\");\n"
-    "        if (!m_ptr_%%symbol%% && !ignore_errors) {\n"
+    "        if (!ptr::%%symbol%% && !ignore_errors) {\n"
     "            return false;\n"
     "        }\n"
     "", 1, 8 },
@@ -2366,11 +2408,11 @@ static const template_t cxx_header[] = {
   { "        switch (symbol_num)", 0, 1 },
   { "        {", 0, 1 },
   { "        /* %%symbol%% */\n" /* multiline entry */
-    "        case LOAD_%%symbol%%:\n"
-    "            m_ptr_%%symbol%% =\n"
+    "        case GDO_LOAD_%%symbol%%:\n"
+    "            ptr::%%symbol%% =\n"
     "                sym_load<%%sym_type%%>\n"
     "                    (\"%%symbol%%\");\n"
-    "            return (m_ptr_%%symbol%% != nullptr);\n"
+    "            return (ptr::%%symbol%% != nullptr);\n"
     "", 1, 7 },
   { "        default:", 0, 1 },
   { "            break;", 0, 1 },
@@ -2418,10 +2460,10 @@ static const template_t cxx_header[] = {
   { "\n" /* multiline entry */
     "        /* %%symbol%% */\n"
     "    GDO_JUMP_%%symbol%%:\n"
-    "        m_ptr_%%symbol%% =\n"
+    "        ptr::%%symbol%% =\n"
     "            sym_load<%%sym_type%%>\n"
     "                (\"%%symbol%%\");\n"
-    "        return (m_ptr_%%symbol%% != nullptr);", 1, 7 },
+    "        return (ptr::%%symbol%% != nullptr);", 1, 7 },
   { "    }", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
@@ -2429,7 +2471,7 @@ static const template_t cxx_header[] = {
   { "    bool all_symbols_loaded() const", 0, 1 },
   { "    {", 0, 1 },
   { "        if (true", 0, 1 },
-  { "            && m_ptr_%%symbol%% != nullptr", 1, 1 },
+  { "            && ptr::%%symbol%% != nullptr", 1, 1 },
   { "        ) {", 0, 1 },
   { "            return true;", 0, 1 },
   { "        }", 0, 1 },
@@ -2442,7 +2484,7 @@ static const template_t cxx_header[] = {
   { "    bool no_symbols_loaded() const", 0, 1 },
   { "    {", 0, 1 },
   { "        if (true", 0, 1 },
-  { "            && m_ptr_%%symbol%% == nullptr", 1, 1 },
+  { "            && ptr::%%symbol%% == nullptr", 1, 1 },
   { "        ) {", 0, 1 },
   { "            return true;", 0, 1 },
   { "        }", 0, 1 },
@@ -2455,7 +2497,7 @@ static const template_t cxx_header[] = {
   { "    bool any_symbol_loaded() const", 0, 1 },
   { "    {", 0, 1 },
   { "        if (false", 0, 1 },
-  { "            || m_ptr_%%symbol%% != nullptr", 1, 1 },
+  { "            || ptr::%%symbol%% != nullptr", 1, 1 },
   { "        ) {", 0, 1 },
   { "            return true;", 0, 1 },
   { "        }", 0, 1 },
@@ -2482,7 +2524,7 @@ static const template_t cxx_header[] = {
   { "", 0, 1 },
   { "        m_handle = nullptr;", 0, 1 },
   { "", 0, 1 },
-  { "        m_ptr_%%symbol%% = nullptr;", 1, 1 },
+  { "        ptr::%%symbol%% = nullptr;", 1, 1 },
   { "", 0, 1 },
   { "        return true;", 0, 1 },
   { "    }", 0, 1 },
@@ -2493,33 +2535,6 @@ static const template_t cxx_header[] = {
   { "    {", 0, 1 },
   { "        m_free_lib_in_dtor = b;", 0, 1 },
   { "    }", 0, 1 },
-  { "", 0, 1 },
-  { "", 0, 1 },
-  { "    /* Create versioned library names for DLLs, dylibs and DSOs.", 0, 1 },
-  { "     * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */", 0, 1 },
-  { "    static std::string make_libname(const std::string &name, const size_t api)", 0, 1 },
-  { "    {", 0, 1 },
-  { "#ifdef _WIN32", 0, 1 },
-  { "        return \"lib\" + name + '-' + std::to_string(api) + \".dll\";", 0, 1 },
-  { "#elif defined(__APPLE__) && defined(__MACH__)", 0, 1 },
-  { "        return \"lib\" + name + '.' + std::to_string(api) + \".dylib\";", 0, 1 },
-  { "#elif defined(_AIX)", 0, 1 },
-  { "        UNUSED_VAL_(api);", 0, 1 },
-  { "        return \"lib\" + name + \".a\";", 0, 1 },
-  { "#elif defined(__ANDROID__)", 0, 1 },
-  { "        UNUSED_VAL_(api);", 0, 1 },
-  { "        return \"lib\" + name + \".so\";", 0, 1 },
-  { "#else", 0, 1 },
-  { "        return \"lib\" + name + \".so.\" + std::to_string(api);", 0, 1 },
-  { "#endif", 0, 1 },
-  { "    }", 0, 1 },
-  { "", 0, 1 },
-  { "#ifdef GDO_WINAPI", 0, 1 },
-  { "    static std::wstring make_libname(const std::wstring &name, const size_t api)", 0, 1 },
-  { "    {", 0, 1 },
-  { "        return L\"lib\" + name + L'-' + std::to_wstring(api) + L\".dll\";", 0, 1 },
-  { "    }", 0, 1 },
-  { "#endif //GDO_WINAPI", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "#ifdef GDO_HAS_MSG_CB", 0, 1 },
@@ -2645,7 +2660,7 @@ static const template_t cxx_header[] = {
   { "            }", 0, 1 },
   { "        };", 0, 1 },
   { "", 0, 1 },
-  { "        get_fname(reinterpret_cast<void *>(m_ptr_%%symbol%%));\n" /* multiline entry */
+  { "        get_fname(reinterpret_cast<void *>(ptr::%%symbol%%));\n" /* multiline entry */
     "        if (!fname.empty()) return fname;", 1, 2 },
   { "", 0, 1 },
   { "        m_errmsg = \"dladdr() failed to get library path\";", 0, 1 },
@@ -2673,12 +2688,17 @@ static const template_t cxx_header[] = {
   { "};", 0, 1 },
   { "/******************************* end of class ********************************/", 0, 1 },
   { "", 0, 1 },
-  { "} /* GDO_CXX_NAMESPACE */", 0, 1 },
+  { "} /* end namespace */", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */", 0, 1 },
-  { "#define GDO_ALIAS_%%func_symbol_pad%% gdo::dl::m_ptr_%%func_symbol%%", 1, 1 },
-  { "#define GDO_ALIAS_%%obj_symbol_pad%% *gdo::dl::m_ptr_%%obj_symbol%%", 1, 1 },
+  { "#define GDO_ALIAS_%%func_symbol_pad%% gdo::ptr::%%func_symbol%%", 1, 1 },
+  { "#define GDO_ALIAS_%%obj_symbol_pad%% *gdo::ptr::%%obj_symbol%%", 1, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* disable aliasing if we saved into separate files and the", 0, 1 },
+  { " * header file was included from the body file */", 0, 1 },
+  { "#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)", 0, 1 },
   { "", 0, 1 },
   { "/* aliases to raw function pointers */", 0, 1 },
   { "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
@@ -2689,6 +2709,8 @@ static const template_t cxx_header[] = {
   { "#if !defined(GDO_DISABLE_ALIASING)", 0, 1 },
   { "#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol_pad%%", 1, 1 },
   { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY", 0, 1 },
   { "", 0, 1 },
   { NULL, 0, 0 }
 };
@@ -2701,8 +2723,35 @@ static const template_t cxx_body[] = {
   { "#endif", 0, 1 },
   { "gdo::dl::handle_t gdo::dl::m_handle = nullptr;", 0, 1 },
   { "", 0, 1 },
-  { "%%type%% (*gdo::dl::m_ptr_%%func_symbol%%)(%%args%%) = nullptr;", 1, 1 },
-  { "%%obj_type%% *gdo::dl::m_ptr_%%obj_symbol%% = nullptr;", 1, 1 },
+  { "%%type%% (*gdo::ptr::%%func_symbol%%)(%%args%%) = nullptr;", 1, 1 },
+  { "%%obj_type%% *gdo::ptr::%%obj_symbol%% = nullptr;", 1, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "/* Create versioned library names for DLLs, dylibs and DSOs.", 0, 1 },
+  { " * make_libname(\"z\",1) for example will return \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\" */", 0, 1 },
+  { "std::string gdo::make_libname(const std::string &name, const size_t api)", 0, 1 },
+  { "{", 0, 1 },
+  { "#ifdef _WIN32", 0, 1 },
+  { "    return \"lib\" + name + '-' + std::to_string(api) + \".dll\";", 0, 1 },
+  { "#elif defined(__APPLE__) && defined(__MACH__)", 0, 1 },
+  { "    return \"lib\" + name + '.' + std::to_string(api) + \".dylib\";", 0, 1 },
+  { "#elif defined(_AIX)", 0, 1 },
+  { "    UNUSED_VAL_(api);", 0, 1 },
+  { "    return \"lib\" + name + \".a\";", 0, 1 },
+  { "#elif defined(__ANDROID__)", 0, 1 },
+  { "    UNUSED_VAL_(api);", 0, 1 },
+  { "    return \"lib\" + name + \".so\";", 0, 1 },
+  { "#else", 0, 1 },
+  { "    return \"lib\" + name + \".so.\" + std::to_string(api);", 0, 1 },
+  { "#endif", 0, 1 },
+  { "}", 0, 1 },
+  { "", 0, 1 },
+  { "#ifdef GDO_WINAPI", 0, 1 },
+  { "std::wstring gdo::make_libname(const std::wstring &name, const size_t api);", 0, 1 },
+  { "{", 0, 1 },
+  { "    return L\"lib\" + name + L'-' + std::to_wstring(api) + L\".dll\";", 0, 1 },
+  { "}", 0, 1 },
+  { "#endif //GDO_WINAPI", 0, 1 },
   { "%PARAM_SKIP_REMOVE_BEGIN%", 1, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
@@ -2713,7 +2762,7 @@ static const template_t cxx_body[] = {
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* helpers used by function wrappers */", 0, 1 },
-  { "GDO_CXX_NAMESPACE", 0, 1 },
+  { "namespace gdo", 0, 1 },
   { "{", 0, 1 },
   { "    namespace helper", 0, 1 },
   { "    {", 0, 1 },
@@ -2741,20 +2790,20 @@ static const template_t cxx_body[] = {
   { "/* function wrappers */", 0, 1 },
   { "\n" /* multiline entry */
     "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
-    "    if (!gdo::dl::m_ptr_%%func_symbol%%) {\n"
+    "    if (!gdo::ptr::%%func_symbol%%) {\n"
     "        gdo::helper::error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
     "    }\n"
-    "    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);\n"
+    "    %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);\n"
     "}", 1, 7 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "#elif defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "GDO_CXX_NAMESPACE", 0, 1 },
+  { "namespace gdo", 0, 1 },
   { "{", 0, 1 },
   { "    namespace /* anonymous */ {", 0, 1 },
-  { "        auto al = gdo::dl(GDO_DEFAULT_LIBA);", 0, 1 },
+  { "        auto _gdo_al = gdo::dl(GDO_DEFAULT_LIBA);", 0, 1 },
   { "    }", 0, 1 },
   { "", 0, 1 },
   { "    namespace helper", 0, 1 },
@@ -2762,21 +2811,21 @@ static const template_t cxx_body[] = {
   { "        /* used internally by wrapper functions, symbol is never NULL */", 0, 1 },
   { "        static void quick_load(int symbol_num, const char *symbol)", 0, 1 },
   { "        {", 0, 1 },
-  { "            if (!al.load()) {", 0, 1 },
-  { "                std::string msg = \"error loading library `\" GDO_DEFAULT_LIBA \"':\\n\" + al.error();", 0, 1 },
+  { "            if (!_gdo_al.load()) {", 0, 1 },
+  { "                std::string msg = \"error loading library `\" GDO_DEFAULT_LIBA \"':\\n\" + _gdo_al.error();", 0, 1 },
   { "                error_exit(msg.c_str());", 0, 1 },
   { "            }", 0, 1 },
   { "", 0, 1 },
   { "#ifdef GDO_DELAYLOAD", 0, 1 },
-  { "            bool loaded = al.load_symbol(symbol_num);", 0, 1 },
+  { "            bool loaded = _gdo_al.load_symbol(symbol_num);", 0, 1 },
   { "#else", 0, 1 },
-  { "            bool loaded = al.load_all_symbols();", 0, 1 },
+  { "            bool loaded = _gdo_al.load_all_symbols();", 0, 1 },
   { "            UNUSED_VAL_(symbol_num);", 0, 1 },
   { "#endif", 0, 1 },
   { "", 0, 1 },
   { "            if (!loaded) {", 0, 1 },
   { "                std::string msg = \"error in auto-loading wrapper function `gdo::autoload::\";", 0, 1 },
-  { "                msg += symbol + (\"': \" + al.error());", 0, 1 },
+  { "                msg += symbol + (\"': \" + _gdo_al.error());", 0, 1 },
   { "                error_exit(msg.c_str());", 0, 1 },
   { "            }", 0, 1 },
   { "        }", 0, 1 },
@@ -2787,12 +2836,27 @@ static const template_t cxx_body[] = {
   { "/* autoload function wrappers */", 0, 1 },
   { "\n" /* multiline entry */
     "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
-    "    gdo::helper::quick_load(gdo::dl::LOAD_%%func_symbol%%, \"%%func_symbol%%\");\n"
-    "    %%return%% gdo::dl::m_ptr_%%func_symbol%%(%%notype_args%%);\n"
+    "    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, \"%%func_symbol%%\");\n"
+    "    %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);\n"
     "}", 1, 5 },
   { "", 0, 1 },
   { "#endif //GDO_ENABLE_AUTOLOAD", 0, 1 },
   { "%PARAM_SKIP_END%", 1, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "#if !defined(GDO_SEPARATE) /* single header file */", 0, 1 },
+  { "", 0, 1 },
+  { "/* aliases to raw function pointers */", 0, 1 },
+  { "#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
+  { "#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol_pad%%", 1, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "/* aliases to raw object pointers */", 0, 1 },
+  { "#if !defined(GDO_DISABLE_ALIASING)", 0, 1 },
+  { "#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol_pad%%", 1, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY", 0, 1 },
   { NULL, 0, 0 }
 };
 
@@ -2917,7 +2981,7 @@ static const template_t min_cxx_header[] = {
   { "", 0, 1 },
   { "***/", 0, 1 },
   { "", 0, 1 },
-  { "GDO_CXX_NAMESPACE", 0, 1 },
+  { "namespace gdo", 0, 1 },
   { "{", 0, 1 },
   { "    /* symbol pointers */", 0, 1 },
   { "    namespace ptr", 0, 1 },

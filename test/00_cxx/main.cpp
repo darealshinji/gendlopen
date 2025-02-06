@@ -10,8 +10,8 @@
 
 static void ctor_load_lib_and_symbols()
 {
-    const auto filename = gdo::dl::make_libname("helloworld", 0);
-    const int flags = gdo::dl::default_flags;
+    const auto filename = gdo::make_libname("helloworld", 0);
+    const int flags = gdo::default_flags;
 
     /* whether or not to load symbols into a new namespace */
 #ifdef __illumos__
@@ -35,7 +35,7 @@ static void ctor_load_lib_and_symbols()
 static void ctor_load()
 {
     /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( gdo::dl::make_libname("helloworld", 0) );
+    gdo::dl loader( gdo::make_libname("helloworld", 0) );
 
     if (!loader.load() || !loader.load_all_symbols()) {
         std::cerr << loader.error() << std::endl;
@@ -49,12 +49,12 @@ static void empty_ctor_load()
 {
     gdo::dl loader;
 
-    if (!loader.load( gdo::dl::make_libname("helloworld", 0) ) ||
-        !loader.load_symbol(gdo::dl::LOAD_helloworld_init) ||
-        !loader.load_symbol(gdo::dl::LOAD_helloworld_callback) ||
-        !loader.load_symbol(gdo::dl::LOAD_helloworld_hello) ||
-        !loader.load_symbol(gdo::dl::LOAD_helloworld_hello2) ||
-        !loader.load_symbol(gdo::dl::LOAD_helloworld_release))
+    if (!loader.load( gdo::make_libname("helloworld", 0) ) ||
+        !loader.load_symbol(GDO_LOAD_helloworld_init) ||
+        !loader.load_symbol(GDO_LOAD_helloworld_callback) ||
+        !loader.load_symbol(GDO_LOAD_helloworld_hello) ||
+        !loader.load_symbol(GDO_LOAD_helloworld_hello2) ||
+        !loader.load_symbol(GDO_LOAD_helloworld_release))
     {
         std::cerr << loader.error() << std::endl;
         std::exit(1);
@@ -67,7 +67,7 @@ static void empty_ctor_load2()
 {
     gdo::dl loader;
 
-    if (!loader.load( gdo::dl::make_libname("helloworld", 0) ) ||
+    if (!loader.load( gdo::make_libname("helloworld", 0) ) ||
         !loader.load_symbol("helloworld_init") ||
         !loader.load_symbol("helloworld_callback") ||
         !loader.load_symbol("helloworld_hello") ||

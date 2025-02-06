@@ -35,7 +35,7 @@ Usage:
 
 ***/
 
-GDO_CXX_NAMESPACE
+namespace gdo
 {
     /* symbol pointers */
     namespace ptr

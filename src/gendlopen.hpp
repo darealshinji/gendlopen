@@ -62,7 +62,7 @@ private:
     std::string m_pfx_lower = "gdo";
 
     /* used by std::regex_replace() */
-    std::string m_fmt_upper, m_fmt_lower, m_fmt_namespace;
+    std::string m_fmt_upper, m_fmt_lower, m_fmt_standalone;
 
     std::string m_defines;
     std::string m_deflib_a, m_deflib_w;

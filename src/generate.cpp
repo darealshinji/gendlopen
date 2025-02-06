@@ -97,12 +97,13 @@ std::wstring convert_filename(const std::string &str)
     return ws;
 }
 
-#define CONVERT_FILENAME(x) convert_filename(x)
-
 #else
 
 /* dummy */
-#define CONVERT_FILENAME(x) x
+template<typename T>
+T convert_filename(T &str) {
+    return str;
+}
 
 #endif // __MINGW32__
 
@@ -187,31 +188,6 @@ int save_note(cio::ofstream &out, bool print_date)
     out << strm.str();
 
     return utils::count_linefeed(strm.str());
-}
-
-/* define default library name */
-int save_default_libname(
-    cio::ofstream &out,
-    const std::string &pfx,
-    const std::string &lib_a,
-    const std::string &lib_w)
-{
-    std::string str;
-
-    if (lib_a.empty() || lib_w.empty()) {
-        return 0;
-    }
-
-    str = "/* default library */\n"
-        "#ifndef "  + pfx + "_DEFAULT_LIBA\n"
-        "# define " + pfx + "_DEFAULT_LIBA " + lib_a + "\n"
-        "#endif\n"
-        "#ifndef "  + pfx + "_DEFAULT_LIBW\n"
-        "# define " + pfx + "_DEFAULT_LIBW " + lib_w + "\n"
-        "#endif\n\n";
-    out << str;
-
-    return utils::count_linefeed(str);
 }
 
 /* extra defines */
@@ -551,11 +527,11 @@ void gendlopen::read_custom_template()
 /* generate output */
 void gendlopen::generate()
 {
-    cio::ofstream ofs, ofs_body;
+    cio::ofstream ofs;
     fs::path ofhdr, ofbody;
     std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
-    int lines;
+    int lines = 0;
 
     /* tokenize and parse strings from input */
     tokenize();
@@ -577,7 +553,7 @@ void gendlopen::generate()
     const bool use_stdout = (m_output == "-");
 
     if (!use_stdout) {
-        ofbody = ofhdr = CONVERT_FILENAME(m_output);
+        ofbody = ofhdr = convert_filename(m_output);
     }
 
     bool is_cxx = false;
@@ -624,69 +600,102 @@ void gendlopen::generate()
         header_name = ofhdr.filename().string();
     }
 
+    /* define GDO_SEPARATE if saving into separate files */
+    if (m_separate) {
+        add_def(m_pfx_upper + "_SEPARATE");
+    }
+
+    /* default library name */
+    if (!m_deflib_a.empty() && !m_deflib_w.empty()) {
+        add_def(m_pfx_upper + "_HARDCODED_DEFAULT_LIBA=" + m_deflib_a);
+        add_def(m_pfx_upper + "_HARDCODED_DEFAULT_LIBW=" + m_deflib_w);
+    }
+
     /* save pointers to template lines in header_data and body_data */
     create_template_data_lists(header_data, body_data);
 
 
-    /* define namespace macro */
-    if (is_cxx) {
-        m_defines += "#define " + m_pfx_upper + "_CXX_NAMESPACE"
-            "  namespace " + m_pfx_lower + '\n';
-    }
-
-
-    /*************** header data ***************/
-    auto print_lineno = [&, this] ()
-    {
+    /************* lambda functions *************/
+    auto print_lineno = [&, this] () {
         if (m_line_directive) {
             ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
             lines++;
         }
     };
 
-    if (!m_pragma_once) {
-        header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
-    }
+    auto HEADER_NOTE_AND_LICENSE = [&, this] () {
+        lines += save_note(ofs, m_print_date);
+        lines += save_license_data(ofs);
+    };
 
-    open_ofstream(ofhdr, ofs);             /* open stream */
+    auto HEADER_GUARD_BEGIN = [&, this] () {
+        if (!m_pragma_once) {
+            header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
+        }
+        lines += save_header_guard_begin(ofs, header_guard, is_cxx);
+    };
 
-    lines  = save_note(ofs, m_print_date); /* top note */
-    lines += save_license_data(ofs);       /* license */
-    lines += save_header_guard_begin(ofs,  /* header guard begin */
-        header_guard, is_cxx);
+    auto HEADER_FILENAME_MACROS = [&] () {
+        lines += save_filename_macros_data(ofs);
+    };
 
-    /* filename macros */
-    lines += save_filename_macros_data(ofs);
+    auto HEADER_GENERATED_DATA = [&, this] () {
+        /* print extra data after filename macros as includes or defines
+         * might make use of it */
+        print_lineno();
+        lines += save_extra_defines(ofs, m_defines);
+        lines += save_includes(ofs, m_includes, is_cxx);
+        lines += save_typedefs(ofs, m_typedefs);
+        lines += save_check_symbol_name_macro(ofs, m_pfx_upper, m_prototypes, m_objects);
+    };
 
-    /* print extra data after filename macros as includes or defines
-     * might make use of it */
-    print_lineno();
-    lines += save_extra_defines(ofs, m_defines);     /* #defines */
-    lines += save_default_libname(ofs, m_pfx_upper,  /* default library name */
-        m_deflib_a, m_deflib_w);
-    lines += save_includes(ofs, m_includes, is_cxx); /* #includes */
-    lines += save_typedefs(ofs, m_typedefs);         /* typedefs */
-    lines += save_check_symbol_name_macro(ofs,       /* GDO_CHECK_SYMBOL_NAME() */
-        m_pfx_upper, m_prototypes, m_objects);
+    auto HEADER_TEMPLATE_DATA = [&] () {
+        lines += substitute(header_data, ofs);
+    };
 
-    /* header template */
-    lines += substitute(header_data, ofs);
+    auto HEADER_GUARD_END = [&] () {
+        print_lineno();
+        save_header_guard_end(ofs, header_guard, is_cxx);
+    };
 
-    /* header guard end */
-    print_lineno();
-    save_header_guard_end(ofs, header_guard, is_cxx);
+    auto BODY_NOTE_AND_LICENSE = [&, this] () {
+        save_note(ofs, m_print_date);
+        save_license_data(ofs);
+    };
 
-    /* close stream */
+    auto BODY_INCLUDE_HEADER = [&, this] () {
+        ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
+        ofs << "#include \"" << header_name << "\"\n\n";
+    };
+
+    auto BODY_TEMPLATE_DATA = [&] () {
+        substitute(body_data, ofs);
+    };
+
+
+    /*************** header data ***************/
+    open_ofstream(ofhdr, ofs);
+
+    HEADER_NOTE_AND_LICENSE();
+    HEADER_GUARD_BEGIN();
+
+    HEADER_FILENAME_MACROS();
+    HEADER_GENERATED_DATA();
+
+    HEADER_TEMPLATE_DATA();
+
+    HEADER_GUARD_END();
+
     ofs.close();
 
     /**************** body data ****************/
     if (m_separate) {
-        open_ofstream(ofbody, ofs_body);    /* open stream */
-        save_note(ofs_body, m_print_date);  /* note */
-        save_license_data(ofs_body);        /* license */
-        ofs_body << "#include \""           /* include header file */
-            << header_name << "\"\n\n";
-        substitute(body_data, ofs_body);    /* body template */
+        open_ofstream(ofbody, ofs);
+
+        BODY_NOTE_AND_LICENSE();
+        BODY_INCLUDE_HEADER();
+
+        BODY_TEMPLATE_DATA();
     }
 }
 

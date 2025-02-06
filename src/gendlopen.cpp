@@ -212,7 +212,7 @@ void gendlopen::prefix(const std::string &s)
     /* set regex format string (used in substitute.cpp) */
     m_fmt_upper = "$1" + m_pfx_upper + '_';
     m_fmt_lower = "$1" + m_pfx_lower + '_';
-    m_fmt_namespace = "$1" + m_pfx_lower + "::";
+    m_fmt_standalone = "$1" + m_pfx_lower + "$3";
 }
 
 
