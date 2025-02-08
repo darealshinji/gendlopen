@@ -111,7 +111,7 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         "'(.*?)'.*"  /* type */
     );
 
-    std::string line = strip_line(yytext);
+    const std::string line = strip_line(yytext);
 
     if (!std::regex_match(line, m, reg) || m.size() != 2) {
         return false;
@@ -167,16 +167,7 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
     const std::string line = strip_line(yytext);
     const bool function = (line[2] == 'F');
 
-    /* regex_match */
-    if (function) {
-        if (!std::regex_match(line, m, reg_func)) {
-            return false;
-        }
-    } else if (!std::regex_match(line, m, reg_var)) {
-        return false;
-    }
-
-    if (m.size() != 3) {
+    if (!std::regex_match(line, m, function ? reg_func : reg_var) || m.size() != 3) {
         return false;
     }
 
@@ -277,38 +268,29 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
 void gendlopen::clang_ast(FILE *fp)
 {
     int mode = M_DEFAULT;
-
-    /* no symbols provided */
-    if (m_symbol_list.empty() && m_prefix_list.empty() && !m_ast_all_symbols) {
-        throw error("Clang AST: no symbols provided to look for\n"
-                    "use `" OPT_SYMBOL_NAME "', `" OPT_SYMBOL_PREFIX "' "
-                    "or `" OPT_AST_ALL_SYMBOLS "'");
-    }
+    int rv;
 
     /* ignore symbol lists if m_ast_all_symbols was set */
-    if (m_ast_all_symbols && (m_symbol_list.size() > 0 || m_prefix_list.size() > 0)) {
-        m_symbol_list.clear();
-        m_prefix_list.clear();
-    }
+    if (!m_ast_all_symbols) {
+        if (m_symbol_list.empty() && m_prefix_list.empty()) {
+            throw error("Clang AST: no symbols provided to look for\n"
+                        "use `" OPT_SYMBOL_NAME "', `" OPT_SYMBOL_PREFIX "' or `" OPT_AST_ALL_SYMBOLS "'");
+        }
 
-    if (m_symbol_list.size() > 0 && m_prefix_list.size() > 0) {
-        mode = M_PFX_LIST;
-    } else if (m_prefix_list.size() > 0) {
-        mode = M_PREFIX;
-    } else if (m_symbol_list.size() > 0) {
-        mode = M_LIST;
+        if (m_symbol_list.size() > 0 && m_prefix_list.size() > 0) {
+            mode = M_PFX_LIST;
+        } else if (m_prefix_list.size() > 0) {
+            mode = M_PREFIX;
+        } else if (m_symbol_list.size() > 0) {
+            mode = M_LIST;
+        }
     }
 
     /* read lines */
-    while (true) {
-        int rv = lex(fp);
-
+    while ((rv = lex(fp)) == LEX_AST_FUNCVAR || rv == LEX_AST_PARMVAR) {
         if (rv == LEX_AST_PARMVAR) {
             /* ignore */
             continue;
-        } else if (rv != LEX_AST_FUNCVAR) {
-            /* stop */
-            break;
         }
 
         /* uses an inner loop to read parameters */
