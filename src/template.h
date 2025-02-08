@@ -3,7 +3,7 @@
 #pragma once
 
 /* filename_macros.h */
-static const template_t filename_macros[] = {
+static constexpr template_t filename_macros[] = {
   { "#line 2 \"<built-in>/filename_macros.h\"\n", 0, 2 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                              filename macros                              */", 0, 1 },
@@ -90,7 +90,7 @@ static const template_t filename_macros[] = {
 };
 
 /* license.h */
-static const template_t license[] = {
+static constexpr template_t license[] = {
   { "/**", 0, 1 },
   { " Licensed under the MIT License <http://opensource.org/licenses/MIT>.", 0, 1 },
   { " SPDX-License-Identifier: MIT", 0, 1 },
@@ -118,7 +118,7 @@ static const template_t license[] = {
 };
 
 /* common.h */
-static const template_t common_header[] = {
+static constexpr template_t common_header[] = {
   { "#line 2 \"<built-in>/common.h\"\n", 0, 2 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                         common macros and headers                         */", 0, 1 },
@@ -131,11 +131,14 @@ static const template_t common_header[] = {
   { "", 0, 1 },
   { "#ifdef _WIN32", 0, 1 },
   { "# include <windows.h>", 0, 1 },
-  { "# ifndef GDO_WINAPI", 0, 1 },
-  { "#  include <dlfcn.h>", 0, 1 },
-  { "# endif", 0, 1 },
   { "#else", 0, 1 },
-  { "# include <features.h>", 0, 1 },
+  { "# include <link.h>", 0, 1 },
+  { "/* <features.h> is a Glibc header that defines __GLIBC__", 0, 1 },
+  { " * and will be automatically included with <stdio.h> if present */", 0, 1 },
+  { "# include <stdio.h>", 0, 1 },
+  { "#endif", 0, 1 },
+  { "", 0, 1 },
+  { "#ifndef GDO_WINAPI", 0, 1 },
   { "# include <dlfcn.h>", 0, 1 },
   { "#endif", 0, 1 },
   { "", 0, 1 },
@@ -300,14 +303,10 @@ static const template_t common_header[] = {
 };
 
 /* c.h */
-static const template_t c_header[] = {
+static constexpr template_t c_header[] = {
   { "#line 2 \"<built-in>/c.h\"\n", 0, 2 },
   { "#ifdef GDO_WINAPI", 0, 1 },
-  { "# include <windows.h>", 0, 1 },
-  { "# include <wchar.h>", 0, 1 },
-  { "#else", 0, 1 },
-  { "# include <link.h>", 0, 1 },
-  { "# include <dlfcn.h>", 0, 1 },
+  { "# include <tchar.h>", 0, 1 },
   { "#endif", 0, 1 },
   { "#ifndef __cplusplus", 0, 1 },
   { "# include <stdbool.h>", 0, 1 },
@@ -618,7 +617,7 @@ static const template_t c_header[] = {
 };
 
 /* c.c */
-static const template_t c_body[] = {
+static constexpr template_t c_body[] = {
   { "#line 2 \"<built-in>/c.c\"\n", 0, 2 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                           C API implementation                            */", 0, 1 },
@@ -628,43 +627,21 @@ static const template_t c_body[] = {
   { "# pragma comment(lib, \"user32.lib\")", 0, 1 },
   { "#endif", 0, 1 },
   { "", 0, 1 },
-  { "/* default headers to include */", 0, 1 },
-  { "", 0, 1 },
   { "#ifdef _WIN32", 0, 1 },
-  { "# include <windows.h>", 0, 1 },
   { "# include <assert.h>", 0, 1 },
-  { "# ifndef GDO_WINAPI", 0, 1 },
-  { "#  include <dlfcn.h>", 0, 1 },
-  { "# endif", 0, 1 },
-  { "#else", 0, 1 },
-  { "# include <features.h>", 0, 1 },
-  { "# include <link.h>", 0, 1 },
-  { "# include <dlfcn.h>", 0, 1 },
   { "#endif", 0, 1 },
-  { "", 0, 1 },
   { "#ifdef _AIX", 0, 1 },
   { "# include <errno.h>", 0, 1 },
   { "#endif", 0, 1 },
-  { "", 0, 1 },
-  { "#ifndef __cplusplus", 0, 1 },
-  { "# include <stdbool.h>", 0, 1 },
-  { "#endif", 0, 1 },
-  { "", 0, 1 },
   { "#include <stdarg.h>", 0, 1 },
-  { "#include <stdbool.h>", 0, 1 },
-  { "#include <stddef.h>", 0, 1 },
   { "#include <stdio.h>", 0, 1 },
   { "#include <stdlib.h>", 0, 1 },
   { "#include <string.h>", 0, 1 },
   { "", 0, 1 },
-  { "#ifdef GDO_WINAPI", 0, 1 },
-  { "# include <tchar.h>", 0, 1 },
-  { "# ifdef _UNICODE", 0, 1 },
-  { "#  define GDO_XS   L\"%ls\"", 1, 1 },
-  { "#  define GDO_XHS  L\"%hs\"", 1, 1 },
-  { "# endif", 0, 1 },
-  { "#endif", 0, 1 },
-  { "#ifndef GDO_XS", 0, 1 },
+  { "#if defined(GDO_WINAPI) && defined(_UNICODE)", 0, 1 },
+  { "# define GDO_XS   L\"%ls\"", 1, 1 },
+  { "# define GDO_XHS  L\"%hs\"", 1, 1 },
+  { "#else", 0, 1 },
   { "# define GDO_XS   \"%s\"", 1, 1 },
   { "# define GDO_XHS  \"%s\"", 1, 1 },
   { "#endif", 0, 1 },
@@ -672,6 +649,7 @@ static const template_t c_body[] = {
   { "#ifndef _T", 0, 1 },
   { "# define _T(x) x", 0, 1 },
   { "#endif", 0, 1 },
+  { "", 0, 1 },
   { "#ifndef _countof", 0, 1 },
   { "# define _countof(array) (sizeof(array) / sizeof(array[0]))", 0, 1 },
   { "#endif", 0, 1 },
@@ -1563,7 +1541,7 @@ static const template_t c_body[] = {
 };
 
 /* cxx.hpp */
-static const template_t cxx_header[] = {
+static constexpr template_t cxx_header[] = {
   { "#line 2 \"<built-in>/cxx.hpp\"\n", 0, 2 },
   { "#if 0", 0, 1 },
   { "", 0, 1 },
@@ -1769,25 +1747,14 @@ static const template_t cxx_header[] = {
   { "", 0, 1 },
   { "***/", 0, 1 },
   { "", 0, 1 },
-  { "#ifdef _WIN32", 0, 1 },
-  { "# include <windows.h>", 0, 1 },
-  { "#else", 0, 1 },
-  { "# include <features.h>", 0, 1 },
-  { "# include <link.h>", 0, 1 },
-  { "#endif", 0, 1 },
-  { "", 0, 1 },
   { "#ifdef GDO_WINAPI", 0, 1 },
   { "# include <cstdlib>", 0, 1 },
   { "# include <cstring>", 0, 1 },
-  { "#else", 0, 1 },
-  { "# include <dlfcn.h>", 0, 1 },
   { "#endif", 0, 1 },
-  { "", 0, 1 },
   { "#ifdef _AIX", 0, 1 },
   { "# include <cerrno>", 0, 1 },
   { "# include <cstring>", 0, 1 },
   { "#endif", 0, 1 },
-  { "", 0, 1 },
   { "#include <string>", 0, 1 },
   { "", 0, 1 },
   { "#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
@@ -2716,7 +2683,7 @@ static const template_t cxx_header[] = {
 };
 
 /* cxx.cpp */
-static const template_t cxx_body[] = {
+static constexpr template_t cxx_body[] = {
   { "#line 2 \"<built-in>/cxx.cpp\"\n", 0, 2 },
   { "#ifdef GDO_HAS_MSG_CB", 0, 1 },
   { "gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;", 0, 1 },
@@ -2861,7 +2828,7 @@ static const template_t cxx_body[] = {
 };
 
 /* minimal.h */
-static const template_t min_c_header[] = {
+static constexpr template_t min_c_header[] = {
   { "#line 2 \"<built-in>/minimal.h\"\n", 0, 2 },
   { "#ifdef GDO_USE_SDL", 0, 1 },
   { "/* SDL API */", 0, 1 },
@@ -2942,7 +2909,7 @@ static const template_t min_c_header[] = {
 };
 
 /* minimal_cxxeh.hpp */
-static const template_t min_cxx_header[] = {
+static constexpr template_t min_cxx_header[] = {
   { "#line 2 \"<built-in>/minimal_cxxeh.hpp\"\n", 0, 2 },
   { "#include <stdexcept>", 0, 1 },
   { "#include <string>", 0, 1 },

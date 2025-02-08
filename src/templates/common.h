@@ -9,11 +9,14 @@
 
 #ifdef _WIN32
 # include <windows.h>
-# ifndef GDO_WINAPI
-#  include <dlfcn.h>
-# endif
 #else
-# include <features.h>
+# include <link.h>
+/* <features.h> is a Glibc header that defines __GLIBC__
+ * and will be automatically included with <stdio.h> if present */
+# include <stdio.h>
+#endif
+
+#ifndef GDO_WINAPI
 # include <dlfcn.h>
 #endif
 

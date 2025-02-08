@@ -1,9 +1,5 @@
 #ifdef GDO_WINAPI
-# include <windows.h>
-# include <wchar.h>
-#else
-# include <link.h>
-# include <dlfcn.h>
+# include <tchar.h>
 #endif
 #ifndef __cplusplus
 # include <stdbool.h>

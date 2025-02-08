@@ -202,25 +202,14 @@ GDO_DISABLE_DLMOPEN
 
 ***/
 
-#ifdef _WIN32
-# include <windows.h>
-#else
-# include <features.h>
-# include <link.h>
-#endif
-
 #ifdef GDO_WINAPI
 # include <cstdlib>
 # include <cstring>
-#else
-# include <dlfcn.h>
 #endif
-
 #ifdef _AIX
 # include <cerrno>
 # include <cstring>
 #endif
-
 #include <string>
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)

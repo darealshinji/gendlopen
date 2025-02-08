@@ -6,43 +6,21 @@
 # pragma comment(lib, "user32.lib")
 #endif
 
-/* default headers to include */
-
 #ifdef _WIN32
-# include <windows.h>
 # include <assert.h>
-# ifndef GDO_WINAPI
-#  include <dlfcn.h>
-# endif
-#else
-# include <features.h>
-# include <link.h>
-# include <dlfcn.h>
 #endif
-
 #ifdef _AIX
 # include <errno.h>
 #endif
-
-#ifndef __cplusplus
-# include <stdbool.h>
-#endif
-
 #include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef GDO_WINAPI
-# include <tchar.h>
-# ifdef _UNICODE
-#  define GDO_XS   L"%ls"
-#  define GDO_XHS  L"%hs"
-# endif
-#endif
-#ifndef GDO_XS
+#if defined(GDO_WINAPI) && defined(_UNICODE)
+# define GDO_XS   L"%ls"
+# define GDO_XHS  L"%hs"
+#else
 # define GDO_XS   "%s"
 # define GDO_XHS  "%s"
 #endif
@@ -50,6 +28,7 @@
 #ifndef _T
 # define _T(x) x
 #endif
+
 #ifndef _countof
 # define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif

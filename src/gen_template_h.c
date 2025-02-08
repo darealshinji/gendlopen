@@ -59,7 +59,7 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     FILE *fp = open_file(in);
 
     fprintf(fpOut, "/* %s */\n", in);
-    fprintf(fpOut, "static const template_t %s[] = {\n", varName);
+    fprintf(fpOut, "static constexpr template_t %s[] = {\n", varName);
 
     if (strcmp(in, "license.h") != 0) {
         // { "#line 2 \"<built-in>/common.h\"\n", 0, 2 },
