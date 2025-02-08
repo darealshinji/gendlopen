@@ -126,13 +126,12 @@ bool parse_args::get_arg(const char *str, const size_t &len)
 
     /* "-foo bar" --> get next item */
     if (strcmp(cur, str) == 0) {
-        int next = m_it + 1;
+        m_opt = next();
 
-        if (next >= m_argc || !m_argv[next] || !*m_argv[next]) {
+        if (!m_opt || *m_opt == 0) {
             throw error(msg);
         }
 
-        m_opt = m_argv[++m_it];
         return true;
     }
 
