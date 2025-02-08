@@ -37,14 +37,21 @@
 
 /* whether to use dlinfo(3);
  * n/a on Windows (both APIs), OpenBSD, Haiku */
-#if !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__) && \
-    !defined(GDO_DISABLE_DLINFO)
+#ifdef GDO_DISABLE_DLINFO
+# ifdef GDO_HAVE_DLINFO
+#  undef GDO_HAVE_DLINFO
+# endif
+#elif !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__) && !defined(GDO_HAVE_DLINFO)
 # define GDO_HAVE_DLINFO
 #endif
 
 /* whether to use dlmopen(3);
  * only available on Glibc and Solaris/IllumOS */
-#if (defined(__GLIBC__) || defined(__sun)) && !defined(GDO_DISABLE_DLMOPEN)
+#ifdef GDO_DISABLE_DLMOPEN
+# ifdef GDO_HAVE_DLMOPEN
+#  undef GDO_HAVE_DLMOPEN
+# endif
+#elif (defined(__GLIBC__) || defined(__sun)) && !defined(GDO_HAVE_DLMOPEN)
 # define GDO_HAVE_DLMOPEN
 #endif
 
