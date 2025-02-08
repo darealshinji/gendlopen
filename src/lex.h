@@ -18,10 +18,11 @@ enum {
     LEX_SEMICOLON
 };
 
+extern char *lex_errmsg;
 extern char *yytext;
 
-int lex(FILE *fp);
-const char *lex_lasterr();
+int yylex();
+void yyset_in(FILE *);
 
 #ifdef __cplusplus
 }

@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <stdio.h>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -68,8 +67,8 @@ private:
     std::string m_deflib_a, m_deflib_w;
 
     /* clang-ast.cpp */
-    bool get_declarations(FILE *fp, int mode);
-    void clang_ast(FILE *fp);
+    bool get_declarations(int mode);
+    void clang_ast();
 
     /* tokenize.cpp */
     void tokenize();

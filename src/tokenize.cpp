@@ -42,11 +42,10 @@
 #include "types.hpp"
 
 
-
 namespace /* anonymous */
 {
     /* tokenize stream into prototype tokens and options */
-    int tokenize_stream(FILE *fp, std::vector<vstring_t> &vec, vstring_t *options)
+    int tokenize_stream(std::vector<vstring_t> &vec, vstring_t *options)
     {
         int rv = LEX_ERROR;
         vstring_t tokens;
@@ -54,7 +53,7 @@ namespace /* anonymous */
 
         while (loop)
         {
-            rv = lex(fp);
+            rv = yylex();
 
             switch (rv)
             {
@@ -131,20 +130,20 @@ void gendlopen::tokenize()
         throw error(input_name + "\nfailed to open file for reading");
     }
 
+    /* set input file pointer */
+    yyset_in(file.file_pointer());
+
     /* read and tokenize input */
-    int ret = tokenize_stream(file.file_pointer(), vec_tokens, poptions);
+    int ret = tokenize_stream(vec_tokens, poptions);
 
     if (ret == LEX_ERROR) {
-        /* lexer error */
-        const char *p = lex_lasterr();
-
-        if (p) {
-            throw error(input_name + '\n' + p);
+        if (*lex_errmsg) {
+            throw error(input_name + '\n' + lex_errmsg);
         }
         throw error(input_name);
     } else if (ret == LEX_AST_BEGIN) {
         /* input is a clang AST file */
-        clang_ast(file.file_pointer());
+        clang_ast();
         return;
     }
 

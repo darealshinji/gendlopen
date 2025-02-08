@@ -426,7 +426,6 @@ int gendlopen::substitute_line(const template_t &line, int &templ_lineno, bool &
 
     /* replace prefixes */
     if (m_pfx_upper != "GDO") {
-        /* regex for prefixes: [_]GDO_ / [_]gdo_ / gdo:: */
         const std::regex reg_pfxupper("(" NOTALNUM "?[_]?)(GDO_)");
         const std::regex reg_pfxlower("(" NOTALNUM "?[_]?)(gdo_)");
         const std::regex reg_standalone("(" NOTALNUM "?)(gdo)(" NOTALNUM "?)");

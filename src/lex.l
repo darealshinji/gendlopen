@@ -28,6 +28,8 @@
 #include "lex.h"
 
 static char errbuf[128] = {0};
+char *lex_errmsg = errbuf;
+
 static void illegal_char();
 
 %}
@@ -116,19 +118,4 @@ static void illegal_char()
 #endif
 
     errbuf[buflen] = 0;
-}
-
-const char *lex_lasterr() {
-    return (errbuf[0] == 0) ? NULL : errbuf;
-}
-
-int lex(FILE *fp)
-{
-    if (fp && yyget_in() != fp) {
-        yyset_in(fp);
-    }
-
-    errbuf[0] = 0;
-
-    return yylex();
 }

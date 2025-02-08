@@ -146,7 +146,7 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
 
 
 /* get function or variable declaration */
-bool gendlopen::get_declarations(FILE *fp, int mode)
+bool gendlopen::get_declarations(int mode)
 {
     decl_t decl;
     proto_t proto;
@@ -217,7 +217,7 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
         utils::strip_spaces(decl.type);
 
         /* read next lines for parameters */
-        while ((rv = lex(fp)) == LEX_AST_PARMVAR) {
+        while ((rv = yylex()) == LEX_AST_PARMVAR) {
             if (letter > 'z') {
                 throw error(decl.symbol + ": too many parameters");
             }
@@ -265,7 +265,7 @@ bool gendlopen::get_declarations(FILE *fp, int mode)
 }
 
 /* read Clang AST */
-void gendlopen::clang_ast(FILE *fp)
+void gendlopen::clang_ast()
 {
     int mode = M_DEFAULT;
     int rv;
@@ -287,14 +287,14 @@ void gendlopen::clang_ast(FILE *fp)
     }
 
     /* read lines */
-    while ((rv = lex(fp)) == LEX_AST_FUNCVAR || rv == LEX_AST_PARMVAR) {
+    while ((rv = yylex()) == LEX_AST_FUNCVAR || rv == LEX_AST_PARMVAR) {
         if (rv == LEX_AST_PARMVAR) {
             /* ignore */
             continue;
         }
 
         /* uses an inner loop to read parameters */
-        while (get_declarations(fp, mode))
+        while (get_declarations(mode))
         {}
 
         if (mode == M_LIST && m_symbol_list.empty()) {
