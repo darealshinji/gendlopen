@@ -617,7 +617,7 @@ else
             # don't need to use DYLD_LIBRARY_PATH,
             # LD_LIBRARY_PATH works too
             ;;
-        *-netbsd)
+        *-netbsd|*-netbsd*)
             ld_library_path_test="LD_LIBRARY_PATH=\"\$\$PWD/../test/00_library:/usr/pkg/lib:\$\$LD_LIBRARY_PATH\""
             ;;
         *-haiku)
