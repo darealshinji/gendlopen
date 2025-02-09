@@ -40,7 +40,7 @@
 namespace /* anonymous */
 {
     /* check if prototype parameters are empty or of type "void"
-    * and save "void" parameter if true */
+     * and save "void" parameter if true */
     bool param_void_or_empty(proto_t &proto)
     {
         if (proto.args_vec.empty()) {
@@ -58,11 +58,6 @@ namespace /* anonymous */
         /* must be 1 token */
         if (v.size() != 1) {
             return false;
-        }
-
-        if (v.at(0).empty()) {
-            /* no parameters */
-            return true;
         }
 
         const char *str = v.at(0).c_str();
@@ -185,6 +180,8 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
             /* type symbol [   ] */
             /*      -1     ^it   */
             proto.notype_args += *(it - 1) + ", ";
+        } else {
+            return false;
         }
     }
 
