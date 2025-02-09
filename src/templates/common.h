@@ -39,7 +39,7 @@
 /* whether to use dlinfo(3);
  * n/a on Windows (both APIs), macOS, OpenBSD, Haiku */
 #if defined(_WIN32) || \
-   (defined(__APPLE__) && defined(__MACH__)) || \
+    defined(__APPLE__) || \
     defined(__OpenBSD__) || \
     defined(__HAIKU__)
 # define _GDO_TARGET_NO_DLINFO

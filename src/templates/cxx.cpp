@@ -13,7 +13,7 @@ std::string gdo::make_libname(const std::string &name, const size_t api)
 {
 #ifdef _WIN32
     return "lib" + name + '-' + std::to_string(api) + ".dll";
-#elif defined(__APPLE__) && defined(__MACH__)
+#elif defined(__APPLE__)
     return "lib" + name + '.' + std::to_string(api) + ".dylib";
 #elif defined(_AIX)
     UNUSED_VAL_(api);

@@ -15,7 +15,7 @@
 #ifdef _WIN32
 # define LIBEXTA    ".dll"
 # define LIBEXTW   L".dll"
-#elif defined(__APPLE__) && defined(__MACH__)
+#elif defined(__APPLE__)
 # define LIBEXTA    ".dylib"
 # define LIBEXTW   L".dylib"
 #elif defined(_AIX)
@@ -56,7 +56,7 @@
 #ifdef _WIN32
 # define LIBNAMEA(NAME, API)    "lib" #NAME "-" #API ".dll"
 # define LIBNAMEW(NAME, API)   L"lib" #NAME "-" #API ".dll"
-#elif defined(__APPLE__) && defined(__MACH__)
+#elif defined(__APPLE__)
 # define LIBNAMEA(NAME, API)    "lib" #NAME "." #API ".dylib"
 # define LIBNAMEW(NAME, API)   L"lib" #NAME "." #API ".dylib"
 #elif defined(_AIX)
