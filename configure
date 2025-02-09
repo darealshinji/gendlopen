@@ -18,6 +18,7 @@ sdl_ldflags=":"
 pkgconfig=":"
 ld=":"
 opt=":"
+macos_minver="10.15" # for std::filesystem::path
 
 check_std="yes"
 win32="no"
@@ -388,6 +389,9 @@ set pkg-config too:
 set gendlopen tool used for cross-compiling tests:
     gdo=..
 
+override minimum macOS version (default: $macos_minver)
+    macos-version-min=..
+
 don't check for -std.. flags:
     -no-std-checks
 
@@ -421,6 +425,9 @@ EOL
     sdl-cflags=*)   sdl_cflags="${i#*=}";;
     sdl-libs=*)     sdl_ldflags="${i#*=}";;
     x11-cflags=*)   x11_cflags="${i#*=}";;
+
+    macos-version-min=*)
+                    macos_minver="${i#*=}";;
 
     -no-std-checks)
         check_std="no"
@@ -604,7 +611,8 @@ else
             dll="libhelloworld-0.dll"
             #ld_library_path_test="WINEPATH=\"\$\$PWD/../test/00_library;%PATH%\""
             ;;
-        *-darwin)
+        *-darwin|*-darwin*)
+            target="darwin"
             dll="libhelloworld.0.dylib"
             # don't need to use DYLD_LIBRARY_PATH,
             # LD_LIBRARY_PATH works too
@@ -660,6 +668,12 @@ else
         # *nix
         if [ "x$cppflags" = "x:" ]; then
             cppflags=""
+        fi
+
+        # macOS
+        if [ "$target" = "darwin" ]; then
+            cxxflags="$cxxflags -mmacosx-version-min=$macos_minver"
+            ldflags="$ldflags -mmacosx-version-min=$macos_minver"
         fi
 
         check_libdl

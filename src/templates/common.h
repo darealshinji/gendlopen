@@ -10,7 +10,6 @@
 #ifdef _WIN32
 # include <windows.h>
 #else
-# include <link.h>
 /* <features.h> is a Glibc header that defines __GLIBC__
  * and will be automatically included with <stdio.h> if present */
 # include <stdio.h>
@@ -24,9 +23,11 @@
 #if !defined(GDO_DEFAULT_LIBA) && defined(GDO_HARDCODED_DEFAULT_LIBA)
 # define GDO_DEFAULT_LIBA  GDO_HARDCODED_DEFAULT_LIBA
 #endif
+
 #if !defined(GDO_DEFAULT_LIBW) && defined(GDO_HARDCODED_DEFAULT_LIBW)
 # define GDO_DEFAULT_LIBW  GDO_HARDCODED_DEFAULT_LIBW
 #endif
+
 #ifndef GDO_DEFAULT_LIB
 # if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)
 #  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW
@@ -36,22 +37,41 @@
 #endif
 
 /* whether to use dlinfo(3);
- * n/a on Windows (both APIs), OpenBSD, Haiku */
+ * n/a on Windows (both APIs), macOS, OpenBSD, Haiku */
+#if defined(_WIN32) || \
+   (defined(__APPLE__) && defined(__MACH__)) || \
+    defined(__OpenBSD__) || \
+    defined(__HAIKU__)
+# define _GDO_TARGET_NO_DLINFO
+#endif
+
 #ifdef GDO_DISABLE_DLINFO
 # ifdef GDO_HAVE_DLINFO
-#  undef GDO_HAVE_DLINFO
+# undef GDO_HAVE_DLINFO
 # endif
-#elif !defined(_WIN32) && !defined(__OpenBSD__) && !defined(__HAIKU__) && !defined(GDO_HAVE_DLINFO)
+#endif
+
+#if !defined(GDO_DISABLE_DLINFO) && \
+    !defined(_GDO_TARGET_NO_DLINFO) && \
+    !defined(GDO_HAVE_DLINFO)
 # define GDO_HAVE_DLINFO
+#endif
+
+#ifdef GDO_HAVE_DLINFO
+# include <link.h>
 #endif
 
 /* whether to use dlmopen(3);
  * only available on Glibc and Solaris/IllumOS */
 #ifdef GDO_DISABLE_DLMOPEN
 # ifdef GDO_HAVE_DLMOPEN
-#  undef GDO_HAVE_DLMOPEN
+# undef GDO_HAVE_DLMOPEN
 # endif
-#elif (defined(__GLIBC__) || defined(__sun)) && !defined(GDO_HAVE_DLMOPEN)
+#endif
+
+#if !defined(GDO_DISABLE_DLMOPEN) && \
+    (defined(__GLIBC__) || defined(__sun)) && \
+    !defined(GDO_HAVE_DLMOPEN)
 # define GDO_HAVE_DLMOPEN
 #endif
 
