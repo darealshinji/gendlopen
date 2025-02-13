@@ -532,6 +532,68 @@ void gendlopen::generate()
     std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
     int lines = 0;
+    bool is_cxx = false;
+
+    /************* lambda functions *************/
+
+    auto print_lineno = [&, this] () {
+        if (m_line_directive) {
+            ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
+            lines++;
+        }
+    };
+
+    auto HEADER_NOTE_AND_LICENSE = [&, this] () {
+        lines += save_note(ofs, m_print_date);
+        lines += save_license_data(ofs);
+    };
+
+    auto HEADER_GUARD_BEGIN = [&, this] () {
+        if (!m_pragma_once) {
+            header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
+        }
+        lines += save_header_guard_begin(ofs, header_guard, is_cxx);
+    };
+
+    auto HEADER_FILENAME_MACROS = [&] () {
+        lines += save_filename_macros_data(ofs);
+    };
+
+    auto HEADER_GENERATED_DATA = [&, this] () {
+        /* print extra data after filename macros as includes or defines
+         * might make use of it */
+        print_lineno();
+        lines += save_extra_defines(ofs, m_defines);
+        lines += save_includes(ofs, m_includes, is_cxx);
+        lines += save_typedefs(ofs, m_typedefs);
+        lines += save_check_symbol_name_macro(ofs, m_pfx_upper, m_prototypes, m_objects);
+    };
+
+    auto HEADER_TEMPLATE_DATA = [&] () {
+        lines += substitute(header_data, ofs);
+    };
+
+    auto HEADER_GUARD_END = [&] () {
+        print_lineno();
+        save_header_guard_end(ofs, header_guard, is_cxx);
+    };
+
+    auto BODY_NOTE_AND_LICENSE = [&, this] () {
+        save_note(ofs, m_print_date);
+        save_license_data(ofs);
+    };
+
+    auto BODY_INCLUDE_HEADER = [&, this] () {
+        ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
+        ofs << "#include \"" << header_name << "\"\n\n";
+    };
+
+    auto BODY_TEMPLATE_DATA = [&] () {
+        substitute(body_data, ofs);
+    };
+
+    /********************************************/
+
 
     /* tokenize and parse strings from input */
     tokenize();
@@ -555,8 +617,6 @@ void gendlopen::generate()
     if (!use_stdout) {
         ofbody = ofhdr = convert_filename(m_output);
     }
-
-    bool is_cxx = false;
 
     switch (m_format)
     {
@@ -615,64 +675,6 @@ void gendlopen::generate()
     create_template_data_lists(header_data, body_data);
 
 
-    /************* lambda functions *************/
-    auto print_lineno = [&, this] () {
-        if (m_line_directive) {
-            ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
-            lines++;
-        }
-    };
-
-    auto HEADER_NOTE_AND_LICENSE = [&, this] () {
-        lines += save_note(ofs, m_print_date);
-        lines += save_license_data(ofs);
-    };
-
-    auto HEADER_GUARD_BEGIN = [&, this] () {
-        if (!m_pragma_once) {
-            header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
-        }
-        lines += save_header_guard_begin(ofs, header_guard, is_cxx);
-    };
-
-    auto HEADER_FILENAME_MACROS = [&] () {
-        lines += save_filename_macros_data(ofs);
-    };
-
-    auto HEADER_GENERATED_DATA = [&, this] () {
-        /* print extra data after filename macros as includes or defines
-         * might make use of it */
-        print_lineno();
-        lines += save_extra_defines(ofs, m_defines);
-        lines += save_includes(ofs, m_includes, is_cxx);
-        lines += save_typedefs(ofs, m_typedefs);
-        lines += save_check_symbol_name_macro(ofs, m_pfx_upper, m_prototypes, m_objects);
-    };
-
-    auto HEADER_TEMPLATE_DATA = [&] () {
-        lines += substitute(header_data, ofs);
-    };
-
-    auto HEADER_GUARD_END = [&] () {
-        print_lineno();
-        save_header_guard_end(ofs, header_guard, is_cxx);
-    };
-
-    auto BODY_NOTE_AND_LICENSE = [&, this] () {
-        save_note(ofs, m_print_date);
-        save_license_data(ofs);
-    };
-
-    auto BODY_INCLUDE_HEADER = [&, this] () {
-        ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
-        ofs << "#include \"" << header_name << "\"\n\n";
-    };
-
-    auto BODY_TEMPLATE_DATA = [&] () {
-        substitute(body_data, ofs);
-    };
-
-
     /*************** header data ***************/
     open_ofstream(ofhdr, ofs);
 
@@ -688,8 +690,9 @@ void gendlopen::generate()
 
     ofs.close();
 
+
     /**************** body data ****************/
-    if (m_separate) {
+    if (!body_data.empty()) {
         open_ofstream(ofbody, ofs);
 
         BODY_NOTE_AND_LICENSE();
