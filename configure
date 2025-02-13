@@ -354,7 +354,7 @@ case $i in
 usage: $0 OPTIONS
 
 set compilers:
-    cc=..  cxx=..  ccbuild=..
+    cc=..  cxx=..
 
 host triplet:
     host=..
@@ -404,7 +404,6 @@ EOL
 
     cc=*)           cc="${i#*=}";;
     cxx=*)          cxx="${i#*=}";;
-    ccbuild=*)      cc_build="${i#*=}";;
     host=*)         host="${i#*=}";;
     cl=*)           cl="${i#*=}";;
     ld=*)           ld="${i#*=}";;
@@ -519,40 +518,10 @@ elif [ "x$cxx" != "x$cc" ]; then
     check_host_tool "$cxx" exit
 fi
 
-# build C
-if [ "x$cc_build" = "x" ]; then
-    if [ "$cc" = "gcc" ] || [ "$cc" = "cc" ]; then
-        cc_build="$cc"
-    else
-        check_tool gcc
-
-        if [ "x$tool" = "x" ]; then
-            check_tool cc exit
-        fi
-
-        cc_build="$tool"
-    fi
-fi
-
 # host ar
 if [ "x$ar" = "x" ]; then
     check_host_tool ar
     ar="$tool"
-fi
-
-# flex
-if [ "x$lex" = "x" ]; then
-    check_tool flex
-
-    if [ "x$tool" = "x" ]; then
-        check_tool lex #exit
-    fi
-
-    if [ "x$tool" = "x" ]; then
-        tool="lex" # normally it's not needed anyway
-    fi
-
-    lex="$tool"
 fi
 
 
@@ -827,12 +796,9 @@ cat <<EOF > settings.mk
 
 CC            = $cc
 CXX           = $cxx
-CCBUILD       = $cc_build
 AR            = $ar
-LEX           = $lex
 
 EXEEXT        = $exeext
-DEF_GENDLOPEN = $PWD/src/gendlopen\$(EXEEXT)
 GENDLOPEN     = $gendlopen
 
 CPPFLAGS      = $cppflags $xcppflags

@@ -14,24 +14,22 @@ TEMPLATES = \
 	$(NULL)
 
 
-.PHONY: all clean
+.PHONY: all clean gen_sources
 
 all: gendlopen$(EXEEXT)
 
 clean:
 	$(_v)-rm -f gendlopen gen_template_h *.exe *.o
 
-template.h: $(TEMPLATES) gen_template_h.c
-	$(gen_v)$(CCBUILD) gen_template_h.c -o gen_template_h && ./gen_template_h templates
+gen_sources:
+	flex --noline -o lex.yy.c lex.l
+	cc -Wall -O2 gen_template_h.c -o gen_template_h && ./gen_template_h templates
 
 gendlopen$(EXEEXT): $(OBJS)
 	$(cxxld_v)$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
 $(OBJS): $(HEADERS)
 data.o: template.h
-
-lex.yy.c: lex.l
-	$(gen_v)$(LEX) --noline lex.l
 
 lex.yy.o: lex.yy.c
 	$(cc_v)$(CC) $(CFLAGS) -c lex.yy.c -o $@

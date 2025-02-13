@@ -1,4 +1,6 @@
 
+BIN = src/gendlopen$(EXEEXT)
+
 clean_makefiles = \
 	src/Makefile \
 	examples/Makefile \
@@ -6,9 +8,23 @@ clean_makefiles = \
 	Makefile
 
 
-.PHONY: $(DEF_GENDLOPEN) all clean distclean check
+.PHONY: $(BIN) all clean distclean check gen_sources
 
-all: $(DEF_GENDLOPEN)
+all: $(BIN)
+
+$(BIN):
+	cd src && $(MAKE)
+
+
+# update auto-generated source files
+gen_sources:
+	cd src && $(MAKE) gen_sources
+
+
+# clean
+
+clean: clean-examples clean-test clean-src
+	$(_v)-rm -f settings.mk test.c test.h test.cpp test.o test.obj
 
 clean-examples:
 	cd examples && $(MAKE) clean
@@ -19,18 +35,15 @@ clean-test:
 clean-src:
 	cd src && $(MAKE) clean
 
-clean: clean-examples clean-test clean-src
-	$(_v)-rm -f settings.mk test.c test.h test.cpp test.o test.obj
+distclean: clean distclean-test
+	$(_v)-rm -f $(clean_makefiles) test.log
+	$(_v)-cd msvc && rm -f *.exe *.obj
 
 distclean-test:
 	cd test && $(MAKE) distclean $(devnull_v)
 
-distclean: clean distclean-test
-	$(_v)-rm -f $(clean_makefiles) test.log
-	$(_v)-cd msvc && rm -f *.exe *.obj template.h
 
-$(DEF_GENDLOPEN):
-	cd src && $(MAKE)
+# tests
 
 check: all-tests all-examples
 

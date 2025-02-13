@@ -30,21 +30,7 @@ sources = $(s)\src\lex.yy.c $(s)\src\*.cpp
 all: gendlopen.exe
 
 clean:
-	-del /q *.exe *.obj template.h $(silence)
-
-
-## main program ##
-
-#$(s)\src\data.cpp: template.h
-
-#template.h: gen_template_h.exe
-#	$** $(s)\src\templates
-
-#$(s)\src\lex.yy.c: $(s)\src\lex.l
-#	$(LEX) --noline $**
-
-#gen_template_h.exe: $(s)\src\gen_template_h.c
-#	$(CC) $(CFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)
+	-del /q *.exe *.obj $(silence)
 
 gendlopen.exe: $(s)\src\lex.yy.c $(s)\src\*.cpp
 	$(CXX) -MP$(JOBS) $(CXXFLAGS) $(CPPFLAGS) $** -Fe$@ -link $(LFLAGS)

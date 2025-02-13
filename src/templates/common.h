@@ -83,17 +83,36 @@
 #ifndef RTLD_NOW
 #define RTLD_NOW 0
 #endif
-#ifndef RTLD_MODEMASK
-#define RTLD_MODEMASK 0  /* FreeBSD, DragonFlyBSD */
-#endif
-#ifndef RTLD_BINDING_MASK
-#define RTLD_BINDING_MASK 0  /* glibc */
-#endif
 #ifndef RTLD_GLOBAL
 #define RTLD_GLOBAL 0
 #endif
 #ifndef RTLD_LOCAL
 #define RTLD_LOCAL 0
+#endif
+
+#ifndef RTLD_BINDING_MASK
+#define RTLD_BINDING_MASK 0
+#endif
+#ifndef RTLD_CONFGEN
+#define RTLD_CONFGEN 0
+#endif
+#ifndef RTLD_DEEPBIND
+#define RTLD_DEEPBIND 0
+#endif
+#ifndef RTLD_FIRST
+#define RTLD_FIRST 0
+#endif
+#ifndef RTLD_GROUP
+#define RTLD_GROUP 0
+#endif
+#ifndef RTLD_MEMBER
+#define RTLD_MEMBER 0
+#endif
+#ifndef RTLD_MODEMASK
+#define RTLD_MODEMASK 0
+#endif
+#ifndef RTLD_NOAUTODEFER
+#define RTLD_NOAUTODEFER 0
 #endif
 #ifndef RTLD_NODELETE
 #define RTLD_NODELETE 0
@@ -101,32 +120,18 @@
 #ifndef RTLD_NOLOAD
 #define RTLD_NOLOAD 0
 #endif
-#ifndef RTLD_DEEPBIND
-#define RTLD_DEEPBIND 0  /* glibc, FreeBSD */
+#ifndef RTLD_PARENT
+#define RTLD_PARENT 0
 #endif
 #ifndef RTLD_TRACE
-#define RTLD_TRACE 0  /* FreeBSD, OpenBSD, DragonFlyBSD */
-#endif
-#ifndef RTLD_GROUP
-#define RTLD_GROUP 0  /* Solaris */
-#endif
-#ifndef RTLD_PARENT
-#define RTLD_PARENT 0  /* Solaris */
+#define RTLD_TRACE 0
 #endif
 #ifndef RTLD_WORLD
-#define RTLD_WORLD 0  /* Solaris */
+#define RTLD_WORLD 0
 #endif
-#ifndef RTLD_FIRST
-#define RTLD_FIRST 0  /* macOS, Solaris */
-#endif
-#ifndef RTLD_MEMBER
-#define RTLD_MEMBER 0  /* AIX */
-#endif
-#ifndef RTLD_NOAUTODEFER
-#define RTLD_NOAUTODEFER 0  /* AIX */
-#endif
+
 #ifndef DL_LAZY
-#define DL_LAZY RTLD_LAZY  /* NetBSD, OpenBSD */
+#define DL_LAZY RTLD_LAZY  /* compat */
 #endif
 
 /* LoadLibrary() flags for compatibility with dlopen() */
