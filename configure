@@ -1,6 +1,6 @@
 #!/bin/sh
 
-gendlopen="\$(DEF_GENDLOPEN)"
+gendlopen="$PWD/src/gendlopen"
 
 opt_gcc="-O2"
 opt_ld=""
