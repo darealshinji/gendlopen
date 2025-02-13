@@ -602,13 +602,13 @@ void gendlopen::generate()
 
     /* define GDO_SEPARATE if saving into separate files */
     if (m_separate) {
-        add_def(m_pfx_upper + "_SEPARATE");
+        m_defines += "#define " + m_pfx_upper + "_SEPARATE\n";
     }
 
     /* default library name */
     if (!m_deflib_a.empty() && !m_deflib_w.empty()) {
-        add_def(m_pfx_upper + "_HARDCODED_DEFAULT_LIBA=" + m_deflib_a);
-        add_def(m_pfx_upper + "_HARDCODED_DEFAULT_LIBW=" + m_deflib_w);
+        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBA " + m_deflib_a + '\n';
+        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBW " + m_deflib_w + '\n';
     }
 
     /* save pointers to template lines in header_data and body_data */
