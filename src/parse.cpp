@@ -401,6 +401,7 @@ bool parse::is_array(vstring_t &v, const iter_t &it)
     ));
 }
 
+
 bool parse::is_array_no_name(vstring_t &v, const iter_t &it)
 {
     return pat(v, it, seq(
@@ -412,7 +413,10 @@ bool parse::is_array_no_name(vstring_t &v, const iter_t &it)
 bool parse::is_object(vstring_t &v, const iter_t &it)
 {
     /* TYPE SYMBOL */
-    return (it == v.end() && v.size() >= 2 && v.at(0) != POINTER);
+    return (it == v.end() &&              /* only IDs and pointers */
+            v.size() >= 2 &&              /* type + symbol */
+            v.front()[0] == parse::ID &&  /* type must begin with ID */
+            v.back()[0] == parse::ID);    /* symbol */
 }
 
 

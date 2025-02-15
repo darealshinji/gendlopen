@@ -73,13 +73,15 @@ namespace /* anonymous */
     }
 
 
-    void append_name(proto_t &proto, char &name)
+    void append_name(proto_t &proto, char &name, const char *sep)
     {
         proto.args += name;
-        proto.args += ' ';
+        proto.args += sep;
         proto.notype_args += name;
         proto.notype_args += ", ";
-        name++;
+
+        /* iterate letter */
+        ++name;
     }
 
 
@@ -89,7 +91,7 @@ namespace /* anonymous */
             /*  type [ ]   */
             /*       ^iter */
             parse::append_strings(proto.args, v.begin(), it);
-            append_name(proto, name);
+            append_name(proto, name, " ");
             parse::append_strings(proto.args, it, v.end());
             proto.args += ", ";
 
@@ -107,7 +109,7 @@ namespace /* anonymous */
             /*  type (       * name ) ( )  */
             /*       ^iter + 1 2    3      */
             parse::append_strings(proto.args, v.begin(), it+2);
-            append_name(proto, name);
+            append_name(proto, name, " ");
             parse::append_strings(proto.args, it+3, v.end());
             proto.args += ", ";
             return true;
@@ -115,7 +117,7 @@ namespace /* anonymous */
             /*  type (       * ) ( )  */
             /*       ^iter + 1 2      */
             parse::append_strings(proto.args, v.begin(), it+2);
-            append_name(proto, name);
+            append_name(proto, name, " ");
             parse::append_strings(proto.args, it+2, v.end());
             proto.args += ", ";
             return true;
@@ -232,16 +234,8 @@ bool parse::create_names(proto_t &proto, std::string &msg)
             continue;
         }
 
-        /* copy parameters */
         append_strings(proto.args, v.begin(), v.end());
-
-        /* add name */
-        proto.args += name;
-        proto.args += ", ";
-        proto.notype_args += name;
-        proto.notype_args += ", ";
-
-        name++;
+        append_name(proto, name, ", ");
     }
 
     utils::delete_suffix(proto.args, ", ");
