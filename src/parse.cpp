@@ -52,7 +52,7 @@ namespace /* anonymous */
     bool pat(vstring_t &v, iter_t it, const seq_t &sq)
     {
         /* iterator cannot be begin or end */
-        if (it == v.begin() || it == v.end()) {
+        if (it == v.begin() || it == v.end() || sq.iter_pos < 1) {
             return false;
         }
 
