@@ -101,10 +101,14 @@ namespace /* anonymous */
     /* print all tokens */
     void print_tokens(const vstring_t &v)
     {
-        std::cerr << "error:";
+        std::cerr << "tokens:";
 
         for (const auto &e : v) {
-            std::cerr << ' ' << e;
+            if (e.front() == parse::ID) {
+                std::cerr << ' ' << (e.c_str() + 1);
+            } else {
+                std::cerr << ' ' << e;
+            }
         }
 
         std::cerr << std::endl;
