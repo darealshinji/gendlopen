@@ -64,8 +64,8 @@ namespace /* anonymous */
             return false;
         }
 
-        /* cannot begin with pointer */
-        if (v.at(0) == POINTER) {
+        /* must begin with ID */
+        if (v.front().at(0) != parse::ID) {
             return false;
         }
 
@@ -415,8 +415,8 @@ bool parse::is_object(vstring_t &v, const iter_t &it)
     /* TYPE SYMBOL */
     return (it == v.end() &&              /* only IDs and pointers */
             v.size() >= 2 &&              /* type + symbol */
-            v.front()[0] == parse::ID &&  /* type must begin with ID */
-            v.back()[0] == parse::ID);    /* symbol */
+            v.front().at(0) == parse::ID &&  /* type must begin with ID */
+            v.back().at(0) == parse::ID);    /* symbol */
 }
 
 
