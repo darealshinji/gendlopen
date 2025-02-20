@@ -104,26 +104,27 @@ namespace /* anonymous */
 
     bool get_function_pointer_type(vstring_t &v, iter_t &it, proto_t &proto, char &name)
     {
+        int offset;
+
         if (parse::is_function_pointer(v, it)) {
             /* guessing the name should be save */
             /*  type (       * name ) ( )  */
             /*       ^iter + 1 2    3      */
-            parse::append_strings(proto.args, v.begin(), it+2);
-            append_name(proto, name, " ");
-            parse::append_strings(proto.args, it+3, v.end());
-            proto.args += ", ";
-            return true;
+            offset = 3;
         } else if (parse::is_function_pointer_no_name(v, it)) {
             /*  type (       * ) ( )  */
             /*       ^iter + 1 2      */
-            parse::append_strings(proto.args, v.begin(), it+2);
-            append_name(proto, name, " ");
-            parse::append_strings(proto.args, it+2, v.end());
-            proto.args += ", ";
-            return true;
+            offset = 2;
+        } else {
+            return false;
         }
 
-        return false;
+        parse::append_strings(proto.args, v.begin(), it + 2);
+        append_name(proto, name, " ");
+        parse::append_strings(proto.args, it + offset, v.end());
+        proto.args += ", ";
+
+        return true;
     }
 
 } /* end anonymous namespace */

@@ -326,19 +326,23 @@ namespace /* anonymous */
     bool parse_tokens(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
     {
         for (vstring_t &v : vec_tokens) {
-            iter_t it = parse::find_first_not_pointer_or_ident(v);
-            proto_t p;
+            if (v.size() >= 2 && v.front().at(0) == parse::ID) {
+                iter_t it = parse::find_first_not_pointer_or_ident(v);
+                proto_t p;
 
-            if (check_function_pointer_prototype(v, p, it) || /* check for function pointer first! */
-                check_function_prototype(v, p, it) ||
-                check_object_prototype(v, p, it) ||
-                check_array_prototype(v, p, it))
-            {
-                vproto.push_back(p);
-            } else {
-                print_tokens(v);
-                return false;
+                /* check for function pointer first! */
+                if (check_function_pointer_prototype(v, p, it) ||
+                    check_function_prototype(v, p, it) ||
+                    check_object_prototype(v, p, it) ||
+                    check_array_prototype(v, p, it))
+                {
+                    vproto.push_back(p);
+                    continue;
+                }
             }
+
+            print_tokens(v);
+            return false;
         }
 
         return true;
