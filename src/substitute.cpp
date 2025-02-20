@@ -82,50 +82,6 @@ namespace /* anonymous */
         return false;
     }
 
-    /* return only the leading newlines from string */
-    std::string get_leading_newlines(const std::string &in)
-    {
-        size_t i = 0;
-
-        while (i < in.size()) {
-            if (in.at(i) == '\n') {
-                /* Unix newline */
-                i++;
-            } else if (in.compare(i, 2, "\r\n") == 0) {
-                /* Windows newline */
-                i += 2;
-            } else {
-                break;
-            }
-        }
-
-        return in.substr(0, i);
-    }
-
-    /* return only the trailing newlines from string */
-    const char *get_trailing_newlines(const std::string &in)
-    {
-        auto it = in.rbegin();
-
-        while (it != in.rend()) {
-            if (*it != '\n') {
-                break;
-            }
-
-            auto next = it + 1;
-
-            if (next != in.rend() && *next == '\r') {
-                /* Windows newline */
-                it += 2;
-            } else {
-                /* Unix newline */
-                it++;
-            }
-        }
-
-        return in.c_str() + (in.size() - std::distance(in.rbegin(), it));
-    }
-
     /* get the length of the longest symbol */
     size_t get_longest_symbol_size(const vproto_t &v)
     {
@@ -154,14 +110,9 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
         }
     };
 
-    std::string nl_beg;        /* copy of leading newlines */
-    const char *nl_end = NULL; /* pointer to begin of trailing newlines */
-
     size_t longest = 0;
 
     int line_count = 0;
-    int nl_beg_count = 0;
-    int nl_end_count = 0;
     const int entry_lines = utils::count_linefeed(entry);
 
     /* print #line directive to make sure the line count is on par */
@@ -181,60 +132,43 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
             entry.find("%%return%%") != std::string::npos) /* wrapper function */
         {
             /* we can't handle variable argument lists in wrapper functions */
-            if (!nl_end) {
-                /* do this only once */
-                nl_beg = get_leading_newlines(entry);
-                nl_end = get_trailing_newlines(entry);
-                nl_beg_count = utils::count_linefeed(nl_beg);
-                nl_end_count = utils::count_linefeed(nl_end);
-            }
-
-            const char *space = (e.type.back() == '*') ? "" : " ";
-
-            /* print trailing and leading newlines from the template line */
-            ofs << nl_beg;
-            ofs << "/* can't handle variable argument lists in wrapper functions */\n";
-            ofs << "// " << e.type << space << e.symbol << '(' << e.args << ");\n";
-            ofs << nl_end;
-
-            line_count += nl_beg_count + 2 + nl_end_count;
-        } else {
-            /* regular entry */
-            std::string copy = entry;
-
-            /* don't "return" on "void" functions */
-            if (strcasecmp(e.type.c_str(), "void") == 0) {
-                /* keep the indentation pretty */
-                erase_string("%%return%% ", copy);
-                erase_string("%%return%%", copy);
-            } else {
-                utils::replace("%%return%%", "return", copy);
-            }
-
-            if (e.type.back() == '*') {
-                /* »char * x«  -->  »char *x« */
-                utils::replace("%%type%% ", e.type, copy);
-            }
-            utils::replace("%%type%%", e.type, copy);
-            utils::replace("%%func_symbol%%", e.symbol, copy);
-            utils::replace("%%args%%", e.args, copy);
-            utils::replace("%%notype_args%%", e.notype_args, copy);
-
-            /* symbol name with padding */
-            if (longest > 0) {
-                std::string s = e.symbol;
-                s.append(longest - e.symbol.size(), ' ');
-                utils::replace("%%func_symbol_pad%%", s, copy);
-            }
-
-            if (m_line_directive) {
-                ofs << "#line " << templ_lineno << '\n';
-                line_count++;
-            }
-
-            ofs << copy << '\n';
-            line_count += entry_lines + 1;
+            continue;
         }
+
+        std::string copy = entry;
+
+        /* don't "return" on "void" functions */
+        if (strcasecmp(e.type.c_str(), "void") == 0) {
+            /* keep the indentation pretty */
+            erase_string("%%return%% ", copy);
+            erase_string("%%return%%", copy);
+        } else {
+            utils::replace("%%return%%", "return", copy);
+        }
+
+        if (e.type.back() == '*') {
+            /* »char * x«  -->  »char *x« */
+            utils::replace("%%type%% ", e.type, copy);
+        }
+        utils::replace("%%type%%", e.type, copy);
+        utils::replace("%%func_symbol%%", e.symbol, copy);
+        utils::replace("%%args%%", e.args, copy);
+        utils::replace("%%notype_args%%", e.notype_args, copy);
+
+        /* symbol name with padding */
+        if (longest > 0) {
+            std::string s = e.symbol;
+            s.append(longest - e.symbol.size(), ' ');
+            utils::replace("%%func_symbol_pad%%", s, copy);
+        }
+
+        if (m_line_directive) {
+            ofs << "#line " << templ_lineno << '\n';
+            line_count++;
+        }
+
+        ofs << copy << '\n';
+        line_count += entry_lines + 1;
     }
 
     return line_count;
@@ -379,7 +313,7 @@ int gendlopen::substitute_line(const template_t &line, int &templ_lineno, bool &
         const int entry_lines = utils::count_linefeed(buf);
 
         if (m_line_directive) {
-            ofs << "#line " << (templ_lineno + entry_lines + 1) << '\n';
+            ofs << "#line " << (templ_lineno + entry_lines) << '\n';
         }
 
         return entry_lines;
@@ -496,7 +430,7 @@ int gendlopen::substitute(const vtemplate_t &data, cio::ofstream &ofs)
     }
 
     for (const auto &list : data) {
-        int templ_lineno = 1; /* input template line count */
+        int templ_lineno = 0; /* input template line count */
         int i = 0;
 
         /* skip initial #line directive */

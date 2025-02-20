@@ -62,8 +62,8 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     fprintf(fpOut, "static constexpr template_t %s[] = {\n", varName);
 
     if (strcmp(in, "license.h") != 0) {
-        // { "#line 2 \"<built-in>/common.h\"\n", 0, 2 },
-        fprintf(fpOut, "  { \"#line 2 \\\"<built-in>/%s\\\"\\n\", 0, 2 },\n", in);
+        // { "#line 1 \"<built-in>/common.h\"", 0, 1 },
+        fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", 0, 1 },\n", in);
     }
 
     while ((c = fgetc(fp)) != EOF)

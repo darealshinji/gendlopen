@@ -538,8 +538,8 @@ void gendlopen::generate()
 
     auto print_lineno = [&, this] () {
         if (m_line_directive) {
-            ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
             lines++;
+            ofs << "#line " << (lines + 1) << " \"" << header_name << "\"\n";
         }
     };
 
@@ -563,6 +563,12 @@ void gendlopen::generate()
         /* print extra data after filename macros as includes or defines
          * might make use of it */
         print_lineno();
+
+        if (m_line_directive) {
+            /* extra padding */
+            ofs << '\n';
+            lines++;
+        }
         lines += save_extra_defines(ofs, m_defines);
         lines += save_includes(ofs, m_includes, is_cxx);
         lines += save_typedefs(ofs, m_typedefs);

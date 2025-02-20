@@ -67,7 +67,7 @@ namespace gdo
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
-/* function wrappers */
+/* function wrappers (functions with `...' arguments are omitted) */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     if (!gdo::ptr::%%func_symbol%%) {@
@@ -113,7 +113,7 @@ namespace gdo
 }
 
 
-/* autoload function wrappers */
+/* autoload function wrappers (functions with `...' arguments are omitted) */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@

@@ -4,7 +4,7 @@
 
 /* filename_macros.h */
 static constexpr template_t filename_macros[] = {
-  { "#line 2 \"<built-in>/filename_macros.h\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/filename_macros.h\"", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                              filename macros                              */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
@@ -119,7 +119,7 @@ static constexpr template_t license[] = {
 
 /* common.h */
 static constexpr template_t common_header[] = {
-  { "#line 2 \"<built-in>/common.h\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/common.h\"", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                         common macros and headers                         */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
@@ -336,7 +336,7 @@ static constexpr template_t common_header[] = {
 
 /* c.h */
 static constexpr template_t c_header[] = {
-  { "#line 2 \"<built-in>/c.h\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/c.h\"", 0, 1 },
   { "#ifdef GDO_WINAPI", 0, 1 },
   { "# include <tchar.h>", 0, 1 },
   { "#endif", 0, 1 },
@@ -650,7 +650,7 @@ static constexpr template_t c_header[] = {
 
 /* c.c */
 static constexpr template_t c_body[] = {
-  { "#line 2 \"<built-in>/c.c\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/c.c\"", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
   { "/*                           C API implementation                            */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
@@ -1459,7 +1459,7 @@ static constexpr template_t c_body[] = {
   { "}", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "/* function wrappers */", 0, 1 },
+  { "/* function wrappers (functions with `...' arguments are omitted) */", 0, 1 },
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
     "    if (!gdo_hndl.ptr.%%func_symbol%%) {\n"
@@ -1533,7 +1533,7 @@ static constexpr template_t c_body[] = {
   { "}", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "/* autoload function wrappers */", 0, 1 },
+  { "/* autoload function wrappers (functions with `...' arguments are omitted) */", 0, 1 },
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
     "    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T(\"%%func_symbol%%\"));\n"
@@ -1574,7 +1574,7 @@ static constexpr template_t c_body[] = {
 
 /* cxx.hpp */
 static constexpr template_t cxx_header[] = {
-  { "#line 2 \"<built-in>/cxx.hpp\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/cxx.hpp\"", 0, 1 },
   { "#if 0", 0, 1 },
   { "", 0, 1 },
   { "/* summary */", 0, 1 },
@@ -2716,7 +2716,7 @@ static constexpr template_t cxx_header[] = {
 
 /* cxx.cpp */
 static constexpr template_t cxx_body[] = {
-  { "#line 2 \"<built-in>/cxx.cpp\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/cxx.cpp\"", 0, 1 },
   { "#ifdef GDO_HAS_MSG_CB", 0, 1 },
   { "gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;", 0, 1 },
   { "#endif", 0, 1 },
@@ -2786,7 +2786,7 @@ static constexpr template_t cxx_body[] = {
   { "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "/* function wrappers */", 0, 1 },
+  { "/* function wrappers (functions with `...' arguments are omitted) */", 0, 1 },
   { "\n" /* multiline entry */
     "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
     "    if (!gdo::ptr::%%func_symbol%%) {\n"
@@ -2832,7 +2832,7 @@ static constexpr template_t cxx_body[] = {
   { "}", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "/* autoload function wrappers */", 0, 1 },
+  { "/* autoload function wrappers (functions with `...' arguments are omitted) */", 0, 1 },
   { "\n" /* multiline entry */
     "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
     "    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, \"%%func_symbol%%\");\n"
@@ -2861,7 +2861,7 @@ static constexpr template_t cxx_body[] = {
 
 /* minimal.h */
 static constexpr template_t min_c_header[] = {
-  { "#line 2 \"<built-in>/minimal.h\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/minimal.h\"", 0, 1 },
   { "#ifdef GDO_USE_SDL", 0, 1 },
   { "/* SDL API */", 0, 1 },
   { "# include <SDL_loadso.h>", 0, 1 },
@@ -2942,7 +2942,7 @@ static constexpr template_t min_c_header[] = {
 
 /* minimal_cxxeh.hpp */
 static constexpr template_t min_cxx_header[] = {
-  { "#line 2 \"<built-in>/minimal_cxxeh.hpp\"\n", 0, 2 },
+  { "#line 1 \"<built-in>/minimal_cxxeh.hpp\"", 0, 1 },
   { "#include <stdexcept>", 0, 1 },
   { "#include <string>", 0, 1 },
   { "", 0, 1 },

@@ -8,9 +8,12 @@ clean_makefiles = \
 	Makefile
 
 
-.PHONY: $(BIN) all clean distclean check gen_sources
+.PHONY: $(BIN) all dev clean distclean check gen_sources
 
 all: $(BIN)
+
+dev:
+	$(MAKE) gen_sources && $(MAKE) $(BIN)
 
 $(BIN):
 	cd src && $(MAKE)

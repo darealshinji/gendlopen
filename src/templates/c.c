@@ -806,7 +806,7 @@ GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)
 }
 
 
-/* function wrappers */
+/* function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     if (!gdo_hndl.ptr.%%func_symbol%%) {@
@@ -880,7 +880,7 @@ GDO_LINKAGE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 }
 
 
-/* autoload function wrappers */
+/* autoload function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%"));@
