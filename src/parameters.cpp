@@ -87,18 +87,18 @@ namespace /* anonymous */
 
     bool get_array_type(vstring_t &v, iter_t &it, proto_t &proto, char &name)
     {
-        if (parse::is_array_no_name(v, it)) {
-            /*  type [ ]   */
-            /*       ^iter */
-            parse::append_strings(proto.args, v.begin(), it);
-            append_name(proto, name, " ");
-            parse::append_strings(proto.args, it, v.end());
-            proto.args += ", ";
-
-            return true;
+        if (!parse::is_array_no_name(v, it)) {
+            return false;
         }
 
-        return false;
+        /*  type [ ]   */
+        /*       ^iter */
+        parse::append_strings(proto.args, v.begin(), it);
+        append_name(proto, name, " ");
+        parse::append_strings(proto.args, it, v.end());
+        proto.args += ", ";
+
+        return true;
     }
 
 
@@ -173,19 +173,20 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
 
         if (is_object(v, it)) {
             proto.notype_args += v.back() + ", ";
-        }
-        else if (is_function_pointer(v, it)) {
+            continue;
+        } else if (is_function_pointer(v, it)) {
             /* type (     * symbol ) ( ) */
             /*      ^it + 1 2            */
             proto.notype_args += *(it + 2) + ", ";
-        }
-        else if (is_array(v, it)) {
+            continue;
+        } else if (is_array(v, it)) {
             /* type symbol [   ] */
             /*      -1     ^it   */
             proto.notype_args += *(it - 1) + ", ";
-        } else {
-            return false;
+            continue;
         }
+
+        return false;
     }
 
     utils::delete_suffix(proto.notype_args, ", ");
@@ -209,13 +210,13 @@ bool parse::create_names(proto_t &proto, std::string &msg)
     for (auto &v : proto.args_vec)
     {
         if (name > 'z') {
-            msg = "too many parameters to handle in function `" + proto.symbol + "'";
+            msg = "too many parameters to handle in function `" + proto.symbol.substr(1) + "'";
             return false;
         }
 
         /* check if a parameter begins with `*' */
         if (v.at(0) == POINTER) {
-            msg = "parameter in function `" + proto.symbol + "' begins with pointer";
+            msg = "parameter in function `" + proto.symbol.substr(1) + "' begins with pointer";
             return false;
         }
 
@@ -229,12 +230,18 @@ bool parse::create_names(proto_t &proto, std::string &msg)
         /* function pointer and array types */
         iter_t it = parse::find_first_not_pointer_or_ident(v);
 
-        if (get_function_pointer_type(v, it, proto, name)) {
-            continue;
-        } else if (get_array_type(v, it, proto, name)) {
-            continue;
+        if (it != v.end()) {
+            if (get_function_pointer_type(v, it, proto, name) ||
+                get_array_type(v, it, proto, name))
+            {
+                continue;
+            }
+
+            msg = "cannot read parameter in function `" + proto.symbol.substr(1) + "'";
+            return false;
         }
 
+        /* regular object or pointer */
         append_strings(proto.args, v.begin(), v.end());
         append_name(proto, name, ", ");
     }

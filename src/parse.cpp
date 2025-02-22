@@ -490,7 +490,7 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 }
 
 
-void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vproto_t &vproto, std::string &input_name)
+void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vproto_t &vproto, const std::string &input_name)
 {
     std::string sym, msg;
 
