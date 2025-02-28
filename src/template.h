@@ -1167,7 +1167,7 @@ static constexpr template_t c_body[] = {
     "    gdo_hndl.ptr.%%symbol%% = \n"
     "        (%%sym_type%%)\n"
     "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
-    "    if (!gdo_hndl.ptr.%%symbol%%&& !ignore_errors) {\n"
+    "    if (!gdo_hndl.ptr.%%symbol%% && !ignore_errors) {\n"
     "        return false;\n"
     "    }\n"
     "", 1, 8 },
@@ -1271,16 +1271,15 @@ static constexpr template_t c_body[] = {
   { "        return false;", 0, 1 },
   { "    }", 0, 1 },
   { "", 0, 1 },
-  { "    /* jumps to `GDO_JUMP_<..>' label if symbol was found */", 0, 1 },
-  { "    GDO_CHECK_SYMBOL_NAME(symbol);", 0, 1 },
-  { "", 0, 1 },
-  { "    /* error */", 0, 1 },
   { "    if (!symbol || *symbol == 0) {", 0, 1 },
   { "#ifdef GDO_WINAPI", 0, 1 },
   { "        gdo_hndl.last_errno = ERROR_INVALID_PARAMETER;", 0, 1 },
   { "#endif", 0, 1 },
   { "        gdo_save_to_errbuf(_T(\"empty symbol name\"));", 0, 1 },
   { "    } else {", 0, 1 },
+  { "        /* jumps to `GDO_JUMP_<..>' label if symbol was found */", 0, 1 },
+  { "        GDO_CHECK_SYMBOL_NAME(symbol);", 0, 1 },
+  { "", 0, 1 },
   { "#ifdef GDO_WINAPI", 0, 1 },
   { "        gdo_hndl.last_errno = ERROR_NOT_FOUND;", 0, 1 },
   { "#endif", 0, 1 },
@@ -2436,16 +2435,15 @@ static constexpr template_t cxx_header[] = {
   { "            return false;", 0, 1 },
   { "        }", 0, 1 },
   { "", 0, 1 },
-  { "        /* jumps to `GDO_JUMP_<..>' label if symbol was found */", 0, 1 },
-  { "        GDO_CHECK_SYMBOL_NAME(symbol);", 0, 1 },
-  { "", 0, 1 },
-  { "        /* error */", 0, 1 },
   { "        if (!symbol || *symbol == 0) {", 0, 1 },
   { "#ifdef GDO_WINAPI", 0, 1 },
   { "            m_last_error = ERROR_INVALID_PARAMETER;", 0, 1 },
   { "#endif", 0, 1 },
   { "            m_errmsg = \"empty symbol name\";", 0, 1 },
   { "        } else {", 0, 1 },
+  { "            /* jumps to `GDO_JUMP_<..>' label if symbol was found */", 0, 1 },
+  { "            GDO_CHECK_SYMBOL_NAME(symbol);", 0, 1 },
+  { "", 0, 1 },
   { "#ifdef GDO_WINAPI", 0, 1 },
   { "            m_last_error = ERROR_NOT_FOUND;", 0, 1 },
   { "#endif", 0, 1 },

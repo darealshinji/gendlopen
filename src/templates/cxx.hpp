@@ -859,16 +859,15 @@ public:
             return false;
         }
 
-        /* jumps to `GDO_JUMP_<..>' label if symbol was found */
-        GDO_CHECK_SYMBOL_NAME(symbol);
-
-        /* error */
         if (!symbol || *symbol == 0) {
 #ifdef GDO_WINAPI
             m_last_error = ERROR_INVALID_PARAMETER;
 #endif
             m_errmsg = "empty symbol name";
         } else {
+            /* jumps to `GDO_JUMP_<..>' label if symbol was found */
+            GDO_CHECK_SYMBOL_NAME(symbol);
+
 #ifdef GDO_WINAPI
             m_last_error = ERROR_NOT_FOUND;
 #endif

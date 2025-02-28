@@ -514,7 +514,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
     gdo_hndl.ptr.%%symbol%% = @
         (%%sym_type%%)@
             gdo_sym("%%symbol%%", _T("%%symbol%%"));@
-    if (!gdo_hndl.ptr.%%symbol%%&& !ignore_errors) {@
+    if (!gdo_hndl.ptr.%%symbol%% && !ignore_errors) {@
         return false;@
     }@
 
@@ -618,16 +618,15 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
         return false;
     }
 
-    /* jumps to `GDO_JUMP_<..>' label if symbol was found */
-    GDO_CHECK_SYMBOL_NAME(symbol);
-
-    /* error */
     if (!symbol || *symbol == 0) {
 #ifdef GDO_WINAPI
         gdo_hndl.last_errno = ERROR_INVALID_PARAMETER;
 #endif
         gdo_save_to_errbuf(_T("empty symbol name"));
     } else {
+        /* jumps to `GDO_JUMP_<..>' label if symbol was found */
+        GDO_CHECK_SYMBOL_NAME(symbol);
+
 #ifdef GDO_WINAPI
         gdo_hndl.last_errno = ERROR_NOT_FOUND;
 #endif
