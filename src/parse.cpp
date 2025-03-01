@@ -32,10 +32,6 @@
 #include "utils.hpp"
 #include "parse.hpp"
 
-#define TYPE    " "
-#define POINTER "*"
-#define SYMBOL  "$"  /* parse::ID */
-
 
 namespace /* anonymous */
 {
@@ -49,49 +45,41 @@ namespace /* anonymous */
 
 
     /* compare vector elements to pattern sequence */
-    bool pat(vstring_t &v, iter_t it, const seq_t &sq)
+    bool pattern(vstring_t &v, iter_t it, const seq_t &sq)
     {
-        /* iterator cannot be begin or end */
-        if (it == v.begin() || it == v.end() || sq.iter_pos < 1) {
+        /* first element was already checked in `parse_tokens()'
+         * and is an identifier */
+
+        /* check minimum vector size */
+        if (static_cast<long>(v.size()) < sq.length) {
             return false;
         }
 
-        /* check vector dimensions */
-        if (static_cast<long>(v.size()) < sq.length ||     /* minimum vector size */
-            std::distance(v.begin(), it) < sq.iter_pos ||  /* iterator distance to vector begin */
-            std::distance(it, v.end()) < (sq.length - sq.iter_pos))  /* iterator distance to vector end */
+        /* check iterator distance to begin() and end() */
+        if (it != v.end() &&  /* vector contains parentheses/brackets/etc. */
+            (std::distance(v.begin(), it) < sq.iter_pos ||
+             std::distance(it, v.end()) < (sq.length - sq.iter_pos)))
         {
             return false;
         }
 
-        /* must begin with ID */
-        if (v.front().at(0) != parse::ID) {
+        /* check last element */
+        if (v.back()[0] != sq.end) {
             return false;
         }
 
         /* "-1" because sq.front doesn't
          * contain a leading TYPE entry */
         const int offset = sq.iter_pos - 1;
-
-        /* apply offset */
         it -= offset;
 
         /* check sequence */
-
-        for (const char *p = sq.front; *p != 0; p++, it++) {
-            if ((*it).front() != *p) {
-                return false;
+        for (auto q : { sq.front, sq.middle }) {
+            for (auto p = q; *p != 0; p++, it++) {
+                if ((*it).front() != *p) {
+                    return false;
+                }
             }
-        }
-
-        for (const char *p = sq.middle; *p != 0; p++, it++) {
-            if ((*it).front() != *p) {
-                return false;
-            }
-        }
-
-        if (v.back()[0] != sq.end) {
-            return false;
         }
 
         return true;
@@ -154,13 +142,13 @@ namespace /* anonymous */
 
 
     /* check for multiple definitions of a symbol */
-    bool multiple_definitions(const vproto_t &vproto, std::string &symbol)
+    bool multiple_definitions(const vproto_t &vproto, std::string &buf)
     {
         /* https://stackoverflow.com/a/72800146/5687704 */
         for (auto i = vproto.begin(); i != vproto.end(); ++i) {
             for (auto j = vproto.begin(); i != j; ++j) {
                 if ((*i).symbol == (*j).symbol) {
-                    symbol = (*i).symbol;
+                    buf = (*i).symbol;
                     return true;
                 }
             }
@@ -216,10 +204,7 @@ namespace /* anonymous */
         }
 
         p.prototype = proto::object;
-
-        /* from begin to symbol name */
-        parse::append_strings(p.type, v.begin(), v.end()-1);
-
+        parse::append_strings(p.type, v.begin(), v.end() - 1 /* symbol name */);
         p.symbol = v.back();
 
         return true;
@@ -233,15 +218,9 @@ namespace /* anonymous */
         }
 
         p.prototype = proto::object_array;
-
-        /* from begin to symbol name */
-        parse::append_strings(p.type, v.begin(), it - 1);
-
-        /* symbol name */
+        parse::append_strings(p.type, v.begin(), it - 1 /* symbol name */);
+        parse::append_strings(p.type, it /* first bracket */, v.end());
         p.symbol = *(it - 1);
-
-        /* from bracket to end */
-        parse::append_strings(p.type, it, v.end());
 
         return true;
     }
@@ -255,18 +234,13 @@ namespace /* anonymous */
 
         p.prototype = proto::function_pointer;
 
-        /* from begin to lparen */
-        parse::append_strings(p.type, v.begin(), it);
-
-        p.type += "(*)";
-
-        /* symbol name */
-        p.symbol = *(it + 2);
-
-        /*  parameters:              */
         /*  type (   * symbol ) ( )  */
         /*       ^ + 1 2      3 4    */
-        parse::append_strings(p.type, it + 4, v.end());
+        parse::append_strings(p.type, v.begin(), it /* first lparen */);
+        p.type += "(*)";
+        parse::append_strings(p.type, it + 4 /* param begin */, v.end());
+
+        p.symbol = *(it + 2);
 
         return true;
     }
@@ -280,14 +254,9 @@ namespace /* anonymous */
         }
 
         p.prototype = proto::function;
-
-        /* from begin to lparen */
-        parse::append_strings(p.type, v.begin(), it);
-
-        /* symbol name */
+        parse::append_strings(p.type, v.begin(), it /* first lparen */);
         p.symbol = *(it + 1);
 
-        /*  parameters:                 */
         /*  type (   symbol ) ( <..> )  */
         /*       ^ + 1      2 3 4       */
         copy_parameters(it + 4, v.end() - 1, p);
@@ -308,15 +277,9 @@ namespace /* anonymous */
         }
 
         p.prototype = proto::function;
-
-        /* from begin to symbol name */
-        parse::append_strings(p.type, v.begin(), it - 1);
-
-        /* symbol name */
+        parse::append_strings(p.type, v.begin(), it - 1 /* symbol name */);
         p.symbol = *(it - 1);
-
-        /* parameters */
-        copy_parameters(it + 1, v.end() - 1, p);
+        copy_parameters(it + 1 /* first lparen */, v.end() - 1, p);
 
         return true;
     }
@@ -326,9 +289,13 @@ namespace /* anonymous */
     bool parse_tokens(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
     {
         for (vstring_t &v : vec_tokens) {
-            if (v.size() >= 2 && v.front().at(0) == parse::ID) {
-                iter_t it = parse::find_first_not_pointer_or_ident(v);
+            /* minimum size is 2 (type + symbol),
+             * first element must be an identifier */
+            if (v.size() >= 2 && v.front()[0] == parse::ID) {
                 proto_t p;
+
+                /* `it' won't be v.begin() */
+                iter_t it = parse::find_first_not_pointer_or_ident(v);
 
                 /* check for function pointer first! */
                 if (check_function_pointer_prototype(v, p, it) ||
@@ -353,6 +320,9 @@ namespace /* anonymous */
     template<size_t sz_front, size_t sz_mid>
     constexpr seq_t seq(char const (&front)[sz_front], char const (&mid)[sz_mid], char const (&end)[2])
     {
+        /* front must contain at least TYPE */
+        static_assert(sz_front > 1);
+
         /* strlen(front) + strlen(mid) + strlen(end) */
         constexpr const int len = (sz_front-1) + (sz_mid-1) + 1;
 
@@ -370,62 +340,20 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
-bool parse::is_function_pointer(vstring_t &v, const iter_t &it)
-{
-    return pat(v, it, seq(
-        TYPE,  "(" POINTER SYMBOL ")"  "(", ")"
-    ));
-}
+#define TYPE    "x"  /* placeholder, length == 1 */
+#define SYMBOL  "$"  /* see parse::ID */
+#define PARSE(NAME,FRONT,MID,END) \
+    bool parse::NAME(vstring_t &v, const iter_t &it) { \
+        return pattern(v, it, seq(FRONT, MID, END)); \
+    }
 
-
-bool parse::is_function_pointer_no_name(vstring_t &v, const iter_t &it)
-{
-    return pat(v, it, seq(
-        TYPE,  "(" POINTER ")"  "(", ")"
-    ));
-}
-
-
-bool parse::is_function_with_parentheses(vstring_t &v, const iter_t &it)
-{
-    return pat(v, it, seq(
-        TYPE,  "(" SYMBOL ")"  "(", ")"
-    ));
-}
-
-
-bool parse::is_function(vstring_t &v, const iter_t &it)
-{
-    return pat(v, it, seq(
-        TYPE SYMBOL, "(", ")"
-    ));
-}
-
-
-bool parse::is_array(vstring_t &v, const iter_t &it)
-{
-    return pat(v, it, seq(
-        TYPE SYMBOL, "[", "]"
-    ));
-}
-
-
-bool parse::is_array_no_name(vstring_t &v, const iter_t &it)
-{
-    return pat(v, it, seq(
-        TYPE, "[", "]"
-    ));
-}
-
-
-bool parse::is_object(vstring_t &v, const iter_t &it)
-{
-    /* TYPE SYMBOL */
-    return (it == v.end() &&              /* only IDs and pointers */
-            v.size() >= 2 &&              /* type + symbol */
-            v.front().at(0) == parse::ID &&  /* type must begin with ID */
-            v.back().at(0) == parse::ID);    /* symbol */
-}
+PARSE( is_function,                   TYPE       SYMBOL, "(", ")" )
+PARSE( is_function_with_parentheses,  TYPE, "("  SYMBOL ")(", ")" )
+PARSE( is_function_pointer,           TYPE, "(*" SYMBOL ")(", ")" )
+PARSE( is_function_pointer_no_name,   TYPE, "(*"        ")(", ")" )
+PARSE( is_object,                     TYPE, "",  SYMBOL           )
+PARSE( is_array,                      TYPE       SYMBOL, "[", "]" )
+PARSE( is_array_no_name,              TYPE,              "[", "]" )
 
 
 void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
