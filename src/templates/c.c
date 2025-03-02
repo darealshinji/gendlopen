@@ -33,6 +33,7 @@
 # define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif
 
+#define GDO_INLINE  static inline
 
 #define GDO_SNPRINTF(dst, fmt, ...) \
     gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)
@@ -41,34 +42,25 @@
     gdo_strlcpy(dst, src, _countof(dst))
 
 
-/* silence warnings about unused functions if static linkage
- * was enabled (you will almost never use ALL functions available) */
-#ifdef GDO_STATIC
-# if defined(__GNUC__) || defined(__clang__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wunused-function"
-# elif defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable: 4507)
-# endif
-#endif
-
-
 /* typedefs */
 typedef void GDO_UNUSED_REF;
 typedef void GDO_UNUSED_RESULT;
 
 
 /* library handle */
-GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
+#ifdef GDO_STATIC
+static gdo_handle_t gdo_hndl = {0};
+#else
+gdo_handle_t gdo_hndl = {0};
+#endif
 
 
 /* forward declarations */
-GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
-GDO_LINKAGE void gdo_register_free_lib(void);
-GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
+GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
+GDO_INLINE void gdo_register_free_lib(void);
+GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
 #if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
-GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
+GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr);
 #endif
 
 
@@ -109,7 +101,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr);
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-GDO_LINKAGE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *fmt, ...)
+GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -142,7 +134,7 @@ GDO_LINKAGE void gdo_snprintf(gdo_char_t *str, size_t buflen, const gdo_char_t *
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-GDO_LINKAGE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t dst_len)
+GDO_INLINE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t dst_len)
 {
     gdo_char_t *dst_end = dst + (dst_len - 1);
 
@@ -156,7 +148,7 @@ GDO_LINKAGE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t dst_
 }
 
 /* save message to error buffer */
-GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
+GDO_INLINE void gdo_save_to_errbuf(const gdo_char_t *msg)
 {
     if (msg) {
         GDO_STRLCPY(gdo_hndl.buf, msg);
@@ -166,7 +158,7 @@ GDO_LINKAGE void gdo_save_to_errbuf(const gdo_char_t *msg)
 #ifdef GDO_WINAPI
 
 /* Clear error buffers. */
-GDO_LINKAGE void gdo_clear_errbuf(void)
+GDO_INLINE void gdo_clear_errbuf(void)
 {
     gdo_hndl.buf[0] = 0;
     gdo_hndl.buf_formatted[0] = 0;
@@ -175,7 +167,7 @@ GDO_LINKAGE void gdo_clear_errbuf(void)
 
 /* Save the last system error code. A message for additional information
  * can be provided too. */
-GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
+GDO_INLINE void gdo_save_GetLastError(const gdo_char_t *msg)
 {
     gdo_clear_errbuf();
     gdo_hndl.last_errno = GetLastError();
@@ -183,7 +175,7 @@ GDO_LINKAGE void gdo_save_GetLastError(const gdo_char_t *msg)
 }
 
 /* Sets the "no library was loaded" error message */
-GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
+GDO_INLINE void gdo_set_error_no_library_loaded(void)
 {
     gdo_clear_errbuf();
     gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
@@ -194,20 +186,20 @@ GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
 /*********************************** dlfcn ***********************************/
 
 /* Clear error buffers. */
-GDO_LINKAGE void gdo_clear_errbuf(void)
+GDO_INLINE void gdo_clear_errbuf(void)
 {
     gdo_hndl.buf[0] = 0;
 }
 
 /* Save the last message provided by dlerror() */
-GDO_LINKAGE void gdo_save_dlerror(void)
+GDO_INLINE void gdo_save_dlerror(void)
 {
     gdo_clear_errbuf();
     gdo_save_to_errbuf(dlerror());
 }
 
 /* Sets the "no library was loaded" error message */
-GDO_LINKAGE void gdo_set_error_no_library_loaded(void)
+GDO_INLINE void gdo_set_error_no_library_loaded(void)
 {
     gdo_clear_errbuf();
     gdo_save_to_errbuf("no library was loaded");
@@ -332,7 +324,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 }
 
 /* call LoadLibraryEx/dlopen/dlmopen */
-GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)
+GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)
 {
 #ifdef GDO_WINAPI
 
@@ -360,7 +352,7 @@ GDO_LINKAGE void gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 /* If registered with atexit() this function will be called at
  * the program's exit. Function must be of type "void (*)(void)". */
 #ifdef GDO_AUTO_RELEASE
-GDO_LINKAGE void gdo_call_free_lib(void)
+GDO_INLINE void gdo_call_free_lib(void)
 {
     if (gdo_lib_is_loaded()) {
 #ifdef GDO_WINAPI
@@ -374,7 +366,7 @@ GDO_LINKAGE void gdo_call_free_lib(void)
 
 /* register our call to free the library handle with atexit()
  * so that the library will automatically be freed upon exit */
-GDO_LINKAGE void gdo_register_free_lib(void)
+GDO_INLINE void gdo_register_free_lib(void)
 {
 #ifdef GDO_AUTO_RELEASE
     if (!gdo_hndl.call_free_lib_is_registered) {
@@ -523,7 +515,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
     return gdo_all_symbols_loaded();
 }
 
-GDO_LINKAGE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
+GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
     gdo_clear_errbuf();
 
@@ -768,7 +760,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 }
 
 #if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
-GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
+GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 {
     Dl_info info;
 
@@ -790,7 +782,7 @@ GDO_LINKAGE char *gdo_dladdr_get_fname(const void *ptr)
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
-GDO_LINKAGE void gdo_error_exit(const gdo_char_t *msg)
+GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 {
 #if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
@@ -820,7 +812,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 
 #if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 /* Windows: show message in a MessageBox window */
-GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
+GDO_INLINE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
     const gdo_char_t *fmt = _T("error in wrapper function for symbol")
         _T("`") GDO_XS _T("':\n\n") GDO_XS;
@@ -841,7 +833,7 @@ GDO_LINKAGE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
 /* This function is used by the wrapper functions to perform the loading
  * and handle errors. */
-GDO_LINKAGE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
+GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 {
 #ifdef GDO_DELAYLOAD
     /* load library + requested symbol */
@@ -889,16 +881,6 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #endif //GDO_ENABLE_AUTOLOAD
 /***************************** end of wrap code ******************************/
 %PARAM_SKIP_END%
-
-
-/* pop pragma */
-#ifdef GDO_STATIC
-# if defined(__GNUC__) || defined(__clang__)
-#  pragma GCC diagnostic pop
-# elif defined(_MSC_VER)
-#  pragma warning(pop)
-# endif
-#endif
 
 
 #if !defined(GDO_SEPARATE) /* single header file */

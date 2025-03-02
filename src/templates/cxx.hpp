@@ -87,7 +87,7 @@ public:
 
 
     /* Load a specific symbol.
-     * `symbol_num' is an enumeration value: `gdo::dl::LOAD_<symbol_name>' */
+     * `symbol_num' is an enumeration value: `GDO_LOAD_<symbol_name>' */
     bool load_symbol(int symbol_num);
 
 
@@ -220,6 +220,7 @@ GDO_DISABLE_DLMOPEN
 /* enumeration values for `load_symbol()' method */
 enum {
     GDO_LOAD_%%symbol%%,
+    GDO_ENUM_LAST
 };
 
 

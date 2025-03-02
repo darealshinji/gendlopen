@@ -139,8 +139,7 @@ GDO_USE_DLOPEN
     On other targets `dlopen()' is always used.
 
 GDO_STATIC
-    If defined static linkage (the `static' keyword) is used for all
-    functions.
+    If defined `static inline' linkage is used for all functions.
 
 GDO_DEFAULT_FLAGS
     Override the default flags to use when loading a library.
@@ -217,11 +216,13 @@ LIBEXTW
 /*****************************************************************************/
 
 
-/* static linkage */
+/* linkage */
 #ifdef GDO_STATIC
-# define GDO_LINKAGE  static
+# define GDO_LINKAGE  static inline
+# define GDO_DECL     static inline
 #else
 # define GDO_LINKAGE  /**/
+# define GDO_DECL     extern
 #endif
 
 
@@ -257,31 +258,39 @@ typedef struct gdo_handle
 } gdo_handle_t;
 
 
-#ifdef GDO_DEFAULT_LIB
-GDO_LINKAGE bool gdo_load_lib(void);
-GDO_LINKAGE bool gdo_load_lib_and_symbols(void);
+#ifdef GDO_STATIC
+static gdo_handle_t gdo_hndl;
+#else
+extern gdo_handle_t gdo_hndl;
 #endif
-GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename);
-GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
-GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
 
-GDO_LINKAGE bool gdo_lib_is_loaded(void);
-GDO_LINKAGE bool gdo_free_lib(void);
 
-GDO_LINKAGE bool gdo_all_symbols_loaded(void);
-GDO_LINKAGE bool gdo_no_symbols_loaded(void);
-GDO_LINKAGE bool gdo_any_symbol_loaded(void);
-GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors);
-GDO_LINKAGE bool gdo_load_symbol(int symbol_num);
-GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol);
+#ifdef GDO_DEFAULT_LIB
+GDO_DECL bool gdo_load_lib(void);
+GDO_DECL bool gdo_load_lib_and_symbols(void);
+#endif
+GDO_DECL bool gdo_load_lib_name(const gdo_char_t *filename);
+GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
+GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
 
-GDO_LINKAGE const gdo_char_t *gdo_last_error(void);
-GDO_LINKAGE gdo_char_t *gdo_lib_origin(void);
+GDO_DECL bool gdo_lib_is_loaded(void);
+GDO_DECL bool gdo_free_lib(void);
+
+GDO_DECL bool gdo_all_symbols_loaded(void);
+GDO_DECL bool gdo_no_symbols_loaded(void);
+GDO_DECL bool gdo_any_symbol_loaded(void);
+GDO_DECL bool gdo_load_all_symbols(bool ignore_errors);
+GDO_DECL bool gdo_load_symbol(int symbol_num);
+GDO_DECL bool gdo_load_symbol_name(const char *symbol);
+
+GDO_DECL const gdo_char_t *gdo_last_error(void);
+GDO_DECL gdo_char_t *gdo_lib_origin(void);
 
 
 /* enumeration values for gdo_load_symbol() */
 enum {
     GDO_LOAD_%%symbol%%,
+    GDO_ENUM_LAST
 };
 
 

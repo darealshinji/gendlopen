@@ -111,7 +111,6 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
     };
 
     size_t longest = 0;
-
     int line_count = 0;
     const int entry_lines = utils::count_linefeed(entry);
 
