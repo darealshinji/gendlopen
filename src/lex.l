@@ -52,42 +52,54 @@ other                [*,()\[\]]
 
 %option noinput nounput noyywrap yylineno nounistd never-interactive
 
-%x CLANG_AST
-%x C_COMMENT
-%x PREPROC
+%x AST
 %x OPTION
+%x COMMENT
+%x C_COMMENT
+%x CPP
+%x CPP_COMMENT
 
 %%
 
 {ast_begin}          { /* clang AST identifier in first line */
     if (yylineno == 1) {
-        BEGIN(CLANG_AST);
+        BEGIN(AST);
         return LEX_AST_BEGIN;
     }
 }
 
-<CLANG_AST>{funcvar} { return LEX_AST_FUNCVAR; }
-<CLANG_AST>{parmvar} { return LEX_AST_PARMVAR; }
-<CLANG_AST>\n        { }
-<CLANG_AST>.         { }
+<AST>{funcvar}       { return LEX_AST_FUNCVAR; }
+<AST>{parmvar}       { return LEX_AST_PARMVAR; }
+<AST>\n              { }
+<AST>.               { }
+
+{option}             { BEGIN(OPTION); }
+<OPTION>{linewrap}   { }
+<OPTION>{optstr}     { return LEX_OPTION; }
+<OPTION>\n           { BEGIN(INITIAL); }
+<OPTION>.            { }
+
+"//"                 { BEGIN(COMMENT); }
+<COMMENT>{linewrap}  { }
+<COMMENT>\n          { BEGIN(INITIAL); }
+<COMMENT>.           { }
 
 "/*"                 { BEGIN(C_COMMENT); }
 <C_COMMENT>"*/"      { BEGIN(INITIAL); }
 <C_COMMENT>\n        { }
 <C_COMMENT>.         { }
 
-{preproc}            { BEGIN(PREPROC); }
-<PREPROC>{linewrap}  { /* continue to next line */ }
-<PREPROC>\n          { BEGIN(INITIAL); }
-<PREPROC>.           { }
+{preproc}            { BEGIN(CPP); }
+<CPP>"/*"            { BEGIN(CPP_COMMENT); /* comment within CPP line */ }
+<CPP>{linewrap}      { }
+<CPP>\n              { BEGIN(INITIAL); }
+<CPP>"//"            { BEGIN(COMMENT); }
+<CPP>.               { }
 
-{option}             { BEGIN(OPTION); }
-<OPTION>{linewrap}   { /* continue to next line */ }
-<OPTION>{optstr}     { return LEX_OPTION; }
-<OPTION>\n           { BEGIN(INITIAL); }
-<OPTION>.            { }
+<CPP_COMMENT>"*/"    { BEGIN(CPP); }
+<CPP_COMMENT>\n      { BEGIN(C_COMMENT); /* leaving the original CPP line */ }
+<CPP_COMMENT>.       { }
 
-"//".*               { /* comment line */ }
 {bom}                { /* byte order mark */ }
 [[:space:]]          { }
 
