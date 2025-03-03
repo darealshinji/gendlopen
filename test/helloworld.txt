@@ -1,31 +1,55 @@
-﻿helloworld *(helloworld_init) (  ); // init
-helloworld *helloworld_init_argv(int argc, char *argv[]); // testing arrays in parameters
+﻿/* << UTF-8 BOM ignored */
 
-/* function pointer */
-//helloworld_cb_t helloworld_callback;
+/* testing if the parser can read everything */
+
+# define ZZZ //line-wrap \
+  continued to next line
+
+# define XXX /* comment */ \
+  /* continued to next line */ \
+  YYY /* multi-line comment begin
+ *
+ *
+ * multi-line comment end */
+
+// /* comment within comment */
+
+/* //comment within comment */
+
+/* multi-line
+ * comment
+ */
+
+// multi-line \
+   comment
+
+/* empty statements ignored */;;;
+
+
+/* no parameters */
+helloworld *(helloworld_init) (  );
+
+/* array in parameters */
+helloworld *helloworld_init_argv(int argc, char *argv[]);
+
+/* non-typedef'd function pointer */
 void (*helloworld_callback) (const char*);
 
-/* array type */
+/* array type, 'extern' keyword */
 extern char helloworld_buffer[64];
 
-/*
- * say hello
- */
+/* function name within parentheses */
 void (helloworld_hello)(helloworld *hw);
+
+/* multi-line declaration */
 void helloworld_hello2(helloworld *hw,
-#define IGNORE_ME \
-  ignored
-    void ( * helloworld_cb )
-        (const char*)  /* testing non-typedef'd function pointer */
+#define IGNORE_THIS_LINE
+    /* non-typedef'd function pointer */
+    void ( * callback_function ) (const char*)
 );
 
-/* ignored */;;;
+/* variable argument lists */
+int helloworld_fprintf(FILE *stream, const char *format, ...);
 
-/* fprintf */
-int helloworld_fprintf(FILE *stream, const char *format,
-  ...); /* testing variable arguments */
-
-/* release */
-void helloworld_release
-  (/* //comment inside comment */ helloworld * p) /* single letter parameter name */
-
+/* single letter parameter name, missing semicolon */
+void helloworld_release (helloworld * p)
