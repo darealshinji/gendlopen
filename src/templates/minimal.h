@@ -35,7 +35,7 @@ typedef struct gdo_handle
 
 } gdo_handle_t;
 
-GDO_LINKAGE gdo_handle_t gdo_hndl = {0};
+GDO_LINKAGE gdo_handle_t gdo_hndl;
 
 
 /* returns NULL on success and an error message if loading failed */
@@ -48,7 +48,7 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
     }
 @
     /* %%symbol%% */@
-    gdo_hndl.%%symbol%% = @
+    gdo_hndl.%%symbol%% =@
         (%%sym_type%%)@
             GDO_GET_SYM(gdo_hndl.handle, "%%symbol%%");@
     if (!gdo_hndl.%%symbol%%) {@

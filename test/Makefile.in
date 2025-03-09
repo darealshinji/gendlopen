@@ -18,6 +18,8 @@ BINS = \
 	c_autoload/$(MAIN) \
 	c_auto_release/$(MAIN) \
 	c_clang_ast/$(MAIN) \
+	c_cxx_with_c_header/$(MAIN) \
+	c_cxx_with_c_minimal_header/$(MAIN) \
 	c_line/$(MAIN) \
 	c_load_symbol/$(MAIN) \
 	c_minimal/$(MAIN) \

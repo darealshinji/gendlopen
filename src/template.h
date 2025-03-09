@@ -557,11 +557,15 @@ static constexpr template_t c_header[] = {
   { "", 0, 1 },
   { "/* linkage */", 0, 1 },
   { "#ifdef GDO_STATIC", 0, 1 },
-  { "# define GDO_LINKAGE  static inline", 0, 1 },
-  { "# define GDO_DECL     static inline", 0, 1 },
+  { "# define GDO_LINKAGE      static inline", 0, 1 },
+  { "# define GDO_OBJ_LINKAGE  static", 0, 1 },
+  { "# define GDO_DECL         static inline", 0, 1 },
+  { "# define GDO_OBJ_DECL     static", 0, 1 },
   { "#else", 0, 1 },
-  { "# define GDO_LINKAGE  /**/", 0, 1 },
-  { "# define GDO_DECL     extern", 0, 1 },
+  { "# define GDO_LINKAGE      /**/", 0, 1 },
+  { "# define GDO_OBJ_LINKAGE  /**/", 0, 1 },
+  { "# define GDO_DECL         extern", 0, 1 },
+  { "# define GDO_OBJ_DECL     extern", 0, 1 },
   { "#endif", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
@@ -597,12 +601,7 @@ static constexpr template_t c_header[] = {
   { "} gdo_handle_t;", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
-  { "#ifdef GDO_STATIC", 0, 1 },
-  { "static gdo_handle_t gdo_hndl;", 0, 1 },
-  { "#else", 0, 1 },
-  { "extern gdo_handle_t gdo_hndl;", 0, 1 },
-  { "#endif", 0, 1 },
-  { "", 0, 1 },
+  { "GDO_OBJ_DECL gdo_handle_t gdo_hndl;", 0, 1 },
   { "", 0, 1 },
   { "#ifdef GDO_DEFAULT_LIB", 0, 1 },
   { "GDO_DECL bool gdo_load_lib(void);", 0, 1 },
@@ -710,11 +709,7 @@ static constexpr template_t c_body[] = {
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* library handle */", 0, 1 },
-  { "#ifdef GDO_STATIC", 0, 1 },
-  { "static gdo_handle_t gdo_hndl = {0};", 0, 1 },
-  { "#else", 0, 1 },
-  { "gdo_handle_t gdo_hndl = {0};", 0, 1 },
-  { "#endif", 0, 1 },
+  { "GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* forward declarations */", 0, 1 },
@@ -1117,7 +1112,7 @@ static constexpr template_t c_body[] = {
   { "    /* get symbol addresses */", 0, 1 },
   { "", 0, 1 },
   { "    /* %%symbol%% */\n" /* multiline entry */
-    "    gdo_hndl.ptr.%%symbol%% = \n"
+    "    gdo_hndl.ptr.%%symbol%% =\n"
     "        (%%sym_type%%)\n"
     "            gdo_sym(\"%%symbol%%\", _T(\"%%symbol%%\"));\n"
     "    if (!gdo_hndl.ptr.%%symbol%% && !ignore_errors) {\n"
@@ -2841,7 +2836,7 @@ static constexpr template_t min_c_header[] = {
   { "", 0, 1 },
   { "} gdo_handle_t;", 0, 1 },
   { "", 0, 1 },
-  { "GDO_LINKAGE gdo_handle_t gdo_hndl = {0};", 0, 1 },
+  { "GDO_LINKAGE gdo_handle_t gdo_hndl;", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "/* returns NULL on success and an error message if loading failed */", 0, 1 },
@@ -2854,7 +2849,7 @@ static constexpr template_t min_c_header[] = {
   { "    }", 0, 1 },
   { "\n" /* multiline entry */
     "    /* %%symbol%% */\n"
-    "    gdo_hndl.%%symbol%% = \n"
+    "    gdo_hndl.%%symbol%% =\n"
     "        (%%sym_type%%)\n"
     "            GDO_GET_SYM(gdo_hndl.handle, \"%%symbol%%\");\n"
     "    if (!gdo_hndl.%%symbol%%) {\n"

@@ -48,11 +48,7 @@ typedef void GDO_UNUSED_RESULT;
 
 
 /* library handle */
-#ifdef GDO_STATIC
-static gdo_handle_t gdo_hndl = {0};
-#else
-gdo_handle_t gdo_hndl = {0};
-#endif
+GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 
 
 /* forward declarations */
@@ -455,7 +451,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
     /* get symbol addresses */
 
     /* %%symbol%% */@
-    gdo_hndl.ptr.%%symbol%% = @
+    gdo_hndl.ptr.%%symbol%% =@
         (%%sym_type%%)@
             gdo_sym("%%symbol%%", _T("%%symbol%%"));@
     if (!gdo_hndl.ptr.%%symbol%% && !ignore_errors) {@

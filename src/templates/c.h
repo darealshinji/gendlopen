@@ -218,11 +218,15 @@ LIBEXTW
 
 /* linkage */
 #ifdef GDO_STATIC
-# define GDO_LINKAGE  static inline
-# define GDO_DECL     static inline
+# define GDO_LINKAGE      static inline
+# define GDO_OBJ_LINKAGE  static
+# define GDO_DECL         static inline
+# define GDO_OBJ_DECL     static
 #else
-# define GDO_LINKAGE  /**/
-# define GDO_DECL     extern
+# define GDO_LINKAGE      /**/
+# define GDO_OBJ_LINKAGE  /**/
+# define GDO_DECL         extern
+# define GDO_OBJ_DECL     extern
 #endif
 
 
@@ -258,12 +262,7 @@ typedef struct gdo_handle
 } gdo_handle_t;
 
 
-#ifdef GDO_STATIC
-static gdo_handle_t gdo_hndl;
-#else
-extern gdo_handle_t gdo_hndl;
-#endif
-
+GDO_OBJ_DECL gdo_handle_t gdo_hndl;
 
 #ifdef GDO_DEFAULT_LIB
 GDO_DECL bool gdo_load_lib(void);
