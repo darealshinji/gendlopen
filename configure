@@ -27,6 +27,7 @@ nix="yes"
 with_sdl="no"
 with_notify="no"
 with_msgbox="no"
+with_gtk="no"
 
 
 
@@ -41,6 +42,7 @@ create_makefile()
     if [ "x$with_sdl"    != "xyes" ]; then xsdl="#"; fi
     if [ "x$with_notify" != "xyes" ]; then xnotify="#"; fi
     if [ "x$with_msgbox" != "xyes" ]; then xmsgbox="#"; fi
+    if [ "x$with_gtk"    != "xyes" ]; then xgtk="#"; fi
     if [ "x$win32"       != "xyes" ]; then xwin32="#"; fi
     if [ "x$msvc"        != "xyes" ]; then xmsvc="#"; fi
     if [ "x$nix"         != "xyes" ]; then xnix="#"; fi
@@ -73,6 +75,7 @@ create_makefile()
     sed -e "s,@SDL@,$xsdl,g" \
         -e "s,@NOTIFY@,$xnotify,g" \
         -e "s,@MSGBOX@,$xmsgbox,g" \
+        -e "s,@GTK@,$xgtk,g" \
         -e "s,@AR@,$xar,g" \
         -e "s,@W32@,$xwin32,g" \
         -e "s,@MSVC@,$xmsvc,g" \
@@ -731,8 +734,12 @@ else
         with_notify="yes"
     fi
 
-    if [ "x$have_gtk_headers" = "xyes" ] && [ "x$have_x11_headers" = "xyes" ]; then
-        with_msgbox="yes"
+    if [ "x$have_gtk_headers" = "xyes" ]; then
+        with_gtk="yes"
+
+        if [ "x$have_x11_headers" = "xyes" ]; then
+            with_msgbox="yes"
+        fi
     fi
 fi
 
@@ -785,6 +792,7 @@ fi
 
 # examples
 echo ""
+echo "build gtk example: $with_gtk"
 echo "build notify example: $with_notify"
 echo "build msgbox example: $with_msgbox"
 echo "build SDL_loadso tests: $with_sdl"

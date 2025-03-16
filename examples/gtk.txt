@@ -1,0 +1,28 @@
+void
+gtk_init (int *argc,
+          char ***argv);
+
+GtkWidget *
+gtk_message_dialog_new (GtkWindow *parent,
+                        GtkDialogFlags flags,
+                        GtkMessageType type,
+                        GtkButtonsType buttons,
+                        const gchar *message_format,
+                        ...);
+
+void
+gtk_window_set_title (
+  GtkWindow* window,
+  const gchar* title
+);
+
+gint
+gtk_dialog_run (
+  GtkDialog* dialog
+);
+
+void
+gtk_widget_destroy (
+  GtkWidget* widget
+);
+
