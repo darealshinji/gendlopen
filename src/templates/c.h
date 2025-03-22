@@ -116,8 +116,8 @@ bool gdo_any_symbol_loaded ();
 const gdo_char_t *gdo_last_error ();
 
     Returns a pointer to the error message buffer with the last saved error string.
-    This buffer can be empty and is in fact cleared when no error occured in a function.
-    This function doesn't return a null pointer.
+    The message will indicate if no error occured in a function.
+    This function doesn't return a null pointer or empty string.
 
 
 gdo_char_t *gdo_lib_origin ();

@@ -11,7 +11,7 @@ constexpr const int default_flags;
 
 /* Shared library file extension without dot ("dll", "dylib" or "so").
  * Useful i.e. on plugins. */
-static constexpr const char * const libext;
+constexpr const char * const libext;
 #ifdef GDO_WINAPI
 constexpr const wchar_t * const libext_w;
 #endif
@@ -80,10 +80,8 @@ public:
 
 
     /* Load the symbols. This function can safely be called multiple times.
-     * If ignore_errors is set true the function won't stop on the first
-     * symbol that can't be loaded but instead tries to load them all.
      * If one or more symbols weren't loaded the function returns false. */
-    bool load_all_symbols(bool ignore_errors=false);
+    bool load_all_symbols();
 
 
     /* Load a specific symbol.
@@ -677,12 +675,6 @@ private:
 
         T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
 
-        /**
-        * Linux man page mentions cases where NULL pointer is a valid address.
-        * These however seem to be edge-cases that are irrelevant to us.
-        * Furthermore this is contradicting POSIX which says a NULL pointer shall
-        * be returned on an error.
-        */
         if (!ptr) {
             save_error();
         }
@@ -717,13 +709,16 @@ private:
         if (!lib_loaded()) {
             const char *ptr = (errsav == ENOEXEC) ? ::dlerror() : ::strerror(errsav);
             m_errmsg = ptr ? ptr : "";
+            return false;
         }
+
+        return true;
 #else
         load_lib(filename, flags, new_namespace);
         save_error(filename);
-#endif //!_AIX
 
         return lib_loaded();
+#endif //!_AIX
     }
 
 
@@ -826,7 +821,7 @@ public:
 
 
     /* load all symbols */
-    bool load_all_symbols(bool ignore_errors=false)
+    bool load_all_symbols()
     {
         clear_error();
 
@@ -837,20 +832,12 @@ public:
             return false;
         }
 
-        /* We can ignore errors in which case dlsym() or GetProcAddress()
-         * is called for each symbol and continue to do so even if it fails.
-         * The function will however in the end still return false if 1 or more
-         * symbols failed to load.
-         * If we do not ignore errors the function will simply return false on
-         * the first error it encounters. */
-
         /* get symbol addresses */
 
         /* %%symbol%% */@
-        ptr::%%symbol%% =@
+        if ((ptr::%%symbol%% =@
             sym_load<%%sym_type%%>@
-                ("%%symbol%%");@
-        if (!ptr::%%symbol%% && !ignore_errors) {@
+                ("%%symbol%%")) == nullptr) {@
             return false;@
         }@
 
@@ -1137,7 +1124,7 @@ public:
     /* retrieve the last error */
     std::string error() const
     {
-        return m_errmsg;
+        return m_errmsg.empty() ? "no error" : m_errmsg;
     }
 
 

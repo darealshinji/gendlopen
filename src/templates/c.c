@@ -226,7 +226,6 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 #ifdef GDO_WINAPI
     /* empty filename */
     if (!filename || *filename == 0) {
-        gdo_clear_errbuf();
         gdo_hndl.last_errno = ERROR_INVALID_NAME;
         gdo_save_to_errbuf(_T("empty filename"));
         return false;
@@ -255,9 +254,9 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
     int errsav = errno;
 
     if (!gdo_lib_is_loaded()) {
-        gdo_clear_errbuf();
         const char *ptr = (errsav == ENOEXEC) ? dlerror() : strerror(errsav);
         gdo_save_to_errbuf(ptr);
+        return false;
     }
 #else
     gdo_load_library(filename, flags, new_namespace);
@@ -578,13 +577,14 @@ GDO_JUMP_%%symbol%%:@
 
 
 /*****************************************************************************/
-/* retrieve the last saved error message (can be an empty buffer)            */
+/*                   retrieve the last saved error message                   */
 /*                                                                           */
 /* For WinAPI the message will be generated from an error code.              */
 /*****************************************************************************/
 GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 {
 #ifdef GDO_WINAPI
+
     /* message was already saved */
     if (gdo_hndl.buf_formatted[0] != 0) {
         return gdo_hndl.buf_formatted;
@@ -613,9 +613,15 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     }
 
     return gdo_hndl.buf_formatted;
+
 #else
-    /* simply return the buffer */
+
+    if (gdo_hndl.buf[0] == 0) {
+        GDO_STRLCPY(gdo_hndl.buf, "no error");
+    }
+
     return gdo_hndl.buf;
+
 #endif //GDO_WINAPI
 }
 /*****************************************************************************/
