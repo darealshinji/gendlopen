@@ -363,10 +363,10 @@ set ld:
     ld=..
 
 override flags:
-    cflags=..  cxxflags=..  cppflags=..  ldlfags=..
+    cflags=..  cxxflags=..  cppflags=..  ldflags=..
 
 append extra flags:
-    xcflags=..  xcxxflags=..  xcppflags=..  xldlfags=..
+    xcflags=..  xcxxflags=..  xcppflags=..  xldflags=..
 
 set flags for GTK2 and GLib headers (ignored for win32):
     gtk-cflags=..  glib-cflags=..
