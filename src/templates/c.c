@@ -727,6 +727,11 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
+
+#ifndef GDO_HOOK_%%func_symbol%%@
+#define GDO_HOOK_%%func_symbol%%(...) /**/@
+#endif
+
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
@@ -751,6 +756,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     if (!gdo_hndl.ptr.%%func_symbol%%) {@
         gdo_error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
+    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
 
@@ -823,6 +829,7 @@ GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%"));@
+    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
 

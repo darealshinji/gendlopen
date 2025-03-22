@@ -27,6 +27,17 @@
 /* define a default library to load; this is required */
 #define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
 
+/* simple function hook */
+#define GDO_HOOK_helloworld_hello(...) \
+    puts("helloworld_hello() function hooked!");
+
+/* manually call the function and return early */
+#define GDO_HOOK_helloworld_hello2(...) \
+    puts("helloworld_hello2() function hooked!"); \
+    GDO_ALIAS_helloworld_hello2(__VA_ARGS__); \
+    return;
+
+
 /* include generated header file */
 #include "c_test.h"
 

@@ -1,0 +1,3 @@
+gpointer g_malloc (gsize n_bytes);
+gpointer g_realloc (gpointer mem, gsize n_bytes);
+void g_free (gpointer mem);

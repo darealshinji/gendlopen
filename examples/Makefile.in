@@ -1,6 +1,7 @@
 
 @GTK@BIN_GTK       = gtk$(EXEEXT)
-@NOTIFY@BIN_NOTIFY = notify$(EXEEXT)
+@GLIB@BIN_HOOK     = hook$(EXEEXT)
+@GLIB@BIN_NOTIFY   = notify$(EXEEXT)
 @MSGBOX@BIN_MSGBOX = msgbox$(EXEEXT)
 
 @NIX@BIN_UUIDNIX = uuid_nix$(EXEEXT)
@@ -12,7 +13,7 @@ MSGBOX_HEADERS = \
 	example_msgbox_fltk.h \
 	example_msgbox_x11.h
 
-BINS = $(BIN_GTK) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
+BINS = $(BIN_HOOK) $(BIN_GTK) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 
 
 .PHONY: all clean
@@ -20,7 +21,7 @@ BINS = $(BIN_GTK) $(BIN_NOTIFY) $(BIN_MSGBOX) $(BIN_UUIDNIX) $(BIN_UUIDWIN)
 all: $(BINS)
 
 clean:
-	$(_v)-rm -f gtk notify msgbox uuid_nix
+	$(_v)-rm -f hook gtk notify msgbox uuid_nix
 	$(_v)-rm -f *.exe *.o *.obj example_*.h uuid_nix_dl.h uuid_win_dl.h
 
 run-examples: $(BINS)
@@ -28,6 +29,14 @@ run-examples: $(BINS)
 
 @W32@run-examples-wine: $(BINS)
 @W32@	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests_wine))
+
+
+# hook
+@GLIB@example_hook.h: hook_glib.txt
+@GLIB@	$(gen_v)$(GENDLOPEN) hook_glib.txt -force -o $@
+
+@GLIB@hook: example_hook.h hook.c
+@GLIB@	$(cc_v)$(CC) $(TEST_CFLAGS) $(GLIB_CFLAGS) hook.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
 # gtk
@@ -39,14 +48,14 @@ run-examples: $(BINS)
 
 
 # libnotify
-@NOTIFY@example_notify.h: notify.txt
-@NOTIFY@	$(gen_v)$(GENDLOPEN) notify.txt -force -o $@
+@GLIB@example_notify.h: notify.txt
+@GLIB@	$(gen_v)$(GENDLOPEN) notify.txt -force -o $@
 
-@NOTIFY@example_notify_gobject.h: notify_gobject.txt
-@NOTIFY@	$(gen_v)$(GENDLOPEN) notify_gobject.txt -force -o $@
+@GLIB@example_notify_gobject.h: notify_gobject.txt
+@GLIB@	$(gen_v)$(GENDLOPEN) notify_gobject.txt -force -o $@
 
-@NOTIFY@notify: example_notify.h example_notify_gobject.h notify.c
-@NOTIFY@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
+@GLIB@notify: example_notify.h example_notify_gobject.h notify.c
+@GLIB@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty $(GLIB_CFLAGS) notify.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 
 # msgbox

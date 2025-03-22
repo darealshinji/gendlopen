@@ -200,6 +200,48 @@ GDO_DISABLE_DLINFO
 GDO_DISABLE_DLMOPEN
     Always disable usage of `dlmopen(3)'.
 
+
+
+*****************
+* Helper macros *
+*****************
+
+GDO_DEFAULT_FLAGS
+    Default flags for `dlopen()' or `LoadLibraryEx()'
+
+GDO_ALIAS_<symbol>
+    Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will
+    access the pointer to `helloworld'.
+
+LIBNAME(NAME, API)
+LIBNAMEA(NAME, API)
+LIBNAMEW(NAME, API)
+    Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
+    including double quote marks.
+    LIBNAME(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
+
+LIBEXT
+LIBEXTA
+LIBEXTW
+    Shared library file extension without dot ("dll", "dylib" or "so").
+    Useful i.e. on plugins.
+
+
+
+*********
+* Hooks *
+*********
+
+GDO_HOOK_<function>(...)
+    Define a hook macro that will be inserted into a wrap function.
+    The hook is placed before the actual function call.
+    If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.
+    Parameter names are taken from the function prototype declarations (or it's "a, b, c" and so on
+    if the header was created with `-param=create'). A hook may be left undefined.
+    For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':
+    #define GDO_HOOK_sum_of_a_and_b(...) \
+      printf("debug: the sum of %d and %d is %d\n", val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
+
 ***/
 
 #ifdef GDO_WINAPI

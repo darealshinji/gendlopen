@@ -14,6 +14,16 @@
 /* define a default library to load (already set in header) */
 //#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
 
+/* simple function hook */
+#define GDO_HOOK_helloworld_hello(...) \
+    std::cout << "helloworld_hello() function hooked!" << std::endl;
+
+/* manually call the function and return early */
+#define GDO_HOOK_helloworld_hello2(...) \
+    std::cout << "helloworld_hello2() function hooked!" << std::endl; \
+    GDO_ALIAS_helloworld_hello2(__VA_ARGS__); \
+    return;
+
 /* include generated header file */
 #include "cxx_test.hpp"
 

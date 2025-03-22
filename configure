@@ -25,9 +25,9 @@ win32="no"
 msvc="no"
 nix="yes"
 with_sdl="no"
-with_notify="no"
 with_msgbox="no"
 with_gtk="no"
+with_glib="no"
 
 
 
@@ -40,11 +40,10 @@ testfiles="test.c test.cpp test.h test.hpp test.o test.obj test.exe a.out a.exe"
 create_makefile()
 {
     if [ "x$with_sdl"    != "xyes" ]; then xsdl="#"; fi
-    if [ "x$with_notify" != "xyes" ]; then xnotify="#"; fi
     if [ "x$with_msgbox" != "xyes" ]; then xmsgbox="#"; fi
     if [ "x$with_gtk"    != "xyes" ]; then xgtk="#"; fi
+    if [ "x$with_glib"   != "xyes" ]; then xglib="#"; fi
     if [ "x$win32"       != "xyes" ]; then xwin32="#"; fi
-    if [ "x$msvc"        != "xyes" ]; then xmsvc="#"; fi
     if [ "x$nix"         != "xyes" ]; then xnix="#"; fi
     if [ "x$ar"           = "x"    ]; then xar="#"; fi
 
@@ -73,12 +72,11 @@ create_makefile()
 
     cat settings.mk rules.mk "${1}/Makefile.in" | \
     sed -e "s,@SDL@,$xsdl,g" \
-        -e "s,@NOTIFY@,$xnotify,g" \
         -e "s,@MSGBOX@,$xmsgbox,g" \
         -e "s,@GTK@,$xgtk,g" \
+        -e "s,@GLIB@,$xglib,g" \
         -e "s,@AR@,$xar,g" \
         -e "s,@W32@,$xwin32,g" \
-        -e "s,@MSVC@,$xmsvc,g" \
         -e "s,@NIX@,$xnix,g" \
         >> "${1}/Makefile"
 
@@ -134,12 +132,8 @@ create_test_makefiles()
     done
 
     sed -e "s,@SDL@,$xsdl,g" \
-        -e "s,@NOTIFY@,$xnotify,g" \
-        -e "s,@MSGBOX@,$xmsgbox,g" \
         -e "s,@AR@,$xar,g" \
         -e "s,@W32@,$xwin32,g" \
-        -e "s,@MSVC@,$xmsvc,g" \
-        -e "s,@NIX@,$xnix,g" \
         Makefile.in >> Makefile
 
     cd "$top"
@@ -731,7 +725,7 @@ else
 
     # set conditionals for Makefile
     if [ "x$have_glib_headers" = "xyes" ]; then
-        with_notify="yes"
+        with_glib="yes"
     fi
 
     if [ "x$have_gtk_headers" = "xyes" ]; then
@@ -793,7 +787,7 @@ fi
 # examples
 echo ""
 echo "build gtk example: $with_gtk"
-echo "build notify example: $with_notify"
+echo "build notify example: $with_glib"
 echo "build msgbox example: $with_msgbox"
 echo "build SDL_loadso tests: $with_sdl"
 echo ""

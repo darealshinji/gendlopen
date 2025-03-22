@@ -534,6 +534,10 @@ static constexpr template_t c_header[] = {
   { "GDO_DEFAULT_FLAGS", 0, 1 },
   { "    Default flags for `dlopen()' or `LoadLibraryEx()'", 0, 1 },
   { "", 0, 1 },
+  { "GDO_ALIAS_<symbol>", 0, 1 },
+  { "    Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will", 0, 1 },
+  { "    access the pointer to `helloworld'.", 0, 1 },
+  { "", 0, 1 },
   { "LIBNAME(NAME, API)", 0, 1 },
   { "LIBNAMEA(NAME, API)", 0, 1 },
   { "LIBNAMEW(NAME, API)", 0, 1 },
@@ -546,6 +550,22 @@ static constexpr template_t c_header[] = {
   { "LIBEXTW", 0, 1 },
   { "    Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").", 0, 1 },
   { "    Useful i.e. on plugins.", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "*********", 0, 1 },
+  { "* Hooks *", 0, 1 },
+  { "*********", 0, 1 },
+  { "", 0, 1 },
+  { "GDO_HOOK_<function>(...)", 0, 1 },
+  { "    Define a hook macro that will be inserted into a wrap function.", 0, 1 },
+  { "    The hook is placed before the actual function call.", 0, 1 },
+  { "    If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.", 0, 1 },
+  { "    Parameter names are taken from the function prototype declarations (or it's \"a, b, c\" and so on", 0, 1 },
+  { "    if the header was created with `-param=create'). A hook may be left undefined.", 0, 1 },
+  { "    For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':", 0, 1 },
+  { "    #define GDO_HOOK_sum_of_a_and_b(...) \\", 0, 1 },
+  { "      printf(\"debug: the sum of %d and %d is %d\\n\", val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));", 1, 1 },
   { "", 0, 1 },
   { "***/", 0, 1 },
   { "", 0, 1 },
@@ -1388,6 +1408,11 @@ static constexpr template_t c_body[] = {
   { "/*****************************************************************************/", 0, 1 },
   { "/*                                wrap code                                  */", 0, 1 },
   { "/*****************************************************************************/", 0, 1 },
+  { "", 0, 1 },
+  { "#ifndef GDO_HOOK_%%func_symbol%%\n" /* multiline entry */
+    "#define GDO_HOOK_%%func_symbol%%(...) /**/\n"
+    "#endif", 1, 3 },
+  { "", 0, 1 },
   { "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
@@ -1412,9 +1437,10 @@ static constexpr template_t c_body[] = {
     "    if (!gdo_hndl.ptr.%%func_symbol%%) {\n"
     "        gdo_error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
     "    }\n"
+    "    GDO_HOOK_%%func_symbol%%(%%notype_args%%);\n"
     "    %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);\n"
     "}\n"
-    "", 1, 7 },
+    "", 1, 8 },
   { "", 0, 1 },
   { "#elif defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
   { "", 0, 1 },
@@ -1484,9 +1510,10 @@ static constexpr template_t c_body[] = {
   { "", 0, 1 },
   { "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n" /* multiline entry */
     "    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T(\"%%func_symbol%%\"));\n"
+    "    GDO_HOOK_%%func_symbol%%(%%notype_args%%);\n"
     "    %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);\n"
     "}\n"
-    "", 1, 5 },
+    "", 1, 6 },
   { "#endif //GDO_ENABLE_AUTOLOAD", 0, 1 },
   { "/***************************** end of wrap code ******************************/", 0, 1 },
   { "%PARAM_SKIP_END%", 1, 1 },
@@ -1713,6 +1740,48 @@ static constexpr template_t cxx_header[] = {
   { "", 0, 1 },
   { "GDO_DISABLE_DLMOPEN", 0, 1 },
   { "    Always disable usage of `dlmopen(3)'.", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "*****************", 0, 1 },
+  { "* Helper macros *", 0, 1 },
+  { "*****************", 0, 1 },
+  { "", 0, 1 },
+  { "GDO_DEFAULT_FLAGS", 0, 1 },
+  { "    Default flags for `dlopen()' or `LoadLibraryEx()'", 0, 1 },
+  { "", 0, 1 },
+  { "GDO_ALIAS_<symbol>", 0, 1 },
+  { "    Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will", 0, 1 },
+  { "    access the pointer to `helloworld'.", 0, 1 },
+  { "", 0, 1 },
+  { "LIBNAME(NAME, API)", 0, 1 },
+  { "LIBNAMEA(NAME, API)", 0, 1 },
+  { "LIBNAMEW(NAME, API)", 0, 1 },
+  { "    Convenience macro to create versioned library names for DLLs, dylibs and DSOs,", 0, 1 },
+  { "    including double quote marks.", 0, 1 },
+  { "    LIBNAME(z,1) for example will become \"libz-1.dll\", \"libz.1.dylib\" or \"libz.so.1\".", 0, 1 },
+  { "", 0, 1 },
+  { "LIBEXT", 0, 1 },
+  { "LIBEXTA", 0, 1 },
+  { "LIBEXTW", 0, 1 },
+  { "    Shared library file extension without dot (\"dll\", \"dylib\" or \"so\").", 0, 1 },
+  { "    Useful i.e. on plugins.", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "", 0, 1 },
+  { "*********", 0, 1 },
+  { "* Hooks *", 0, 1 },
+  { "*********", 0, 1 },
+  { "", 0, 1 },
+  { "GDO_HOOK_<function>(...)", 0, 1 },
+  { "    Define a hook macro that will be inserted into a wrap function.", 0, 1 },
+  { "    The hook is placed before the actual function call.", 0, 1 },
+  { "    If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.", 0, 1 },
+  { "    Parameter names are taken from the function prototype declarations (or it's \"a, b, c\" and so on", 0, 1 },
+  { "    if the header was created with `-param=create'). A hook may be left undefined.", 0, 1 },
+  { "    For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':", 0, 1 },
+  { "    #define GDO_HOOK_sum_of_a_and_b(...) \\", 0, 1 },
+  { "      printf(\"debug: the sum of %d and %d is %d\\n\", val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));", 1, 1 },
   { "", 0, 1 },
   { "***/", 0, 1 },
   { "", 0, 1 },
@@ -2720,6 +2789,10 @@ static constexpr template_t cxx_body[] = {
   { "#endif //GDO_HAS_MSG_CB", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
+  { "#ifndef GDO_HOOK_%%func_symbol%%\n" /* multiline entry */
+    "#define GDO_HOOK_%%func_symbol%%(...) /**/\n"
+    "#endif", 1, 3 },
+  { "", 0, 1 },
   { "#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
   { "", 0, 1 },
   { "", 0, 1 },
@@ -2729,8 +2802,9 @@ static constexpr template_t cxx_body[] = {
     "    if (!gdo::ptr::%%func_symbol%%) {\n"
     "        gdo::helper::error_exit(\"error: symbol `%%func_symbol%%' was not loaded\");\n"
     "    }\n"
+    "    GDO_HOOK_%%func_symbol%%(%%notype_args%%);\n"
     "    %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);\n"
-    "}", 1, 7 },
+    "}", 1, 8 },
   { "", 0, 1 },
   { "", 0, 1 },
   { "#elif defined(GDO_ENABLE_AUTOLOAD)", 0, 1 },
@@ -2773,8 +2847,9 @@ static constexpr template_t cxx_body[] = {
   { "\n" /* multiline entry */
     "GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {\n"
     "    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, \"%%func_symbol%%\");\n"
+    "    GDO_HOOK_%%func_symbol%%(%%notype_args%%);\n"
     "    %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);\n"
-    "}", 1, 5 },
+    "}", 1, 6 },
   { "", 0, 1 },
   { "#endif //GDO_ENABLE_AUTOLOAD", 0, 1 },
   { "%PARAM_SKIP_END%", 1, 1 },

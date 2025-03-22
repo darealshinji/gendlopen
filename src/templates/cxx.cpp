@@ -64,6 +64,10 @@ namespace gdo
 #endif //GDO_HAS_MSG_CB
 
 
+#ifndef GDO_HOOK_%%func_symbol%%@
+#define GDO_HOOK_%%func_symbol%%(...) /**/@
+#endif
+
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
@@ -73,6 +77,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     if (!gdo::ptr::%%func_symbol%%) {@
         gdo::helper::error_exit("error: symbol `%%func_symbol%%' was not loaded");@
     }@
+    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }
 
@@ -117,6 +122,7 @@ namespace gdo
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
+    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }
 
