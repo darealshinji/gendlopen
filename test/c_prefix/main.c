@@ -33,11 +33,9 @@ static void load_lib_args()
     const bool new_namespace = true;
 #endif
 
-    const bool ignore_errors = false;
-
     /* load library and symbols */
     if (!myprefix_load_lib_args(filename, flags, new_namespace) ||
-        !myprefix_load_all_symbols(ignore_errors))
+        !myprefix_load_all_symbols())
     {
         /* print the last saved error */
         fprintf(stderr, "%s\n", myprefix_last_error());
@@ -61,17 +59,6 @@ static void load_lib_name()
         !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_hello2) ||
         !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_release))
     {
-        fprintf(stderr, "%s\n", myprefix_last_error());
-        myprefix_free_lib();
-        exit(1);
-    }
-}
-
-static void load_lib()
-{
-    const bool ignore_errors = true;
-
-    if (!myprefix_load_lib() || !myprefix_load_all_symbols(ignore_errors)) {
         fprintf(stderr, "%s\n", myprefix_last_error());
         myprefix_free_lib();
         exit(1);
@@ -109,10 +96,6 @@ int main(int argc, char *argv[])
     myprefix_free_lib();
 
     // #3
-    load_lib();
-    myprefix_free_lib();
-
-    // #4
     load_lib_and_symbols();
 
     print_lib_origin();

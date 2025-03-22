@@ -21,7 +21,7 @@ void cb(const char *msg)
 int wmain()
 {
     /* load library and symbols */
-    if (!gdo_load_lib() || !gdo_load_all_symbols(false)) {
+    if (!gdo_load_lib_and_symbols()) {
         /* print error */
         fwprintf(stderr, L"%ls\n", gdo_last_error());
 

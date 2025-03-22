@@ -178,7 +178,7 @@ GDO_LINKAGE bool gdo_load_lib(void)
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
 {
     return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&
-        gdo_load_all_symbols(false));
+        gdo_load_all_symbols());
 }
 #endif
 /*****************************************************************************/
@@ -201,7 +201,7 @@ GDO_LINKAGE bool gdo_load_lib_name(const gdo_char_t *filename)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename)
 {
-    return (gdo_load_lib_name(filename) && gdo_load_all_symbols(false));
+    return (gdo_load_lib_name(filename) && gdo_load_all_symbols());
 }
 /*****************************************************************************/
 
@@ -424,9 +424,9 @@ GDO_LINKAGE bool gdo_any_symbol_loaded(void)
 
 
 /*****************************************************************************/
-/*          load all symbols; can safely be called multiple times            */
+/*                             load all symbols                              */
 /*****************************************************************************/
-GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
+GDO_LINKAGE bool gdo_load_all_symbols(void)
 {
     gdo_clear_errbuf();
 
@@ -441,20 +441,12 @@ GDO_LINKAGE bool gdo_load_all_symbols(bool ignore_errors)
         return false;
     }
 
-    /* We can ignore errors in which case dlsym() or GetProcAddress()
-     * is called for each symbol and continue to do so even if it fails.
-     * The function will however in the end still return false if 1 or more
-     * symbols failed to load.
-     * If we do not ignore errors the function will simply return false on
-     * the first error it encounters. */
-
     /* get symbol addresses */
 
     /* %%symbol%% */@
-    gdo_hndl.ptr.%%symbol%% =@
-        (%%sym_type%%)@
-            gdo_sym("%%symbol%%", _T("%%symbol%%"));@
-    if (!gdo_hndl.ptr.%%symbol%% && !ignore_errors) {@
+    if ((gdo_hndl.ptr.%%symbol%% =@
+            (%%sym_type%%)@
+                gdo_sym("%%symbol%%", _T("%%symbol%%"))) == NULL) {@
         return false;@
     }@
 
@@ -469,7 +461,6 @@ GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 
 #ifdef GDO_WINAPI
 
-    /* cast to void* to supress compiler warnings */
     void *ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
 
     if (!ptr) {
@@ -482,12 +473,6 @@ GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
 
     void *ptr = dlsym(gdo_hndl.handle, symbol);
 
-    /**
-     * Linux man page mentions cases where NULL pointer is a valid address.
-     * These however seem to be edge-cases that are irrelevant to us.
-     * Furthermore this is contradicting POSIX which says a NULL pointer shall
-     * be returned on an error.
-     */
     if (!ptr) {
         gdo_save_dlerror();
     }

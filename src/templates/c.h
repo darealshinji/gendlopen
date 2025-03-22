@@ -33,7 +33,7 @@ bool               gdo_free_lib ();
 bool               gdo_all_symbols_loaded ();
 bool               gdo_no_symbols_loaded ();
 bool               gdo_any_symbol_loaded ();
-bool               gdo_load_all_symbols (bool ignore_errors);
+bool               gdo_load_all_symbols ();
 bool               gdo_load_symbol (int symbol_num);
 bool               gdo_load_symbol_name (const char *symbol);
 
@@ -87,12 +87,9 @@ bool gdo_free_lib ();
     Free/release library handle.
 
 
-bool gdo_load_symbols (bool ignore_errors);
+bool gdo_load_all_symbols ();
 
     Load the symbols. This function can safely be called multiple times.
-    If ignore_errors is set true the function won't stop on the first
-    symbol that can't be loaded but instead tries to load them all.
-    If one or more symbols weren't loaded the function returns false.
 
 
 bool gdo_load_symbol (int symbol_num);
@@ -298,7 +295,7 @@ GDO_DECL bool gdo_free_lib(void);
 GDO_DECL bool gdo_all_symbols_loaded(void);
 GDO_DECL bool gdo_no_symbols_loaded(void);
 GDO_DECL bool gdo_any_symbol_loaded(void);
-GDO_DECL bool gdo_load_all_symbols(bool ignore_errors);
+GDO_DECL bool gdo_load_all_symbols(void);
 GDO_DECL bool gdo_load_symbol(int symbol_num);
 GDO_DECL bool gdo_load_symbol_name(const char *symbol);
 

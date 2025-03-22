@@ -233,7 +233,7 @@ bool load_fltk()
         dl_fltk_load_lib_name( "libfltk" LIBEXT );
     }
 
-    if (dl_fltk_lib_is_loaded() && dl_fltk_load_all_symbols(false)) {
+    if (dl_fltk_lib_is_loaded() && dl_fltk_load_all_symbols()) {
         return true;
     }
 

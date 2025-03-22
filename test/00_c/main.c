@@ -33,11 +33,9 @@ static void load_lib_args()
     const bool new_namespace = true;
 #endif
 
-    const bool ignore_errors = false;
-
     /* load library and symbols */
     if (!gdo_load_lib_args(filename, flags, new_namespace) ||
-        !gdo_load_all_symbols(ignore_errors))
+        !gdo_load_all_symbols())
     {
         /* print the last saved error */
         fprintf(stderr, "%s\n", gdo_last_error());
@@ -87,17 +85,6 @@ static void load_lib_name2()
     }
 }
 
-static void load_lib()
-{
-    const bool ignore_errors = true;
-
-    if (!gdo_load_lib() || !gdo_load_all_symbols(ignore_errors)) {
-        fprintf(stderr, "%s\n", gdo_last_error());
-        gdo_free_lib();
-        exit(1);
-    }
-}
-
 static void load_lib_and_symbols()
 {
     if (!gdo_load_lib_and_symbols()) {
@@ -133,10 +120,6 @@ int main(int argc, char *argv[])
     gdo_free_lib();
 
     // #4
-    load_lib();
-    gdo_free_lib();
-
-    // #5
     load_lib_and_symbols();
 
     print_lib_origin();
