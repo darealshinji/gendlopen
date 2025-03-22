@@ -29,6 +29,10 @@
 # define _T(x) x
 #endif
 
+#ifndef _ftprintf
+# define _ftprintf fprintf
+#endif
+
 #ifndef _countof
 # define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif
@@ -724,10 +728,8 @@ GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 {
 #if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
-#elif defined(_WIN32) && defined(_UNICODE)
-    fwprintf(stderr, L"%ls\n", msg);
 #else
-    fprintf(stderr, "%s\n", msg);
+    _ftprintf(stderr, GDO_XS _T("\n"), msg);
 #endif
 
     gdo_free_lib();
@@ -794,15 +796,10 @@ GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 #if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     /* Windows: popup message box window */
     gdo_win32_last_error_messagebox(symbol);
-#elif defined(_WIN32) && defined(_UNICODE)
-    /* Windows: output to console (wide characters) */
-    fwprintf(stderr, L"error in wrapper function for symbol `%ls':\n%ls\n",
-        symbol, gdo_last_error());
 #else
-    /* default: UTF-8 output to console (any operating system) */
-    fprintf(stderr, "error in wrapper function for symbol `%s':\n%s\n",
-        symbol, gdo_last_error());
-#endif //_WIN32 && GDO_USE_MESSAGE_BOX
+    _ftprintf(stderr, _T("error in wrapper function for symbol `") GDO_XS _T("':\n")
+        GDO_XS _T("\n"), symbol, gdo_last_error());
+#endif
 
     /* free library handle and exit */
     gdo_free_lib();
