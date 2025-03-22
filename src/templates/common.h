@@ -37,7 +37,7 @@
 #endif
 
 /* whether to use dlinfo(3);
- * n/a on Windows (both APIs), macOS, OpenBSD, Haiku */
+ * n/a on Windows, macOS, OpenBSD and Haiku */
 #if defined(_WIN32) || \
     defined(__APPLE__) || \
     defined(__OpenBSD__) || \

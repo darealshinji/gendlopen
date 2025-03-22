@@ -159,7 +159,7 @@ static constexpr template_t common_header[] = {
   { "#endif", 0, 1 },
   { "", 0, 1 },
   { "/* whether to use dlinfo(3);", 0, 1 },
-  { " * n/a on Windows (both APIs), macOS, OpenBSD, Haiku */", 0, 1 },
+  { " * n/a on Windows, macOS, OpenBSD and Haiku */", 0, 1 },
   { "#if defined(_WIN32) || \\", 0, 1 },
   { "    defined(__APPLE__) || \\", 0, 1 },
   { "    defined(__OpenBSD__) || \\", 0, 1 },
