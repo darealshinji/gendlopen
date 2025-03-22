@@ -71,7 +71,7 @@ GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt
     va_list ap;
 
     va_start(ap, fmt);
-#ifdef _MSC_VER
+#ifdef _WIN32
     _vsntprintf_s(str, size, _TRUNCATE, fmt, ap);
 #else
     vsnprintf(str, size, fmt, ap);

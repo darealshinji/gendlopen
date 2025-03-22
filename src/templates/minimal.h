@@ -7,9 +7,9 @@
 #elif defined(_WIN32) && !defined(GDO_USE_DLOPEN)
 /* WinAPI */
 # include <windows.h>
-# define GDO_LOAD_LIB(filename)       (void *)LoadLibraryExA(filename, NULL, 0)
-# define GDO_FREE_LIB(handle)         FreeLibrary(handle)
-# define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress(handle, symbol)
+# define GDO_LOAD_LIB(filename)       (void *)LoadLibraryA(filename)
+# define GDO_FREE_LIB(handle)         FreeLibrary((HMODULE)handle)
+# define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress((HMODULE)handle, symbol)
 #else
 /* POSIX */
 # include <dlfcn.h>

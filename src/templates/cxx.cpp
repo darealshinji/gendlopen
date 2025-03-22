@@ -27,7 +27,7 @@ std::string gdo::make_libname(const std::string &name, const size_t api)
 }
 
 #ifdef GDO_WINAPI
-std::wstring gdo::make_libname(const std::wstring &name, const size_t api);
+std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 {
     return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
 }
