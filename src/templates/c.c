@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(GDO_WINAPI) && defined(_UNICODE)
+#ifdef _GDO_TARGET_WIDECHAR
 # define GDO_XS   L"%ls"
 # define GDO_XHS  L"%hs"
 #else

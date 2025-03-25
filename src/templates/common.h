@@ -19,25 +19,53 @@
 # include <dlfcn.h>
 #endif
 
-/* default library name */
+
+/* symbol visibility, i.e. __declspec(dllexport)
+ * or __attribute__((visibility("default"))) */
+#ifndef GDO_VISIBILITY
+# define GDO_VISIBILITY
+#endif
+
+
+/* set default library name values */
+
+#if defined(GDO_WINAPI) && defined(_UNICODE)
+# define _GDO_TARGET_WIDECHAR
+#else
+# define _GDO_TARGET_UTF8
+#endif
+
+/* GDO_DEFAULT_LIBA ?= GDO_HARDCODED_DEFAULT_LIBA */
 #if !defined(GDO_DEFAULT_LIBA) && defined(GDO_HARDCODED_DEFAULT_LIBA)
 # define GDO_DEFAULT_LIBA  GDO_HARDCODED_DEFAULT_LIBA
 #endif
 
+/* GDO_DEFAULT_LIBW ?= GDO_HARDCODED_DEFAULT_LIBW */
 #if !defined(GDO_DEFAULT_LIBW) && defined(GDO_HARDCODED_DEFAULT_LIBW)
 # define GDO_DEFAULT_LIBW  GDO_HARDCODED_DEFAULT_LIBW
 #endif
 
+/* GDO_DEFAULT_LIB ?= GDO_DEFAULT_LIBA or GDO_DEFAULT_LIBW */
 #ifndef GDO_DEFAULT_LIB
-# if defined(GDO_DEFAULT_LIBW) && defined(GDO_WINAPI) && defined(_UNICODE)
-#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW
-# elif defined(GDO_DEFAULT_LIBA)
+# if defined(GDO_DEFAULT_LIBA) && defined(_GDO_TARGET_UTF8)
 #  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBA
+# elif defined(GDO_DEFAULT_LIBW) && defined(_GDO_TARGET_WIDECHAR)
+#  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW
 # endif
 #endif
 
-/* whether to use dlinfo(3);
- * n/a on Windows, macOS, OpenBSD and Haiku */
+/* GDO_DEFAULT_LIBA ?= GDO_DEFAULT_LIB */
+#if !defined(GDO_DEFAULT_LIBA) && defined(GDO_DEFAULT_LIB) && defined(_GDO_TARGET_UTF8)
+# define GDO_DEFAULT_LIBA  GDO_DEFAULT_LIB
+#endif
+
+/* GDO_DEFAULT_LIBW ?= GDO_DEFAULT_LIB */
+#if !defined(GDO_DEFAULT_LIBW) && defined(GDO_DEFAULT_LIB) && defined(_GDO_TARGET_WIDECHAR)
+# define GDO_DEFAULT_LIBW  GDO_DEFAULT_LIB
+#endif
+
+
+/* dlinfo(3); n/a on Windows, macOS, OpenBSD and Haiku */
 #if defined(_WIN32) || \
     defined(__APPLE__) || \
     defined(__OpenBSD__) || \
@@ -61,8 +89,8 @@
 # include <link.h>
 #endif
 
-/* whether to use dlmopen(3);
- * only available on Glibc and Solaris/IllumOS */
+
+/* dlmopen(3); only on Glibc and Solaris/IllumOS */
 #ifdef GDO_DISABLE_DLMOPEN
 # ifdef GDO_HAVE_DLMOPEN
 # undef GDO_HAVE_DLMOPEN
@@ -74,6 +102,7 @@
     !defined(GDO_HAVE_DLMOPEN)
 # define GDO_HAVE_DLMOPEN
 #endif
+
 
 /* dlopen(3) flags for compatibility with LoadLibrary() */
 /* taken from different implementations of dlfcn.h */
@@ -134,6 +163,7 @@
 #define DL_LAZY RTLD_LAZY  /* compat */
 #endif
 
+
 /* LoadLibrary() flags for compatibility with dlopen() */
 /* https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */
 #ifndef DONT_RESOLVE_DLL_REFERENCES
@@ -176,11 +206,6 @@
 #define LOAD_LIBRARY_SAFE_CURRENT_DIRS 0
 #endif
 
-/* symbol visibility, i.e. __declspec(dllexport)
- * or __attribute__((visibility("default"))) */
-#ifndef GDO_VISIBILITY
-# define GDO_VISIBILITY
-#endif
 
 /* default flags */
 #ifndef GDO_DEFAULT_FLAGS
@@ -190,6 +215,7 @@
 #  define GDO_DEFAULT_FLAGS (RTLD_LAZY | RTLD_MEMBER)
 # endif
 #endif
+
 
 %PARAM_SKIP_REMOVE_BEGIN%
 /* wrapped functions are enabled */

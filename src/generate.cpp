@@ -590,6 +590,7 @@ void gendlopen::generate()
     };
 
     auto BODY_INCLUDE_HEADER = [&, this] () {
+        ofs << '\n';
         ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
         ofs << "#include \"" << header_name << "\"\n\n";
     };
