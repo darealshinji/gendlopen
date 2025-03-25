@@ -193,7 +193,8 @@ GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names. Use with care.
 
 GDO_DISABLE_DLINFO
-    Always disable usage of `dlinfo(3)'.
+    Always disable usage of `dlinfo(3)' to retrieve the library path.
+    `dladdr(3)' will be used instead.
 
 GDO_DISABLE_DLMOPEN
     Always disable usage of `dlmopen(3)'.

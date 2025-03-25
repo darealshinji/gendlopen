@@ -171,14 +171,15 @@ GDO_VISIBILITY
     using this macro.
 
 GDO_USE_MESSAGE_BOX
-    If win32 API is used and GDO_ENABLE_AUTOLOAD was activated this will enable
+    Windows only: if GDO_ENABLE_AUTOLOAD was activated this will enable
     error messages from auto-loading to be displayed in MessageBox windows.
 
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names. Use with care.
 
 GDO_DISABLE_DLINFO
-    Always disable usage of `dlinfo(3)'.
+    Always disable usage of `dlinfo(3)' to retrieve the library path.
+    `dladdr(3)' will be used instead.
 
 GDO_DISABLE_DLMOPEN
     Always disable usage of `dlmopen(3)'.
@@ -246,6 +247,12 @@ GDO_HOOK_<function>(...)
 # define GDO_OBJ_DECL     extern
 #endif
 
+#ifdef __GNUC__
+# define GDO_ATTR_NONNULL  __attribute__((returns_nonnull))
+#else
+# define GDO_ATTR_NONNULL  /**/
+#endif
+
 
 /* char / wchar_t */
 #ifdef _GDO_TARGET_WIDECHAR
@@ -299,7 +306,7 @@ GDO_DECL bool gdo_load_all_symbols(void);
 GDO_DECL bool gdo_load_symbol(int symbol_num);
 GDO_DECL bool gdo_load_symbol_name(const char *symbol);
 
-GDO_DECL const gdo_char_t *gdo_last_error(void);
+GDO_DECL const gdo_char_t *gdo_last_error(void) GDO_ATTR_NONNULL;
 GDO_DECL gdo_char_t *gdo_lib_origin(void);
 
 

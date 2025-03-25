@@ -2,8 +2,12 @@
 /*                           C API implementation                            */
 /*****************************************************************************/
 
-#if defined _MSC_VER && defined(GDO_USE_MESSAGE_BOX)
-# pragma comment(lib, "user32.lib")
+#ifdef GDO_USE_MESSAGE_BOX
+# if !defined(_WIN32)
+#  undef GDO_USE_MESSAGE_BOX
+# elif defined(_MSC_VER)
+#  pragma comment(lib, "user32.lib")
+# endif
 #endif
 
 #ifdef _WIN32
@@ -59,7 +63,7 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_INLINE void gdo_register_free_lib(void);
 GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
-#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
+#ifndef GDO_HAVE_DLINFO
 GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr);
 #endif
 
@@ -732,7 +736,7 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 
 GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 {
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+#ifdef GDO_USE_MESSAGE_BOX
     MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
 #else
     _ftprintf(stderr, GDO_XS _T("\n"), msg);
@@ -757,7 +761,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+#ifdef GDO_USE_MESSAGE_BOX
 /* Windows: show message in a MessageBox window */
 GDO_INLINE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
@@ -775,7 +779,7 @@ GDO_INLINE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
     free(buf);
 }
-#endif //_WIN32 && GDO_USE_MESSAGE_BOX
+#endif // GDO_USE_MESSAGE_BOX
 
 
 /* This function is used by the wrapper functions to perform the loading
@@ -799,7 +803,7 @@ GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 
     /* an error has occured: display an error message */
 
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+#ifdef GDO_USE_MESSAGE_BOX
     /* Windows: popup message box window */
     gdo_win32_last_error_messagebox(symbol);
 #else
