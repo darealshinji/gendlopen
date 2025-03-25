@@ -1,5 +1,3 @@
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
 #include "helloworld.h"
 
 /* include generated header file */

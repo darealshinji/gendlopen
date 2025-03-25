@@ -1,6 +1,6 @@
 MAIN = main$(EXEEXT)
 
-@AR@AR_BINS = 00_static_library/$(MAIN)
+@AR@AR_BINS = c_static_library/$(MAIN)
 
 @W32@W32_BINS = \
 @W32@	c_win32_wide/$(MAIN) \

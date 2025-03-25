@@ -1,6 +1,3 @@
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
-
 #include "helloworld.h"
 
 /* use wrap functions that will warn and exit

@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include <assert.h>
-
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
 #include "helloworld.h"
 
 #define MYPREFIX_DEFAULT_LIB LIBNAME(helloworld,0)

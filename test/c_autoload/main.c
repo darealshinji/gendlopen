@@ -4,9 +4,6 @@
 #define UNICODE  1
 #endif
 
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
-
 /* our "hello world" API */
 #include "helloworld.h"
 

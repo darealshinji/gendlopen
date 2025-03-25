@@ -25,7 +25,7 @@
 #include <uuid.h>
 #include <stdio.h>
 
-#include "uuid_nix_dl.h"
+#include "example_uuid_nix.h"
 
 
 int print_uuid()

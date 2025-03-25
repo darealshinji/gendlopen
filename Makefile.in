@@ -50,10 +50,10 @@ distclean-test:
 
 check: all-tests all-examples
 
-all-tests: $(BIN)
+all-tests: $(TEST_DEPENDS)
 	cd test && $(MAKE) all
 
-all-examples: $(BIN)
+all-examples: $(TEST_DEPENDS)
 	cd examples && $(MAKE)
 
 run-check: run-tests run-examples

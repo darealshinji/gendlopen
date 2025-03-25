@@ -12,5 +12,5 @@ cxx_test.cpp: cxx_test.hpp
 cxx_test.hpp:
 	$(gen_v)$(GENDLOPEN) ../helloworld.txt -force -o $@ \
 	  -format=C++ -separate -library=API:0:helloworld \
-	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD -DDLL_PUBLIC=''
+	  -include=helloworld.h -DGDO_ENABLE_AUTOLOAD
 

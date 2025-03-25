@@ -25,7 +25,7 @@
 #include <rpc.h>
 #include <stdio.h>
 
-#include "uuid_win_dl.h"
+#include "example_uuid_win.h"
 
 
 int print_uuid()

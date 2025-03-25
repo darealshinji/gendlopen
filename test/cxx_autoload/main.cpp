@@ -2,9 +2,6 @@
 #pragma comment(lib, "user32.lib")
 #endif
 
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
-
 #include "helloworld.h"
 
 /* enable automatic loading through wrapper functions */

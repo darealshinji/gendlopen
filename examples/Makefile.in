@@ -22,7 +22,7 @@ all: $(BINS)
 
 clean:
 	$(_v)-rm -f hook gtk notify msgbox uuid_nix
-	$(_v)-rm -f *.exe *.o *.obj example_*.h uuid_nix_dl.h uuid_win_dl.h
+	$(_v)-rm -f *.exe *.o *.obj example_*.h
 
 run-examples: $(BINS)
 	$(_v)(set +e ; bins="$(BINS)" ; $(run_tests))
@@ -78,18 +78,18 @@ run-examples: $(BINS)
 # UUID (read data from Clang AST file)
 
 # clang -Xclang -ast-dump uuid.h
-@NIX@uuid_nix_dl.h: uuid_nix_ast.txt
+@NIX@example_uuid_nix.h: uuid_nix_ast.txt
 @NIX@	$(gen_v)$(GENDLOPEN) uuid_nix_ast.txt -force -o $@ -library api:1:uuid \
 @NIX@	  -Suuid_generate_random -Suuid_is_null -Suuid_unparse_lower
 
-@NIX@uuid_nix: uuid_nix_dl.h uuid_nix.c
+@NIX@uuid_nix: example_uuid_nix.h uuid_nix.c
 @NIX@	$(cc_v)$(CC) $(TEST_CFLAGS) -Ithirdparty/uuid uuid_nix.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 
 # clang -Xclang -ast-dump -DWIN32_LEAN_AND_MEAN --target=x86_64-mingw32 --sysroot=$PWD include/rpcdce.h
-@W32@uuid_win_dl.h: uuid_win_ast.txt
+@W32@example_uuid_win.h: uuid_win_ast.txt
 @W32@	$(gen_v)$(GENDLOPEN) uuid_win_ast.txt -force -o $@ -library rpcrt4.dll \
 @W32@	  -SUuidCreate -SUuidToStringA -SRpcStringFreeA
 
-@W32@uuid_win$(EXEEXT): uuid_win_dl.h uuid_win.c
+@W32@uuid_win$(EXEEXT): example_uuid_win.h uuid_win.c
 @W32@	$(cc_v)$(CC) $(TEST_CFLAGS) uuid_win.c -o $@ $(TEST_LDFLAGS) $(LIBDL)
 

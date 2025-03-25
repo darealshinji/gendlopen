@@ -1,7 +1,4 @@
 #include <stdio.h>
-
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
 #include "helloworld.h"
 
 #define GDO_DEFAULT_LIB LIBNAME(helloworld,0)

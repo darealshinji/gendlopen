@@ -21,6 +21,7 @@ lib*.so.*
 *.bak
 *~
 
+/xgendlopen
 src/gendlopen
 src/gen_template_h
 

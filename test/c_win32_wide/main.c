@@ -1,9 +1,6 @@
-/* disable [-Wattributes] warnings */
-#define DLL_PUBLIC /**/
+/* this is a win32 API example using wide characters */
 
 #include "helloworld.h"
-
-/* this is a win32 API example using wide characters */
 
 /* set a default library to load */
 #define GDO_DEFAULT_LIB  L"libhelloworld-0.dll"

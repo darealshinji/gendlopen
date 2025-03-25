@@ -107,7 +107,7 @@ On Windows (MSVC) you can run `nmake` or `make` inside the `msvc` directory.
 Cross-compiling with MinGW and clang-cl:
 ``` sh
 ./configure host=x86_64-w64-mingw32 && make
-./configure cl=clang-cl && make
+./configure cl=clang-cl ld=lld-link && make
 ```
 
 Cross-compiling tests:
@@ -118,11 +118,15 @@ cp src/gendlopen xgendlopen
 
 # MinGW
 ./configure gdo="$PWD/xgendlopen" host=x86_64-w64-mingw32
-make clean && make check
+make clean
+make check
+make run-check-wine
 
 # clang-cl with lld-link
 ./configure gdo="$PWD/xgendlopen" cl=clang-cl ld=lld-link
-make clean && make check
+make clean
+make check
+make run-check-wine
 ```
 
 

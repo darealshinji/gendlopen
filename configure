@@ -1,6 +1,7 @@
 #!/bin/sh
 
-gendlopen="$PWD/src/gendlopen"
+gendlopen_default="$PWD/src/gendlopen"
+gendlopen="$gendlopen_default"
 
 opt_gcc="-O2"
 opt_ld=""
@@ -561,6 +562,7 @@ if [ "x$cl" != "x" ]; then
     exeext=".exe"
     dll="libhelloworld-0.dll"
     dll_cflags="-DBUILDING_DLL -LD"
+    test_cppflags="-DBUILDING_STATIC"
     unicode_flags="-DUNICODE -D_UNICODE"
 else
     # GCC / Clang
@@ -629,6 +631,7 @@ else
         exeext=".exe"
         dll_cflags="-DBUILDING_DLL"
         dll_ldflags="-shared"
+        test_cppflags="-DBUILDING_STATIC"
         unicode_flags="-DUNICODE -D_UNICODE -municode"
     else
         # *nix
@@ -784,6 +787,12 @@ fi
 ## output
 ###############################################################################
 
+if [ "$gendlopen" = "$gendlopen_default" ]; then
+    test_depends="src/gendlopen\$(EXEEXT)" # same as $(BIN) in top Makefile
+else
+    test_depends="" # no dependency declared
+fi
+
 # examples
 echo ""
 echo "build gtk example: $with_gtk"
@@ -813,8 +822,9 @@ DLL           = $dll
 DLL_CFLAGS    = $dll_cflags
 DLL_LDFLAGS   = $dll_ldflags
 
-TEST_CFLAGS   = \$(CFLAGS) $dlmopen_cppflags -I../00_library
-TEST_CXXFLAGS = \$(CXXFLAGS) $test_cxx11 $dlmopen_cppflags -I../00_library
+TEST_DEPENDS  = $test_depends
+TEST_CFLAGS   = \$(CFLAGS) $test_cppflags $dlmopen_cppflags -I../00_library
+TEST_CXXFLAGS = \$(CXXFLAGS) $test_cxx11 $test_cppflags $dlmopen_cppflags -I../00_library
 TEST_LDFLAGS  = \$(LDFLAGS)
 TEST_LIBPATH  = $ld_library_path_test
 UNICODE_FLAGS = $unicode_flags
