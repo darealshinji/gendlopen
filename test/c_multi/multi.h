@@ -1,3 +1,4 @@
+#define BUILDING_STATIC
 #include "helloworld.h"
 
 void cb(const char *msg);

@@ -1,3 +1,4 @@
+/* no parameter names */
 helloworld *helloworld_init();
 helloworld *helloworld_init_argv(int, char**);
 helloworld_cb_t helloworld_callback;

@@ -11,19 +11,19 @@ struct helloworld_
     char str[16];
 };
 
-helloworld_cb_t helloworld_callback = NULL;
+DLL_PUBLIC helloworld_cb_t helloworld_callback = NULL;
 
-char helloworld_buffer[64] = "pointless buffer!";
+DLL_PUBLIC char helloworld_buffer[64] = "pointless buffer!";
 
 
 /* allocate object */
-helloworld *helloworld_init()
+DLL_PUBLIC helloworld *helloworld_init()
 {
     return malloc(sizeof(helloworld));
 }
 
 /* same as above */
-helloworld *helloworld_init_argv(int argc, char *argv[])
+DLL_PUBLIC helloworld *helloworld_init_argv(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
@@ -31,13 +31,13 @@ helloworld *helloworld_init_argv(int argc, char *argv[])
 }
 
 /* use object and respond something */
-void helloworld_hello(helloworld *hw)
+DLL_PUBLIC void helloworld_hello(helloworld *hw)
 {
     helloworld_hello2(hw, helloworld_callback);
 }
 
 /* use object and respond something */
-void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
+DLL_PUBLIC void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
 {
     if (hw && helloworld_cb) {
         memcpy(hw->str, "hello world\0", 12);
@@ -48,13 +48,13 @@ void helloworld_hello2(helloworld *hw, void (*helloworld_cb)(const char *))
 }
 
 /* release object */
-void helloworld_release(helloworld *hw)
+DLL_PUBLIC void helloworld_release(helloworld *hw)
 {
     if (hw) free(hw);
 }
 
 /* fprintf implementation */
-int helloworld_fprintf(FILE *stream, const char *format, ...)
+DLL_PUBLIC int helloworld_fprintf(FILE *stream, const char *format, ...)
 {
     int n;
     va_list ap;

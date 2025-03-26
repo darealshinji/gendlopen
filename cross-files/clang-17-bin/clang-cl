@@ -1,0 +1,2 @@
+#!/bin/sh
+clang-cl-17 -fuse-ld=lld-link-17 "$@"

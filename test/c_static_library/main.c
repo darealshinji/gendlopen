@@ -1,6 +1,8 @@
 /* example file without generated headers */
 
 #include <stdio.h>
+
+#define BUILDING_STATIC
 #include "helloworld.h"
 
 

@@ -100,33 +100,53 @@ in the generated output files.
 Compiling
 ---------
 
-`./configure && make && make test`
-
-On Windows (MSVC) you can run `nmake` or `make` inside the `msvc` directory.
-
-Cross-compiling with MinGW and clang-cl:
+Meson build system is used:
 ``` sh
-./configure host=x86_64-w64-mingw32 && make
-./configure cl=clang-cl ld=lld-link && make
+meson setup builddir
+meson compile -C builddir
 ```
 
-Cross-compiling tests:
+Run tests:
+``` sh
+meson test -C builddir
+```
+
+On Windows (MSVC) you can also run `nmake` or `make` inside the `msvc` directory.
+
+Cross-compiling with MinGW:
+``` sh
+meson setup --cross-file cross-files/x86_64-w64-mingw32.ini builddir
+meson compile -C builddir
+```
+
+Cross-compiling with clang-cl/LLD:
 ```sh
-# compile the native tool first
-./configure && make
-cp src/gendlopen xgendlopen
+# set your clang version
+CLANGVER=19
+export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
 
-# MinGW
-./configure gdo="$PWD/xgendlopen" host=x86_64-w64-mingw32
-make clean
-make check
-make run-check-wine
+meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini builddir
+meson compile -C builddir
+```
 
-# clang-cl with lld-link
-./configure gdo="$PWD/xgendlopen" cl=clang-cl ld=lld-link
-make clean
-make check
-make run-check-wine
+Here are all steps to setup a Visual Studio installation for clang-cl.
+```sh
+# tools to help download VS on Linux
+git clone https://github.com/mstorsjo/msvc-wine
+cd msvc-wine
+./vsdownload.py --dest msvc
+./install.sh msvc
+cd ..
+
+# set up environment variables
+BIN="$PWD/msvc-wine/msvc/bin/x64" . msvc-wine/msvcenv-native.sh
+
+# set your clang version
+CLANGVER=19
+export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
+
+meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini builddir
+meson compile -C builddir
 ```
 
 

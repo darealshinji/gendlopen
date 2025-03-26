@@ -1,0 +1,2 @@
+#!/bin/sh
+clang-cl-19 -fuse-ld=lld-link-19 "$@"

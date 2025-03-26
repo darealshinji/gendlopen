@@ -1,0 +1,70 @@
+project('gendlopen', ['c', 'cpp'],
+    license : 'MIT',
+    default_options : [
+        'b_ndebug=if-release',
+        'cpp_std=c++20',
+        'buildtype=release'
+    ]
+)
+
+
+compiler = meson.get_compiler('c')
+arg_syntax = compiler.get_argument_syntax()
+
+link_args = []
+
+if host_machine.system() == 'linux'
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+elif host_machine.system() == 'windows'
+    add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
+elif host_machine.system() == 'darwin'
+    arg_minver = '-mmacosx-version-min=10.15'  # for std::filesystem::path
+    add_project_arguments(arg_minver, language: ['c', 'cpp'])
+    link_args += arg_minver
+endif
+
+
+# library load path
+if host_machine.system() == 'windows'
+    ld_library_path = 'PATH=../00_library;%PATH%'
+elif host_machine.system() == 'netbsd'
+    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN/../00_library:/usr/pkg/lib'
+elif host_machine.system() == 'haiku'
+    ld_library_path = 'LIBRARY_PATH=$ORIGIN/../00_library'
+else
+    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN/../00_library'
+endif
+
+
+dl_dep = dependency('dl', required: false)
+
+if host_machine.system() != 'windows'
+    gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
+    glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
+    x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
+endif
+
+sdl_dep = dependency('sdl3', required: false)
+
+if not sdl_dep.found()
+    sdl_dep = dependency('sdl2', required: false)
+endif
+
+
+subdir('src')
+
+gendlopen_bin = executable(
+    'gendlopen',
+    gendlopen_src,
+    link_args : link_args,
+    win_subsystem : 'console'
+)
+
+if get_option('examples')
+    subdir('examples')
+endif
+
+if get_option('tests')
+    subdir('test')
+endif
+
