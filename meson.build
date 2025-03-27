@@ -25,20 +25,19 @@ endif
 
 
 # library load path
-if host_machine.system() == 'windows'
-    ld_library_path = 'PATH=../00_library;%PATH%'
-elif host_machine.system() == 'netbsd'
-    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN/../00_library:/usr/pkg/lib'
+if host_machine.system() == 'netbsd'
+    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN:/usr/pkg/lib'
 elif host_machine.system() == 'haiku'
-    ld_library_path = 'LIBRARY_PATH=$ORIGIN/../00_library'
+    ld_library_path = 'LIBRARY_PATH=$ORIGIN'
 else
-    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN/../00_library'
+    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'
 endif
 
 
-dl_dep = dependency('dl', required: false)
+dl_dep = []
 
 if host_machine.system() != 'windows'
+    dl_dep = dependency('dl', required: false)
     gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
     glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
     x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)

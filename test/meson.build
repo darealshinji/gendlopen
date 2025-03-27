@@ -1,40 +1,223 @@
-subdir('00_library')
-subdir('00_c')
-subdir('00_cxx')
+test_flags = []
+libname = 'helloworld'
 
-subdir('c_autoload')
-subdir('c_auto_release')
-subdir('c_clang_ast')
-subdir('c_cxx_with_c_header')
-subdir('c_cxx_with_c_minimal_header')
-subdir('c_line')
-subdir('c_load_symbol')
-subdir('c_minimal')
-if sdl_dep.found()
-    subdir('c_minimal_sdl')
-endif
-subdir('c_multi')
-subdir('c_no_date')
-subdir('c_option')
-subdir('c_param_create')
-subdir('c_param_skip')
-subdir('c_prefix')
-subdir('c_static_library')
-subdir('c_static_linkage')
-subdir('c_stdin')
 if host_machine.system() == 'windows'
-    subdir('c_win32_wide')
+    test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
+    libname = 'libhelloworld'  # otherwise it'll be 'helloworld-0.dll'
 endif
-subdir('c_wrapped_functions')
 
-subdir('cxx_autoload')
-subdir('cxx_minimal')
+
+helloworld_lib = shared_library(libname,
+    'helloworld.c',
+    c_args : '-DBUILDING_DLL',
+    soversion : '0',
+    install : false
+)
+
+
+
+### tests ###
+
+hw = 'helloworld.txt'
+
+symbol_list = [
+    '-Phelloworld_hello',
+    '-Shelloworld_init_argv',
+    '-Shelloworld_callback',
+    '-Shelloworld_buffer',
+    '-Shelloworld_release'
+]
+
+components = [
+    ['',    'c_test',               'C',                                    hw,                             []],
+    ['',    'c_autoload',           'C automatic loading',                  hw,                             []],
+    ['',    'c_auto_release',       'C automatic release',                  hw,                             []],
+    ['',    'c_clang_ast',          'C generated from clang AST',           'ast.txt',                      symbol_list],
+    ['',    'c_line',               'C generated with #line directives',    hw,                             ['-line']],
+    ['',    'c_load_symbol',        'C load individual symbols',            hw,                             []],
+    ['',    'c_minimal',            'C minimal header',                     hw,                             ['-format', 'minimal']],
+    ['',    'c_no_date',            'C generated without date in header',   hw,                             ['-no-date']],
+    ['',    'c_option',             'C generated with %option lines',       'helloworld_option.txt',        []],
+    ['',    'c_param_create',       'C parameter names created',            'helloworld_param_create.txt',  ['-param=create']],
+    ['',    'c_param_skip',         'C parameter names skipped',            hw,                             ['-param=skip']],
+    ['',    'c_prefix',             'C custom symbol prefix',               hw,                             ['-prefix', 'MyPrefix']],
+    ['',    'c_static_linkage',     'C static inline linkage',              hw,                             []],
+    ['',    'c_wrapped_functions',  'C wrapped functions',                  hw,                             []],
+    ['pp',  'cxx_test',             'C++',                                  hw,                             ['-format=c++']],
+    ['pp',  'cxx_autoload',         'C++ automatic loading',                'helloworld_cxx_autoload.txt',  ['-format=c++']],
+    ['pp',  'cxx_minimal',          'C++ minimal header',                   hw,                             ['-format', 'minimal-c++']],
+    ['pp',  'cxx_prefix',           'C++ custom symbol prefix',             hw,                             ['-format=C++', '-prefix=MyPrefix']]
+]
+
 if sdl_dep.found()
-    subdir('cxx_minimal_sdl')
-endif
-subdir('cxx_multi')
-subdir('cxx_prefix')
-if host_machine.system() == 'windows'
-    subdir('cxx_win32_wide')
+    components += [
+        ['',    'c_minimal_sdl',    'C minimal header (SDL API)',   hw, ['-format', 'minimal']],
+        ['pp',  'cxx_minimal_sdl',  'C++ minimal header (SDL API)', hw, ['-format', 'minimal-c++']]
+    ]
 endif
 
+foreach p : components
+    command = [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+
+    foreach arg : p[4]
+        command += arg
+    endforeach
+
+    gen_hdr = custom_target(p[1]+'.h'+p[0],
+        depends : helloworld_lib,
+        output : p[1]+'.h'+p[0],
+        input : p[3],
+        command : command)
+
+    e = executable(p[1], [p[1]+'.c'+p[0], gen_hdr],
+        dependencies : [dl_dep, sdl_dep],
+        c_args : test_flags,
+        cpp_args : test_flags,
+        install : false)
+
+    test(p[2], e, env : ld_library_path)
+endforeach
+
+
+
+### C++ with C header tests ###
+
+components = [
+    ['cxx_with_c_header',         'C++ source file with C header',         '-format=C'],
+    ['cxx_with_c_minimal_header', 'C++ source file with minimal C header', '-format=minimal']
+]
+
+foreach p : components
+    gen_hdr = custom_target(p[0]+'.h',
+        depends : helloworld_lib,
+        output : p[0]+'.h',
+        input : hw,
+        command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
+
+    e = executable(p[0], [p[0]+'.cpp', gen_hdr],
+        dependencies : [dl_dep, sdl_dep],
+        cpp_args : test_flags,
+        install : false)
+
+    test(p[1], e, env : ld_library_path)
+endforeach
+
+
+
+### multiple source files tests ###
+
+components = [
+    ['c_',   '',   'C'],
+    ['cxx_', 'pp', 'C++']
+]
+
+foreach p : components
+    gen_srcs = custom_target(p[0]+'multi_generated.c'+p[1],
+        depends : helloworld_lib,
+        output : [p[0]+'multi_generated.c'+p[1], p[0]+'multi_generated.h'+p[1]],
+        input : hw,
+        command : [
+            gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT1@', '-format', p[2],
+            '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
+            '-DGDO_ENABLE_AUTOLOAD'
+        ]
+    )
+
+    e = executable(p[0]+'multi', [p[0]+'multi.c'+p[1], p[0]+'multi_cb.c'+p[1], p[0]+'multi_call2.c'+p[1], gen_srcs],
+        dependencies : dl_dep,
+        c_args : test_flags,
+        cpp_args : test_flags,
+        install : false
+    )
+
+    test(p[2]+' multiple source files', e, env : ld_library_path)
+endforeach
+
+
+
+### C static library test ###
+
+gen_srcs = custom_target('libhelloworld_generated.c',
+    depends : helloworld_lib,
+    output : ['libhelloworld_generated.c', 'libhelloworld_generated.h'],
+    input : hw,
+    command : [
+        gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT0@',
+        '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
+        '-DGDO_ENABLE_AUTOLOAD'
+    ]
+)
+
+helloworld_fakelib = static_library('helloworld_dl', gen_srcs,
+    c_args : test_flags,
+    install : false
+)
+
+e = executable('c_static_library', 'c_static_library.c',
+    dependencies : dl_dep,
+    link_with : helloworld_fakelib,
+    c_args : test_flags,
+    install : false
+)
+
+test('C fake static library', e, env : ld_library_path)
+
+
+
+### read input from STDIN ###
+
+read_from_stdin = executable('read_from_stdin', 'read_from_stdin.cpp', install : false)
+
+gen_hdr = custom_target('c_stdin.h',
+    depends : helloworld_lib,
+    output : 'c_stdin.h',
+    input : hw,
+    command : [read_from_stdin, gendlopen_bin, '@INPUT@', '@OUTPUT@']
+)
+
+e = executable('c_stdin', ['c_stdin.c', gen_hdr],
+    dependencies : dl_dep,
+    c_args : test_flags,
+    install : false
+)
+
+test('C generated from STDIN', e, env : ld_library_path)
+
+
+
+### win32 wide characters API ###
+
+if host_machine.system() == 'windows'
+    c_args = ['-DUNICODE', '-D_UNICODE']
+    cpp_args = ['-DUNICODE', '-D_UNICODE']
+    link_args = []
+
+    if arg_syntax != 'msvc'
+        c_args += '-municode'
+        cpp_args += '-municode'
+        link_args += '-municode'
+    endif
+
+
+    components = [
+        ['c_',   '',   'C'],
+        ['cxx_', 'pp', 'C++']
+    ]
+
+    foreach p : components
+        gen_hdr = custom_target(p[0]+'win32_wide.h'+p[1],
+            output : p[0]+'win32_wide.h'+p[1],
+            input : hw,
+            command : [gendlopen_bin, '@INPUT@', '-format', p[2], '-force', '-o', '@OUTPUT@']
+        )
+
+        e = executable(p[0]+'win32_wide', [p[0]+'win32_wide.c'+p[1], gen_hdr],
+            c_args : [c_args, test_flags],
+            cpp_args : [cpp_args, test_flags],
+            link_args : link_args,
+            install : false
+        )
+
+        test(p[2]+' win32 wide characters API', e, env : ld_library_path)
+    endforeach
+endif
