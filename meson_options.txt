@@ -1,2 +1,2 @@
-option('examples', type: 'boolean', value: false, description: 'Build examples')
-option('tests',    type: 'boolean', value: false, description: 'Build tests')
+option('enable_examples', type: 'boolean', value: false, description: 'Build examples')
+option('enable_tests',    type: 'boolean', value: false, description: 'Build tests')

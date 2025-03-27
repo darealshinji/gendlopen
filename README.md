@@ -106,12 +106,10 @@ meson setup builddir
 meson compile -C builddir
 
 # or with tests and examples enabled
-meson setup -Dtests=true -Dexamples=true builddir
+meson setup -Denable_tests=true -Denable_examples=true builddir
 meson compile -C builddir
 meson test -C builddir
 ```
-
-On Windows (MSVC) you can also run `nmake` or `make` inside the `msvc` directory.
 
 Cross-compiling with MinGW:
 ``` sh
@@ -149,10 +147,9 @@ meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini b
 meson compile -C builddir
 ```
 
-
-Links
------
-
-A similar albeit less portable approach is the project [dynload-wrapper](https://github.com/hpvb/dynload-wrapper).
-
-If you want to use `dlopen()` on Windows try [dlfcn-win32](https://github.com/dlfcn-win32/dlfcn-win32).
+If you want to build on Windows using only `cl` and `link`:
+``` sh
+cl -W3 -O2 -EHsc -std:c++latest -Isrc -c src/*.cpp
+cl -W3 -O2 -Isrc -c src/lex.yy.c
+link *.obj -release -out:gendlopen.exe
+```

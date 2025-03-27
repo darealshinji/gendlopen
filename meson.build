@@ -13,14 +13,14 @@ arg_syntax = compiler.get_argument_syntax()
 
 link_args = []
 
-if host_machine.system() == 'linux'
+if host_machine.system() == 'linux' or host_machine.system() == 'gnu'
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
-elif host_machine.system() == 'windows'
+elif host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
 elif host_machine.system() == 'darwin'
-    arg_minver = '-mmacosx-version-min=10.15'  # for std::filesystem::path
-    add_project_arguments(arg_minver, language: ['c', 'cpp'])
-    link_args += arg_minver
+    #arg_minver = '-mmacosx-version-min=10.15'  # for std::filesystem::path
+    #add_project_arguments(arg_minver, language: ['c', 'cpp'])
+    #link_args += arg_minver
 endif
 
 
@@ -59,11 +59,11 @@ gendlopen_bin = executable(
     win_subsystem : 'console'
 )
 
-if get_option('examples')
+if get_option('enable_examples')
     subdir('examples')
 endif
 
-if get_option('tests')
+if get_option('enable_tests')
     subdir('tests')
 endif
 
