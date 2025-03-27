@@ -64,6 +64,6 @@ if get_option('examples')
 endif
 
 if get_option('tests')
-    subdir('test')
+    subdir('tests')
 endif
 

@@ -60,7 +60,7 @@ Create a header file `load_foo.h` from the input:
 Include `load_foo.h` it in your source file and use the provided functions to load the symbols:
 ``` C
     /* load library and symbols */
-    if (!gdo_load_lib_name("foo.so") || !gdo_load_symbols(false))
+    if (!gdo_load_lib_name("foo.so") || !gdo_load_symbols())
     {
         fprintf(stderr, "%s\n", gdo_last_error());
         gdo_free_lib();
@@ -92,7 +92,7 @@ Or in C++ using the `gdo::dl` class:
     foobar_bar(y);
 ```
 
-You can find more information in the files from the `examples` and `test`
+You can find more information in the files from the `examples` and `tests`
 directories, in the comments of the template files in `src/templates` as well as
 in the generated output files.
 
@@ -104,10 +104,10 @@ Meson build system is used:
 ``` sh
 meson setup builddir
 meson compile -C builddir
-```
 
-Run tests:
-``` sh
+# or with tests and examples enabled
+meson setup -Dtests=true -Dexamples=true builddir
+meson compile -C builddir
 meson test -C builddir
 ```
 

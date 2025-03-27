@@ -3,6 +3,9 @@ libname = 'helloworld'
 
 if host_machine.system() == 'windows'
     test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
+endif
+
+if arg_syntax == 'msvc'
     libname = 'libhelloworld'  # otherwise it'll be 'helloworld-0.dll'
 endif
 
