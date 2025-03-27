@@ -18,7 +18,7 @@ constexpr const wchar_t * const libext_w;
 
 
 /* Create versioned library names for DLLs, dylibs and DSOs.
- * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+ * make_libname("z",1) for example will return "libz.1.dylib" on macOS */
 std::string make_libname(const std::string &name, const size_t api);
 #ifdef GDO_WINAPI
 std::wstring make_libname(const std::wstring &name, const size_t api);

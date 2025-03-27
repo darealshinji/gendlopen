@@ -8,19 +8,24 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 /* Create versioned library names for DLLs, dylibs and DSOs.
- * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+ * make_libname("z",1) for example will return "libz.1.dylib" on macOS */
 std::string gdo::make_libname(const std::string &name, const size_t api)
 {
+    /* prefix + name + middle + api + suffix */
 #ifdef _WIN32
-    return "lib" + name + '-' + std::to_string(api) + ".dll";
+# ifdef __MINGW32__
+    return "lib" + name + '-'    + std::to_string(api) + ".dll";
+# else
+    return         name + '-'    + std::to_string(api) + ".dll";
+# endif
 #elif defined(__APPLE__)
-    return "lib" + name + '.' + std::to_string(api) + ".dylib";
+    return "lib" + name + '.'    + std::to_string(api) + ".dylib";
 #elif defined(_AIX)
     UNUSED_VAL_(api);
-    return "lib" + name + ".a";
+    return "lib" + name                                + ".a";
 #elif defined(__ANDROID__)
     UNUSED_VAL_(api);
-    return "lib" + name + ".so";
+    return "lib" + name                                + ".so";
 #else
     return "lib" + name + ".so." + std::to_string(api);
 #endif
@@ -29,7 +34,11 @@ std::string gdo::make_libname(const std::string &name, const size_t api)
 #ifdef GDO_WINAPI
 std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 {
+#ifdef __MINGW32__
     return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
+#else
+    return          name + L'-' + std::to_wstring(api) + L".dll";
+#endif
 }
 #endif //GDO_WINAPI
 %PARAM_SKIP_REMOVE_BEGIN%

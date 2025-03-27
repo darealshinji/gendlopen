@@ -31,8 +31,7 @@
  *
  * Examples using LIBNAME(foo, 1.2) macro:
  *
- * Windows: libfoo-1.2.dll
- * De-facto standard when libraries are ported to Windows.
+ * Windows: libfoo-1.2.dll when using MinGW, otherwise foo-1.2.dll
  *
  * macOS: libfoo.1.2.dylib
  *
@@ -54,8 +53,13 @@
 # undef LIBNAMEW
 #endif
 #ifdef _WIN32
-# define LIBNAMEA(NAME, API)    "lib" #NAME "-" #API ".dll"
-# define LIBNAMEW(NAME, API)   L"lib" #NAME "-" #API ".dll"
+# ifdef __MINGW32__
+#  define LIBNAMEA(NAME, API)   "lib" #NAME "-" #API ".dll"
+#  define LIBNAMEW(NAME, API)  L"lib" #NAME "-" #API ".dll"
+# else
+#  define LIBNAMEA(NAME, API)         #NAME "-" #API ".dll"
+#  define LIBNAMEW(NAME, API)     L"" #NAME "-" #API ".dll"
+# endif
 #elif defined(__APPLE__)
 # define LIBNAMEA(NAME, API)    "lib" #NAME "." #API ".dylib"
 # define LIBNAMEW(NAME, API)   L"lib" #NAME "." #API ".dylib"

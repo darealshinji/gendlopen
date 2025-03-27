@@ -3,7 +3,7 @@
 #include "helloworld.h"
 
 /* set a default library to load */
-#define GDO_DEFAULT_LIB  L"libhelloworld-0.dll"
+#define GDO_DEFAULT_LIB  LIBNAMEW(helloworld,0)
 
 /* include generated header file */
 #include "c_test.h"

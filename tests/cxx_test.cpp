@@ -86,15 +86,20 @@ static void load_from_list(gdo::dl &loader)
 #ifdef _WIN32
     std::list<std::wstring> list = {
         L"helloworld.dll",
+        L"helloworld-0.dll",
         L"libhelloworld.dll",
         L"libhelloworld-0.dll",
     };
 #else
     std::list<std::string> list = {
+# ifdef __APPLE__
         "libhelloworld.0.dylib",
+        "libhelloworld.dylib",
+# elif defined(_AIX)
+        "libhelloworld.a",
+# endif
         "libhelloworld.so.0",
-        "libhelloworld.so",
-        "libhelloworld.a"
+        "libhelloworld.so"
     };
 #endif
 
