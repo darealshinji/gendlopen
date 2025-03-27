@@ -75,6 +75,10 @@ std::string utils::convert_to_lower(const std::string &str, bool underscores)
 /* returns true if s begins with a prefix found in list */
 bool utils::is_prefixed(const std::string &s, const vstring_t &list)
 {
+    if (s.empty() || list.empty()) {
+        return false;
+    }
+
     for (const auto &e : list) {
         if (s.starts_with(e)) {
             return true;

@@ -367,6 +367,20 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         }
     };
 
+    auto format = [] (vproto_t &vec) {
+        for (auto &e : vec) {
+            //e.symbol.erase(0, 1); // erase parse::ID
+            std::erase(e.notype_args, parse::ID);
+            format_prototype(e.type);
+            format_prototype(e.args);
+        }
+    };
+
+    /* remove parse::ID!! */
+    for (auto &e : vproto) {
+        e.symbol.erase(0, 1);
+    }
+
     if (m_prefix_list.empty() && m_symbol_list.empty()) {
         /* copy all symbols */
         for (const auto &e : vproto) {
@@ -399,16 +413,6 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
     create_typedefs();
 
     /* cosmetics */
-
-    auto format = [] (vproto_t &vec) {
-        for (auto &e : vec) {
-            e.symbol.erase(0, 1); // erase parse::ID
-            std::erase(e.notype_args, parse::ID);
-            format_prototype(e.type);
-            format_prototype(e.args);
-        }
-    };
-
     format(m_prototypes);
     format(m_objects);
 
@@ -460,4 +464,9 @@ void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vp
 
     /* copy */
     filter_and_copy_symbols(vproto);
+
+    /* nothing found? */
+    if (m_prototypes.empty() && m_objects.empty()) {
+        throw error("no function or object prototypes found in " + input_name);
+    }
 }
