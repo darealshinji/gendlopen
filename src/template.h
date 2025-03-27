@@ -774,7 +774,7 @@ static constexpr template_t c_body[] = {
   { "GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);", 0, 1 },
   { "GDO_INLINE void gdo_register_free_lib(void);", 0, 1 },
   { "GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg);", 0, 1 },
-  { "#ifndef GDO_HAVE_DLINFO", 0, 1 },
+  { "#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)", 0, 1 },
   { "GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr);", 0, 1 },
   { "#endif", 0, 1 },
   { "", 0, 1 },

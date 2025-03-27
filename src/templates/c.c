@@ -63,7 +63,7 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_INLINE void gdo_register_free_lib(void);
 GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
-#ifndef GDO_HAVE_DLINFO
+#if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
 GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr);
 #endif
 
