@@ -369,16 +369,15 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 
     auto format = [] (vproto_t &vec) {
         for (auto &e : vec) {
-            //e.symbol.erase(0, 1); // erase parse::ID
             std::erase(e.notype_args, parse::ID);
             format_prototype(e.type);
             format_prototype(e.args);
         }
     };
 
-    /* remove parse::ID!! */
+    /* remove parse::ID from symbol name */
     for (auto &e : vproto) {
-        e.symbol.erase(0, 1);
+        std::erase(e.symbol, parse::ID);
     }
 
     if (m_prefix_list.empty() && m_symbol_list.empty()) {
