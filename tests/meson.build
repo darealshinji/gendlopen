@@ -1,4 +1,6 @@
 test_flags = []
+ld_library_path = []
+test_rpath = '$ORIGIN'
 
 if host_machine.system() == 'windows'
     test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
@@ -6,8 +8,11 @@ endif
 
 if host_machine.system() == 'darwin'
     test_rpath = '@executable_path'
-else
-    test_rpath = '$ORIGIN'
+endif
+
+# set library path additionally to the rpath as backup
+if host_machine.system() != 'windows'
+    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'
 endif
 
 
