@@ -127,7 +127,7 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
     }
 
     for (auto &e : m_prototypes) {
-        if (e.args.ends_with("...") && /* VA_ARGS */
+        if (utils::ends_with(e.args, "...") && /* VA_ARGS */
             entry.find("%%return%%") != std::string::npos) /* wrapper function */
         {
             /* we can't handle variable argument lists in wrapper functions */

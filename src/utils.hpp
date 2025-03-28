@@ -55,5 +55,31 @@ void replace(const std::string &from, const std::string &to, std::string &s);
 /* count '\n' characters */
 int count_linefeed(const std::string &str);
 
+
+#ifdef __cpp_lib_starts_ends_with
+
+template <typename T>
+bool starts_with(const std::string &str, T prefix) {
+    return str.starts_with(prefix);
+}
+
+template <typename T>
+bool ends_with(const std::string &str, T suffix) {
+    return str.ends_with(suffix);
+}
+
+#else
+
+static inline bool starts_with(const std::string &str, const std::string prefix) {
+    return (str.substr(0, prefix.size()) == prefix);
+}
+
+static inline bool ends_with(const std::string &str, const std::string suffix) {
+    return (str.size() >= suffix.size() && str.substr(str.size() - suffix.size()) == suffix);
+}
+
+#endif // __cpp_lib_starts_ends_with
+
+
 } /* namespace utils end */
 

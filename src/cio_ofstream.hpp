@@ -47,7 +47,9 @@ public:
     ofstream();
     ~ofstream();
 
+#ifdef __cpp_lib_filesystem
     bool open(const std::filesystem::path &path);
+#endif
     bool open(const std::string &file);
 
     void close();

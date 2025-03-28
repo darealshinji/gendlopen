@@ -25,8 +25,6 @@
 #include "cio_ofstream.hpp"
 
 
-namespace fs = std::filesystem;
-
 namespace cio
 {
 
@@ -38,7 +36,8 @@ ofstream::~ofstream()
     close();
 }
 
-bool ofstream::open(const fs::path &path)
+#ifdef __cpp_lib_filesystem
+bool ofstream::open(const std::filesystem::path &path)
 {
     close();
     m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
@@ -50,6 +49,7 @@ bool ofstream::open(const fs::path &path)
 
     return false;
 }
+#endif
 
 bool ofstream::open(const std::string &file)
 {
@@ -59,7 +59,15 @@ bool ofstream::open(const std::string &file)
         return true;
     }
 
-    return open(fs::path(file));
+    close();
+    m_ofs.open(file, std::ios_base::out | std::ios_base::binary);
+
+    if (m_ofs.is_open()) {
+        m_optr = &m_ofs;
+        return true;
+    }
+
+    return false;
 }
 
 void ofstream::close()

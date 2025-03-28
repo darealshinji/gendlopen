@@ -75,7 +75,7 @@ namespace /* anonymous */
     std::string quote_lib(const std::string &lib, bool wide)
     {
         if (wide) {
-            if (lib.starts_with("L\"") && lib.back() == '"') {
+            if (utils::starts_with(lib, "L\"") && lib.back() == '"') {
                 /* already quoted */
                 return lib;
             } else if (lib.front() == '"' && lib.back() == '"') {
@@ -268,7 +268,7 @@ void gendlopen::format(const std::string &in)
         } else if (s == "cxx" || s == "c++" || s == "cpp") {
             out = output::cxx;
         }
-    } else if (s.starts_with("minimal")) {
+    } else if (utils::starts_with(s, "minimal")) {
         s.erase(0, 7);
 
         if (s.empty() || s == "-c") {

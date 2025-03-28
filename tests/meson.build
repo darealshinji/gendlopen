@@ -4,6 +4,14 @@ if host_machine.system() == 'windows'
     test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
 endif
 
+if host_machine.system() == 'darwin'
+    test_rpath = '@executable_path'
+else
+    test_rpath = '$ORIGIN'
+endif
+
+
+
 helloworld_lib = shared_library('helloworld',
     'helloworld.c',
     c_args : '-DBUILDING_DLL',
@@ -70,6 +78,7 @@ foreach p : components
         dependencies : [dl_dep, sdl_dep],
         c_args : test_flags,
         cpp_args : test_flags,
+        build_rpath : test_rpath,
         install : false)
 
     test(p[2], e, env : ld_library_path)
@@ -94,6 +103,7 @@ foreach p : components
     e = executable(p[0], [p[0]+'.cpp', gen_hdr],
         dependencies : [dl_dep, sdl_dep],
         cpp_args : test_flags,
+        build_rpath : test_rpath,
         install : false)
 
     test(p[1], e, env : ld_library_path)
@@ -124,6 +134,7 @@ foreach p : components
         dependencies : dl_dep,
         c_args : test_flags,
         cpp_args : test_flags,
+        build_rpath : test_rpath,
         install : false
     )
 
@@ -154,6 +165,7 @@ e = executable('c_static_library', 'c_static_library.c',
     dependencies : dl_dep,
     link_with : helloworld_fakelib,
     c_args : test_flags,
+    build_rpath : test_rpath,
     install : false
 )
 
@@ -175,6 +187,7 @@ gen_hdr = custom_target('c_stdin.h',
 e = executable('c_stdin', ['c_stdin.c', gen_hdr],
     dependencies : dl_dep,
     c_args : test_flags,
+    build_rpath : test_rpath,
     install : false
 )
 

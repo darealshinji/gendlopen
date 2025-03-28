@@ -80,7 +80,7 @@ bool utils::is_prefixed(const std::string &s, const vstring_t &list)
     }
 
     for (const auto &e : list) {
-        if (s.starts_with(e)) {
+        if (starts_with(s, e)) {
             return true;
         }
     }
@@ -90,7 +90,7 @@ bool utils::is_prefixed(const std::string &s, const vstring_t &list)
 /* delete suffix from string */
 void utils::delete_suffix(std::string &str, const std::string &suffix)
 {
-    if (str.ends_with(suffix)) {
+    if (ends_with(str, suffix)) {
         str.erase(str.size() - suffix.size());
     }
 }

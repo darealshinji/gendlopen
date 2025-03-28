@@ -39,6 +39,10 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#ifndef __cpp_lib_filesystem
+# include <sys/stat.h>
+# include <unistd.h>
+#endif
 #include "cio_ofstream.hpp"
 #include "gendlopen.hpp"
 #include "open_file.hpp"
@@ -51,6 +55,86 @@ namespace fs = std::filesystem;
 
 namespace /* anonymous */
 {
+
+#ifdef __cpp_lib_filesystem
+
+std::string get_basename(const fs::path &p) {
+    return p.filename().string();
+}
+
+template <typename T>
+void replace_extension(fs::path &p, T ext) {
+    p.replace_extension(ext);
+}
+
+void remove_file(const fs::path &p) {
+    fs::remove(p);
+}
+
+bool exists_lstat(const fs::path &p) {
+    return fs::exists(fs::symlink_status(p));
+}
+
+#else
+
+std::string get_basename(const std::string &str)
+{
+    if (str.back() == '/') {
+        return "";
+    }
+
+    auto pos = str.rfind('/');
+
+    if (pos == std::string::npos) {
+        return str;
+    }
+
+    return str.substr(pos+1);
+}
+
+void replace_extension(std::string &path, const char *ext)
+{
+    std::string dirname, basename, dot;
+
+    /* first split path into dirname and basename */
+    auto pos = path.rfind('/');
+
+    if (pos == std::string::npos) {
+        basename = path;
+    } else {
+        basename = path.substr(pos+1);
+        dirname = path.substr(0, pos+1);
+    }
+
+    /* remove leading dot temporarily from basename */
+    if (basename.front() == '.') {
+        dot = ".";
+        basename.erase(0, 1);
+    }
+
+    /* erase old extension */
+    pos = basename.rfind('.');
+
+    if (pos != std::string::npos) {
+        basename.erase(pos);
+    }
+
+    path = dirname + dot + basename + ext;
+}
+
+void remove_file(const std::string &path) {
+    unlink(path.c_str());
+}
+
+bool exists_lstat(const std::string &path)
+{
+    struct stat st;
+
+    return (lstat(path.c_str(), &st) == 0);
+}
+
+#endif // __cpp_lib_filesystem
+
 
 #ifdef __MINGW32__
 
@@ -462,9 +546,17 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
 
 
 /* open output file for writing */
-void gendlopen::open_ofstream(const fs::path &opath, cio::ofstream &ofs)
+void gendlopen::open_ofstream(const fs_path_t &opath, cio::ofstream &ofs)
 {
-    if (opath.empty() || opath.filename() == "-") {
+    std::string opath_str;
+
+#ifdef __cpp_lib_filesystem
+    opath_str = opath.string();
+#else
+    opath_str = opath;
+#endif
+
+    if (opath.empty() || opath_str == "-") {
         /* default to STDOUT */
         ofs.close();
         return;
@@ -472,17 +564,17 @@ void gendlopen::open_ofstream(const fs::path &opath, cio::ofstream &ofs)
 
     /* delete file to prevent writing data into symlink target */
     if (m_force) {
-        fs::remove(opath);
+        remove_file(opath);
     }
 
     /* check symlink and not its target */
-    if (fs::exists(fs::symlink_status(opath))) {
-        throw error("file already exists: " + opath.string());
+    if (exists_lstat(opath)) {
+        throw error("file already exists: " + opath_str);
     }
 
     /* open file for writing */
     if (!ofs.open(opath)) {
-        throw error("failed to open file for writing: " + opath.string());
+        throw error("failed to open file for writing: " + opath_str);
     }
 }
 
@@ -528,7 +620,7 @@ void gendlopen::read_custom_template()
 void gendlopen::generate()
 {
     cio::ofstream ofs;
-    fs::path ofhdr, ofbody;
+    fs_path_t ofhdr, ofbody;
     std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
     int lines = 0;
@@ -651,11 +743,11 @@ void gendlopen::generate()
     /* rename file extensions only if we save into separate files */
     if (m_separate) {
         if (is_cxx) {
-            ofhdr.replace_extension(".hpp");
-            ofbody.replace_extension(".cpp");
+            replace_extension(ofhdr, ".hpp");
+            replace_extension(ofbody, ".cpp");
         } else {
-            ofhdr.replace_extension(".h");
-            ofbody.replace_extension(".c");
+            replace_extension(ofhdr, ".h");
+            replace_extension(ofbody, ".c");
         }
     }
 
@@ -664,7 +756,7 @@ void gendlopen::generate()
         header_name = m_pfx;
         header_name += is_cxx ? ".hpp" : ".h";
     } else {
-        header_name = ofhdr.filename().string();
+        header_name = get_basename(ofhdr);
     }
 
     /* define GDO_SEPARATE if saving into separate files */

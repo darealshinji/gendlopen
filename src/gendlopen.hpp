@@ -89,7 +89,7 @@ private:
     void create_typedefs();
 
     /* generate.cpp */
-    void open_ofstream(const std::filesystem::path &opath, cio::ofstream &ofs);
+    void open_ofstream(const fs_path_t &opath, cio::ofstream &ofs);
     void read_custom_template();
 
     /* substitute.cpp */

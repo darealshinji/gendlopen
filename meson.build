@@ -17,19 +17,9 @@ if host_machine.system() == 'linux' or host_machine.system() == 'gnu'
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
-elif host_machine.system() == 'darwin'
-    #arg_minver = '-mmacosx-version-min=10.15'  # for std::filesystem::path
-    #add_project_arguments(arg_minver, language: ['c', 'cpp'])
-    #link_args += arg_minver
 endif
 
-
-# library load path
-if host_machine.system() == 'netbsd'
-    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN:/usr/pkg/lib'
-elif host_machine.system() == 'haiku'
-    ld_library_path = 'LIBRARY_PATH=$ORIGIN'
-else
+if host_machine.system() != 'windows' and host_machine.system() != 'haiku'
     ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'
 endif
 
