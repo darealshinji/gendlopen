@@ -33,6 +33,10 @@
 #include "parse.hpp"
 
 
+/* must be the same as parse::ID */
+#define SYMBOL  "$"
+
+
 namespace /* anonymous */
 {
     typedef struct _seq {
@@ -92,7 +96,7 @@ namespace /* anonymous */
         std::cerr << "tokens:";
 
         for (const auto &e : v) {
-            if (e.front() == parse::ID) {
+            if (parse::is_ident(e.front())) {
                 std::cerr << ' ' << (e.c_str() + 1);
             } else {
                 std::cerr << ' ' << e;
@@ -291,7 +295,7 @@ namespace /* anonymous */
         for (vstring_t &v : vec_tokens) {
             /* minimum size is 2 (type + symbol),
              * first element must be an identifier */
-            if (v.size() >= 2 && v.front()[0] == parse::ID) {
+            if (v.size() >= 2 && parse::is_ident(v.front()[0])) {
                 proto_t p;
 
                 /* `it' won't be v.begin() */
@@ -340,8 +344,7 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
-#define TYPE    "x"  /* placeholder, length == 1 */
-#define SYMBOL  "$"  /* see parse::ID */
+#define TYPE  "x"  /* placeholder, length == 1 */
 #define PARSE(NAME,FRONT,MID,END) \
     bool parse::NAME(vstring_t &v, const iter_t &it) { \
         return pattern(v, it, seq(FRONT, MID, END)); \

@@ -32,6 +32,10 @@ namespace parse
 {
     enum { ID = '$' };
 
+    inline bool is_ident(char c) {
+        return (c == ID);
+    }
+
     /* append strings, separated by space */
     template <typename T>
     void append_strings(std::string &buf, const T &it_beg, const T &it_end) {
@@ -45,7 +49,7 @@ namespace parse
     template <typename T>
     T::iterator find_first_not_pointer_or_ident(T &v) {
         for (auto i = v.begin(); i != v.end(); i++) {
-            if ((*i).front() != '*' && (*i).front() != ID) {
+            if ((*i).front() != '*' && !is_ident((*i).front())) {
                 return i;
             }
         }

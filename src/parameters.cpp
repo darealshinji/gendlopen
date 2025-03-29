@@ -62,7 +62,7 @@ namespace /* anonymous */
 
         const char *str = v.at(0).c_str();
 
-        if (*str == parse::ID && strcasecmp(str+1, "void") == 0) {
+        if (parse::is_ident(*str) && strcasecmp(str+1, "void") == 0) {
             /* "void" parameter */
             proto.args = v.at(0);
             return true;
