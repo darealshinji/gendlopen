@@ -60,9 +60,7 @@ namespace /* anonymous */
             return false;
         }
 
-        const char *str = v.at(0).c_str();
-
-        if (parse::is_ident(*str) && strcasecmp(str+1, "void") == 0) {
+        if (strcasecmp(v.at(0).c_str(), "void") == 0) {
             /* "void" parameter */
             proto.args = v.at(0);
             return true;
@@ -210,13 +208,13 @@ bool parse::create_names(proto_t &proto, std::string &msg)
     for (auto &v : proto.args_vec)
     {
         if (name > 'z') {
-            msg = "too many parameters to handle in function `" + proto.symbol.substr(1) + "'";
+            msg = "too many parameters to handle in function `" + proto.symbol + "'";
             return false;
         }
 
         /* check if a parameter begins with `*' */
         if (v.at(0) == POINTER) {
-            msg = "parameter in function `" + proto.symbol.substr(1) + "' begins with pointer";
+            msg = "parameter in function `" + proto.symbol + "' begins with pointer";
             return false;
         }
 

@@ -33,8 +33,9 @@
 #include "parse.hpp"
 
 
-/* must be the same as parse::ID */
-#define SYMBOL  "$"
+/* placeholder characters */
+#define TYPE   "\x01"
+#define SYMBOL "\x02"
 
 
 namespace /* anonymous */
@@ -68,7 +69,9 @@ namespace /* anonymous */
         }
 
         /* check last element */
-        if (v.back()[0] != sq.end) {
+        char ch_elem = v.back()[0];
+
+        if (ch_elem != sq.end && !(sq.end == SYMBOL[0] && parse::is_ident(ch_elem))) {
             return false;
         }
 
@@ -79,10 +82,13 @@ namespace /* anonymous */
 
         /* check sequence */
         for (auto q : { sq.front, sq.middle }) {
-            for (auto p = q; *p != 0; p++, it++) {
-                if ((*it).front() != *p) {
-                    return false;
+            for (auto seq_ptr = q; *seq_ptr != 0; seq_ptr++, it++) {
+                ch_elem = (*it).front();
+
+                if (ch_elem == *seq_ptr || (*seq_ptr == SYMBOL[0] && parse::is_ident(ch_elem))) {
+                    continue;
                 }
+                return false;
             }
         }
 
@@ -96,11 +102,7 @@ namespace /* anonymous */
         std::cerr << "tokens:";
 
         for (const auto &e : v) {
-            if (parse::is_ident(e.front())) {
-                std::cerr << ' ' << (e.c_str() + 1);
-            } else {
-                std::cerr << ' ' << e;
-            }
+            std::cerr << ' ' << e;
         }
 
         std::cerr << std::endl;
@@ -116,12 +118,6 @@ namespace /* anonymous */
 
         utils::strip_spaces(type);
         utils::strip_spaces(args);
-
-        std::erase(type,   parse::ID);
-        std::erase(symbol, parse::ID);
-        std::erase(args,   parse::ID);
-
-        std::cerr << type << ' ' << symbol << '(' << args << ");\n";
     }
 
 
@@ -129,7 +125,6 @@ namespace /* anonymous */
     void format_prototype(std::string &s)
     {
         utils::strip_spaces(s);
-        std::erase(s, parse::ID);
 
         utils::replace("( ", "(", s);
         utils::replace(") ", ")", s);
@@ -344,7 +339,6 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
-#define TYPE  "x"  /* placeholder, length == 1 */
 #define PARSE(NAME,FRONT,MID,END) \
     bool parse::NAME(vstring_t &v, const iter_t &it) { \
         return pattern(v, it, seq(FRONT, MID, END)); \
@@ -372,16 +366,10 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
 
     auto format = [] (vproto_t &vec) {
         for (auto &e : vec) {
-            std::erase(e.notype_args, parse::ID);
             format_prototype(e.type);
             format_prototype(e.args);
         }
     };
-
-    /* remove parse::ID from symbol name */
-    for (auto &e : vproto) {
-        std::erase(e.symbol, parse::ID);
-    }
 
     if (m_prefix_list.empty() && m_symbol_list.empty()) {
         /* copy all symbols */

@@ -61,7 +61,7 @@ namespace /* anonymous */
             case LEX_ID:
                 /* don't add "extern" keyword */
                 if (strcasecmp(yytext, "extern") != 0) {
-                    tokens.push_back(std::string(1, parse::ID) + yytext);
+                    tokens.push_back(yytext);
                 }
                 break;
 

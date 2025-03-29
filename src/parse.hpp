@@ -25,15 +25,14 @@
 #pragma once
 
 #include <string>
+#include <ctype.h>
 #include "types.hpp"
 
 
 namespace parse
 {
-    enum { ID = '$' };
-
     inline bool is_ident(char c) {
-        return (c == ID);
+        return (c == '_' || isalnum(c));
     }
 
     /* append strings, separated by space */
