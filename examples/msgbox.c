@@ -78,6 +78,13 @@ void show_message_box(const char *msg, int tk);
 
 
 
+void print_origin(const char *path)
+{
+    if (path) {
+        printf("loaded: %s\n", path);
+    }
+}
+
 void show_gtk_message_box(const char *msg)
 {
     const char *title = "Gtk+ Info";
@@ -176,6 +183,7 @@ void show_x11_message_box(const char *msg)
         case Expose:
             x = 16;
             y = h/2;
+            /* _countof macro provided by generated headers */
             XDrawText(display, window, gc, x, y, items, _countof(items));
             break;
 
@@ -205,7 +213,14 @@ void show_x11_message_box(const char *msg)
 
 bool load_gtk()
 {
-    if (dl_gtk_load_lib_name_and_symbols( LIBNAME(gtk-x11-2.0, 0) )) {
+    /* try Gtk3 first, then Gtk2 */
+    if (!dl_gtk_load_lib_name( LIBNAME(gtk-3, 0) )) {
+        fprintf(stderr, "warning: %s\n", dl_gtk_last_error());
+        dl_gtk_load_lib_name( LIBNAME(gtk-x11-2.0, 0) );
+    }
+
+    if (dl_gtk_lib_is_loaded() && dl_gtk_load_all_symbols()) {
+        print_origin(dl_gtk_lib_origin());
         return true;
     }
 
@@ -216,7 +231,14 @@ bool load_gtk()
 
 bool load_sdl()
 {
-    if (dl_sdl_load_lib_name_and_symbols( LIBNAME(SDL2-2.0, 0) )) {
+    /* try SDL3 first, then SDL2 */
+    if (!dl_sdl_load_lib_name( LIBNAME(SDL3, 0) )) {
+        fprintf(stderr, "warning: %s\n", dl_sdl_last_error());
+        dl_sdl_load_lib_name( LIBNAME(SDL2-2.0, 0) );
+    }
+
+    if (dl_sdl_lib_is_loaded() && dl_sdl_load_all_symbols()) {
+        print_origin(dl_sdl_lib_origin());
         return true;
     }
 
@@ -234,6 +256,7 @@ bool load_fltk()
     }
 
     if (dl_fltk_lib_is_loaded() && dl_fltk_load_all_symbols()) {
+        print_origin(dl_fltk_lib_origin());
         return true;
     }
 
@@ -245,6 +268,7 @@ bool load_fltk()
 bool load_x11()
 {
     if (dl_x11_load_lib_name_and_symbols( LIBNAME(X11, 6) )) {
+        print_origin(dl_x11_lib_origin());
         return true;
     }
 
