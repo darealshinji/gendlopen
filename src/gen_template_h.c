@@ -35,35 +35,35 @@
 #include <string.h>
 
 
-static FILE *open_file(const char *name)
-{
-    FILE *fp = fopen(name, "rb");
-
-    if (!fp) {
-        perror("fopen()");
-        fprintf(stderr, "-> %s\n", name);
-        exit(1);
-    }
-
-    return fp;
-}
-
-static void textdump(const char *in, const char *varName, FILE *fpOut)
+static void dump(const char *in_dir, const char *in_file, const char *varName, FILE *fpOut)
 {
     int c = 0;
     bool multi_line = false;
     bool new_line = true;
     int count = 0;
     int percent = 0;
+    FILE *fp;
 
-    FILE *fp = open_file(in);
+    /* concat path */
+    char *buf = malloc(strlen(in_dir) + strlen(in_file) + 2);
+    sprintf(buf, "%s/%s", in_dir, in_file);
 
-    fprintf(fpOut, "/* %s */\n", in);
-    fprintf(fpOut, "static constexpr template_t %s[] = {\n", varName);
+    /* open input file */
+    if ((fp = fopen(buf, "rb")) == NULL) {
+        perror("fopen()");
+        fprintf(stderr, "-> %s\n", buf);
+        exit(1);
+    }
 
-    if (strcmp(in, "license.h") != 0) {
-        // { "#line 1 \"<built-in>/common.h\"", 0, 1 },
-        fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", 0, 1 },\n", in);
+    free(buf);
+
+    /* write output */
+    fprintf(fpOut, "/* %s */\n", in_file);
+    fprintf(fpOut, "static const template_t %s[] = {\n", varName);
+
+    if (strcmp(in_file, "license.h") != 0) {
+        /* we don't need this line in the lincense header */
+        fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", 0, 1 },\n", in_file);
     }
 
     while ((c = fgetc(fp)) != EOF)
@@ -133,23 +133,23 @@ static void textdump(const char *in, const char *varName, FILE *fpOut)
     fclose(fp);
 }
 
-/* optional argument provided: path to source directory,
- * used for out-of-tree builds */
 int main(int argc, char **argv)
 {
-    const char *out = "template.h";
-    FILE *fp = fopen(out, "wb");
+    if (argc != 3) {
+        fprintf(stderr, "usage: %s <INPUT_DIR> <OUTFILE>\n", argv[0]);
+        return 1;
+    }
+
+    /* input directory */
+    const char *d = argv[1];
+
+    /* open output file for writing */
+    FILE *fp = fopen(argv[2], "wb");
 
     if (!fp) {
         perror("fopen()");
-        fprintf(stderr, "(%s)\n", out);
-        exit(1);
-    }
-
-    if (argc > 1 && chdir(argv[1]) == -1) {
-        perror("chdir()");
-        fprintf(stderr, "(%s)\n", argv[1]);
-        exit(1);
+        fprintf(stderr, "[%s]\n", argv[2]);
+        return 1;
     }
 
     fprintf(fp, "%s\n",
@@ -157,15 +157,15 @@ int main(int argc, char **argv)
         "\n"
         "#pragma once\n");
 
-    textdump("filename_macros.h", "filename_macros", fp);
-    textdump("license.h",         "license",         fp);
-    textdump("common.h",          "common_header",   fp);
-    textdump("c.h",               "c_header",        fp);
-    textdump("c.c",               "c_body",          fp);
-    textdump("cxx.hpp",           "cxx_header",      fp);
-    textdump("cxx.cpp",           "cxx_body",        fp);
-    textdump("minimal.h",         "min_c_header",    fp);
-    textdump("minimal_cxxeh.hpp", "min_cxx_header",  fp);
+    dump(d, "filename_macros.h", "filename_macros", fp);
+    dump(d, "license.h",         "license",         fp);
+    dump(d, "common.h",          "common_header",   fp);
+    dump(d, "c.h",               "c_header",        fp);
+    dump(d, "c.c",               "c_body",          fp);
+    dump(d, "cxx.hpp",           "cxx_header",      fp);
+    dump(d, "cxx.cpp",           "cxx_body",        fp);
+    dump(d, "minimal.h",         "min_c_header",    fp);
+    dump(d, "minimal_cxxeh.hpp", "min_cxx_header",  fp);
 
     fclose(fp);
 

@@ -17,9 +17,24 @@ gendlopen_src = files(
     'utils.cpp'
 )
 
+
+gen_template_h = executable(
+    'gen_template_h',
+    'gen_template_h.c',
+    win_subsystem : 'console',
+    install : false,
+    native : true
+)
+
+gen_hdr = custom_target(
+    'template.h',
+    depends : gen_template_h,
+    output : 'template.h',
+    command : [gen_template_h, '@CURRENT_SOURCE_DIR@/templates', '@OUTPUT@'])
+
 gendlopen_bin = executable(
     'gendlopen',
-    gendlopen_src,
+    [gendlopen_src, gen_hdr],
     win_subsystem : 'console'
 )
 
@@ -37,7 +52,7 @@ if cross_compile and (get_option('enable_examples') or get_option('enable_tests'
 
     gendlopen_aux_bin = executable(
         'gendlopen_aux',
-        gendlopen_src,
+        [gendlopen_src, gen_hdr],
         c_args : c_args,
         cpp_args : cpp_args,
         win_subsystem : 'console',

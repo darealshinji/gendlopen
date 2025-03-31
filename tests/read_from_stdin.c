@@ -18,10 +18,10 @@ int main(int argc, char **argv)
     const char *input = argv[3];
     const char *format = "%s -force -o %s - < %s";
 
-    size_t len = strlen(format) + strlen(exe) + strlen(output) + strlen(input);
+    const size_t len = strlen(format) + strlen(exe) + strlen(output) + strlen(input);
     char *command = malloc(len);
 
-    snprintf(command, len-1, format, exe, output, input);
+    snprintf(command, len, format, exe, output, input);
 
     int rv = system(command);
     free(command);

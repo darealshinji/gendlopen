@@ -147,9 +147,3 @@ meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini b
 meson compile -C build
 ```
 
-If you want to build on Windows using only `cl` and `link`:
-``` sh
-cl -W3 -O2 -EHsc -std:c++latest -Isrc -c src/*.cpp
-cl -W3 -O2 -Isrc -c src/lex.yy.c
-link *.obj -release -out:gendlopen.exe
-```
