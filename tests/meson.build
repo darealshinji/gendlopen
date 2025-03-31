@@ -2,16 +2,14 @@ test_flags = []
 ld_library_path = []
 test_rpath = '$ORIGIN'
 
-if host_machine.system() == 'windows'
+if host_system_win32
     test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
-endif
-
-if host_machine.system() == 'darwin'
+elif host_system == 'darwin'
     test_rpath = '@executable_path'
 endif
 
 # set library path additionally to the rpath as backup
-if host_machine.system() != 'windows'
+if host_system_win32 == false
     ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'
 endif
 
@@ -67,7 +65,7 @@ if sdl_dep.found()
 endif
 
 foreach p : components
-    command = [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+    command = [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
 
     foreach arg : p[4]
         command += arg
@@ -103,7 +101,7 @@ foreach p : components
         depends : helloworld_lib,
         output : p[0]+'.h',
         input : hw,
-        command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
+        command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
 
     e = executable(p[0], [p[0]+'.cpp', gen_hdr],
         dependencies : [dl_dep, sdl_dep],
@@ -129,7 +127,7 @@ foreach p : components
         output : [p[0]+'multi_generated.c'+p[1], p[0]+'multi_generated.h'+p[1]],
         input : hw,
         command : [
-            gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT1@', '-format', p[2],
+            gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT1@', '-format', p[2],
             '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
             '-DGDO_ENABLE_AUTOLOAD'
         ]
@@ -155,7 +153,7 @@ gen_srcs = custom_target('libhelloworld_generated.c',
     output : ['libhelloworld_generated.c', 'libhelloworld_generated.h'],
     input : hw,
     command : [
-        gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT0@',
+        gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT0@',
         '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
         '-DGDO_ENABLE_AUTOLOAD'
     ]
@@ -180,13 +178,18 @@ test('C fake static library', e, env : ld_library_path)
 
 ### read input from STDIN ###
 
-read_from_stdin = executable('read_from_stdin', 'read_from_stdin.cpp', install : false)
+read_from_stdin = executable('read_from_stdin',
+    'read_from_stdin.c',
+    install : false,
+    native : true
+)
 
 gen_hdr = custom_target('c_stdin.h',
     depends : helloworld_lib,
     output : 'c_stdin.h',
     input : hw,
-    command : [read_from_stdin, gendlopen_bin, '@INPUT@', '@OUTPUT@']
+    # gendlopen -force -o @OUTPUT@ - < @INPUT@
+    command : [read_from_stdin, gendlopen_aux_bin, '@OUTPUT@', '@INPUT@']
 )
 
 e = executable('c_stdin', ['c_stdin.c', gen_hdr],
@@ -202,7 +205,7 @@ test('C generated from STDIN', e, env : ld_library_path)
 
 ### win32 wide characters API ###
 
-if host_machine.system() == 'windows'
+if host_system_win32
     c_args = ['-DUNICODE', '-D_UNICODE']
     cpp_args = ['-DUNICODE', '-D_UNICODE']
     link_args = []
@@ -223,7 +226,7 @@ if host_machine.system() == 'windows'
         gen_hdr = custom_target(p[0]+'win32_wide.h'+p[1],
             output : p[0]+'win32_wide.h'+p[1],
             input : hw,
-            command : [gendlopen_bin, '@INPUT@', '-format', p[2], '-force', '-o', '@OUTPUT@']
+            command : [gendlopen_aux_bin, '@INPUT@', '-format', p[2], '-force', '-o', '@OUTPUT@']
         )
 
         e = executable(p[0]+'win32_wide', [p[0]+'win32_wide.c'+p[1], gen_hdr],

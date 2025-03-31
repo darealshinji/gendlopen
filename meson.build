@@ -2,24 +2,32 @@ project('gendlopen', ['c', 'cpp'],
     license : 'MIT',
     default_options : [
         'b_ndebug=if-release',
-        'cpp_std=c++20',
+        'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20',
         'buildtype=release'
     ]
 )
 
 
-compiler = meson.get_compiler('c')
-arg_syntax = compiler.get_argument_syntax()
-link_args = []
+arg_syntax = meson.get_compiler('cpp').get_argument_syntax()
+arg_syntax_native = meson.get_compiler('cpp', native : true).get_argument_syntax()
+host_system = host_machine.system()
 dl_dep = []
+cross_compile = false
+host_system_win32 = false
 
-if host_machine.system() == 'linux' or host_machine.system() == 'gnu'
-    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
-elif host_machine.system() == 'windows' or host_machine.system() == 'cygwin'
-    add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
+if build_machine.system() != host_system
+    cross_compile = true
 endif
 
-if host_machine.system() != 'windows'
+if host_system == 'linux' or host_system == 'gnu'
+    # needed for tests/examples, but setting it globally doesn't hurt
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+elif host_system == 'windows' or host_system == 'cygwin'
+    add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
+    host_system_win32 = true
+endif
+
+if host_system_win32 == false
     dl_dep = dependency('dl', required: false)
     gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
     glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
@@ -34,13 +42,6 @@ endif
 
 
 subdir('src')
-
-gendlopen_bin = executable(
-    'gendlopen',
-    gendlopen_src,
-    link_args : link_args,
-    win_subsystem : 'console'
-)
 
 if get_option('enable_examples')
     subdir('examples')

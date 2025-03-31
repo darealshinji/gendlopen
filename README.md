@@ -102,19 +102,19 @@ Compiling
 
 Meson build system is used:
 ``` sh
-meson setup builddir
-meson compile -C builddir
+meson setup build
+meson compile -C build
 
 # or with tests and examples enabled
-meson setup -Denable_tests=true -Denable_examples=true builddir
-meson compile -C builddir
-meson test -C builddir
+meson setup -Denable_tests=true -Denable_examples=true build
+meson compile -C build
+meson test -C build
 ```
 
 Cross-compiling with MinGW:
 ``` sh
-meson setup --cross-file cross-files/x86_64-w64-mingw32.ini builddir
-meson compile -C builddir
+meson setup --cross-file cross-files/x86_64-w64-mingw32.ini build
+meson compile -C build
 ```
 
 Cross-compiling with clang-cl/LLD:
@@ -123,8 +123,8 @@ Cross-compiling with clang-cl/LLD:
 CLANGVER=19
 export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
 
-meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini builddir
-meson compile -C builddir
+meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini build
+meson compile -C build
 ```
 
 Here are all steps to setup a Visual Studio installation for clang-cl.
@@ -143,8 +143,8 @@ BIN="$PWD/msvc-wine/msvc/bin/x64" . msvc-wine/msvcenv-native.sh
 CLANGVER=19
 export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
 
-meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini builddir
-meson compile -C builddir
+meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini build
+meson compile -C build
 ```
 
 If you want to build on Windows using only `cl` and `link`:
