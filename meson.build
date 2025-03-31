@@ -1,7 +1,6 @@
 project('gendlopen', ['c', 'cpp'],
     license : 'MIT',
     default_options : [
-        'b_ndebug=if-release',
         'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20',
         'buildtype=release'
     ]
@@ -20,7 +19,7 @@ if build_machine.system() != host_system
 endif
 
 if host_system == 'linux' or host_system == 'gnu'
-    # needed for tests/examples, but setting it globally doesn't hurt
+    # needed for tests and examples, but setting it globally doesn't hurt
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_system == 'windows' or host_system == 'cygwin'
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
