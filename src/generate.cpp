@@ -443,7 +443,7 @@ size_t common_prefix_length(vstring_t &vec)
 
 /* create a macro that will do a slightly optimized lookup of a
  * given symbol name */
-int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_upper,
+int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
     const vproto_t &v_prototypes, const vproto_t &v_objects)
 {
     vstring_t symbols, temp;
@@ -520,11 +520,11 @@ int save_check_symbol_name_macro(cio::ofstream &out, const std::string &pfx_uppe
         } else {
             str += "    case '"; str+=c; str+="': \\\n";
 
-            for (const auto &e : v) {
-                const char *short_name = e.c_str() + pfxlen + 1;
+            for (const auto &symbol : v) {
+                const char *short_name = symbol.c_str() + pfxlen + 1;
 
-                str += "      if (strcmp(SYM+" + off + ", \"" + short_name + "\") == 0) /*" + e + "*/ \\\n"
-                       "        { goto " + pfx_upper + "_JUMP_" + e + "; } \\\n";
+                str += "      if (strcmp(SYM+" + off + ", \"" + short_name + "\") == 0) /*" + symbol + "*/ \\\n"
+                       "        { goto " + pfx_upper + "_JUMP_" + symbol + "; } \\\n";
             }
 
             str += "      break; \\\n";
@@ -625,6 +625,7 @@ void gendlopen::generate()
     vtemplate_t header_data, body_data;
     int lines = 0;
     bool is_cxx = false;
+    bool is_minimal = false;
 
     /************* lambda functions *************/
 
@@ -654,17 +655,20 @@ void gendlopen::generate()
     auto HEADER_GENERATED_DATA = [&, this] () {
         /* print extra data after filename macros as includes or defines
          * might make use of it */
-        print_lineno();
-
         if (m_line_directive) {
-            /* extra padding */
-            ofs << '\n';
+            print_lineno();
+            ofs << '\n'; /* extra padding */
             lines++;
         }
+
         lines += save_extra_defines(ofs, m_defines);
         lines += save_includes(ofs, m_includes, is_cxx);
         lines += save_typedefs(ofs, m_typedefs);
-        lines += save_check_symbol_name_macro(ofs, m_pfx_upper, m_prototypes, m_objects);
+
+        /* minimal headers don't need this */
+        if (!is_minimal) {
+            lines += save_symbol_name_goto(ofs, m_pfx_upper, m_prototypes, m_objects);
+        }
     };
 
     auto HEADER_TEMPLATE_DATA = [&] () {
@@ -726,10 +730,12 @@ void gendlopen::generate()
         break;
     case output::minimal:
         m_separate = false;
+        is_minimal = true;
         break;
     case output::minimal_cxx:
         is_cxx = true;
         m_separate = false;
+        is_minimal = true;
         break;
     [[unlikely]] case output::error:
         throw error("output::format == output::error");
