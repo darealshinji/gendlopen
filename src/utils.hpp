@@ -25,6 +25,7 @@
 #pragma once
 
 #include <string>
+#include <string.h>
 #include "types.hpp"
 
 
@@ -59,23 +60,41 @@ int count_linefeed(const std::string &str);
 #ifdef __cpp_lib_starts_ends_with
 
 template <typename T>
-bool starts_with(const std::string &str, T prefix) {
+bool starts_with(const std::string &str, const T &prefix) {
     return str.starts_with(prefix);
 }
 
 template <typename T>
-bool ends_with(const std::string &str, T suffix) {
+bool ends_with(const std::string &str, const T &suffix) {
     return str.ends_with(suffix);
 }
 
 #else
 
-static inline bool starts_with(const std::string &str, const std::string prefix) {
-    return (str.substr(0, prefix.size()) == prefix);
+/* starts_with() */
+template<size_t N>
+bool starts_with(const std::string &str, char const (&prefix)[N]) {
+    constexpr size_t prefix_size = N-1;
+    return (str.size() >= prefix_size &&
+            strncmp(str.c_str(), prefix, prefix_size) == 0);
 }
 
-static inline bool ends_with(const std::string &str, const std::string suffix) {
-    return (str.size() >= suffix.size() && str.substr(str.size() - suffix.size()) == suffix);
+static inline bool starts_with(const std::string &str, const std::string &prefix) {
+    return (str.size() >= prefix.size() &&
+            strncmp(str.c_str(), prefix.c_str(), prefix.size()) == 0);
+}
+
+/* ends_with() */
+template<size_t N>
+bool ends_with(const std::string &str, char const (&suffix)[N]) {
+    constexpr size_t suffix_size = N-1;
+    return (str.size() >= suffix_size &&
+            strcmp(str.c_str() + (str.size() - suffix_size), suffix) == 0);
+}
+
+static inline bool ends_with(const std::string &str, const std::string &suffix) {
+    return (str.size() >= suffix.size() &&
+            strcmp(str.c_str() + (str.size() - suffix.size()), suffix.c_str()) == 0);
 }
 
 #endif // __cpp_lib_starts_ends_with

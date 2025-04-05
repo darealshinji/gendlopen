@@ -276,6 +276,12 @@ void gendlopen::format(const std::string &in)
         } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
             out = output::minimal_cxx;
         }
+    } else if (utils::starts_with(s, "plugin")) {
+        s.erase(0, 6);
+
+        if (s.empty() || s == "-c") {
+            out = output::plugin;
+        }
     }
 
     if (out == output::error) {

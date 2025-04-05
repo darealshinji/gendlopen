@@ -119,16 +119,6 @@ meson compile -C build
 
 Cross-compiling with clang-cl/LLD:
 ```sh
-# set your clang version
-CLANGVER=19
-export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
-
-meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini build
-meson compile -C build
-```
-
-Here are all steps to setup a Visual Studio installation for clang-cl.
-```sh
 # tools to help download VS on Linux
 git clone https://github.com/mstorsjo/msvc-wine
 cd msvc-wine

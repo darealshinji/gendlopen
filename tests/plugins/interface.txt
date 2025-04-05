@@ -1,0 +1,1 @@
+void plugin_main(void);

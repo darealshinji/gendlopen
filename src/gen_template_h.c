@@ -166,6 +166,8 @@ int main(int argc, char **argv)
     dump(d, "cxx.cpp",           "cxx_body",        fp);
     dump(d, "minimal.h",         "min_c_header",    fp);
     dump(d, "minimal_cxxeh.hpp", "min_cxx_header",  fp);
+    dump(d, "plugin.h",          "plugin_header",   fp);
+    dump(d, "plugin.c",          "plugin_body",     fp);
 
     fclose(fp);
 

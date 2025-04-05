@@ -239,3 +239,8 @@ if host_system_win32
         test(p[2]+' win32 wide characters API', e, env : ld_library_path)
     endforeach
 endif
+
+
+
+### plugin API ###
+subdir('plugins')

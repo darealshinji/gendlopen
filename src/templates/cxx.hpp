@@ -205,9 +205,6 @@ GDO_DISABLE_DLMOPEN
 * Helper macros *
 *****************
 
-GDO_DEFAULT_FLAGS
-    Default flags for `dlopen()' or `LoadLibraryEx()'
-
 GDO_ALIAS_<symbol>
     Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will
     access the pointer to `helloworld'.
@@ -237,9 +234,12 @@ GDO_HOOK_<function>(...)
     If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.
     Parameter names are taken from the function prototype declarations (or it's "a, b, c" and so on
     if the header was created with `-param=create'). A hook may be left undefined.
+
     For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':
+
     #define GDO_HOOK_sum_of_a_and_b(...) \
-      printf("debug: the sum of %d and %d is %d\n", val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
+      printf("debug: the sum of %d and %d is %d\n", \
+        val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
 
 ***/
 

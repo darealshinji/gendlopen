@@ -67,43 +67,36 @@ int gendlopen::save_license_data(cio::ofstream &ofs) {
 /* create template data */
 void gendlopen::create_template_data_lists(vtemplate_t &header, vtemplate_t &body)
 {
+    auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
+    {
+        header.push_back(common_header);
+        header.push_back(t_header);
+
+        if (m_separate) {
+            body.push_back(t_body);
+        } else {
+            header.push_back(t_body);
+        }
+    };
+
     switch (m_format)
     {
-    [[unlikely]] default:
-        [[fallthrough]];
-
     case output::c:
-        {
-            header.push_back(common_header);
-            header.push_back(c_header);
-
-            if (m_separate) {
-                body.push_back(c_body);
-            } else {
-                header.push_back(c_body);
-            }
-        }
+        concat_sources(c_header, c_body);
         break;
-
     case output::cxx:
-        {
-            header.push_back(common_header);
-            header.push_back(cxx_header);
-
-            if (m_separate) {
-                body.push_back(cxx_body);
-            } else {
-                header.push_back(cxx_body);
-            }
-        }
+        concat_sources(cxx_header, cxx_body);
         break;
-
+    case output::plugin:
+        concat_sources(plugin_header, plugin_body);
+        break;
     case output::minimal:
         header.push_back(min_c_header);
         break;
-
     case output::minimal_cxx:
         header.push_back(min_cxx_header);
         break;
+    [[unlikely]] case output::error:
+        throw error(std::string(__func__) + ": m_format == output::error");
     }
 }

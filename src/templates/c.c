@@ -21,18 +21,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _GDO_TARGET_WIDECHAR
-# define GDO_XS   L"%ls"
-# define GDO_XHS  L"%hs"
-#else
-# define GDO_XS   "%s"
-# define GDO_XHS  "%s"
+#ifdef GDO_WINAPI
+# include <tchar.h>
 #endif
-
 #ifndef _T
 # define _T(x) x
 #endif
-
 #ifndef _ftprintf
 # define _ftprintf fprintf
 #endif
@@ -41,13 +35,25 @@
 # define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif
 
+#ifdef _GDO_TARGET_WIDECHAR
+# define GDO_XS   L"%ls"
+# define GDO_XHS  L"%hs"
+#else
+# define GDO_XS   "%s"
+# define GDO_XHS  "%s"
+#endif
+
+
+/* linkage */
+#ifdef GDO_STATIC
+# define GDO_LINKAGE      static inline
+# define GDO_OBJ_LINKAGE  static
+#else
+# define GDO_LINKAGE      /**/
+# define GDO_OBJ_LINKAGE  /**/
+#endif
+
 #define GDO_INLINE  static inline
-
-#define GDO_SNPRINTF(dst, fmt, ...) \
-    gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)
-
-#define GDO_STRLCPY(dst, src) \
-    gdo_strlcpy(dst, src, _countof(dst))
 
 
 /* typedefs */
@@ -63,9 +69,30 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_INLINE void gdo_register_free_lib(void);
 GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
+
 #if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
-GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr);
+GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
+    GDO_ATTR (warn_unused_result);
 #endif
+
+
+/* GDO_SNPRINTF */
+#define GDO_SNPRINTF(dst, fmt, ...) \
+    gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)
+
+GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt, ...)
+#if !defined(_GDO_TARGET_WIDECHAR)
+    GDO_ATTR (format (printf, 3, 4))
+#endif
+    GDO_ATTR (nonnull (1));
+
+
+/* GDO_STRLCPY */
+#define GDO_STRLCPY(dst, src) \
+    gdo_strlcpy(dst, src, _countof(dst))
+
+GDO_INLINE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
+    GDO_ATTR (nonnull (1, 2));
 
 
 
@@ -79,17 +106,23 @@ GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt
     va_list ap;
 
     va_start(ap, fmt);
+
 #ifdef _WIN32
     _vsntprintf_s(str, size, _TRUNCATE, fmt, ap);
 #else
     vsnprintf(str, size, fmt, ap);
 #endif
+
     va_end(ap);
 }
 
 /* like strlcpy(3), no return value */
 GDO_INLINE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
 {
+    if (size == 0) {
+        return;
+    }
+
     gdo_char_t *end = dst + size - 1;
 
     for ( ; dst != end; dst++, src++) {

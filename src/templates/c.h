@@ -1,5 +1,5 @@
 #ifdef GDO_WINAPI
-# include <tchar.h>
+# include <wchar.h>
 #endif
 #ifndef __cplusplus
 # include <stdbool.h>
@@ -190,9 +190,6 @@ GDO_DISABLE_DLMOPEN
 * Helper macros *
 *****************
 
-GDO_DEFAULT_FLAGS
-    Default flags for `dlopen()' or `LoadLibraryEx()'
-
 GDO_ALIAS_<symbol>
     Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will
     access the pointer to `helloworld'.
@@ -222,9 +219,12 @@ GDO_HOOK_<function>(...)
     If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.
     Parameter names are taken from the function prototype declarations (or it's "a, b, c" and so on
     if the header was created with `-param=create'). A hook may be left undefined.
+
     For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':
+
     #define GDO_HOOK_sum_of_a_and_b(...) \
-      printf("debug: the sum of %d and %d is %d\n", val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
+      printf("debug: the sum of %d and %d is %d\n", \
+        val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
 
 ***/
 
@@ -234,23 +234,20 @@ GDO_HOOK_<function>(...)
 /*****************************************************************************/
 
 
-/* linkage */
+/* declaration */
 #ifdef GDO_STATIC
-# define GDO_LINKAGE      static inline
-# define GDO_OBJ_LINKAGE  static
-# define GDO_DECL         static inline
-# define GDO_OBJ_DECL     static
+# define GDO_DECL      static inline
+# define GDO_OBJ_DECL  static
 #else
-# define GDO_LINKAGE      /**/
-# define GDO_OBJ_LINKAGE  /**/
-# define GDO_DECL         extern
-# define GDO_OBJ_DECL     extern
+# define GDO_DECL      extern
+# define GDO_OBJ_DECL  extern
 #endif
 
+/* attributes */
 #ifdef __GNUC__
-# define GDO_ATTR_NONNULL  __attribute__((returns_nonnull))
+# define GDO_ATTR(x)  __attribute__ ((x))
 #else
-# define GDO_ATTR_NONNULL  /**/
+# define GDO_ATTR(x)  /**/
 #endif
 
 
@@ -262,7 +259,7 @@ typedef char    gdo_char_t;
 #endif
 
 
-/* Our library and symbols handle */
+/* our library and symbols handle */
 typedef struct gdo_handle
 {
 #ifdef GDO_WINAPI
@@ -306,8 +303,8 @@ GDO_DECL bool gdo_load_all_symbols(void);
 GDO_DECL bool gdo_load_symbol(int symbol_num);
 GDO_DECL bool gdo_load_symbol_name(const char *symbol);
 
-GDO_DECL const gdo_char_t *gdo_last_error(void) GDO_ATTR_NONNULL;
-GDO_DECL gdo_char_t *gdo_lib_origin(void);
+GDO_DECL const gdo_char_t *gdo_last_error(void)  GDO_ATTR (returns_nonnull);
+GDO_DECL gdo_char_t *gdo_lib_origin(void)  GDO_ATTR (warn_unused_result);
 
 
 /* enumeration values for gdo_load_symbol() */

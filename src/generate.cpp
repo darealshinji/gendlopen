@@ -459,8 +459,6 @@ int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
         symbols.push_back(e.symbol);
     }
 
-    std::sort(symbols.begin(), symbols.end());
-
     /* GDO_CHECK_SYMBOL_NAME */
     str = "/* symbol name check */\n"
           "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(SYM) \\\n";
@@ -493,6 +491,9 @@ int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
     }
 
     /* copy symbol names into alphabetically sorted lists */
+
+    std::sort(symbols.begin(), symbols.end());
+
     for (const auto &e : symbols) {
         if (!temp.empty() && temp.front().at(pfxlen) != e.at(pfxlen)) {
             lists.push_back(temp);
@@ -665,8 +666,8 @@ void gendlopen::generate()
         lines += save_includes(ofs, m_includes, is_cxx);
         lines += save_typedefs(ofs, m_typedefs);
 
-        /* minimal headers don't need this */
-        if (!is_minimal) {
+        /* minimal/plugin headers don't need this */
+        if (!is_minimal && m_format != output::plugin) {
             lines += save_symbol_name_goto(ofs, m_pfx_upper, m_prototypes, m_objects);
         }
     };
@@ -724,21 +725,26 @@ void gendlopen::generate()
     switch (m_format)
     {
     case output::c:
+    case output::plugin:
         break;
+
     case output::cxx:
         is_cxx = true;
         break;
+
     case output::minimal:
         m_separate = false;
         is_minimal = true;
         break;
+
     case output::minimal_cxx:
         is_cxx = true;
         m_separate = false;
         is_minimal = true;
         break;
+
     [[unlikely]] case output::error:
-        throw error("output::format == output::error");
+        throw error(std::string(__func__) + ": m_format == output::error");
     }
 
     /* disable separate files on stdout */

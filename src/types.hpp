@@ -84,6 +84,7 @@ namespace output
         error,
         c,
         cxx,
+        plugin,
         minimal,
         minimal_cxx
     } format;
