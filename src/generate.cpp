@@ -40,8 +40,11 @@
 #include <string>
 #include <vector>
 #ifndef __cpp_lib_filesystem
+# include <sys/types.h>
 # include <sys/stat.h>
-# include <unistd.h>
+# ifndef _WIN32
+#  include <unistd.h>
+# endif
 #endif
 #include "cio_ofstream.hpp"
 #include "gendlopen.hpp"
@@ -58,12 +61,13 @@ namespace /* anonymous */
 
 #ifdef __cpp_lib_filesystem
 
+/* use features from std::filesystem */
+
 std::string get_basename(const fs::path &p) {
     return p.filename().string();
 }
 
-template <typename T>
-void replace_extension(fs::path &p, T ext) {
+void replace_extension(fs::path &p, const char *ext) {
     p.replace_extension(ext);
 }
 
@@ -77,19 +81,25 @@ bool exists_lstat(const fs::path &p) {
 
 #else
 
+/* fall back to using our own implementations */
+
 std::string get_basename(const std::string &str)
 {
+#ifdef _WIN32
+    if (str.back() == '\\' || str.back() == '/') {
+        return "";
+    }
+
+    auto pos = str.find_last_of("\\/");
+#else
     if (str.back() == '/') {
         return "";
     }
 
     auto pos = str.rfind('/');
+#endif
 
-    if (pos == std::string::npos) {
-        return str;
-    }
-
-    return str.substr(pos+1);
+    return (pos == std::string::npos) ? str : str.substr(pos+1);
 }
 
 void replace_extension(std::string &path, const char *ext)
@@ -97,7 +107,11 @@ void replace_extension(std::string &path, const char *ext)
     std::string dirname, basename, dot;
 
     /* first split path into dirname and basename */
+#ifdef _WIN32
+    auto pos = path.find_last_of("\\/");
+#else
     auto pos = path.rfind('/');
+#endif
 
     if (pos == std::string::npos) {
         basename = path;
@@ -122,15 +136,27 @@ void replace_extension(std::string &path, const char *ext)
     path = dirname + dot + basename + ext;
 }
 
-void remove_file(const std::string &path) {
+void remove_file(const std::string &path)
+{
+#ifdef _WIN32
+    _unlink(path.c_str());
+#else
     unlink(path.c_str());
+#endif
 }
 
 bool exists_lstat(const std::string &path)
 {
+#ifdef _WIN32
+    struct _stat st;
+
+    /* no _lstat() available */
+    return (_stat(path.c_str(), &st) == 0);
+#else
     struct stat st;
 
     return (lstat(path.c_str(), &st) == 0);
+#endif
 }
 
 #endif // __cpp_lib_filesystem
@@ -185,7 +211,7 @@ std::wstring convert_filename(const std::string &str)
 
 /* dummy */
 template<typename T>
-T convert_filename(T &str) {
+T convert_filename(const T &str) {
     return str;
 }
 
