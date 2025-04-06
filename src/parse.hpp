@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <string>
 #include <ctype.h>
 #include "types.hpp"
@@ -45,13 +46,14 @@ namespace parse
     }
 
     /* find first element that isn't an identifier or pointer */
-    template <typename T>
-    T::iterator find_first_not_pointer_or_ident(T &v) {
+    inline vstring_t::iterator find_first_not_pointer_or_ident(vstring_t &v)
+    {
         for (auto i = v.begin(); i != v.end(); i++) {
             if ((*i).front() != '*' && !is_ident((*i).front())) {
                 return i;
             }
         }
+
         return v.end();
     }
 

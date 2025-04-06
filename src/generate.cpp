@@ -53,13 +53,13 @@
 #include "utils.hpp"
 
 
-namespace fs = std::filesystem;
-
 
 namespace /* anonymous */
 {
 
 #ifdef __cpp_lib_filesystem
+
+namespace fs = std::filesystem;
 
 /* use features from std::filesystem */
 
@@ -148,13 +148,11 @@ void remove_file(const std::string &path)
 bool exists_lstat(const std::string &path)
 {
 #ifdef _WIN32
+    /* no lstat/_lstat available */
     struct _stat st;
-
-    /* no _lstat() available */
     return (_stat(path.c_str(), &st) == 0);
 #else
     struct stat st;
-
     return (lstat(path.c_str(), &st) == 0);
 #endif
 }

@@ -1,10 +1,20 @@
 project('gendlopen', ['c', 'cpp'],
     license : 'MIT',
     default_options : [
-        'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20',
+        'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20,gnu++17,c++17,gnu++14,c++14',
         'buildtype=release'
     ]
 )
+
+
+# used by gendlopen_aux_bin
+cpp_std_list = [
+    '-std=gnu++26', '-std=c++26',
+    '-std=gnu++23', '-std=c++23',
+    '-std=gnu++20', '-std=c++20',
+    '-std=gnu++17', '-std=c++17',
+    '-std=gnu++14', '-std=c++14'
+]
 
 
 arg_syntax = meson.get_compiler('cpp').get_argument_syntax()

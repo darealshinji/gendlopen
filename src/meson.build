@@ -55,15 +55,9 @@ if cross_compile and (get_option('enable_examples') or get_option('enable_tests'
             noopt = '-O0'
         endif
 
-        cpp_std = [
-            '-std=gnu++26', '-std=c++26',
-            '-std=gnu++23', '-std=c++23',
-            '-std=gnu++20', '-std=c++20',
-        ]
-
         compiler = meson.get_compiler('cpp', native : true)
 
-        foreach arg : cpp_std
+        foreach arg : cpp_std_list
             if (compiler.has_argument(arg))
                 cpp_std = arg
                 break
