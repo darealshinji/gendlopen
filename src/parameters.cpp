@@ -129,7 +129,7 @@ namespace /* anonymous */
 
 
 /* get parameter names from function parameter list */
-bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
+bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, std::string &msg)
 {
     if (proto.prototype != proto::function || param_void_or_empty(proto)) {
         /* nothing to do */
@@ -151,19 +151,25 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
     }
 
     /* get parameter names */
-    for (auto &v : proto.args_vec)
+    for (vstring_t &v : proto.args_vec)
     {
-        if (v.size() == 1) {
+        if (v.empty()) {
+            msg = "empty parameter in function `" + proto.symbol + "'";
+            return false;
+        } else if (v.size() == 1) {
             /* check for `...' */
             if (v.back() == TRIPLE_DOT) {
                 proto.notype_args += TRIPLE_DOT ", ";
                 continue;
             }
-            return false;  /* typename only or incorrect format */
+
+            msg = "typename only or incorrect parameter format in function `" + proto.symbol + "'";
+            return false;
         }
 
         /* check if a parameter begins with `*' */
         if (v.at(0) == POINTER) {
+            msg = "parameter in function `" + proto.symbol + "' begins with pointer `*'";
             return false;
         }
 
@@ -184,6 +190,7 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names)
             continue;
         }
 
+        msg = "incorrect parameter format in function `" + proto.symbol + "'";
         return false;
     }
 
@@ -212,6 +219,11 @@ bool parse::create_names(proto_t &proto, std::string &msg)
             return false;
         }
 
+        if (v.empty()) {
+            msg = "empty parameter in function `" + proto.symbol + "'";
+            return false;
+        }
+
         /* check if a parameter begins with `*' */
         if (v.at(0) == POINTER) {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer";
@@ -235,7 +247,7 @@ bool parse::create_names(proto_t &proto, std::string &msg)
                 continue;
             }
 
-            msg = "cannot read parameter in function `" + proto.symbol.substr(1) + "'";
+            msg = "cannot read parameter in function `" + proto.symbol + "'";
             return false;
         }
 

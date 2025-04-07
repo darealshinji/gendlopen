@@ -37,7 +37,7 @@
 namespace /* anonymous */
 {
     /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
-    bool prefixed_case_len(const std::string &str, const char *pfx, const size_t &pfxlen)
+    bool prefixed_and_longer_case_len(const std::string &str, const char *pfx, const size_t &pfxlen)
     {
         if (str.size() > pfxlen) {
             auto tmp = str.substr(0, pfxlen);
@@ -47,21 +47,22 @@ namespace /* anonymous */
     }
 
     template<size_t N>
-    constexpr bool prefixed_case(const std::string &str, char const (&pfx)[N])
+    constexpr bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
     {
-        return prefixed_case_len(str, pfx, N-1);
+        return prefixed_and_longer_case_len(str, pfx, N-1);
     }
 
     /* quote header name if needed */
     std::string format_inc(const std::string &inc)
     {
-        if (prefixed_case(inc, "nq:")) {
+        if (prefixed_and_longer_case(inc, "nq:")) {
             /* no quotes */
             return inc.substr(3);
         }
 
-        if ((inc.front() == '<' && inc.back() == '>') ||
-            (inc.front() == '"' && inc.back() == '"'))
+        if (inc.size() >= 2 &&
+            (utils::starts_ends_with(inc, '<', '>') ||
+             utils::starts_ends_with(inc, '"', '"')))
         {
             /* already quoted */
             return inc;
@@ -75,10 +76,10 @@ namespace /* anonymous */
     std::string quote_lib(const std::string &lib, bool wide)
     {
         if (wide) {
-            if (utils::starts_with(lib, "L\"") && lib.back() == '"') {
+            if (lib.size() >= 3 && utils::starts_ends_with(lib, "L\"", '"')) {
                 /* already quoted */
                 return lib;
-            } else if (lib.front() == '"' && lib.back() == '"') {
+            } else if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
                 /* prepend 'L' */
                 return 'L' + lib;
             }
@@ -86,7 +87,7 @@ namespace /* anonymous */
             return "L\"" + lib + '"';
         }
 
-        if (lib.front() == '"' && lib.back() == '"') {
+        if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
             /* already quoted */
             return lib;
         }
@@ -103,12 +104,16 @@ namespace /* anonymous */
      */
     void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w)
     {
-        switch(str.at(0))
+        if (str.empty()) {
+            return;
+        }
+
+        switch(str.front())
         {
         case 'N':
         case 'n':
             /* no quotes */
-            if (prefixed_case(str, "nq:")) {
+            if (prefixed_and_longer_case(str, "nq:")) {
                 lib_a = lib_w = str.substr(3);
                 return;
             }
@@ -117,7 +122,7 @@ namespace /* anonymous */
         case 'E':
         case 'e':
             /* quotes + file extension macro */
-            if (prefixed_case(str, "ext:")) {
+            if (prefixed_and_longer_case(str, "ext:")) {
                 auto sub = str.substr(4);
                 lib_a = quote_lib(sub, false) + " LIBEXTA";
                 lib_w = quote_lib(sub, true) + " LIBEXTW";
@@ -128,7 +133,7 @@ namespace /* anonymous */
         case 'A':
         case 'a':
             /* no quotes, API libname macro */
-            if (prefixed_case(str, "api:")) {
+            if (prefixed_and_longer_case(str, "api:")) {
                 const std::regex reg("(.*?):(.*)");
                 std::smatch m;
                 auto sub = str.substr(4);
@@ -262,7 +267,7 @@ void gendlopen::format(const std::string &in)
     output::format out = output::error;
     std::string s = utils::convert_to_lower(in, false);
 
-    if (s.front() == 'c') {
+    if (utils::starts_with(s, 'c')) {
         if (s == "c") {
             out = output::c;
         } else if (s == "cxx" || s == "c++" || s == "cpp") {

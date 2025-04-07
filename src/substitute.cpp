@@ -145,7 +145,7 @@ int gendlopen::replace_function_prototypes(const int &templ_lineno, const std::s
             utils::replace("%%return%%", "return", copy);
         }
 
-        if (e.type.back() == '*') {
+        if (utils::ends_with(e.type, '*')) {
             /* »char * x«  -->  »char *x« */
             utils::replace("%%type%% ", e.type, copy);
         }
@@ -195,7 +195,7 @@ int gendlopen::replace_object_prototypes(const int &templ_lineno, const std::str
     for (auto &e : m_objects) {
         std::string copy = entry;
 
-        if (e.type.back() == '*') {
+        if (utils::ends_with(e.type, '*')) {
             /* »char * x«  -->  »char *x« */
             utils::replace("%%obj_type%% ", e.type, copy);
         }
@@ -254,7 +254,7 @@ int gendlopen::replace_symbol_names(const int &templ_lineno, const std::string &
     /* function pointer */
     for (auto &e : m_prototypes) {
         /* %%sym_type%% --> »%%type%% (*)(%%args%%)« */
-        if (e.type.back() == '*') {
+        if (utils::ends_with(e.type, '*')) {
             type = e.type + "(*)(" + e.args + ")";
         } else {
             type = e.type + " (*)(" + e.args + ")";
@@ -266,7 +266,7 @@ int gendlopen::replace_symbol_names(const int &templ_lineno, const std::string &
     /* object pointer */
     for (auto &e : m_objects) {
         /* %%sym_type%% --> »%%obj_type%% *« */
-        if (e.type.back() == '*') {
+        if (utils::ends_with(e.type, '*')) {
             type = e.type + '*';
         } else {
             type = e.type + " *";

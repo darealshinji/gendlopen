@@ -14,6 +14,7 @@ gen_hdr = custom_target('load_plugins.h',
     command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', '-format=plugin'])
 
 e = executable('load_plugins', 'load_plugins.cpp', gen_hdr,
+    cpp_args : [test_flags, cpp_std],
     build_rpath : test_rpath,
     install : false)
 

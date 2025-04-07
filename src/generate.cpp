@@ -86,13 +86,13 @@ bool exists_lstat(const fs::path &p) {
 std::string get_basename(const std::string &str)
 {
 #ifdef _WIN32
-    if (str.back() == '\\' || str.back() == '/') {
+    if (utils::ends_with(str, '\\') || utils::ends_with(str, '/')) {
         return "";
     }
 
     auto pos = str.find_last_of("\\/");
 #else
-    if (str.back() == '/') {
+    if (utils::ends_with(str, '/')) {
         return "";
     }
 
@@ -121,7 +121,7 @@ void replace_extension(std::string &path, const char *ext)
     }
 
     /* remove leading dot temporarily from basename */
-    if (basename.front() == '.') {
+    if (utils::starts_with(basename, '.')) {
         dot = ".";
         basename.erase(0, 1);
     }
@@ -234,7 +234,7 @@ bool get_lines(FILE *fp, std::string &line, template_t &entry)
         {
         case '\n':
             /* concatenate lines ending on '@' */
-            if (line.back() == '@') {
+            if (utils::ends_with(line, '@')) {
                 line.back() = '\n';
                 entry.line_count++;
                 continue;
@@ -243,7 +243,7 @@ bool get_lines(FILE *fp, std::string &line, template_t &entry)
             break;
 
         case EOF:
-            if (line.back() == '@') {
+            if (utils::ends_with(line, '@')) {
                 line.pop_back();
             }
             loop = false;
@@ -404,7 +404,7 @@ void print_symbols_to_stdout(const vproto_t &objs, const vproto_t &funcs, const 
 
     auto print_type = [] (const std::string &s)
     {
-        if (s.back() == '*') {
+        if (utils::ends_with(s, '*')) {
             std::cout << s;
         } else {
             std::cout << s << ' ';
@@ -519,7 +519,7 @@ int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
     std::sort(symbols.begin(), symbols.end());
 
     for (const auto &e : symbols) {
-        if (!temp.empty() && temp.front().at(pfxlen) != e.at(pfxlen)) {
+        if (!temp.empty() && !temp.front().empty() && temp.front().at(pfxlen) != e.at(pfxlen)) {
             lists.push_back(temp);
             temp.clear();
         }

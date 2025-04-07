@@ -80,7 +80,7 @@ foreach p : components
     e = executable(p[1], [p[1]+'.c'+p[0], gen_hdr],
         dependencies : [dl_dep, sdl_dep],
         c_args : test_flags,
-        cpp_args : test_flags,
+        cpp_args : [test_flags, cpp_std],
         build_rpath : test_rpath,
         install : false)
 
@@ -105,7 +105,7 @@ foreach p : components
 
     e = executable(p[0], [p[0]+'.cpp', gen_hdr],
         dependencies : [dl_dep, sdl_dep],
-        cpp_args : test_flags,
+        cpp_args : [test_flags, cpp_std],
         build_rpath : test_rpath,
         install : false)
 
@@ -136,7 +136,7 @@ foreach p : components
     e = executable(p[0]+'multi', [p[0]+'multi.c'+p[1], p[0]+'multi_cb.c'+p[1], p[0]+'multi_call2.c'+p[1], gen_srcs],
         dependencies : dl_dep,
         c_args : test_flags,
-        cpp_args : test_flags,
+        cpp_args : [test_flags, cpp_std],
         build_rpath : test_rpath,
         install : false
     )
@@ -231,7 +231,7 @@ if host_system_win32
 
         e = executable(p[0]+'win32_wide', [p[0]+'win32_wide.c'+p[1], gen_hdr],
             c_args : [c_args, test_flags],
-            cpp_args : [cpp_args, test_flags],
+            cpp_args : [cpp_args, test_flags, cpp_std],
             link_args : link_args,
             install : false
         )

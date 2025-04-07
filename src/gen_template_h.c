@@ -45,8 +45,9 @@ static void dump(const char *in_dir, const char *in_file, const char *varName, F
     FILE *fp;
 
     /* concat path */
-    char *buf = malloc(strlen(in_dir) + strlen(in_file) + 2);
-    sprintf(buf, "%s/%s", in_dir, in_file);
+    const size_t len = strlen(in_dir) + strlen(in_file) + 2;
+    char *buf = malloc(len);
+    snprintf(buf, len, "%s/%s", in_dir, in_file);
 
     /* open input file */
     if ((fp = fopen(buf, "rb")) == NULL) {

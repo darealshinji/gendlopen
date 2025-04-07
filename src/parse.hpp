@@ -45,23 +45,18 @@ namespace parse
         }
     }
 
-    /* find first element that isn't an identifier or pointer */
-    inline vstring_t::iterator find_first_not_pointer_or_ident(vstring_t &v)
-    {
-        for (auto i = v.begin(); i != v.end(); i++) {
-            if ((*i).front() != '*' && !is_ident((*i).front())) {
-                return i;
-            }
-        }
-
-        return v.end();
-    }
 
     /* parameters.cpp */
-    bool read_and_copy_names(proto_t &proto, param::names &parameter_names);
+
+    bool read_and_copy_names(proto_t &proto, param::names &parameter_names, std::string &msg);
     bool create_names(proto_t &proto, std::string &msg);
 
+
     /* parse.cpp */
+
+    /* find first element that isn't an identifier or pointer */
+    vstring_t::iterator find_first_not_pointer_or_ident(vstring_t &v);
+
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
     bool is_function_with_parentheses(vstring_t &v, const iter_t &i);

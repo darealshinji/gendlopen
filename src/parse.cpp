@@ -69,6 +69,10 @@ namespace /* anonymous */
         }
 
         /* check last element */
+        if (v.back().empty()) {
+            return false;
+        }
+
         char ch_elem = v.back()[0];
 
         if (ch_elem != sq.end && !(sq.end == SYMBOL[0] && parse::is_ident(ch_elem))) {
@@ -106,18 +110,6 @@ namespace /* anonymous */
         }
 
         std::cerr << std::endl;
-    }
-
-
-    /* print function name */
-    void print_pretty_function(const proto_t &proto)
-    {
-        std::string type   = proto.type;
-        std::string symbol = proto.symbol;
-        std::string args   = proto.args;
-
-        utils::strip_spaces(type);
-        utils::strip_spaces(args);
     }
 
 
@@ -166,6 +158,10 @@ namespace /* anonymous */
 
         for (auto it = it_beg; it != it_end; it++)
         {
+            if ((*it).empty()) {
+                continue;
+            }
+
             switch ((*it).front())
             {
             case '(':
@@ -290,7 +286,7 @@ namespace /* anonymous */
         for (vstring_t &v : vec_tokens) {
             /* minimum size is 2 (type + symbol),
              * first element must be an identifier */
-            if (v.size() >= 2 && parse::is_ident(v.front()[0])) {
+            if (v.size() >= 2 && !v.at(0).empty() && parse::is_ident(v.at(0).front())) {
                 proto_t p;
 
                 /* `it' won't be v.begin() */
@@ -351,6 +347,20 @@ PARSE( is_function_pointer_no_name,   TYPE, "(*"        ")(", ")" )
 PARSE( is_object,                     TYPE, "",  SYMBOL           )
 PARSE( is_array,                      TYPE       SYMBOL, "[", "]" )
 PARSE( is_array_no_name,              TYPE,              "[", "]" )
+
+
+vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
+{
+    for (auto i = v.begin(); i != v.end(); i++) {
+        if ((*i).empty() || (*i).front() == '*' || is_ident((*i).front())) {
+            continue;
+        }
+
+        return i;
+    }
+
+    return v.end();
+}
 
 
 void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
@@ -445,9 +455,8 @@ void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vp
     } else {
         /* read parameter names */
         for (auto &proto : vproto) {
-            if (!parse::read_and_copy_names(proto, m_parameter_names)) {
-                print_pretty_function(proto);
-                throw error(input_name + "\nfailed to read function parameter names");
+            if (!parse::read_and_copy_names(proto, m_parameter_names, msg)) {
+                throw error(input_name + '\n' + msg);
             }
         }
     }

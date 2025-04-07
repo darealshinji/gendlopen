@@ -52,6 +52,18 @@ endif
 
 subdir('src')
 
+
+# try to set standard to C++11
+
+cpp_std = []
+compiler = meson.get_compiler('cpp')
+
+if (compiler.has_argument('-std=c++11'))
+    cpp_std = '-std=c++11'
+elif (compiler.has_argument('-std:c++11'))
+    cpp_std = '-std:c++11'
+endif
+
 if get_option('enable_examples')
     subdir('examples')
 endif

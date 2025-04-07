@@ -94,7 +94,7 @@ std::string strip_line(const char *line)
     std::string s = line;
 
     /* remains of Windows line endings */
-    if (s.back() == '\r') {
+    if (utils::ends_with(s, '\r')) {
         s.pop_back();
     }
 
@@ -111,6 +111,10 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         "'(.*?)'.*"  /* type */
     );
 
+    if (*yytext == 0) {
+        return false;
+    }
+
     const std::string line = strip_line(yytext);
 
     if (!std::regex_match(line, m, reg) || m.size() != 2) {
@@ -121,22 +125,25 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
     notype_args += ", ";
 
     /* search for function pointer */
-    size_t pos = m[1].str().find("(*)");
+    std::string str = m[1].str();
+    size_t pos = str.find("(*)");
 
     if (pos == std::string::npos) {
         /* regular parameter */
-        args += m[1].str();
+        args += str;
 
-        if (args.back() != '*') {
+        if (!utils::ends_with(args, '*')) {
             args += ' ';
         }
         args += letter;
         args += ", ";
     } else {
         /* function pointer */
-        std::string s = m[1].str();
-        s.insert(pos + 2, 1, letter);
-        args += s + ", ";
+        std::string ins = "(*x)";
+        ins[2] = letter;
+
+        str.replace(pos, 3, ins);
+        args += str + ", ";
     }
 
     return true;
@@ -176,8 +183,12 @@ bool gendlopen::get_declarations(int mode)
         "'(.*?)'.*"           /* type */
     );
 
+    if (*yytext == 0) {
+        return false;
+    }
+
     const std::string line = strip_line(yytext);
-    const bool function = (line[2] == 'F');
+    const bool function = (line.size() >= 3 && line.at(2) == 'F');
 
     if (!std::regex_match(line, m, function ? reg_func : reg_var) || m.size() != 3) {
         return false;

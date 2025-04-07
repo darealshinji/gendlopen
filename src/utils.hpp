@@ -84,6 +84,10 @@ static inline bool starts_with(const std::string &str, const std::string &prefix
             strncmp(str.c_str(), prefix.c_str(), prefix.size()) == 0);
 }
 
+static inline bool starts_with(const std::string &str, const char &prefix) {
+    return (!str.empty() && str.front() == prefix);
+}
+
 /* ends_with() */
 template<size_t N>
 bool ends_with(const std::string &str, char const (&suffix)[N]) {
@@ -97,7 +101,16 @@ static inline bool ends_with(const std::string &str, const std::string &suffix) 
             strcmp(str.c_str() + (str.size() - suffix.size()), suffix.c_str()) == 0);
 }
 
+static inline bool ends_with(const std::string &str, const char &prefix) {
+    return (!str.empty() && str.back() == prefix);
+}
+
 #endif // __cpp_lib_starts_ends_with
+
+template <typename T1, typename T2>
+bool starts_ends_with(const std::string &str, const T1 &prefix, const T2 &suffix) {
+    return (starts_with(str, prefix) && ends_with(str, suffix));
+}
 
 
 } /* namespace utils end */
