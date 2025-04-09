@@ -53,16 +53,16 @@ namespace /* anonymous */
             return false;
         }
 
-        auto &v = proto.args_vec.at(0);
+        auto &v = proto.args_vec.front();
 
         /* must be 1 token */
         if (v.size() != 1) {
             return false;
         }
 
-        if (strcasecmp(v.at(0).c_str(), "void") == 0) {
+        if (strcasecmp(v.front().c_str(), "void") == 0) {
             /* "void" parameter */
-            proto.args = v.at(0);
+            proto.args = v.front();
             return true;
         }
 
@@ -168,7 +168,7 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, s
         }
 
         /* check if a parameter begins with `*' */
-        if (v.at(0) == POINTER) {
+        if (v.front() == POINTER) {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer `*'";
             return false;
         }
@@ -225,7 +225,7 @@ bool parse::create_names(proto_t &proto, std::string &msg)
         }
 
         /* check if a parameter begins with `*' */
-        if (v.at(0) == POINTER) {
+        if (v.front() == POINTER) {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer";
             return false;
         }

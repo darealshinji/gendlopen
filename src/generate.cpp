@@ -434,24 +434,31 @@ size_t common_prefix_length(vstring_t &vec)
 {
     /* need at least 2 symbols */
     if (vec.size() < 2) {
-        return {};
+        return 0;
     }
 
-    /* get shortest symbol length */
-    size_t maxlen = vec.at(0).size();
+    size_t shortest_sym_len = vec.at(0).size();
 
+    /* get shortest symbol length */
     for (const auto &e : vec) {
         /* prevent `min()' macro expansion from Windows headers */
-        maxlen = std::min<size_t>(maxlen, e.size());
+        shortest_sym_len = std::min<size_t>(shortest_sym_len, e.size());
+    }
+
+    if (shortest_sym_len == 0) {
+        return 0;
     }
 
     size_t pfxlen = 0;
+    const char *ptr = vec.front().c_str();
 
-    for (size_t i = 0; i < maxlen; i++) {
-        const char c = vec.at(0).at(i);
-
+    for (size_t i = 0; i < shortest_sym_len; i++, ptr++) {
         for (const auto &e : vec) {
-            if (e.at(i) != c) {
+            if (e.empty()) {
+                return 0;
+            }
+
+            if (e.at(i) != *ptr) {
                 /* common prefix found (can be empty) */
                 return pfxlen;
             }
@@ -481,6 +488,11 @@ int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
 
     for (const auto &e : v_objects) {
         symbols.push_back(e.symbol);
+    }
+
+    if (symbols.empty()) {
+        /* should not happen */
+        return 0;
     }
 
     /* GDO_CHECK_SYMBOL_NAME */
@@ -519,15 +531,26 @@ int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
     std::sort(symbols.begin(), symbols.end());
 
     for (const auto &e : symbols) {
-        if (!temp.empty() && !temp.front().empty() && temp.front().at(pfxlen) != e.at(pfxlen)) {
+        if (e.empty()) {
+            /* unlikely */
+            continue;
+        }
+
+        if (!temp.empty() && temp.front().at(pfxlen) != e.at(pfxlen)) {
             lists.push_back(temp);
             temp.clear();
         }
+
         temp.push_back(e);
     }
 
     if (!temp.empty()) {
         lists.push_back(temp);
+    }
+
+    if (lists.empty()) {
+        /* unlikely */
+        return 0;
     }
 
     /* switch begin */
@@ -537,7 +560,7 @@ int save_symbol_name_goto(cio::ofstream &out, const std::string &pfx_upper,
 
     /* switch entries */
     for (const auto &v : lists) {
-        char c = v.front().at(pfxlen);
+        const char c = utils::str_at(v.front(), pfxlen);
 
         if (c == 0) {
             str += "    case 0: /* same as common symbol prefix */ \\\n"

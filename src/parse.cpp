@@ -286,7 +286,7 @@ namespace /* anonymous */
         for (vstring_t &v : vec_tokens) {
             /* minimum size is 2 (type + symbol),
              * first element must be an identifier */
-            if (v.size() >= 2 && !v.at(0).empty() && parse::is_ident(v.at(0).front())) {
+            if (v.size() >= 2 && parse::is_ident(utils::str_at(v.front(), 0))) {
                 proto_t p;
 
                 /* `it' won't be v.begin() */
@@ -352,7 +352,7 @@ PARSE( is_array_no_name,              TYPE,              "[", "]" )
 vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
 {
     for (auto i = v.begin(); i != v.end(); i++) {
-        if ((*i).empty() || (*i).front() == '*' || is_ident((*i).front())) {
+        if (utils::starts_with(*i, '*') || is_ident(utils::str_at(*i, 0))) {
             continue;
         }
 

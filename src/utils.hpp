@@ -56,6 +56,11 @@ void replace(const std::string &from, const std::string &to, std::string &s);
 /* count '\n' characters */
 int count_linefeed(const std::string &str);
 
+/* return char at position pos or NUL */
+inline char str_at(const std::string &str, size_t pos) {
+    return (str.size() > pos) ? str.at(pos) : 0;
+}
+
 
 #ifdef __cpp_lib_starts_ends_with
 

@@ -183,7 +183,7 @@ namespace /* anonymous */
         std::string s = type;
 
         /* insert space if needed */
-        if (pos > 0 && type.at(pos-1) != ' ') {
+        if (pos > 0 && utils::str_at(type, pos-1) != ' ') {
             s.insert(pos, 1, ' ');
             pos++;
         }

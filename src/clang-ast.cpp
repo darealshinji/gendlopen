@@ -188,7 +188,7 @@ bool gendlopen::get_declarations(int mode)
     }
 
     const std::string line = strip_line(yytext);
-    const bool function = (line.size() >= 3 && line.at(2) == 'F');
+    const bool function = (utils::str_at(line, 2) == 'F');
 
     if (!std::regex_match(line, m, function ? reg_func : reg_var) || m.size() != 3) {
         return false;
