@@ -81,7 +81,7 @@ static size_t common_prefix_length(vstring_t &vec)
 
 /* create a macro that will do a slightly optimized lookup of a
  * given symbol name */
-int save::symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects)
+size_t save::symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects)
 {
     vstring_t symbols, temp;
     std::vector<vstring_t> lists;
@@ -119,9 +119,9 @@ int save::symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_pro
     /* multiple symbols */
 
     const size_t pfxlen = common_prefix_length(symbols); /* can be 0 */
-    const auto pfx = symbols.at(0).substr(0, pfxlen); /* can be empty string */
-    const auto str_pfxlen = std::to_string(pfxlen);
-    const auto off = std::to_string(pfxlen + 1);
+    const std::string pfx = symbols.at(0).substr(0, pfxlen); /* can be empty string */
+    const std::string str_pfxlen = std::to_string(pfxlen);
+    const std::string off = std::to_string(pfxlen + 1);
 
     /* prefix check */
     if (pfxlen == 0) {

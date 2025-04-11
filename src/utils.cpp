@@ -113,9 +113,9 @@ void utils::replace(const std::string &from, const std::string &to, std::string 
 }
 
 /* count '\n' characters */
-int utils::count_linefeed(const std::string &str)
+size_t utils::count_linefeed(const std::string &str)
 {
-    int n = 0;
+    size_t n = 0;
 
     for (auto &c : str) {
         if (c == '\n') {

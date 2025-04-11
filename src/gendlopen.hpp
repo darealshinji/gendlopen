@@ -39,17 +39,17 @@ namespace save
     extern cio::ofstream ofs;
 
     /* creates the GDO_CHECK_SYMBOL_NAME() macro and saves it to save::ofs */
-    int symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects);
+    size_t symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects);
 }
 
 
 namespace data
 {
     /* save filename macros to save::ofs */
-    int filename_macros(bool line_directive);
+    size_t filename_macros(bool line_directive);
 
     /* save license header to save::ofs */
-    int license(bool line_directive);
+    size_t license(bool line_directive);
 
     /* concatenate templates and create template_t vector lists */
     void create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate);
@@ -102,11 +102,11 @@ private:
     void open_ofstream(const fs_path_t &opath);
 
     /* substitute.cpp */
-    int replace_function_prototypes(const int &templ_lineno, const std::string &entry);
-    int replace_object_prototypes(const int &templ_lineno, const std::string &entry);
-    int replace_symbol_names(const int &templ_lineno, const std::string &entry);
-    int substitute_line(const template_t &line, int &templ_lineno, bool &skip_code);
-    int substitute(const vtemplate_t &data);
+    size_t replace_function_prototypes(const size_t &templ_lineno, const std::string &entry);
+    size_t replace_object_prototypes(const size_t &templ_lineno, const std::string &entry);
+    size_t replace_symbol_names(const size_t &templ_lineno, const std::string &entry);
+    size_t substitute_line(const template_t &line, size_t &templ_lineno, bool &skip_code);
+    size_t substitute(const vtemplate_t &data);
 
 public:
 

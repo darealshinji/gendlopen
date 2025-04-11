@@ -30,40 +30,37 @@
 #include "gendlopen.hpp"
 #include "types.hpp"
 
-namespace templates {
+namespace templates
+{
 #include "template.h"
 }
 
 
-namespace /* anonymous */
+static size_t save_data(bool line_directive, const template_t *list, size_t line_count)
 {
-    int save_data(bool line_directive, const template_t *list)
-    {
-        int total_lines = 0;
-        int i = 0;
-
-        if (!line_directive && strncmp(list[0].data, "#line", 5) == 0) {
-            /* skip initial line directive */
-            i++;
-        }
-
-        for ( ; list[i].data != NULL; i++) {
-            save::ofs << list[i].data << '\n';
-            total_lines += list[i].line_count;
-        }
-
-        return total_lines;
+    if (!line_directive && strncmp(list->data, "#line", 5) == 0) {
+        /* skip initial line directive */
+        list++;
+        line_count--;
     }
-}
 
-/* filename macros */
-int data::filename_macros(bool line_directive) {
-    return save_data(line_directive, templates::filename_macros);
+    for ( ; list->data != NULL; list++) {
+        save::ofs << list->data << '\n';
+    }
+
+    return line_count;
 }
 
 /* license */
-int data::license(bool line_directive) {
-    return save_data(line_directive, templates::license);
+size_t data::license(bool line_directive)
+{
+    return save_data(line_directive, templates::license, templates::license_lines);
+}
+
+/* filename macros */
+size_t data::filename_macros(bool line_directive)
+{
+    return save_data(line_directive, templates::filename_macros, templates::filename_macros_lines);
 }
 
 /* create template data */

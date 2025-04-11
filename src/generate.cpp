@@ -224,7 +224,7 @@ void gendlopen::generate()
     fs_path_t ofhdr, ofbody;
     std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
-    int lines = 0;
+    size_t lines = 0;
     bool is_cxx = false;
     bool is_minimal = false;
 

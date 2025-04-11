@@ -50,7 +50,7 @@ void strip_spaces(std::string &s);
 void replace(const std::string &from, const std::string &to, std::string &s);
 
 /* count '\n' characters */
-int count_linefeed(const std::string &str);
+size_t count_linefeed(const std::string &str);
 
 
 /* return char at position pos or NUL */

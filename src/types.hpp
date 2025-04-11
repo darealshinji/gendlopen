@@ -63,8 +63,8 @@ typedef struct _decl {
 
 typedef struct _template {
     const char *data;
-    int maybe_keyword;
-    int line_count;
+    bool maybe_keyword;
+    size_t line_count;
 } template_t;
 
 using vproto_t = std::vector<proto_t>;

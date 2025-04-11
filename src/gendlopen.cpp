@@ -165,7 +165,7 @@ namespace /* anonymous */
         int c = EOF;
 
         line.clear();
-        entry.maybe_keyword = 0;
+        entry.maybe_keyword = false;
         entry.line_count = 1;
 
         while (loop)
@@ -192,7 +192,7 @@ namespace /* anonymous */
                 break;
 
             case '%':
-                entry.maybe_keyword = 1;
+                entry.maybe_keyword = true;
                 [[fallthrough]];
 
             default:
@@ -358,7 +358,7 @@ void gendlopen::process_custom_template()
     template_t entry;
     bool param_skip_code = false;
     bool eof = false;
-    int templ_lineno = 1; /* input template line count */
+    size_t templ_lineno = 1; /* input template line count */
 
     /* open file for reading */
     open_file file(m_custom_template);
