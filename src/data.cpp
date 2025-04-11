@@ -30,12 +30,14 @@
 #include "gendlopen.hpp"
 #include "types.hpp"
 
+namespace templates {
 #include "template.h"
+}
 
 
 namespace /* anonymous */
 {
-    constexpr int save_data(cio::ofstream &ofs, bool line_directive, const template_t *list)
+    constexpr int save_data(bool line_directive, const template_t *list)
     {
         int total_lines = 0;
         int i = 0;
@@ -46,7 +48,7 @@ namespace /* anonymous */
         }
 
         for ( ; list[i].data != NULL; i++) {
-            ofs << list[i].data << '\n';
+            save::ofs << list[i].data << '\n';
             total_lines += list[i].line_count;
         }
 
@@ -55,48 +57,48 @@ namespace /* anonymous */
 }
 
 /* filename macros */
-int gendlopen::save_filename_macros_data(cio::ofstream &ofs) {
-    return save_data(ofs, m_line_directive, filename_macros);
+int data::filename_macros(bool line_directive) {
+    return save_data(line_directive, templates::filename_macros);
 }
 
 /* license */
-int gendlopen::save_license_data(cio::ofstream &ofs) {
-    return save_data(ofs, m_line_directive, license);
+int data::license(bool line_directive) {
+    return save_data(line_directive, templates::license);
 }
 
 /* create template data */
-void gendlopen::create_template_data_lists(vtemplate_t &header, vtemplate_t &body)
+void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate)
 {
     auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
     {
-        header.push_back(common_header);
+        header.push_back(templates::common_header);
         header.push_back(t_header);
 
-        if (m_separate) {
+        if (separate) {
             body.push_back(t_body);
         } else {
             header.push_back(t_body);
         }
     };
 
-    switch (m_format)
+    switch (format)
     {
     case output::c:
-        concat_sources(c_header, c_body);
+        concat_sources(templates::c_header, templates::c_body);
         break;
     case output::cxx:
-        concat_sources(cxx_header, cxx_body);
+        concat_sources(templates::cxx_header, templates::cxx_body);
         break;
     case output::plugin:
-        concat_sources(plugin_header, plugin_body);
+        concat_sources(templates::plugin_header, templates::plugin_body);
         break;
     case output::minimal:
-        header.push_back(min_c_header);
+        header.push_back(templates::min_c_header);
         break;
     case output::minimal_cxx:
-        header.push_back(min_cxx_header);
+        header.push_back(templates::min_cxx_header);
         break;
     [[unlikely]] case output::error:
-        throw error(std::string(__func__) + ": m_format == output::error");
+        throw gendlopen::error(std::string(__func__) + ": format == output::error");
     }
 }

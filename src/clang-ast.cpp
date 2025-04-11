@@ -98,7 +98,7 @@ std::string strip_line(const char *line)
         s.pop_back();
     }
 
-    return std::regex_replace(s, reg, "");
+    return s.empty() ? "" : std::regex_replace(s, reg, "");
 }
 
 /* get function parameter declaration */
@@ -111,13 +111,9 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         "'(.*?)'.*"  /* type */
     );
 
-    if (*yytext == 0) {
-        return false;
-    }
-
     const std::string line = strip_line(yytext);
 
-    if (!std::regex_match(line, m, reg) || m.size() != 2) {
+    if (line.empty() || !std::regex_match(line, m, reg) || m.size() != 2) {
         return false;
     }
 
@@ -139,10 +135,10 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         args += ", ";
     } else {
         /* function pointer */
-        std::string ins = "(*x)";
-        ins[2] = letter;
+        std::string insert = "(*x)";
+        insert[2] = letter;
 
-        str.replace(pos, 3, ins);
+        str.replace(pos, 3, insert);
         args += str + ", ";
     }
 
@@ -183,14 +179,15 @@ bool gendlopen::get_declarations(int mode)
         "'(.*?)'.*"           /* type */
     );
 
-    if (*yytext == 0) {
+    const std::string line = strip_line(yytext);
+
+    if (line.empty()) {
         return false;
     }
 
-    const std::string line = strip_line(yytext);
-    const bool function = (utils::str_at(line, 2) == 'F');
+    const bool is_function = (utils::str_at(line, 2) == 'F');
 
-    if (!std::regex_match(line, m, function ? reg_func : reg_var) || m.size() != 3) {
+    if (!std::regex_match(line, m, is_function ? reg_func : reg_var) || m.size() != 3) {
         return false;
     }
 
@@ -223,7 +220,7 @@ bool gendlopen::get_declarations(int mode)
         break;
     }
 
-    if (function) {
+    if (is_function) {
         /* function declaration */
         std::string args, notype_args;
         char letter = 'a';
@@ -288,7 +285,7 @@ bool gendlopen::get_declarations(int mode)
 }
 
 /* read Clang AST */
-void gendlopen::clang_ast()
+void gendlopen::parse_clang_ast()
 {
     int mode = M_DEFAULT;
     int rv;
@@ -345,7 +342,5 @@ void gendlopen::clang_ast()
     if (m_prototypes.empty() && m_objects.empty()) {
         throw error("no function or object prototypes found in file: " + m_input);
     }
-
-    create_typedefs();
 }
 

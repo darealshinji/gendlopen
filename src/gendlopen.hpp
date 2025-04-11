@@ -33,11 +33,36 @@
 namespace cio { class ofstream; }
 
 
-#define SET(TYPE, NAME, DEFVAL) \
+namespace save
+{
+    /* global output file stream; defaults to STDOUT */
+    extern cio::ofstream ofs;
+
+    /* creates the GDO_CHECK_SYMBOL_NAME() macro and saves it to save::ofs */
+    int symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects);
+}
+
+
+namespace data
+{
+    /* save filename macros to save::ofs */
+    int filename_macros(bool line_directive);
+
+    /* save license header to save::ofs */
+    int license(bool line_directive);
+
+    /* concatenate templates and create template_t vector lists */
+    void create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate);
+}
+
+
+/* create option plus setter and getter methods */
+#define OPT(TYPE, NAME, DEFVAL) \
     private: \
         TYPE m_##NAME = DEFVAL; \
     public: \
-        void NAME(const TYPE &var) { m_##NAME = var; }
+        void NAME(const TYPE &var) { m_##NAME = var; } \
+        TYPE NAME() { return m_##NAME; }
 
 
 class gendlopen
@@ -68,36 +93,20 @@ private:
 
     /* clang-ast.cpp */
     bool get_declarations(int mode);
-    void clang_ast();
-
-    /* tokenize.cpp */
-    void tokenize();
+    void parse_clang_ast();
 
     /* parse.cpp */
-    void parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vproto_t &vproto, const std::string &input_name);
-    void filter_and_copy_symbols(vproto_t &proto);
-
-    /* parse_options.cpp */
-    void parse_options(const vstring_t &options);
-
-    /* data.cpp */
-    int save_filename_macros_data(cio::ofstream &ofs);
-    int save_license_data(cio::ofstream &ofs);
-    void create_template_data_lists(vtemplate_t &header, vtemplate_t &body);
-
-    /* gendlopen.cpp */
-    void create_typedefs();
+    void parse(std::vector<vstring_t> &vec_tokens, vproto_t &vproto, const std::string &input_name);
 
     /* generate.cpp */
-    void open_ofstream(const fs_path_t &opath, cio::ofstream &ofs);
-    void read_custom_template();
+    void open_ofstream(const fs_path_t &opath);
 
     /* substitute.cpp */
-    int replace_function_prototypes(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs);
-    int replace_object_prototypes(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs);
-    int replace_symbol_names(const int &templ_lineno, const std::string &entry, cio::ofstream &ofs);
-    int substitute_line(const template_t &line, int &templ_lineno, bool &skip_code, cio::ofstream &ofs);
-    int substitute(const vtemplate_t &data, cio::ofstream &ofs);
+    int replace_function_prototypes(const int &templ_lineno, const std::string &entry);
+    int replace_object_prototypes(const int &templ_lineno, const std::string &entry);
+    int replace_symbol_names(const int &templ_lineno, const std::string &entry);
+    int substitute_line(const template_t &line, int &templ_lineno, bool &skip_code);
+    int substitute(const vtemplate_t &data);
 
 public:
 
@@ -107,35 +116,37 @@ public:
     /* d'tor */
     ~gendlopen();
 
-    /* set options */
-    SET(std::string, input, {})
-    SET(std::string, output, "-")
-    SET(output::format, format, output::c)
-    SET(param::names, parameter_names, param::param_default)
-    SET(std::string, custom_template, {})
-    SET(bool, force, false)
-    SET(bool, separate, false)
-    SET(bool, ast_all_symbols, false)
-    SET(bool, print_symbols, false)
-    SET(bool, read_options, true)
-    SET(bool, print_date, true)
-    SET(bool, line_directive, false)
-    SET(bool, pragma_once, true)
+    void tokenize();
+    void print_symbols_to_stdout();
+    void process_custom_template();
+    void generate();
 
-    /* gendlopen.cpp */
-    void prefix(const std::string &s);
-    void default_lib(const std::string &s);
-    void format(const std::string &s);
-    void add_inc(const std::string &s);
-    void add_def(const std::string &s);
+    /* get() / set() an option */
 
-    /* add code */
+    /*   type            method name      default value */
+    OPT( std::string,    input,           {}          )
+    OPT( std::string,    output,          "-"         )
+    OPT( output::format, format,          output::c   )
+    OPT( param::names,   parameter_names, param::read )
+    OPT( std::string,    custom_template, {}          )
+    OPT( bool,           force,           false       )
+    OPT( bool,           separate,        false       )
+    OPT( bool,           ast_all_symbols, false       )
+    OPT( bool,           print_symbols,   false       )
+    OPT( bool,           read_options,    true        )
+    OPT( bool,           print_date,      true        )
+    OPT( bool,           line_directive,  false       )
+    OPT( bool,           pragma_once,     true        )
+
     void add_pfx(const std::string &s) { m_prefix_list.push_back(s); }
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }
 
-    /* generate output */
-    void generate();
-
+    /* gendlopen.cpp */
+    void add_inc(const std::string &s);
+    void add_def(const std::string &s);
+    void prefix(const std::string &s);
+    void default_lib(const std::string &s);
+    void format(const std::string &s);
 };
 
 #undef SET

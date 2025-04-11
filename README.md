@@ -7,7 +7,6 @@ This is still experimental and the main goal is to simply try out how much can
 be automized and find out how useful it is.
 
 Features:
- * no build dependencies other than a C/C++ compiler and make
  * can generate code for C and C++
  * win32 API `LoadLibraryEx()` and POSIX `dlopen()`
  * wide and narrow characters on win32 API
@@ -16,6 +15,10 @@ Features:
 Limitations:
  * auto-loading only works on functions ¹
  * auto-loading does not work on functions with variable arguments ²
+
+Dependencies:
+ * C++14 compiler (C++20 or newer is recommended)
+ * meson or make
 
 ¹ I recommend using your own get/set wrapper functions to auto-load objects<br>
 ² You can however replace a prototype such as `int myprintf(const char *format, ...)`
@@ -136,4 +139,6 @@ export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
 meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini build
 meson compile -C build
 ```
+
+There are also simple Makefiles for nmake and POSIX make located in the `src` directory.
 

@@ -43,10 +43,6 @@ std::string convert_to_lower(const std::string &s, bool underscores=true);
 /* returns true if s begins with a prefix found in list */
 bool is_prefixed(const std::string &s, const vstring_t &list);
 
-/* delete suffix from string */
-void delete_suffix(std::string &str, const std::string &suffix);
-void delete_suffix(std::string &str, const char suffix);
-
 /* strip ANSI white-space characters from front and back */
 void strip_spaces(std::string &s);
 
@@ -55,6 +51,7 @@ void replace(const std::string &from, const std::string &to, std::string &s);
 
 /* count '\n' characters */
 int count_linefeed(const std::string &str);
+
 
 /* return char at position pos or NUL */
 inline char str_at(const std::string &str, size_t pos) {
@@ -112,11 +109,26 @@ static inline bool ends_with(const std::string &str, const char &prefix) {
 
 #endif // __cpp_lib_starts_ends_with
 
+
 template <typename T1, typename T2>
 bool starts_ends_with(const std::string &str, const T1 &prefix, const T2 &suffix) {
     return (starts_with(str, prefix) && ends_with(str, suffix));
 }
 
+
+/* delete suffix from string */
+
+inline void delete_suffix(std::string &str, const std::string &suffix) {
+    if (ends_with(str, suffix)) {
+        str.erase(str.size() - suffix.size());
+    }
+}
+
+inline void delete_suffix(std::string &str, const char suffix) {
+    if (ends_with(str, suffix)) {
+        str.pop_back();
+    }
+}
 
 } /* namespace utils end */
 

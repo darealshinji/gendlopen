@@ -46,24 +46,25 @@ namespace help {
 namespace
 {
     /* -param=... */
-    bool set_parameter_names(gendlopen &gdo, const char *prog, const char *opt, char optpfx)
+    void set_parameter_names(gendlopen &gdo, const char *prog, const char *opt, char optpfx)
     {
         if (strcasecmp(opt, "skip") == 0) {
             gdo.parameter_names(param::skip);
-            return true;
         } else if (strcasecmp(opt, "create") == 0) {
             gdo.parameter_names(param::create);
-            return true;
+        } else if (strcasecmp(opt, "read") == 0) {
+            gdo.parameter_names(param::read);
+        } else {
+            std::string msg = "unknown argument for option '";
+            msg += optpfx;
+            msg += "param': ";
+            msg += opt;
+            throw parse_args::error(msg);
         }
-
-        std::cerr << prog << ": unknown argument for option '"
-            << optpfx << "param': " << opt << std::endl;
-
-        return false;
     }
 
     /* parse argv[] and set options in 'gdo' object */
-    bool parse_arguments(gendlopen &gdo, const int &argc, char ** const &argv)
+    void parse_arguments(gendlopen &gdo, const int &argc, char ** const &argv)
     {
         std::string lib_a, lib_w;
         const char *prog = parse_args::get_prog_name(argv[0]);
@@ -186,9 +187,7 @@ namespace
                     gdo.prefix(a.opt());
                     continue;
                 } else if ( a.get_arg("param") ) {
-                    if (!set_parameter_names(gdo, prog, a.opt(), a.current()[0])) {
-                        return false;
-                    }
+                    set_parameter_names(gdo, prog, a.opt(), a.current()[0]);
                     continue;
                 } else if ( a.get_noarg("print-symbols") ) {
                     gdo.print_symbols(true);
@@ -229,19 +228,15 @@ namespace
                 break;
             }
 
-            std::cerr << prog << ": unknown option: " << a.current() << std::endl;
-            return false;
+            throw parse_args::error(std::string("unknown option: ") + a.current());
         }
 
         /* input is required */
         if (!input) {
-            std::cerr << prog << ": input file required" << std::endl;
-            return false;
+            throw parse_args::error("input file required");
         }
 
         gdo.input(input);
-
-        return true;
     }
 
 } /* anonymous namespace */
@@ -249,28 +244,36 @@ namespace
 
 int main(int argc, char **argv)
 {
-    auto print_info = [&] () {
-        std::cerr << "See `" << argv[0] << " -help' for more information." << std::endl;
-    };
-
     gendlopen gdo;
 
     try {
-        if (!parse_arguments(gdo, argc, argv)) {
-            print_info();
-            return 1;
+        parse_arguments(gdo, argc, argv);
+
+        /* read input */
+        gdo.tokenize();
+
+        /* print and exit */
+        if (gdo.print_symbols()) {
+            gdo.print_symbols_to_stdout();
+            return 0;
         }
+
+        /* read and process custom template (`-format' will be ignored) */
+        if (!gdo.custom_template().empty()) {
+            gdo.process_custom_template();
+            return 0;
+        }
+
+        /* generate output */
         gdo.generate();
     }
     catch (const parse_args::error &e) {
-        std::cerr << parse_args::get_prog_name(argv[0])
-            << ": error: " << e.what() << std::endl;
-        print_info();
+        std::cerr << parse_args::get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
+        std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
         return 1;
     }
     catch (const gendlopen::error &e) {
-        std::cerr << parse_args::get_prog_name(argv[0])
-            << ": error: " << e.what() << std::endl;
+        std::cerr << parse_args::get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
         return 1;
     }
 

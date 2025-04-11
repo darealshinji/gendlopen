@@ -58,8 +58,8 @@ namespace help
             "  -S<string>        look for symbol name <string> *\n"
             "  -separate         save output into separate body and header files\n"
             "  -force            always overwrite existing output files\n"
-            "  -param=skip       don't look for parameter names in function prototypes\n"
-            "  -param=create     create parameter names for function prototypes\n"
+            "  -param=<mode>     how to handle parameter names in function prototypes from input file;\n"
+            "                    modes are: read (default), skip, create"
             "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
             "  -print-symbols    print list of found symbols and exit\n"
             "  -ignore-options   ignore `%option' lines from input file\n"
@@ -249,14 +249,18 @@ namespace help
 
 
             "  -param=<mode>\n"
+            "    If <mode> is 'read':\n"
+            "    Always try to read parameter names in function prototypes when\n"
+            "    the input is being processed. This is the default behavior if `-param'\n"
+            "    was not explicitly set.\n"
+            "\n"
             "    If <mode> is 'skip':\n"
-            "    Don't try to look for parameter names in function prototypes when\n"
-            "    the input is being processed. This will disable any kind of wrapped\n"
-            "    functions in the output.\n"
+            "    Don't try to look for parameter names in function prototypes. This will\n"
+            "    disable any kind of wrapped functions in the output.\n"
             "\n"
             "    If <mode> is 'create':\n"
             "    Create parameter names for the output to be used in wrapped functions.\n"
-            "    Function prototypes from the input are assumed to have no parameter names.\n"
+            "    Function prototypes from the input are assumed to have no parameter names!\n"
             "\n"
 
 

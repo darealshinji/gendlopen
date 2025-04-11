@@ -4,6 +4,7 @@ OBJS = \
 	$(OUT)/cio_ofstream.o \
 	$(OUT)/clang-ast.o \
 	$(OUT)/data.o \
+	$(OUT)/filesystem_compat.o \
 	$(OUT)/gendlopen.o \
 	$(OUT)/generate.o \
 	$(OUT)/help.o \
@@ -15,6 +16,7 @@ OBJS = \
 	$(OUT)/parse.o \
 	$(OUT)/parse_options.o \
 	$(OUT)/substitute.o \
+	$(OUT)/symbol_name_lookup.o \
 	$(OUT)/tokenize.o \
 	$(OUT)/utils.o
 
@@ -34,6 +36,7 @@ clean:
 $(OUT)/gendlopen: $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
 
+# .dirstamp
 $(OUT)/.gitignore:
 	mkdir -p $(OUT) && echo '*' > $@
 
@@ -55,6 +58,9 @@ $(OUT)/clang-ast.o: clang-ast.cpp
 
 $(OUT)/data.o: data.cpp
 	$(COMPILE_CXX) $@ data.cpp
+
+$(OUT)/filesystem_compat.o: filesystem_compat.cpp
+	$(COMPILE_CXX) $@ filesystem_compat.cpp
 
 $(OUT)/gendlopen.o: gendlopen.cpp
 	$(COMPILE_CXX) $@ gendlopen.cpp
@@ -88,6 +94,9 @@ $(OUT)/parse_options.o: parse_options.cpp
 
 $(OUT)/substitute.o: substitute.cpp
 	$(COMPILE_CXX) $@ substitute.cpp
+
+$(OUT)/symbol_name_lookup.o: symbol_name_lookup.cpp
+	$(COMPILE_CXX) $@ symbol_name_lookup.cpp
 
 $(OUT)/tokenize.o: tokenize.cpp
 	$(COMPILE_CXX) $@ tokenize.cpp

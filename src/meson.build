@@ -2,6 +2,7 @@ gendlopen_src = files(
     'cio_ofstream.cpp',
     'clang-ast.cpp',
     'data.cpp',
+    'filesystem_compat.cpp',
     'gendlopen.cpp',
     'generate.cpp',
     'help.cpp',
@@ -13,6 +14,7 @@ gendlopen_src = files(
     'parse.cpp',
     'parse_options.cpp',
     'substitute.cpp',
+    'symbol_name_lookup.cpp',
     'tokenize.cpp',
     'utils.cpp'
 )
@@ -44,9 +46,7 @@ if cross_compile and (get_option('enable_examples') or get_option('enable_tests'
     noopt = []
     cpp_std = []
 
-    # disable optimization to speed up build,
-    # enable C++20 or newer
-
+    # disable optimization to speed up build
     if arg_syntax_native == 'msvc'
         noopt = '-Od'
         cpp_std = '-std:c++latest'

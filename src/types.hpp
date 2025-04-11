@@ -95,7 +95,7 @@ namespace output
 namespace param
 {
     typedef enum {
-        param_default,
+        read, /* default */
         create,
         skip
     } names;

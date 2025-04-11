@@ -87,21 +87,6 @@ bool utils::is_prefixed(const std::string &s, const vstring_t &list)
     return false;
 }
 
-/* delete suffix from string */
-void utils::delete_suffix(std::string &str, const std::string &suffix)
-{
-    if (ends_with(str, suffix)) {
-        str.erase(str.size() - suffix.size());
-    }
-}
-
-void utils::delete_suffix(std::string &str, const char suffix)
-{
-    if (ends_with(str, suffix)) {
-        str.pop_back();
-    }
-}
-
 /* strip ANSI white-space characters from front and back */
 void utils::strip_spaces(std::string &s)
 {

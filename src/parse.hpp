@@ -29,6 +29,8 @@
 #include <ctype.h>
 #include "types.hpp"
 
+class gendlopen;
+
 
 namespace parse
 {
@@ -45,18 +47,14 @@ namespace parse
         }
     }
 
-
     /* parameters.cpp */
-
     bool read_and_copy_names(proto_t &proto, param::names &parameter_names, std::string &msg);
     bool create_names(proto_t &proto, std::string &msg);
 
+    /* parse_options.cpp */
+    void options(gendlopen *gdo, const vstring_t &options);
 
     /* parse.cpp */
-
-    /* find first element that isn't an identifier or pointer */
-    vstring_t::iterator find_first_not_pointer_or_ident(vstring_t &v);
-
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
     bool is_function_with_parentheses(vstring_t &v, const iter_t &i);
@@ -64,5 +62,8 @@ namespace parse
     bool is_array(vstring_t &v, const iter_t &i);
     bool is_array_no_name(vstring_t &v, const iter_t &it);
     bool is_object(vstring_t &v, const iter_t &it);
+
+    /* find first element that isn't an identifier or pointer */
+    vstring_t::iterator find_first_not_pointer_or_ident(vstring_t &v);
 }
 

@@ -31,6 +31,8 @@
 #include <initializer_list>
 #include <regex>
 #include "gendlopen.hpp"
+#include "cio_ofstream.hpp"
+#include "open_file.hpp"
 #include "utils.hpp"
 
 
@@ -156,39 +158,52 @@ namespace /* anonymous */
         lib_w = quote_lib(str, true);
     }
 
-    /* 'void (*)()'  ==>  'void (*name)()' */
-    std::string fptr_typedef(const std::string &type, const std::string &name)
+    /* read input lines */
+    bool get_lines(FILE *fp, std::string &line, template_t &entry)
     {
-        auto pos = type.find("(*)");
+        bool loop = true;
+        int c = EOF;
 
-        if (pos == std::string::npos || type.find('(') != pos) {
-            return {};
+        line.clear();
+        entry.maybe_keyword = 0;
+        entry.line_count = 1;
+
+        while (loop)
+        {
+            c = fgetc(fp);
+
+            switch (c)
+            {
+            case '\n':
+                /* concatenate lines ending on '@' */
+                if (utils::ends_with(line, '@')) {
+                    line.back() = '\n';
+                    entry.line_count++;
+                    continue;
+                }
+                loop = false;
+                break;
+
+            case EOF:
+                if (utils::ends_with(line, '@')) {
+                    line.pop_back();
+                }
+                loop = false;
+                break;
+
+            case '%':
+                entry.maybe_keyword = 1;
+                [[fallthrough]];
+
+            default:
+                line.push_back(static_cast<char>(c));
+                continue;
+            }
         }
 
-        std::string s = type;
-        pos += 2; /* insert after '*' */
+        entry.data = line.c_str();
 
-        return s.insert(pos, name);
-    }
-
-    /* 'char[32]'  ==>  'char name[32]' */
-    std::string array_typedef(std::string &type, const std::string &name)
-    {
-        auto pos = type.find('[');
-
-        if (pos == std::string::npos) {
-            return {};
-        }
-
-        std::string s = type;
-
-        /* insert space if needed */
-        if (pos > 0 && utils::str_at(type, pos-1) != ' ') {
-            s.insert(pos, 1, ' ');
-            pos++;
-        }
-
-        return s.insert(pos, name);
+        return (c == EOF);
     }
 
 } /* end anonymous namespace */
@@ -297,32 +312,78 @@ void gendlopen::format(const std::string &in)
 }
 
 
-/* create typedefs for function pointers and arrays */
-void gendlopen::create_typedefs()
+/* print all found symbols to stdout */
+void gendlopen::print_symbols_to_stdout()
 {
-    /* create typename */
-    auto mk_name = [this] (const std::string &symbol) {
-        return m_pfx_lower + '_' + symbol + "_t";
+    cio::ofstream out; /* defaults to STDOUT */
+
+    if (!m_typedefs.empty()) {
+        std::string str = "/* typedefs */\n";
+
+        for (const auto &e : m_typedefs) {
+            str += "typedef " + e + ";\n";
+        }
+        str += '\n';
+    }
+
+    std::cout << "/* prototypes */\n";
+
+    auto print_type = [] (const std::string &s)
+    {
+        if (utils::ends_with(s, '*')) {
+            std::cout << s;
+        } else {
+            std::cout << s << ' ';
+        }
     };
 
-    for (auto &p : m_objects) {
-        std::string def, name;
+    for (const auto &e : m_objects) {
+        print_type(e.type);
+        std::cout << e.symbol << ";\n";
+    }
 
-        if (p.prototype == proto::function_pointer) {
-            /* function pointer */
-            name = mk_name(p.symbol);
-            def = fptr_typedef(p.type, name);
-        } else if (p.prototype == proto::object_array) {
-            /* array type */
-            name = mk_name(p.symbol);
-            def = array_typedef(p.type, name);
+    for (const auto &e : m_prototypes) {
+        print_type(e.type);
+        std::cout << e.symbol << '(' << e.args << ");\n";
+    }
+
+    std::cout << "\n/***  " << (m_objects.size() + m_prototypes.size()) << " matches  ***/" << std::endl;
+}
+
+
+/* read and process custom template */
+void gendlopen::process_custom_template()
+{
+    std::string buf;
+    template_t entry;
+    bool param_skip_code = false;
+    bool eof = false;
+    int templ_lineno = 1; /* input template line count */
+
+    /* open file for reading */
+    open_file file(m_custom_template);
+
+    if (!file.is_open()) {
+        throw error("failed to open file for reading: " + m_custom_template);
+    }
+
+    /* create output file */
+    open_ofstream(m_output);
+    FILE *fp = file.file_pointer();
+
+    /* write initial #line directive */
+    if (m_line_directive) {
+        if (fp == stdin) {
+            save::ofs << "#line 1 \"<STDIN>\"\n";
         } else {
-            continue;
+            save::ofs << "#line 1 \"" << m_custom_template << "\"\n";
         }
+    }
 
-        if (!def.empty()) {
-            m_typedefs.push_back(def); /* add to typedefs */
-            p.type = name; /* replace old type */
-        }
+    /* parse lines */
+    while (!eof) {
+        eof = get_lines(fp, buf, entry);
+        substitute_line(entry, templ_lineno, param_skip_code);
+        templ_lineno += entry.line_count;
     }
 }

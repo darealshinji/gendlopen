@@ -40,6 +40,7 @@
 #include "open_file.hpp"
 #include "parse.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 
 namespace /* anonymous */
@@ -99,6 +100,74 @@ namespace /* anonymous */
 
         return rv;
     }
+
+
+    /* 'void (*)()'  ==>  'void (*name)()' */
+    std::string fptr_typedef(const std::string &type, const std::string &name)
+    {
+        auto pos = type.find("(*)");
+
+        if (pos == std::string::npos || type.find('(') != pos) {
+            return {};
+        }
+
+        std::string s = type;
+        pos += 2; /* insert after '*' */
+
+        return s.insert(pos, name);
+    }
+
+
+    /* 'char[32]'  ==>  'char name[32]' */
+    std::string array_typedef(std::string &type, const std::string &name)
+    {
+        auto pos = type.find('[');
+
+        if (pos == std::string::npos) {
+            return {};
+        }
+
+        std::string s = type;
+
+        /* insert space if needed */
+        if (pos > 0 && utils::str_at(type, pos-1) != ' ') {
+            s.insert(pos, 1, ' ');
+            pos++;
+        }
+
+        return s.insert(pos, name);
+    }
+
+
+    /* create typedefs for function pointers and arrays */
+    void create_typedefs(vstring_t &typedefs, vproto_t &objects, const std::string &pfx_lower)
+    {
+        /* create typename */
+        auto mk_name = [&] (const std::string &symbol) {
+            return pfx_lower + '_' + symbol + "_t";
+        };
+
+        for (auto &p : objects) {
+            std::string def, name;
+
+            if (p.prototype == proto::function_pointer) {
+                /* function pointer */
+                name = mk_name(p.symbol);
+                def = fptr_typedef(p.type, name);
+            } else if (p.prototype == proto::object_array) {
+                /* array type */
+                name = mk_name(p.symbol);
+                def = array_typedef(p.type, name);
+            } else {
+                continue;
+            }
+
+            if (!def.empty()) {
+                typedefs.push_back(def); /* add to typedefs */
+                p.type = name; /* replace old type */
+            }
+        }
+    }
 } /* end anonymous namespace */
 
 
@@ -143,9 +212,16 @@ void gendlopen::tokenize()
         throw error(input_name);
     } else if (ret == LEX_AST_BEGIN) {
         /* input is a clang AST file */
-        clang_ast();
+        parse_clang_ast();
+        create_typedefs(m_typedefs, m_objects, m_pfx_lower);
         return;
     }
 
-    parse(vec_tokens, options, vproto, input_name);
+    if (m_read_options) {
+        /* parse `%options' strings */
+        parse::options(this, options);
+    }
+
+    parse(vec_tokens, vproto, input_name);
+    create_typedefs(m_typedefs, m_objects, m_pfx_lower);
 }

@@ -6,6 +6,7 @@ CXX_SRCS = \
 	..\cio_ofstream.cpp \
 	..\clang-ast.cpp \
 	..\data.cpp \
+	..\filesystem_compat.cpp \
 	..\gendlopen.cpp \
 	..\generate.cpp \
 	..\help.cpp \
@@ -16,6 +17,7 @@ CXX_SRCS = \
 	..\parse.cpp \
 	..\parse_options.cpp \
 	..\substitute.cpp \
+	..\symbol_name_lookup.cpp \
 	..\tokenize.cpp \
 	..\utils.cpp
 
@@ -32,6 +34,7 @@ clean:
 $(OUT)\gendlopen.exe: $(OUT)\lex.yy.obj $(OUT)\template.h
 	cd $(OUT)\ && $(CXX) /nologo /MP $(CXXFLAGS) $(CXX_SRCS) /Fe:gendlopen.exe /link lex.yy.obj $(LFLAGS)
 
+# .dirstamp
 $(OUT)\.gitignore:
 	mkdir $(OUT) && echo * > $@
 

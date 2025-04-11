@@ -315,8 +315,8 @@ namespace /* anonymous */
     template<size_t sz_front, size_t sz_mid>
     constexpr seq_t seq(char const (&front)[sz_front], char const (&mid)[sz_mid], char const (&end)[2])
     {
-        /* front must contain at least TYPE */
-        static_assert(sz_front > 1);
+        static_assert(sz_front > 1,
+            "parameter `front' must contain at least TYPE and NUL");
 
         /* strlen(front) + strlen(mid) + strlen(end) */
         constexpr const int len = (sz_front-1) + (sz_mid-1) + 1;
@@ -363,21 +363,50 @@ vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
 }
 
 
-void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
+void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vproto_t &vproto, const std::string &input_name)
 {
+    std::string sym, msg;
+
+    /* parse tokens */
+    if (!parse_tokens(vec_tokens, vproto)) {
+        throw error(input_name + "\nfailed to read prototypes");
+    }
+
+    /* nothing found? */
+    if (vproto.empty()) {
+        throw error("no function or object prototypes found in " + input_name);
+    }
+
+    /* check for multiple definitions of a symbol */
+    if (multiple_definitions(vproto, sym)) {
+        throw error("multiple definitions of symbol `" + sym + "' found in " + input_name);
+    }
+
+    /* parameters */
+    if (m_parameter_names == param::create) {
+        /* create parameter names */
+        for (auto &proto : vproto) {
+            if (!parse::create_names(proto, msg)) {
+                throw error(input_name + '\n' + msg);
+            }
+        }
+    } else {
+        /* param::read or param::skip */
+        for (auto &proto : vproto) {
+            if (!parse::read_and_copy_names(proto, m_parameter_names, msg)) {
+                throw error(input_name + '\n' + msg);
+            }
+        }
+    }
+
+    /* filter and copy symbols */
+
     auto save_symbol = [this] (const proto_t &p)
     {
         if (p.prototype == proto::function) {
             m_prototypes.push_back(p);
         } else {
             m_objects.push_back(p);
-        }
-    };
-
-    auto format = [] (vproto_t &vec) {
-        for (auto &e : vec) {
-            format_prototype(e.type);
-            format_prototype(e.args);
         }
     };
 
@@ -410,62 +439,24 @@ void gendlopen::filter_and_copy_symbols(vproto_t &vproto)
         }
     }
 
-    create_typedefs();
-
-    /* cosmetics */
-    format(m_prototypes);
-    format(m_objects);
-
-    for (auto &e : m_typedefs) {
-        format_prototype(e);
-    }
-}
-
-
-void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vstring_t &options, vproto_t &vproto, const std::string &input_name)
-{
-    std::string sym, msg;
-
-    /* parse `%options' strings */
-    parse_options(options);
-
-    /* parse tokens */
-    if (!parse_tokens(vec_tokens, vproto)) {
-        throw error(input_name + "\nfailed to read prototypes");
-    }
-
-    /* nothing found? */
-    if (vproto.empty()) {
-        throw error("no function or object prototypes found in " + input_name);
-    }
-
-    /* check for multiple definitions of a symbol */
-    if (multiple_definitions(vproto, sym)) {
-        throw error("multiple definitions of symbol `" + sym + "' found in " + input_name);
-    }
-
-    /* parameters */
-    if (m_parameter_names == param::create) {
-        /* create parameter names */
-        for (auto &proto : vproto) {
-            if (!parse::create_names(proto, msg)) {
-                throw error(input_name + '\n' + msg);
-            }
-        }
-    } else {
-        /* read parameter names */
-        for (auto &proto : vproto) {
-            if (!parse::read_and_copy_names(proto, m_parameter_names, msg)) {
-                throw error(input_name + '\n' + msg);
-            }
-        }
-    }
-
-    /* copy */
-    filter_and_copy_symbols(vproto);
-
     /* nothing found? */
     if (m_prototypes.empty() && m_objects.empty()) {
         throw error("no function or object prototypes found in " + input_name);
+    }
+
+    /* cosmetics */
+
+    for (auto &e : m_prototypes) {
+        format_prototype(e.type);
+        format_prototype(e.args);
+    }
+
+    for (auto &e : m_objects) {
+        format_prototype(e.type);
+        format_prototype(e.args);
+    }
+
+    for (auto &e : m_typedefs) {
+        format_prototype(e);
     }
 }
