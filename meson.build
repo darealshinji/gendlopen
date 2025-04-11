@@ -1,7 +1,7 @@
 project('gendlopen', ['c', 'cpp'],
     license : 'MIT',
     default_options : [
-        'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20,gnu++17,c++17,gnu++14,c++14',
+        'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20,gnu++17,c++17,gnu++14,c++14,gnu++11,c++11',
         'buildtype=release'
     ]
 )

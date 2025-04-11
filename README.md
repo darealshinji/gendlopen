@@ -17,7 +17,7 @@ Limitations:
  * auto-loading does not work on functions with variable arguments ²
 
 Dependencies:
- * C++14 compiler (C++20 or newer is recommended)
+ * C++11 compiler (C++20 or newer is recommended)
  * meson or make
 
 ¹ I recommend using your own get/set wrapper functions to auto-load objects<br>

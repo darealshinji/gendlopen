@@ -57,16 +57,16 @@ public:
     const char *opt() const;
     bool has_prefix() const;
 
-    bool get_arg(const char *str, const size_t &len);
-    bool get_noarg(const char *str, const size_t &len);
+    bool get_arg(const char *str, size_t len);
+    bool get_noarg(const char *str, size_t len);
 
     template<size_t N>
-    constexpr bool get_arg(char const (&str)[N]) {
+    bool get_arg(char const (&str)[N]) {
         return get_arg(str, N-1);
     }
 
     template<size_t N>
-    constexpr bool get_noarg(char const (&str)[N]) {
+    bool get_noarg(char const (&str)[N]) {
         return get_noarg(str, N-1);
     }
 

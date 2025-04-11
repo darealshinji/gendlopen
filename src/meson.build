@@ -57,10 +57,10 @@ if cross_compile and (get_option('enable_examples') or get_option('enable_tests'
 
         compiler = meson.get_compiler('cpp', native : true)
 
-        if (compiler.has_argument('-std=c++14'))
-            cpp_std = '-std=c++14'
-        elif (compiler.has_argument('-std:c++14'))
-            cpp_std = '-std:c++14'
+        if (compiler.has_argument('-std=c++11'))
+            cpp_std = '-std=c++11'
+        elif (compiler.has_argument('-std:c++11'))
+            cpp_std = '-std:c++11'
         endif
     endif
 

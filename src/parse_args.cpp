@@ -110,7 +110,7 @@ const char *parse_args::get_prog_name(const char *prog)
 }
 
 /* get argument from an option string */
-bool parse_args::get_arg(const char *str, const size_t &len)
+bool parse_args::get_arg(const char *str, size_t len)
 {
     std::string msg;
     const char *cur = m_argv[m_it] + 1; /* skip prefix */
@@ -160,7 +160,7 @@ bool parse_args::get_arg(const char *str, const size_t &len)
 }
 
 /* option without argument */
-bool parse_args::get_noarg(const char *str, const size_t &len)
+bool parse_args::get_noarg(const char *str, size_t len)
 {
     const char *cur = m_argv[m_it] + 1; /* skip prefix */
 

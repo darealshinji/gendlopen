@@ -37,7 +37,7 @@ namespace templates {
 
 namespace /* anonymous */
 {
-    constexpr int save_data(bool line_directive, const template_t *list)
+    int save_data(bool line_directive, const template_t *list)
     {
         int total_lines = 0;
         int i = 0;
