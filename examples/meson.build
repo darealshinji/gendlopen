@@ -12,7 +12,7 @@ if host_system_win32
     )
 
     executable('uuid', ['uuid_win.c', example_uuid_win_h],
-        dependencies : [dl_dep],
+        dependencies : dl_dep,
         install : false
     )
 else
@@ -26,7 +26,7 @@ else
 
         executable('gtk', ['gtk.c', example_gtk_h],
             dependencies : [dl_dep, gtk_dep],
-            c_args : '-Wno-deprecated-declarations',
+            c_args : wno_deprecated_declarations,
             install : false
         )
     endif
@@ -52,7 +52,7 @@ else
         executable('msgbox', ['msgbox.c', gen_hdrs],
             dependencies : [dl_dep, gtk_dep, x11_dep],
             install : false,
-            c_args : '-Wno-deprecated-declarations',
+            c_args : wno_deprecated_declarations,
             include_directories : include_directories('thirdparty/sdl')
         )
     endif
@@ -104,7 +104,7 @@ else
     )
 
     executable('uuid', ['uuid_nix.c', gen_hdr],
-        dependencies : [dl_dep],
+        dependencies : dl_dep,
         include_directories : include_directories('thirdparty/uuid'),
         install : false
     )

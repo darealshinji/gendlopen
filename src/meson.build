@@ -48,8 +48,8 @@ if cross_compile and (get_option('enable_examples') or get_option('enable_tests'
 
     # disable optimization to speed up build
     if arg_syntax_native == 'msvc'
-        noopt = '-Od'
-        cpp_std = '-std:c++latest'
+        noopt = '/Od'
+        cpp_std = '/std:c++latest'
     else
         if arg_syntax_native == 'gcc'
             noopt = '-O0'
@@ -57,12 +57,11 @@ if cross_compile and (get_option('enable_examples') or get_option('enable_tests'
 
         compiler = meson.get_compiler('cpp', native : true)
 
-        foreach arg : cpp_std_list
-            if (compiler.has_argument(arg))
-                cpp_std = arg
-                break
-            endif
-        endforeach
+        if (compiler.has_argument('-std=c++14'))
+            cpp_std = '-std=c++14'
+        elif (compiler.has_argument('-std:c++14'))
+            cpp_std = '-std:c++14'
+        endif
     endif
 
     gendlopen_aux_bin = executable(

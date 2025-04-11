@@ -7,21 +7,11 @@ project('gendlopen', ['c', 'cpp'],
 )
 
 
-# used by gendlopen_aux_bin
-cpp_std_list = [
-    '-std=gnu++26', '-std=c++26',
-    '-std=gnu++23', '-std=c++23',
-    '-std=gnu++20', '-std=c++20',
-    '-std=gnu++17', '-std=c++17',
-    '-std=gnu++14', '-std=c++14'
-]
-
-
-arg_syntax = meson.get_compiler('cpp').get_argument_syntax()
+compiler          = meson.get_compiler('cpp')
+arg_syntax        = compiler.get_argument_syntax()
 arg_syntax_native = meson.get_compiler('cpp', native : true).get_argument_syntax()
-host_system = host_machine.system()
-dl_dep = []
-cross_compile = false
+host_system       = host_machine.system()
+cross_compile     = false
 host_system_win32 = false
 
 if build_machine.system() != host_system
@@ -36,17 +26,33 @@ elif host_system == 'windows' or host_system == 'cygwin'
     host_system_win32 = true
 endif
 
+wno_deprecated_declarations = []
+dl_dep = []
+gtk_dep = []
+glib_dep = []
+x11_dep = []
+sdl_dep = []
+
 if host_system_win32 == false
     dl_dep = dependency('dl', required: false)
-    gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
-    glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
-    x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
+
+    if get_option('enable_examples')
+        if (compiler.has_argument('-Wno-deprecated-declarations'))
+            wno_deprecated_declarations = '-Wno-deprecated-declarations'
+        endif
+
+        gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
+        glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
+        x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
+    endif
 endif
 
-sdl_dep = dependency('sdl3', required: false)
+if get_option('enable_tests') or get_option('enable_examples')
+    sdl_dep = dependency('sdl3', required: false)
 
-if not sdl_dep.found()
-    sdl_dep = dependency('sdl2', required: false)
+    if not sdl_dep.found()
+        sdl_dep = dependency('sdl2', required: false)
+    endif
 endif
 
 
@@ -56,12 +62,15 @@ subdir('src')
 # try to set standard to C++11
 
 cpp_std = []
-compiler = meson.get_compiler('cpp')
 
-if (compiler.has_argument('-std=c++11'))
-    cpp_std = '-std=c++11'
-elif (compiler.has_argument('-std:c++11'))
-    cpp_std = '-std:c++11'
+if get_option('enable_tests') or get_option('enable_examples')
+    compiler = meson.get_compiler('cpp')
+
+    if (compiler.has_argument('-std=c++11'))
+        cpp_std = '-std=c++11'
+    elif (compiler.has_argument('-std:c++11'))
+        cpp_std = '-std:c++11'
+    endif
 endif
 
 if get_option('enable_examples')
