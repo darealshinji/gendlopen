@@ -129,14 +129,12 @@ cd msvc-wine
 ./install.sh msvc
 cd ..
 
-# set up environment variables
-BIN="$PWD/msvc-wine/msvc/bin/x64" . msvc-wine/msvcenv-native.sh
+# setup clang-cl toolchain
+export CLANGVER=19
+export WINSYSROOT="$PWD/msvc-wine/msvc"
+export PATH="$PWD/cross-files/clang-cl-wrapper:$PATH"
 
-# set your clang version
-CLANGVER=19
-export PATH="$PWD/cross-files/clang-${CLANGVER}-bin:$PATH"
-
-meson setup --cross-file cross-files/x86_64-windows-msvc-clang-${CLANGVER}.ini build
+meson setup --cross-file cross-files/x86_64-windows-msvc-clang.ini build
 meson compile -C build
 ```
 

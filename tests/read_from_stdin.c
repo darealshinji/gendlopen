@@ -13,13 +13,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    const char *exe = argv[1];
+    const char *exe    = argv[1];
     const char *output = argv[2];
-    const char *input = argv[3];
+    const char *input  = argv[3];
     const char *format = "%s -force -o %s - < %s";
-
-    const size_t len = strlen(format) + strlen(exe) + strlen(output) + strlen(input);
-    char *command = malloc(len);
+    const size_t len   = strlen(format) + strlen(exe) + strlen(output) + strlen(input);
+    char *command      = malloc(len);
 
     snprintf(command, len, format, exe, output, input);
 

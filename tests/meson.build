@@ -1,6 +1,12 @@
-test_flags = []
+if arg_syntax == 'msvc'
+    test_overrides = {'cpp_std' : 'c++14'}
+else
+    test_overrides = {'cpp_std' : 'c++11'}
+endif
+
+test_flags      = []
 ld_library_path = []
-test_rpath = '$ORIGIN'
+test_rpath      = '$ORIGIN'
 
 if host_system_win32
     test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
@@ -65,7 +71,7 @@ if sdl_dep.found()
 endif
 
 foreach p : components
-    command = [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+    command = [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
 
     foreach arg : p[4]
         command += arg
@@ -79,8 +85,9 @@ foreach p : components
 
     e = executable(p[1], [p[1]+'.c'+p[0], gen_hdr],
         dependencies : [dl_dep, sdl_dep],
+        override_options : test_overrides,
         c_args : test_flags,
-        cpp_args : [test_flags, cpp_std],
+        cpp_args : test_flags,
         build_rpath : test_rpath,
         install : false)
 
@@ -101,11 +108,12 @@ foreach p : components
         depends : helloworld_lib,
         output : p[0]+'.h',
         input : hw,
-        command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
+        command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
 
     e = executable(p[0], [p[0]+'.cpp', gen_hdr],
         dependencies : [dl_dep, sdl_dep],
-        cpp_args : [test_flags, cpp_std],
+        override_options : test_overrides,
+        cpp_args : test_flags,
         build_rpath : test_rpath,
         install : false)
 
@@ -127,7 +135,7 @@ foreach p : components
         output : [p[0]+'multi_generated.c'+p[1], p[0]+'multi_generated.h'+p[1]],
         input : hw,
         command : [
-            gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT1@', '-format', p[2],
+            gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT1@', '-format', p[2],
             '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
             '-DGDO_ENABLE_AUTOLOAD'
         ]
@@ -135,8 +143,9 @@ foreach p : components
 
     e = executable(p[0]+'multi', [p[0]+'multi.c'+p[1], p[0]+'multi_cb.c'+p[1], p[0]+'multi_call2.c'+p[1], gen_srcs],
         dependencies : dl_dep,
+        override_options : test_overrides,
         c_args : test_flags,
-        cpp_args : [test_flags, cpp_std],
+        cpp_args : test_flags,
         build_rpath : test_rpath,
         install : false
     )
@@ -153,7 +162,7 @@ gen_srcs = custom_target('libhelloworld_generated.c',
     output : ['libhelloworld_generated.c', 'libhelloworld_generated.h'],
     input : hw,
     command : [
-        gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT0@',
+        gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT0@',
         '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
         '-DGDO_ENABLE_AUTOLOAD'
     ]
@@ -180,16 +189,14 @@ test('C fake static library', e, env : ld_library_path)
 
 read_from_stdin = executable('read_from_stdin',
     'read_from_stdin.c',
-    install : false,
-    native : true
+    install : false
 )
 
 gen_hdr = custom_target('c_stdin.h',
     depends : helloworld_lib,
     output : 'c_stdin.h',
-    input : hw,
-    # gendlopen -force -o @OUTPUT@ - < @INPUT@
-    command : [read_from_stdin, gendlopen_aux_bin, '@OUTPUT@', '@INPUT@']
+    input : [hw, gendlopen_bin],
+    command : [read_from_stdin, '@INPUT1@', '@OUTPUT@', '@INPUT0@']
 )
 
 e = executable('c_stdin', ['c_stdin.c', gen_hdr],
@@ -226,12 +233,13 @@ if host_system_win32
         gen_hdr = custom_target(p[0]+'win32_wide.h'+p[1],
             output : p[0]+'win32_wide.h'+p[1],
             input : hw,
-            command : [gendlopen_aux_bin, '@INPUT@', '-format', p[2], '-force', '-o', '@OUTPUT@']
+            command : [gendlopen_bin, '@INPUT@', '-format', p[2], '-force', '-o', '@OUTPUT@']
         )
 
         e = executable(p[0]+'win32_wide', [p[0]+'win32_wide.c'+p[1], gen_hdr],
+            override_options : test_overrides,
             c_args : [c_args, test_flags],
-            cpp_args : [cpp_args, test_flags, cpp_std],
+            cpp_args : [cpp_args, test_flags],
             link_args : link_args,
             install : false
         )

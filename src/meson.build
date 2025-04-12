@@ -40,41 +40,5 @@ gendlopen_bin = executable(
     win_subsystem : 'console'
 )
 
-
-# set up gendlopen as auxilliary tool
-if cross_compile and (get_option('enable_examples') or get_option('enable_tests'))
-    noopt = []
-    cpp_std = []
-
-    # disable optimization to speed up build
-    if arg_syntax_native == 'msvc'
-        noopt = '/Od'
-        cpp_std = '/std:c++latest'
-    else
-        if arg_syntax_native == 'gcc'
-            noopt = '-O0'
-        endif
-
-        compiler = meson.get_compiler('cpp', native : true)
-
-        if (compiler.has_argument('-std=c++11'))
-            cpp_std = '-std=c++11'
-        elif (compiler.has_argument('-std:c++11'))
-            cpp_std = '-std:c++11'
-        endif
-    endif
-
-    gendlopen_aux_bin = executable(
-        'gendlopen_aux',
-        [gendlopen_src, gen_hdr],
-        c_args : noopt,
-        cpp_args : [noopt, cpp_std],
-        win_subsystem : 'console',
-        install : false,
-        native : true
-    )
-else
-    # use host tool
-    gendlopen_aux_bin = gendlopen_bin
-endif
+gendlopen_aux_bin = gendlopen_bin
 

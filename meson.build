@@ -1,9 +1,15 @@
 project('gendlopen', ['c', 'cpp'],
     license : 'MIT',
-    default_options : [
-        'cpp_std=c++latest,gnu++26,c++26,gnu++23,c++23,gnu++20,c++20,gnu++17,c++17,gnu++14,c++14,gnu++11,c++11',
-        'buildtype=release'
-    ]
+    default_options : {
+        'buildtype' : 'release',
+        'cpp_std' :
+            ['gnu++26', 'c++26',
+             'gnu++23', 'c++23',
+             'gnu++20', 'c++20',
+             'gnu++17', 'c++17',
+             'gnu++14', 'c++14',
+             'gnu++11', 'c++11']
+    }
 )
 
 
@@ -27,11 +33,11 @@ elif host_system == 'windows' or host_system == 'cygwin'
 endif
 
 wno_deprecated_declarations = []
-dl_dep = []
-gtk_dep = []
+dl_dep   = []
+gtk_dep  = []
 glib_dep = []
-x11_dep = []
-sdl_dep = []
+x11_dep  = []
+sdl_dep  = []
 
 if host_system_win32 == false
     dl_dep = dependency('dl', required: false)
@@ -58,20 +64,6 @@ endif
 
 subdir('src')
 
-
-# try to set standard to C++11
-
-cpp_std = []
-
-if get_option('enable_tests') or get_option('enable_examples')
-    compiler = meson.get_compiler('cpp')
-
-    if (compiler.has_argument('-std=c++11'))
-        cpp_std = '-std=c++11'
-    elif (compiler.has_argument('-std:c++11'))
-        cpp_std = '-std:c++11'
-    endif
-endif
 
 if get_option('enable_examples')
     subdir('examples')

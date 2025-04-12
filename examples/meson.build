@@ -4,7 +4,7 @@ if host_system_win32
         output : 'example_uuid_win.h',
         input : 'uuid_win_ast.txt',
         command : [
-            gendlopen_aux_bin, '@INPUT@',
+            gendlopen_bin, '@INPUT@',
             '-force', '-o', '@OUTPUT@',
             '-library=rpcrt4.dll',
             '-SUuidCreate', '-SUuidToStringA', '-SRpcStringFreeA'
@@ -21,7 +21,7 @@ else
         example_gtk_h = custom_target('example_gtk.h',
             output : 'example_gtk.h',
             input : 'gtk.txt',
-            command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+            command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
         )
 
         executable('gtk', ['gtk.c', example_gtk_h],
@@ -45,7 +45,7 @@ else
             gen_hdrs += custom_target(dep[0],
                 output : dep[0],
                 input : dep[1],
-                command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+                command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
             )
         endforeach
 
@@ -62,7 +62,7 @@ else
         gen_hdr = custom_target('example_hook.h',
             output : 'example_hook.h',
             input : 'hook_glib.txt',
-            command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+            command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
         )
 
         executable('hook', ['hook.c', gen_hdr],
@@ -81,7 +81,7 @@ else
             gen_hdrs += custom_target(dep[0],
                 output : dep[0],
                 input : dep[1],
-                command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+                command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
             )
         endforeach
 
@@ -97,7 +97,7 @@ else
         output : 'example_uuid_nix.h',
         input : 'uuid_nix_ast.txt',
         command : [
-            gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@',
+            gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@',
             '-library=api:1:uuid',
             '-Suuid_generate_random', '-Suuid_is_null', '-Suuid_unparse_lower'
         ]
