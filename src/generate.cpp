@@ -52,7 +52,7 @@ cio::ofstream ofs;
 
 
 /* print note */
-int note(bool print_date)
+size_t note(bool print_date)
 {
     std::stringstream strm;
 
@@ -86,7 +86,7 @@ int note(bool print_date)
 
 
 /* extra defines */
-int extra_defines(const std::string &defs)
+size_t extra_defines(const std::string &defs)
 {
     if (defs.empty()) {
         return 0;
@@ -100,7 +100,7 @@ int extra_defines(const std::string &defs)
 }
 
 /* typedefs for function pointers */
-int typedefs(const vstring_t &tdefs)
+size_t typedefs(const vstring_t &tdefs)
 {
     if (tdefs.empty()) {
         return 0;
@@ -119,7 +119,7 @@ int typedefs(const vstring_t &tdefs)
 }
 
 /* extra includes */
-int includes(const vstring_t &incs, bool is_cxx)
+size_t includes(const vstring_t &incs, bool is_cxx)
 {
     std::string str = "/* extra headers */\n";
 
@@ -141,7 +141,7 @@ int includes(const vstring_t &incs, bool is_cxx)
     return utils::count_linefeed(str);
 }
 
-int header_guard_begin(const std::string &header_guard, bool is_cxx)
+size_t header_guard_begin(const std::string &header_guard, bool is_cxx)
 {
     std::string str;
 

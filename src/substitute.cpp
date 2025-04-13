@@ -307,9 +307,9 @@ size_t gendlopen::substitute_line(const template_t &line, size_t &templ_lineno, 
     int has_sym = 0;
 
     /* print #line directive to make sure the line count is on par */
-    auto print_lineno = [&, this] () -> int
+    auto print_lineno = [&, this] () -> size_t
     {
-        const int entry_lines = utils::count_linefeed(buf);
+        const size_t entry_lines = utils::count_linefeed(buf);
 
         if (m_line_directive) {
             save::ofs << "#line " << (templ_lineno + entry_lines) << '\n';
