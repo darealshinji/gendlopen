@@ -1,4 +1,4 @@
-#ifdef _MSC_VER
+#if defined(_WIN32) && defined(_MSC_VER)
 # define _CRT_SECURE_NO_WARNINGS
 # define _CRT_NONSTDC_NO_WARNINGS
 #endif
@@ -21,9 +21,20 @@ int main(int argc, char **argv)
     char *command      = malloc(len);
 
     snprintf(command, len, format, exe, output, input);
+    //printf("command: %s\n", command);
+
+#ifdef _WIN32
+    /* command may not work as expected with Unix-style path separators */
+    for (char *p = command; *p != 0; p++) {
+        if (*p == '/') {
+            *p = '\\';
+        }
+    }
+#endif
 
     int rv = system(command);
     free(command);
 
     return rv;
 }
+

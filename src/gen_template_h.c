@@ -71,7 +71,9 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
         total_line_count++;
     }
 
-    while ((c = fgetc(fp)) != EOF)
+#define READ_NEXT() (c = fgetc(fp))
+
+    while (READ_NEXT() != EOF)
     {
         if (new_line) {
             fprintf(fpOut, "%s", "  { \"");
@@ -95,6 +97,14 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
             percent = 1;
             break;
 
+        case '\r':
+            /* ignore \r in line endings */
+            if (READ_NEXT() != '\n') {
+                ungetc(c, fp);
+                break;
+            }
+            /* FALLTHROUGH */
+
         case '\n':
             count++;
             fprintf(fpOut, "\", %s, %zd },\n", true_false[percent], count);
@@ -106,7 +116,14 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
 
         case '@':
             /* concatenate lines ending on »@\n« */
-            if ((c = fgetc(fp)) == '\n' || c == EOF) {
+            if (READ_NEXT() == '\r' && READ_NEXT() != '\n') {
+                /* not a »\r\n« line ending */
+                fprintf(fpOut, "%s", "@\r");
+                ungetc(c, fp);
+                break;
+            }
+
+            if (c == '\n' || c == EOF) {
                 if (!multi_line) {
                     fprintf(fpOut, "%s", "\\n\" /* multiline entry */\n");
                     multi_line = true;
