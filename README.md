@@ -15,6 +15,7 @@ Features:
 Limitations:
  * auto-loading only works on functions ¹
  * auto-loading does not work on functions with variable arguments ²
+ * any type declaration more complicated than a function pointer will not be recognized (use a typedef)
 
 Dependencies:
  * C++11 compiler (C++20 or newer is recommended)
@@ -137,6 +138,3 @@ export PATH="$PWD/cross-files/clang-cl-wrapper:$PATH"
 meson setup --cross-file cross-files/x86_64-windows-msvc-clang.ini build
 meson compile -C build
 ```
-
-There are also simple Makefiles for nmake and POSIX make located in the `src` directory.
-
