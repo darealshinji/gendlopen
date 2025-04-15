@@ -26,42 +26,6 @@
 #include <string.h>
 #include "parse_args.hpp"
 
-#if defined(__GLIBC__)
-/* <features.h> is a Glibc header that defines __GLIBC__ and
- * will be automatically included with standard headers if present */
-# ifndef HAVE_PROGRAM_INVOCATION_NAME
-#  define HAVE_PROGRAM_INVOCATION_NAME
-# endif
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-      defined(__DragonFly__) || defined(__APPLE__)
-# ifndef HAVE_GETPROGNAME
-#  define HAVE_GETPROGNAME
-# endif
-#elif defined(__MINGW32__)
-/* std::filesystem will throw an exception if the path
- * contains non-ASCII characters */
-# include <libgen.h>
-#else
-# include <filesystem>
-#endif
-
-
-parse_args::parse_args(const int &argc, char ** const &argv)
-: m_argc(argc), m_argv(argv)
-{}
-
-parse_args::~parse_args()
-{}
-
-/* get current argument */
-const char *parse_args::current() const {
-    return (m_it < m_argc) ? m_argv[m_it] : NULL;
-}
-
-/* return option string (may be NULL) */
-const char *parse_args::opt() const {
-    return m_opt;
-}
 
 /* whether argument has a prefix */
 bool parse_args::has_prefix() const
@@ -87,26 +51,6 @@ const char *parse_args::next()
     }
 
     return current();
-}
-
-/* get program name without full path */
-const char *parse_args::get_prog_name(const char *prog)
-{
-#ifdef HAVE_PROGRAM_INVOCATION_NAME
-    (void)prog;
-    return program_invocation_short_name; /* GNU */
-#elif defined(HAVE_GETPROGNAME)
-    (void)prog;
-    return getprogname(); /* BSD */
-#elif defined(__MINGW32__)
-    static std::string buf = prog;
-    char *ptr = const_cast<char *>(buf.data());
-    return basename(ptr);
-#else
-    auto f = std::filesystem::path(prog).filename();
-    static std::string buf = f.string();
-    return f.empty() ? prog : buf.c_str();
-#endif
 }
 
 /* get argument from an option string */

@@ -49,12 +49,24 @@ private:
 
 public:
 
-    parse_args(const int &argc, char ** const &argv);
-    ~parse_args();
+    parse_args(const int &argc, char ** const &argv)
+    : m_argc(argc), m_argv(argv)
+    {}
 
-    const char *current() const;
+    ~parse_args()
+    {}
+
+    /* get current argument */
+    const char *current() const {
+        return (m_it < m_argc) ? m_argv[m_it] : NULL;
+    }
+
+    /* return option string (may be NULL) */
+    const char *opt() const {
+        return m_opt;
+    }
+
     const char *next();
-    const char *opt() const;
     bool has_prefix() const;
 
     bool get_arg(const char *str, size_t len);
@@ -70,6 +82,5 @@ public:
         return get_noarg(str, N-1);
     }
 
-    static const char *get_prog_name(const char *prog);
 };
 

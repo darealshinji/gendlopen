@@ -33,6 +33,13 @@
 namespace cio { class ofstream; }
 
 
+namespace help
+{
+    void print(const char *prog);
+    void print_full(const char *prog);
+}
+
+
 namespace save
 {
     /* global output file stream; defaults to STDOUT */
