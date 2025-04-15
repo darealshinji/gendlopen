@@ -226,7 +226,6 @@ void gendlopen::generate()
     vtemplate_t header_data, body_data;
     size_t lines = 0;
     bool is_cxx = false;
-    bool is_minimal = false;
 
     /************* lambda functions *************/
 
@@ -237,7 +236,7 @@ void gendlopen::generate()
         }
     };
 
-    auto HEADER_NOTE_AND_LICENSE = [&, this] () {
+    auto NOTE_AND_LICENSE = [&, this] () {
         lines += save::note(m_print_date);
         lines += data::license(m_line_directive);
     };
@@ -265,11 +264,6 @@ void gendlopen::generate()
         lines += save::extra_defines(m_defines);
         lines += save::includes(m_includes, is_cxx);
         lines += save::typedefs(m_typedefs);
-
-        /* minimal/plugin headers don't need this */
-        if (!is_minimal && m_format != output::plugin) {
-            lines += save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
-        }
     };
 
     auto HEADER_TEMPLATE_DATA = [&] () {
@@ -278,18 +272,15 @@ void gendlopen::generate()
 
     auto HEADER_GUARD_END = [&] () {
         print_lineno();
+        /* no more line counting needed from here on */
         save::header_guard_end(header_guard, is_cxx);
     };
 
-    auto BODY_NOTE_AND_LICENSE = [&, this] () {
-        save::note(m_print_date);
-        data::license(m_line_directive);
-    };
-
-    auto BODY_INCLUDE_HEADER = [&, this] () {
+    auto BODY_GENERATED_DATA = [&, this] () {
         save::ofs << '\n';
         save::ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
-        save::ofs << "#include \"" << header_name << "\"\n\n";
+        save::ofs << "#include \"" << header_name << "\"\n";
+        save::ofs << '\n';
     };
 
     auto BODY_TEMPLATE_DATA = [&] () {
@@ -314,7 +305,6 @@ void gendlopen::generate()
     switch (m_format)
     {
     case output::c:
-    case output::plugin:
         break;
 
     case output::cxx:
@@ -323,13 +313,14 @@ void gendlopen::generate()
 
     case output::minimal:
         m_separate = false;
-        is_minimal = true;
         break;
 
     case output::minimal_cxx:
-        is_cxx = true;
         m_separate = false;
-        is_minimal = true;
+        is_cxx = true;
+        break;
+
+    case output::plugin:
         break;
 
     [[unlikely]] case output::error:
@@ -343,13 +334,8 @@ void gendlopen::generate()
 
     /* rename file extensions only if we save into separate files */
     if (m_separate) {
-        if (is_cxx) {
-            fs::replace_extension(ofhdr, ".hpp");
-            fs::replace_extension(ofbody, ".cpp");
-        } else {
-            fs::replace_extension(ofhdr, ".h");
-            fs::replace_extension(ofbody, ".c");
-        }
+        fs::replace_extension(ofhdr, is_cxx ? ".hpp" : "h");
+        fs::replace_extension(ofbody, is_cxx ? ".cpp" : "c");
     }
 
     /* create header filename */
@@ -378,7 +364,7 @@ void gendlopen::generate()
     /*************** header data ***************/
     open_ofstream(ofhdr);
 
-    HEADER_NOTE_AND_LICENSE();
+    NOTE_AND_LICENSE();
     HEADER_GUARD_BEGIN();
 
     HEADER_FILENAME_MACROS();
@@ -395,12 +381,9 @@ void gendlopen::generate()
     if (!body_data.empty()) {
         open_ofstream(ofbody);
 
-        BODY_NOTE_AND_LICENSE();
-        BODY_INCLUDE_HEADER();
-
+        NOTE_AND_LICENSE();
+        BODY_GENERATED_DATA();
         BODY_TEMPLATE_DATA();
-
-        save::ofs.close();
     }
 }
 

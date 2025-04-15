@@ -102,14 +102,13 @@ size_t save::symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_
     }
 
     /* GDO_CHECK_SYMBOL_NAME */
-    str = "/* symbol name check */\n"
-          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(SYM) \\\n";
+    str = "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(SYM) \\\n";
 
     /* only 1 symbol */
     if (symbols.size() == 1) {
         str += "  if (SYM != NULL && strcmp(SYM, \"" + symbols.at(0) + "\") == 0) { \\\n"
                "    goto " + pfx_upper + "_JUMP_" + symbols.at(0) + "; \\\n"
-               "  }\n\n";
+               "  }\n";
 
         save::ofs << str;
 
@@ -189,7 +188,7 @@ size_t save::symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_
     str += "    default: \\\n"
            "      break; \\\n"
            "    } \\\n"
-           "  }\n\n";
+           "  }\n";
 
     save::ofs << str;
 

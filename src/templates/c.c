@@ -95,6 +95,10 @@ GDO_INLINE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
     GDO_ATTR (nonnull (1, 2));
 
 
+/* GDO_CHECK_SYMBOL_NAME */
+%DEFINE_MACRO_CHECK_SYMBOL_NAME%
+
+
 
 /*****************************************************************************/
 /*                                save error                                 */

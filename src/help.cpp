@@ -88,10 +88,9 @@ namespace help
             "    Comments are ignored, line-breaks are treated as spaces.\n"
             "    Any other code will throw an error.\n"
             "\n"
-            /* see gendlopen::parse_options() in tokenize.cpp */
             "    Some options can be set on a line beginning with `%option':\n"
             "    %option format=<string> prefix=<string> library=[<mode>:]<lib>\n"
-            "    %option include=[nq:]<file> define=<string> param=[skip|create]\n"
+            "    %option include=[nq:]<file> define=<string> param=[skip|create|read]\n"
             "    %option no-date no-pragma-once line\n"
             "\n"
             "    See the corresponding command line options for details.\n"
@@ -175,6 +174,11 @@ namespace help
             "    It's the other way around if `-param=skip' was not passed.\n"
             "    A line `%PARAM_SKIP_END%' will reset everything to default. This is used to\n"
             "    skip code that would otherwise require parameter names.\n"
+            "\n"
+            "    A line with the content `%DEFINE_MACRO_CHECK_SYMBOL_NAME%' will be replaced\n"
+            "    with a definition of the macro `GDO_CHECK_SYMBOL_NAME(<symbol>)' which will do\n"
+            "    a slightly optimized lookup of a given symbol name. If `<symbol>' was found\n"
+            "    it will jump to the label `GDO_JUMP_<symbol>'.\n"
             "\n"
 
 
