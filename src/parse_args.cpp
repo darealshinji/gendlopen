@@ -27,19 +27,20 @@
 #include "parse_args.hpp"
 
 
-/* whether argument has a prefix */
+/* whether argument has a prefix;
+ * don't count "-" (and "/" on win32) as prefixed */
 bool parse_args::has_prefix() const
 {
     if (m_it >= m_argc) {
         return false;
     }
 
-    char c = m_argv[m_it][0];
+    const char *p = m_argv[m_it];
 
 #ifdef _WIN32
-    return (c == '-' || c == '/');
+    return ((p[0] == '-' || p[0] == '/') && p[1] != 0);
 #else
-    return (c == '-');
+    return (p[0] == '-' && p[1] != 0);
 #endif
 }
 

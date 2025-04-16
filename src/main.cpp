@@ -99,8 +99,8 @@ namespace
 
         /* parse arguments */
         for (cur = a.begin(); cur != NULL; cur = a.next()) {
-            /* non-option argument --> input */
-            if (!a.has_prefix() || strcmp(cur, "-") == 0) {
+            /* use first non-option argument (including "-") as input */
+            if (!a.has_prefix()) {
                 if (!input) {
                     input = cur;
                 } else {
