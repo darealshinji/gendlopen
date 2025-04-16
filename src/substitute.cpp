@@ -353,11 +353,6 @@ size_t gendlopen::substitute_line(const template_t &line, size_t &templ_lineno, 
         return 0;
     }
 
-    /* generate "GDO_CHECK_SYMBOL_NAME()" macro */
-    if (line.maybe_keyword && strcmp(line.data, "%DEFINE_MACRO_CHECK_SYMBOL_NAME%") == 0) {
-        return save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
-    }
-
     buf = line.data;
 
 #define NOTALNUM "[^a-zA-Z0-9_]"

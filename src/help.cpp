@@ -175,11 +175,6 @@ namespace help
             "    A line `%PARAM_SKIP_END%' will reset everything to default. This is used to\n"
             "    skip code that would otherwise require parameter names.\n"
             "\n"
-            "    A line with the content `%DEFINE_MACRO_CHECK_SYMBOL_NAME%' will be replaced\n"
-            "    with a definition of the macro `GDO_CHECK_SYMBOL_NAME(<symbol>)' which will do\n"
-            "    a slightly optimized lookup of a given symbol name. If `<symbol>' was found\n"
-            "    it will jump to the label `GDO_JUMP_<symbol>'.\n"
-            "\n"
 
 
             "  -library=[<mode>:]<lib>\n"

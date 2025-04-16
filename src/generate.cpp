@@ -226,6 +226,8 @@ void gendlopen::generate()
     vtemplate_t header_data, body_data;
     size_t lines = 0;
     bool is_cxx = false;
+    bool gen_macro_header = false;
+    bool gen_macro_body = false;
 
     /************* lambda functions *************/
 
@@ -264,6 +266,10 @@ void gendlopen::generate()
         lines += save::extra_defines(m_defines);
         lines += save::includes(m_includes, is_cxx);
         lines += save::typedefs(m_typedefs);
+
+        if (gen_macro_header) {
+            lines += save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
+        }
     };
 
     auto HEADER_TEMPLATE_DATA = [&] () {
@@ -281,6 +287,10 @@ void gendlopen::generate()
         save::ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
         save::ofs << "#include \"" << header_name << "\"\n";
         save::ofs << '\n';
+
+        if (gen_macro_body) {
+            save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
+        }
     };
 
     auto BODY_TEMPLATE_DATA = [&] () {
@@ -305,9 +315,15 @@ void gendlopen::generate()
     switch (m_format)
     {
     case output::c:
+        if (m_separate) {
+            gen_macro_body = true;
+        } else {
+            gen_macro_header = true;
+        }
         break;
 
     case output::cxx:
+        gen_macro_header = true;
         is_cxx = true;
         break;
 

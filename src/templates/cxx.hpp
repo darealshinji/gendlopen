@@ -258,9 +258,6 @@ GDO_HOOK_<function>(...)
 #endif
 
 
-/* GDO_CHECK_SYMBOL_NAME */
-%DEFINE_MACRO_CHECK_SYMBOL_NAME%
-
 
 /* enumeration values for `load_symbol()' method */
 enum {
