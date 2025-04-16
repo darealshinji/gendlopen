@@ -27,8 +27,11 @@
 #else
 # include <strings.h>
 #endif
+#ifdef __MINGW32__
+# include <libgen.h>
+#endif
+#include <stdlib.h>
 #include <string.h>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
@@ -36,17 +39,12 @@
 #include "parse_args.hpp"
 #include "types.hpp"
 
-#if defined(__GLIBC__)
-/* <features.h> is a Glibc header that defines __GLIBC__ and
- * will be automatically included with standard headers if present */
-# ifndef HAVE_PROGRAM_INVOCATION_NAME
-#  define HAVE_PROGRAM_INVOCATION_NAME
-# endif
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-      defined(__DragonFly__) || defined(__APPLE__)
-# ifndef HAVE_GETPROGNAME
-#  define HAVE_GETPROGNAME
-# endif
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || \
+    defined(__DragonFly__) || defined(__APPLE__) || defined(LIBBSD_OVERLAY)
+# define HAVE_GETPROGNAME
+#endif
+#if !defined(HAVE_GETPROGNAME) && !defined(__GLIBC__)
+# define SAVE_ARGV0
 #endif
 
 
@@ -54,28 +52,26 @@
 /* anonymous */
 namespace
 {
-    /* get program name without full path */
-    const char *get_prog_name(const char *prog)
-    {
-#ifdef HAVE_PROGRAM_INVOCATION_NAME
-        (void)prog;
-        return program_invocation_short_name; /* GNU */
-#elif defined(HAVE_GETPROGNAME)
-        (void)prog;
-        return getprogname(); /* BSD */
-#else
-        static std::string buf;
-# ifdef MINGW32_NEED_CONVERT_FILENAME
-        buf = fs::filename(fs::convert_filename(prog));
-# else
-        buf = fs::filename(prog);
-# endif
-        return buf.c_str();
-    }
+#ifdef SAVE_ARGV0
+    std::string argv0;
 #endif
 
+    /* get program name without full path */
+    std::string get_prog_name()
+    {
+#ifdef HAVE_GETPROGNAME
+        return getprogname();
+#elif defined(__GLIBC__)
+        return program_invocation_short_name;
+#elif defined(__MINGW32__)
+        return basename(const_cast<char *>(argv0.data()));
+#else
+        return fs::filename(argv0);
+#endif
+    }
+
     /* -param=... */
-    void set_parameter_names(gendlopen &gdo, const char *prog, const char *opt, char optpfx)
+    void set_parameter_names(gendlopen &gdo, const char *opt, char optpfx)
     {
         if (strcasecmp(opt, "skip") == 0) {
             gdo.parameter_names(param::skip);
@@ -96,14 +92,13 @@ namespace
     void parse_arguments(gendlopen &gdo, const int &argc, char ** const &argv)
     {
         std::string lib_a, lib_w;
-        const char *prog = get_prog_name(argv[0]);
         const char *input = NULL;
         const char *cur = NULL;
 
         parse_args a(argc, argv);
 
         /* parse arguments */
-        for (cur = a.current(); cur != NULL; cur = a.next()) {
+        for (cur = a.begin(); cur != NULL; cur = a.next()) {
             /* non-option argument --> input */
             if (!a.has_prefix() || strcmp(cur, "-") == 0) {
                 if (!input) {
@@ -114,21 +109,18 @@ namespace
                 continue;
             }
 
-            /* skip prefix */
-            cur++;
-
-            switch(*cur)
+            switch(*(cur+1)) /* skip prefix */
             {
             case '?':
                 if ( a.get_noarg("?") ) {
-                    help::print(prog);
+                    help::print(get_prog_name());
                     std::exit(0);
                 }
                 break;
 
             case 'h':
                 if ( a.get_noarg("help") ) {
-                    help::print(prog);
+                    help::print(get_prog_name());
                     std::exit(0);
                 }
                 break;
@@ -141,7 +133,7 @@ namespace
                     gdo.force(true);
                     continue;
                 } else if ( a.get_noarg("full-help") ) {
-                    help::print_full(prog);
+                    help::print_full(get_prog_name());
                     std::exit(0);
                 }
                 break;
@@ -216,7 +208,7 @@ namespace
                     gdo.prefix(a.opt());
                     continue;
                 } else if ( a.get_arg("param") ) {
-                    set_parameter_names(gdo, prog, a.opt(), a.current()[0]);
+                    set_parameter_names(gdo, a.opt(), *cur);
                     continue;
                 } else if ( a.get_noarg("print-symbols") ) {
                     gdo.print_symbols(true);
@@ -247,8 +239,8 @@ namespace
 
             case '-':
                 /* let's support a help option with two dashes too */
-                if (strcmp(a.current(), "--help") == 0) {
-                    help::print(prog);
+                if (strcmp(cur, "--help") == 0) {
+                    help::print(get_prog_name());
                     std::exit(0);
                 }
                 break;
@@ -257,7 +249,7 @@ namespace
                 break;
             }
 
-            throw parse_args::error(std::string("unknown option: ") + a.current());
+            throw parse_args::error(std::string("unknown option: ") + cur);
         }
 
         /* input is required */
@@ -274,6 +266,10 @@ namespace
 int main(int argc, char **argv)
 {
     gendlopen gdo;
+
+#ifdef SAVE_ARGV0
+    argv0 = argv[0];
+#endif
 
     try {
         parse_arguments(gdo, argc, argv);
@@ -297,12 +293,12 @@ int main(int argc, char **argv)
         gdo.generate();
     }
     catch (const parse_args::error &e) {
-        std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
+        std::cerr << get_prog_name() << ": error: " << e.what() << std::endl;
         std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
         return 1;
     }
     catch (const gendlopen::error &e) {
-        std::cerr << get_prog_name(argv[0]) << ": error: " << e.what() << std::endl;
+        std::cerr << get_prog_name() << ": error: " << e.what() << std::endl;
         return 1;
     }
 

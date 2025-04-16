@@ -56,9 +56,9 @@ public:
     ~parse_args()
     {}
 
-    /* get current argument */
-    const char *current() const {
-        return (m_it < m_argc) ? m_argv[m_it] : NULL;
+    /* get first argument (argv[1]) */
+    const char *begin() const {
+        return (m_argc > 1) ? m_argv[1] : NULL;
     }
 
     /* return option string (may be NULL) */

@@ -35,8 +35,8 @@ namespace cio { class ofstream; }
 
 namespace help
 {
-    void print(const char *prog);
-    void print_full(const char *prog);
+    void print(const std::string &prog);
+    void print_full(const std::string &prog);
 }
 
 

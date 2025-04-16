@@ -50,7 +50,7 @@ const char *parse_args::next()
         m_it++;
     }
 
-    return current();
+    return (m_it < m_argc) ? m_argv[m_it] : NULL;
 }
 
 /* get argument from an option string */
