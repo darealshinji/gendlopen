@@ -98,8 +98,9 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
             break;
 
         case '\r':
-            /* ignore \r in line endings */
+            /* ignore \r only in line endings */
             if (READ_NEXT() != '\n') {
+                fprintf(fpOut, "%s", "\\r");
                 ungetc(c, fp);
                 break;
             }
