@@ -11,7 +11,7 @@
 # include <windows.h>
 #else
 /* <features.h> is a Glibc header that defines __GLIBC__
- * and will be automatically included with <stdio.h> if present */
+ * and will be automatically included with a system header if present */
 # include <stdio.h>
 #endif
 

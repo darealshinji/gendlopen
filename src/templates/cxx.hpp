@@ -863,9 +863,11 @@ public:
         {
         /* %%symbol%% */@
         case GDO_LOAD_%%symbol%%:@
-            ptr::%%symbol%% =@
-                sym_load<%%sym_type%%>@
-                    ("%%symbol%%");@
+            if (!ptr::%%symbol%%) {@
+                ptr::%%symbol%% =@
+                    sym_load<%%sym_type%%>@
+                        ("%%symbol%%");@
+            }@
             return (ptr::%%symbol%% != nullptr);@
 
         default:
@@ -913,9 +915,11 @@ public:
 @
         /* %%symbol%% */@
     GDO_JUMP_%%symbol%%:@
-        ptr::%%symbol%% =@
-            sym_load<%%sym_type%%>@
-                ("%%symbol%%");@
+        if (!ptr::%%symbol%%) {@
+            ptr::%%symbol%% =@
+                sym_load<%%sym_type%%>@
+                    ("%%symbol%%");@
+        }@
         return (ptr::%%symbol%% != nullptr);
     }
 

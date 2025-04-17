@@ -28,6 +28,7 @@ bool               gdo_load_lib_name_and_symbols (const gdo_char_t *filename);
 bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
 
 bool               gdo_lib_is_loaded ();
+int                gdo_lib_flags ();
 bool               gdo_free_lib ();
 
 bool               gdo_all_symbols_loaded ();
@@ -80,6 +81,12 @@ bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespac
 bool gdo_lib_is_loaded ();
 
     Returns true if the library was successfully loaded.
+
+
+int gdo_lib_flags ();
+
+    Returns the flags used to load the library, which is the last time gdo_load_lib_args()
+    was invoked directly or indirectly.
 
 
 bool gdo_free_lib ();
@@ -271,6 +278,7 @@ typedef struct gdo_handle
     void *handle;
 #endif
 
+    int flags;
     bool call_free_lib_is_registered;
     gdo_char_t buf[8*1024];
 
@@ -294,6 +302,7 @@ GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
 GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
 
 GDO_DECL bool gdo_lib_is_loaded(void);
+GDO_DECL int  gdo_lib_flags(void);
 GDO_DECL bool gdo_free_lib(void);
 
 GDO_DECL bool gdo_all_symbols_loaded(void);

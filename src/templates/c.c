@@ -335,6 +335,8 @@ GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new
     gdo_hndl.handle = dlopen(filename, flags);
 
 #endif //!GDO_WINAPI
+
+    gdo_hndl.flags = flags;
 }
 
 /* If registered with atexit() this function will be called at
@@ -379,7 +381,18 @@ GDO_LINKAGE bool gdo_lib_is_loaded(void)
 
 
 /*****************************************************************************/
-/*          Free the library handle and set pointers to NULL                 */
+/*                 return the flags used to load the library                 */
+/*****************************************************************************/
+GDO_LINKAGE int gdo_lib_flags(void)
+{
+    return gdo_hndl.flags;
+}
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+/*             free the library handle and set pointers to NULL              */
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_free_lib(void)
 {
@@ -546,9 +559,11 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
     {
     /* %%symbol%% */@
     case GDO_LOAD_%%symbol%%:@
-        gdo_hndl.ptr.%%symbol%% =@
-            (%%sym_type%%)@
-                gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+        if (!gdo_hndl.ptr.%%symbol%%) {@
+            gdo_hndl.ptr.%%symbol%% =@
+                (%%sym_type%%)@
+                    gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+        }@
         return (gdo_hndl.ptr.%%symbol%% != NULL);@
 
     default:
@@ -604,9 +619,11 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
 @
     /* %%symbol%% */@
 GDO_JUMP_%%symbol%%:@
-    gdo_hndl.ptr.%%symbol%% =@
-        (%%sym_type%%)@
-            gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+    if (!gdo_hndl.ptr.%%symbol%%) {@
+        gdo_hndl.ptr.%%symbol%% =@
+            (%%sym_type%%)@
+                gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+    }@
     return (gdo_hndl.ptr.%%symbol%% != NULL);
 }
 /*****************************************************************************/
@@ -827,9 +844,8 @@ GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 #else
     (GDO_UNUSED_REF) symbol_num;
 
-    /* return immediately if everything is already loaded,
-     * otherwise load library + all symbols */
-    if (gdo_all_symbols_loaded() || gdo_load_lib_and_symbols()) {
+    /* load library + all symbols */
+    if (gdo_load_lib_and_symbols()) {
         return;
     }
 #endif
