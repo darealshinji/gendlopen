@@ -27,11 +27,17 @@
 #else
 # include <strings.h>
 #endif
-#ifdef __MINGW32__
-# include <libgen.h>
-#endif
-#include <stdlib.h>
 #include <string.h>
+
+#ifdef HAVE_LIBGEN_H
+# include <libgen.h>  /* basename */
+#endif
+
+/* <features.h> is a Glibc header that defines __GLIBC__
+ * and will be automatically included with a system header if present */
+#include <errno.h>  /* program_invocation_short_name */
+
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
@@ -39,10 +45,6 @@
 #include "parse_args.hpp"
 #include "types.hpp"
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || \
-    defined(__DragonFly__) || defined(__APPLE__) || defined(LIBBSD_OVERLAY)
-# define HAVE_GETPROGNAME
-#endif
 #if !defined(HAVE_GETPROGNAME) && !defined(__GLIBC__)
 # define SAVE_ARGV0
 #endif
@@ -60,11 +62,18 @@ namespace
     std::string get_prog_name()
     {
 #ifdef HAVE_GETPROGNAME
-        return getprogname();
+        return getprogname(); /* BSD */
+
 #elif defined(__GLIBC__)
-        return program_invocation_short_name;
-#elif defined(__MINGW32__)
+        return program_invocation_short_name; /* GNU */
+
+#elif defined(HAVE_BASENAME)
         return basename(const_cast<char *>(argv0.data()));
+
+#elif defined(MINGW32_NEED_CONVERT_FILENAME)
+        /* see filesystem_compat.cpp */
+        return fs::filename(fs::convert_filename(argv0));
+
 #else
         return fs::filename(argv0);
 #endif

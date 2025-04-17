@@ -22,8 +22,10 @@
  SOFTWARE.
 **/
 
+#include <stddef.h>
 #include <algorithm>
 #include <string>
+#include <vector>
 #include "cio_ofstream.hpp"
 #include "gendlopen.hpp"
 #include "types.hpp"

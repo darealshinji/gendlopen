@@ -23,7 +23,6 @@
 **/
 
 #include <ctype.h>
-#include <stddef.h>
 #include <vector>
 #include "utils.hpp"
 

@@ -22,23 +22,28 @@
  SOFTWARE.
 **/
 
-#ifdef __cpp_lib_filesystem
-# include <filesystem>
-#else
-# include <sys/types.h>
-# include <sys/stat.h>
-# ifndef _WIN32
-#  include <unistd.h>
-# endif
-#endif
-#include <string>
-#include "types.hpp"
+#pragma once
 
+#include <filesystem>
+#include <string>
 
 #if defined(__cpp_lib_filesystem) && defined(__MINGW32__)
 # define MINGW32_NEED_CONVERT_FILENAME
-//# warning MINGW32_NEED_CONVERT_FILENAME
 #endif
+
+#if !defined(__cpp_lib_filesystem)
+# ifdef _WIN32
+#  include <io.h>
+#  include <stdio.h>
+# else
+#  include <unistd.h>
+# endif
+# include <sys/types.h>
+# include <sys/stat.h>
+#endif
+
+#include "types.hpp"
+
 
 
 namespace fs
@@ -73,7 +78,7 @@ namespace fs
 
     std::string filename(const std::string &path);
 
-    void replace_extension(std::string &path, const std::string &ext);
+    void replace_extension(std::string &path, std::string ext);
 
 #ifdef _WIN32
 

@@ -12,6 +12,12 @@ project('gendlopen', ['c', 'cpp'],
     }
 )
 
+wno_deprecated_declarations = []
+dl_dep   = []
+gtk_dep  = []
+glib_dep = []
+x11_dep  = []
+sdl_dep  = []
 
 compiler          = meson.get_compiler('cpp')
 arg_syntax        = compiler.get_argument_syntax()
@@ -25,19 +31,23 @@ if build_machine.system() != host_system
 endif
 
 if host_system == 'linux' or host_system == 'gnu'
-    # needed for tests and examples, but setting it globally doesn't hurt
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_system == 'windows' or host_system == 'cygwin'
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
     host_system_win32 = true
 endif
 
-wno_deprecated_declarations = []
-dl_dep   = []
-gtk_dep  = []
-glib_dep = []
-x11_dep  = []
-sdl_dep  = []
+if compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
+    add_project_arguments('-DHAVE_GETPROGNAME', language: ['c', 'cpp'])
+endif
+
+if compiler.has_header('libgen.h')
+    add_project_arguments('-DHAVE_LIBGEN_H', language: ['c', 'cpp'])
+
+    if compiler.has_function('basename', prefix : '#include <libgen.h>')
+        add_project_arguments('-DHAVE_BASENAME', language: ['c', 'cpp'])
+    endif
+endif
 
 if host_system_win32 == false
     dl_dep = dependency('dl', required: false)

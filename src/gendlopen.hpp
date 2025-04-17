@@ -24,13 +24,13 @@
 
 #pragma once
 
-#include <filesystem>
+#include <stddef.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "cio_ofstream.hpp"
 #include "types.hpp"
 
-namespace cio { class ofstream; }
 
 
 namespace help

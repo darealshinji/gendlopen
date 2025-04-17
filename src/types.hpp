@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <filesystem>
 #include <list>
 #include <string>

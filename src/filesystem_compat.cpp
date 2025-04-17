@@ -22,35 +22,28 @@
  SOFTWARE.
 **/
 
-#ifdef MINGW32_NEED_CONVERT_FILENAME
-# include <wchar.h>
-# include <cstdlib>
-#endif
-#ifdef __cpp_lib_filesystem
-# include <filesystem>
-#else
-# include <sys/types.h>
-# include <sys/stat.h>
-# ifndef _WIN32
-#  include <unistd.h>
-# endif
+#include <string>
+#include "filesystem_compat.hpp"
+
+#ifndef __cpp_lib_filesystem
 # include "utils.hpp"
 #endif
-#include <iostream>
-#include <string>
 
-#include "gendlopen.hpp"
-#include "filesystem_compat.hpp"
-#include "types.hpp"
-
-
+/* defined in filesystem_compat.hpp */
 #ifdef MINGW32_NEED_CONVERT_FILENAME
+# include <stdlib.h>
+# include <wchar.h>
+# include "gendlopen.hpp"
+#endif
+
+
 
 /**
  * convert from string to wstring;
  * this is required because on MinGW std::filesystem will throw an exception
  * if an input string contains non-ASCII characters (this doesn't happend with MSVC)
  */
+#ifdef MINGW32_NEED_CONVERT_FILENAME
 
 static wchar_t *char_to_wchar(const char *str)
 {
@@ -118,7 +111,7 @@ std::string fs::filename(const std::string &path)
 
 /* not an exact replica of std::filesystem::path::replace_extension()
  * but it does exactly what we want */
-void fs::replace_extension(std::string &path, const std::string &ext)
+void fs::replace_extension(std::string &path, std::string ext)
 {
     std::string dirname, basename, dot;
 
@@ -132,8 +125,8 @@ void fs::replace_extension(std::string &path, const std::string &ext)
     if (pos == std::string::npos) {
         basename = path;
     } else {
-        basename = path.substr(pos+1);
         dirname = path.substr(0, pos+1);
+        basename = path.substr(pos+1);
     }
 
     /* remove leading dot temporarily from basename */
@@ -147,6 +140,11 @@ void fs::replace_extension(std::string &path, const std::string &ext)
 
     if (pos != std::string::npos) {
         basename.erase(pos);
+    }
+
+    /* add dot to extension if it's missing */
+    if (!utils::starts_with(ext, '.')) {
+        ext.insert(0, 1, '.');
     }
 
     path = dirname + dot + basename + ext;

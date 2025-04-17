@@ -350,8 +350,8 @@ void gendlopen::generate()
 
     /* rename file extensions only if we save into separate files */
     if (m_separate) {
-        fs::replace_extension(ofhdr, is_cxx ? ".hpp" : "h");
-        fs::replace_extension(ofbody, is_cxx ? ".cpp" : "c");
+        fs::replace_extension(ofhdr, is_cxx ? "hpp" : "h");
+        fs::replace_extension(ofbody, is_cxx ? "cpp" : "c");
     }
 
     /* create header filename */

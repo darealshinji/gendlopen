@@ -32,7 +32,7 @@
 # include <strings.h>
 #endif
 #include <string.h>
-#include <iterator>
+#include <algorithm>
 #include <list>
 #include <ostream>
 #include <regex>

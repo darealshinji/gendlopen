@@ -27,8 +27,8 @@
 #else
 # include <strings.h>
 #endif
-#include <algorithm>
-#include <initializer_list>
+#include <stdio.h>
+#include <iostream>
 #include <regex>
 #include "gendlopen.hpp"
 #include "cio_ofstream.hpp"

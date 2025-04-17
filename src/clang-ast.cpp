@@ -51,11 +51,9 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
   |-ParmVarDecl 0x59d985361d48 <col:35, col:41> col:41 stream 'FILE *'
   |-ParmVarDecl 0x59d985361dc8 <col:49, col:61> col:61 format 'const char *'
   `-VisibilityAttr 0x59d985361f68 <line:21:44, col:65> Default
-
-
 ***/
 
-#include <stdio.h>
+#include <stddef.h>
 #include <algorithm>
 #include <regex>
 #include <string>

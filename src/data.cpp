@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include <ostream>
+#include <string>
 #include "cio_ofstream.hpp"
 #include "gendlopen.hpp"
 #include "types.hpp"
