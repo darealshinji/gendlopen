@@ -1,12 +1,14 @@
+test_flags      = []
+ld_library_path = []
+test_rpath      = '$ORIGIN'
+arg_syntax      = compiler.get_argument_syntax()
+
+
 if arg_syntax == 'msvc'
     test_overrides = {'cpp_std' : 'c++14'}
 else
     test_overrides = {'cpp_std' : 'c++11'}
 endif
-
-test_flags      = []
-ld_library_path = []
-test_rpath      = '$ORIGIN'
 
 if host_system_win32
     test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues

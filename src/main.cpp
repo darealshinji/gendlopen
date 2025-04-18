@@ -32,10 +32,7 @@
 #ifdef HAVE_LIBGEN_H
 # include <libgen.h>  /* basename */
 #endif
-
-/* <features.h> is a Glibc header that defines __GLIBC__
- * and will be automatically included with a system header if present */
-#include <errno.h>  /* program_invocation_short_name */
+#include <errno.h>    /* program_invocation_short_name */
 
 #include <cstdlib>
 #include <iostream>
@@ -45,7 +42,7 @@
 #include "parse_args.hpp"
 #include "types.hpp"
 
-#if !defined(HAVE_GETPROGNAME) && !defined(__GLIBC__)
+#if !defined(HAVE_GETPROGNAME) && !defined(HAVE_PROGRAM_INVOCATION_SHORT_NAME)
 # define SAVE_ARGV0
 #endif
 
@@ -61,11 +58,11 @@ namespace
     /* get program name without full path */
     std::string get_prog_name()
     {
-#ifdef HAVE_GETPROGNAME
-        return getprogname(); /* BSD */
-
-#elif defined(__GLIBC__)
+#ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
         return program_invocation_short_name; /* GNU */
+
+#elif defined(HAVE_GETPROGNAME)
+        return getprogname(); /* BSD */
 
 #elif defined(HAVE_BASENAME)
         return basename(const_cast<char *>(argv0.data()));

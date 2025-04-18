@@ -13,6 +13,7 @@ project('gendlopen', ['c', 'cpp'],
 )
 
 wno_deprecated_declarations = []
+cpp_args_extra = []
 dl_dep   = []
 gtk_dep  = []
 glib_dep = []
@@ -20,15 +21,8 @@ x11_dep  = []
 sdl_dep  = []
 
 compiler          = meson.get_compiler('cpp')
-arg_syntax        = compiler.get_argument_syntax()
-arg_syntax_native = meson.get_compiler('cpp', native : true).get_argument_syntax()
 host_system       = host_machine.system()
-cross_compile     = false
 host_system_win32 = false
-
-if build_machine.system() != host_system
-    cross_compile = true
-endif
 
 if host_system == 'linux' or host_system == 'gnu'
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
@@ -37,19 +31,19 @@ elif host_system == 'windows' or host_system == 'cygwin'
     host_system_win32 = true
 endif
 
-if compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
-    add_project_arguments('-DHAVE_GETPROGNAME', language: ['c', 'cpp'])
-endif
-
-if compiler.has_header('libgen.h')
-    add_project_arguments('-DHAVE_LIBGEN_H', language: ['c', 'cpp'])
+if compiler.has_function('program_invocation_short_name', prefix : '#include <errno.h>')
+    cpp_args_extra = '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
+elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
+    cpp_args_extra = '-DHAVE_GETPROGNAME'
+elif compiler.has_header('libgen.h')
+    cpp_args_extra = '-DHAVE_LIBGEN_H'
 
     if compiler.has_function('basename', prefix : '#include <libgen.h>')
-        add_project_arguments('-DHAVE_BASENAME', language: ['c', 'cpp'])
+        cpp_args_extra += '-DHAVE_BASENAME'
     endif
 endif
 
-if host_system_win32 == false
+if not host_system_win32
     dl_dep = dependency('dl', required: false)
 
     if get_option('enable_examples')

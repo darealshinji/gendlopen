@@ -37,6 +37,7 @@ gen_hdr = custom_target(
 gendlopen_bin = executable(
     'gendlopen',
     [gendlopen_src, gen_hdr],
+    cpp_args : cpp_args_extra,
     win_subsystem : 'console'
 )
 
