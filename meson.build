@@ -36,25 +36,23 @@ if compiler.has_function('program_invocation_short_name', prefix : '#include <er
 elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
     cpp_args_extra = '-DHAVE_GETPROGNAME'
 elif compiler.has_header('libgen.h')
-    cpp_args_extra = '-DHAVE_LIBGEN_H'
+    cpp_args_extra = ['-DHAVE_LIBGEN_H']
 
     if compiler.has_function('basename', prefix : '#include <libgen.h>')
-        cpp_args_extra += '-DHAVE_BASENAME'
+        cpp_args_extra += ['-DHAVE_BASENAME']
     endif
 endif
 
-if not host_system_win32
-    dl_dep = dependency('dl', required: false)
+dl_dep = dependency('dl', required: false)
 
-    if get_option('enable_examples')
-        if (compiler.has_argument('-Wno-deprecated-declarations'))
-            wno_deprecated_declarations = '-Wno-deprecated-declarations'
-        endif
-
-        gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
-        glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
-        x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
+if not host_system_win32 and get_option('enable_examples')
+    if (compiler.has_argument('-Wno-deprecated-declarations'))
+        wno_deprecated_declarations = '-Wno-deprecated-declarations'
     endif
+
+    gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
+    glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
+    x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
 endif
 
 if get_option('enable_tests') or get_option('enable_examples')

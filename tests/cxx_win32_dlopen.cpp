@@ -1,3 +1,5 @@
+/* modified version of cxx_test.cpp */
+
 #include <iostream>
 #include <string>
 #include <list>
@@ -5,7 +7,11 @@
 #include "helloworld.h"
 
 /* include generated header file */
-#include "cxx_test.hpp"
+#include "cxx_win32_dlopen.hpp"
+
+#ifndef GDO_USE_DLOPEN
+#error GDO_USE_DLOPEN not defined!
+#endif
 
 
 static void ctor_load_lib_and_symbols()

@@ -1,5 +1,8 @@
+/* modified version of c_test.c */
+
 #include <stdio.h>
 #include <assert.h>
+
 #include "helloworld.h"
 
 #define MYPREFIX_DEFAULT_LIB LIBNAME(helloworld,0)
@@ -50,11 +53,31 @@ static void load_lib_name()
 
     /* load library and each individual symbol */
     if (!myprefix_load_lib_name(filename) ||
-        !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_init) ||
+        !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_init_argv) ||
         !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_callback) ||
+        !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_buffer) ||
         !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_hello) ||
         !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_hello2) ||
         !myprefix_load_symbol(MYPREFIX_LOAD_helloworld_release))
+    {
+        fprintf(stderr, "%s\n", myprefix_last_error());
+        myprefix_free_lib();
+        exit(1);
+    }
+}
+
+static void load_lib_name2()
+{
+    const myprefix_char_t *filename = LIBNAME(helloworld,0);
+
+    /* load library and each individual symbol */
+    if (!myprefix_load_lib_name(filename) ||
+        !myprefix_load_symbol_name("helloworld_init_argv") ||
+        !myprefix_load_symbol_name("helloworld_callback") ||
+        !myprefix_load_symbol_name("helloworld_buffer") ||
+        !myprefix_load_symbol_name("helloworld_hello") ||
+        !myprefix_load_symbol_name("helloworld_hello2") ||
+        !myprefix_load_symbol_name("helloworld_release"))
     {
         fprintf(stderr, "%s\n", myprefix_last_error());
         myprefix_free_lib();
@@ -93,6 +116,10 @@ int main(int argc, char *argv[])
     myprefix_free_lib();
 
     // #3
+    load_lib_name2();
+    myprefix_free_lib();
+
+    // #4
     load_lib_and_symbols();
 
     print_lib_origin();

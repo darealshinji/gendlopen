@@ -67,8 +67,15 @@ components = [
 
 if sdl_dep.found()
     components += [
-        ['',    'c_minimal_sdl',    'C minimal header (SDL API)',   hw, ['-format', 'minimal']],
-        ['pp',  'cxx_minimal_sdl',  'C++ minimal header (SDL API)', hw, ['-format', 'minimal-c++']]
+        ['',    'c_minimal_sdl',    'C minimal header (SDL API)',    hw,  ['-format', 'minimal']],
+        ['pp',  'cxx_minimal_sdl',  'C++ minimal header (SDL API)',  hw,  ['-format', 'minimal-c++']]
+    ]
+endif
+
+if host_system_win32 and dl_dep.found()
+    components += [
+        ['',    'c_win32_dlopen',    'C using dlopen() on win32',    hw,  ['-DGDO_USE_DLOPEN']],
+        ['pp',  'cxx_win32_dlopen',  'C++ using dlopen() on win32',  hw,  ['-format=C++', '-DGDO_USE_DLOPEN']]
     ]
 endif
 

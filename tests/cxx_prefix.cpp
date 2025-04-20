@@ -1,3 +1,5 @@
+/* modified version of cxx_test.cpp */
+
 #include <iostream>
 #include <string>
 #include <list>
@@ -63,25 +65,44 @@ static void empty_ctor_load()
     loader.free();
 }
 
+static void empty_ctor_load2()
+{
+    myprefix::dl loader;
+
+    if (!loader.load( myprefix::make_libname("helloworld", 0) ) ||
+        !loader.load_symbol("helloworld_init") ||
+        !loader.load_symbol("helloworld_callback") ||
+        !loader.load_symbol("helloworld_hello") ||
+        !loader.load_symbol("helloworld_hello2") ||
+        !loader.load_symbol("helloworld_release"))
+    {
+        std::cerr << loader.error() << std::endl;
+        std::exit(1);
+    }
+
+    loader.free();
+}
+
 static void load_from_list(myprefix::dl &loader)
 {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
     std::list<std::wstring> list = {
         L"helloworld.dll",
         L"helloworld-0.dll",
         L"libhelloworld.dll",
-        L"libhelloworld-0.dll",
+        L"libhelloworld-0.dll"
     };
 #else
     std::list<std::string> list = {
-# ifdef __APPLE__
-        "libhelloworld.0.dylib",
-        "libhelloworld.dylib",
-# elif defined(_AIX)
-        "libhelloworld.a",
+# ifdef _WIN32
+        "helloworld.dll",
+        "helloworld-0.dll",
+        "libhelloworld.dll",
+        "libhelloworld-0.dll"
+# else
+        "libhelloworld" LIBEXT
+        LIBNAMEA(helloworld,0)
 # endif
-        "libhelloworld.so.0",
-        "libhelloworld.so"
     };
 #endif
 
@@ -107,6 +128,7 @@ int main()
     ctor_load_lib_and_symbols();
     ctor_load();
     empty_ctor_load();
+    empty_ctor_load2();
 
     myprefix::dl loader;
     load_from_list(loader);
