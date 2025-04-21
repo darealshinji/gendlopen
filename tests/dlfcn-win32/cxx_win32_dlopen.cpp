@@ -4,7 +4,7 @@
 #include <string>
 #include <list>
 #include <string.h>
-#include "helloworld.h"
+#include "../helloworld.h"
 
 /* include generated header file */
 #include "cxx_win32_dlopen.hpp"
@@ -14,9 +14,14 @@
 #endif
 
 
+static std::string make_libname()
+{
+    return std::string("../") + gdo::make_libname("helloworld", 0);
+}
+
 static void ctor_load_lib_and_symbols()
 {
-    const auto filename = gdo::make_libname("helloworld", 0);
+    const std::string filename = make_libname();
     const int flags = gdo::default_flags;
 
     /* whether or not to load symbols into a new namespace */
@@ -41,7 +46,7 @@ static void ctor_load_lib_and_symbols()
 static void ctor_load()
 {
     /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( gdo::make_libname("helloworld", 0) );
+    gdo::dl loader( make_libname() );
 
     if (!loader.load() || !loader.load_all_symbols()) {
         std::cerr << loader.error() << std::endl;
@@ -55,7 +60,7 @@ static void empty_ctor_load()
 {
     gdo::dl loader;
 
-    if (!loader.load( gdo::make_libname("helloworld", 0) ) ||
+    if (!loader.load( make_libname() ) ||
         !loader.load_symbol(GDO_LOAD_helloworld_init) ||
         !loader.load_symbol(GDO_LOAD_helloworld_callback) ||
         !loader.load_symbol(GDO_LOAD_helloworld_hello) ||
@@ -73,7 +78,7 @@ static void empty_ctor_load2()
 {
     gdo::dl loader;
 
-    if (!loader.load( gdo::make_libname("helloworld", 0) ) ||
+    if (!loader.load( make_libname() ) ||
         !loader.load_symbol("helloworld_init") ||
         !loader.load_symbol("helloworld_callback") ||
         !loader.load_symbol("helloworld_hello") ||
@@ -99,10 +104,10 @@ static void load_from_list(gdo::dl &loader)
 #else
     std::list<std::string> list = {
 # ifdef _WIN32
-        "helloworld.dll",
-        "helloworld-0.dll",
-        "libhelloworld.dll",
-        "libhelloworld-0.dll"
+        "../helloworld.dll",
+        "../helloworld-0.dll",
+        "../libhelloworld.dll",
+        "../libhelloworld-0.dll"
 # else
         "libhelloworld" LIBEXT
         LIBNAMEA(helloworld,0)

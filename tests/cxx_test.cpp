@@ -10,7 +10,7 @@
 
 static void ctor_load_lib_and_symbols()
 {
-    const auto filename = gdo::make_libname("helloworld", 0);
+    const auto filename = std::string("././") + gdo::make_libname("helloworld", 0);
     const int flags = gdo::default_flags;
 
     /* whether or not to load symbols into a new namespace */

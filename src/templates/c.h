@@ -272,7 +272,7 @@ typedef struct gdo_handle
 #ifdef GDO_WINAPI
     HMODULE handle;
     DWORD last_errno;
-    /* FormatMessage: according to MSDN the maximum is either 64k or 128k */
+    /* FormatMessage: according to MSDN the maximum message length is 64k */
     gdo_char_t buf_formatted[64*1024];
 #else
     void *handle;
@@ -280,7 +280,12 @@ typedef struct gdo_handle
 
     int flags;
     bool call_free_lib_is_registered;
+
+#ifdef _WIN32
+    gdo_char_t buf[64*1024];
+#else
     gdo_char_t buf[8*1024];
+#endif
 
     /* symbols */
     struct _gdo_ptr {

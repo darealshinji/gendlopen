@@ -12,7 +12,7 @@
 
 static void ctor_load_lib_and_symbols()
 {
-    const auto filename = myprefix::make_libname("helloworld", 0);
+    const auto filename = std::string("././") + myprefix::make_libname("helloworld", 0);
     const int flags = myprefix::default_flags;
 
     /* whether or not to load symbols into a new namespace */

@@ -30,6 +30,9 @@
 #ifndef _ftprintf
 # define _ftprintf fprintf
 #endif
+#ifndef _vsntprintf_s
+# define _vsntprintf_s _vsnprintf_s
+#endif
 
 #ifndef _countof
 # define _countof(array) (sizeof(array) / sizeof(array[0]))
@@ -95,6 +98,13 @@ GDO_INLINE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
     GDO_ATTR (nonnull (1, 2));
 
 
+/* GDO_STRDUP */
+#ifdef _MSC_VER
+# define GDO_STRDUP(x) _strdup(x)
+#else
+# define GDO_STRDUP(x) strdup(x)
+#endif
+
 
 /*****************************************************************************/
 /*                                save error                                 */
@@ -107,7 +117,7 @@ GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt
 
     va_start(ap, fmt);
 
-#ifdef GDO_WINAPI
+#ifdef _WIN32
     _vsntprintf_s(str, size, _TRUNCATE, fmt, ap);
 #else
     vsnprintf(str, size, fmt, ap);
@@ -737,7 +747,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    return lm->l_name ? strdup(lm->l_name) : NULL;
+    return lm->l_name ? GDO_STRDUP(lm->l_name) : NULL;
 #else
     /* use dladdr() to get the library path from a symbol pointer */
     char *fname;
@@ -762,7 +772,7 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
     Dl_info info;
 
     if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {
-        return strdup(info.dli_fname);
+        return GDO_STRDUP(info.dli_fname);
     }
 
     return NULL;

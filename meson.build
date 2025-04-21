@@ -43,7 +43,9 @@ elif compiler.has_header('libgen.h')
     endif
 endif
 
-dl_dep = dependency('dl', required: false)
+if not host_system_win32
+    dl_dep = dependency('dl', required: false)
+endif
 
 if not host_system_win32 and get_option('enable_examples')
     if (compiler.has_argument('-Wno-deprecated-declarations'))
