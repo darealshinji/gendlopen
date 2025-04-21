@@ -104,7 +104,8 @@ size_t save::symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_
     }
 
     /* GDO_CHECK_SYMBOL_NAME */
-    str = "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(SYM) \\\n";
+    str = "/* lookup symbol and jump to label if found */\n"
+          "#define " + pfx_upper + "_CHECK_SYMBOL_NAME(SYM) \\\n";
 
     /* only 1 symbol */
     if (symbols.size() == 1) {
