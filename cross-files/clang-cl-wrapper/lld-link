@@ -1,1 +1,15 @@
-clang-cl
+#!/bin/sh -e
+
+if [ "x$CLANGVER" = "x" ]; then
+    echo "environment variable CLANGVER not set"
+    exit 1
+fi
+
+if [ "x$WINSYSROOT" = "x" ]; then
+    echo "environment variable WINSYSROOT not set"
+    exit 1
+fi
+
+lld-link-$CLANGVER /winsysroot:"$WINSYSROOT" "$@"
+exit $?
+

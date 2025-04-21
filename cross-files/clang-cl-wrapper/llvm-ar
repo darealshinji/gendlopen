@@ -1,1 +1,10 @@
-clang-cl
+#!/bin/sh -e
+
+if [ "x$CLANGVER" = "x" ]; then
+    echo "environment variable CLANGVER not set"
+    exit 1
+fi
+
+llvm-ar-$CLANGVER "$@"
+exit $?
+

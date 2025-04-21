@@ -1,26 +1,15 @@
 #!/bin/sh -e
 
-check_winsysroot() {
-    if [ "x$WINSYSROOT" = "x" ]; then
-        echo "environment variable WINSYSROOT not set"
-        exit 1
-    fi
-}
-
 if [ "x$CLANGVER" = "x" ]; then
     echo "environment variable CLANGVER not set"
     exit 1
 fi
 
-name="$(basename "$0")"
-
-if [ "x$name" = "xclang-cl" ]; then
-    check_winsysroot
-    clang-cl-$CLANGVER -fuse-ld=lld-link-$CLANGVER /winsysroot "$WINSYSROOT" "$@"
-elif [ "x$name" = "xlld-link" ]; then
-    check_winsysroot
-    lld-link-$CLANGVER /winsysroot:"$WINSYSROOT" "$@"
-else
-    ${name}-$CLANGVER "$@"
+if [ "x$WINSYSROOT" = "x" ]; then
+    echo "environment variable WINSYSROOT not set"
+    exit 1
 fi
+
+clang-cl-$CLANGVER -fuse-ld=lld-link-$CLANGVER /winsysroot "$WINSYSROOT" "$@"
+exit $?
 
