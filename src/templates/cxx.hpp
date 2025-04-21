@@ -561,12 +561,12 @@ private:
     }
 
 
-    DWORD format_message(DWORD flags, DWORD msgId, LPWSTR buf) {
-        return ::FormatMessageW(flags, NULL, msgId, 0, buf, 0, NULL);
+    void format_message(DWORD flags, DWORD msgId, DWORD langId, LPWSTR buf) {
+        ::FormatMessageW(flags, NULL, msgId, langId, buf, 0, NULL);
     }
 
-    DWORD format_message(DWORD flags, DWORD msgId, LPSTR buf) {
-        return ::FormatMessageA(flags, NULL, msgId, 0, buf, 0, NULL);
+    void format_message(DWORD flags, DWORD msgId, DWORD langId, LPSTR buf) {
+        ::FormatMessageA(flags, NULL, msgId, langId, buf, 0, NULL);
     }
 
 
@@ -579,9 +579,11 @@ private:
 
         const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
                             FORMAT_MESSAGE_FROM_SYSTEM |
+                            FORMAT_MESSAGE_IGNORE_INSERTS |
                             FORMAT_MESSAGE_MAX_WIDTH_MASK;
 
-        format_message(flags, m_last_error, reinterpret_cast<T*>(&buf));
+        format_message(flags, m_last_error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            reinterpret_cast<T*>(&buf));
 
         if (buf) {
             str = buf;
