@@ -18,7 +18,7 @@ static void load_lib_args()
 {
     /* filename of the library we want to load;
      * using the macro `LIBNAME` for cross-platform compatibility */
-    const gdo_char_t *filename = "././" LIBNAME(helloworld,0);
+    const gdo_char_t *filename = LIBNAME(helloworld,0);
 
     /* flags that will be passed to dlopen() or LoadLibraryEx() */
     const int flags = GDO_DEFAULT_FLAGS;
