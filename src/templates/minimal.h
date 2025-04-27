@@ -70,6 +70,9 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 GDO_LINKAGE void gdo_free_library(void)
 {
     GDO_FREE_LIB(gdo_hndl.handle);
+
+    gdo_hndl.handle = NULL;
+    gdo_hndl.ptr.%%symbol%% = NULL;
 }
 
 

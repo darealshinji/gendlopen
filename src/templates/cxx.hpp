@@ -61,11 +61,6 @@ public:
     bool load();
 
 
-    /* Load library from a list.
-     * T should be of a container type like std::vector, std::list, std::array, ... */
-    bool load_from_list(const T &list, int flags=default_flags, bool new_namespace=false)
-
-
     /* Load library and symbols.
      * Filename and flags must have been set with the the constructor. */
     bool load_lib_and_symbols();
@@ -755,8 +750,8 @@ public:
     /* d'tor */
     ~dl()
     {
-        if (m_free_lib_in_dtor && lib_loaded()) {
-            free_lib();
+        if (m_free_lib_in_dtor) {
+            free();
         }
     }
 
@@ -786,20 +781,6 @@ public:
         }
 #endif
         return load(m_filename, m_flags, m_new_namespace);
-    }
-
-
-    /* load from a container list of filenames (std::vector, std::list, etc.) */
-    template<class T>
-    bool load_from_list(const T &list, int flags=default_flags, bool new_namespace=false)
-    {
-        for (const auto &e : list) {
-            if (load(e, flags, new_namespace)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
 
@@ -968,24 +949,19 @@ public:
     /* free library */
     bool free()
     {
+        bool rv = true;
+
         clear_error();
 
-        if (!lib_loaded()) {
-            return true;
-        }
-
-        bool ret = free_lib();
-        save_error();
-
-        if (!ret) {
-            return false;
+        if (lib_loaded()) {
+            rv = free_lib();
+            save_error();
         }
 
         m_handle = nullptr;
-
         ptr::%%symbol%% = nullptr;
 
-        return true;
+        return rv;
     }
 
 

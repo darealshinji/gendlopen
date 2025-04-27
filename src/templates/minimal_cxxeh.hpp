@@ -56,21 +56,21 @@ namespace gdo
 
 
     /* load library */
-    void *load_lib(const char *filename, int flags=default_flags)
+    void load_lib(const char *filename, int flags=default_flags)
     {
 #ifdef GDO_USE_SDL
         static_cast<void>(flags);
-        return SDL_LoadObject(filename);
+        handle = SDL_LoadObject(filename);
 #elif defined(GDO_WINAPI)
-        return reinterpret_cast<void *>(::LoadLibraryExA(filename, nullptr, flags));
+        handle = reinterpret_cast<void *>(::LoadLibraryExA(filename, nullptr, flags));
 #else
-        return ::dlopen(filename, flags);
+        handle = ::dlopen(filename, flags);
 #endif
     }
 
 
     /* free library (no error checks) */
-    void free_lib(void *handle)
+    void free_lib(void)
     {
 #ifdef GDO_USE_SDL
         SDL_UnloadObject(handle);
@@ -79,11 +79,14 @@ namespace gdo
 #else
         ::dlclose(handle);
 #endif
+
+        handle = nullptr;
+        ptr::%%symbol%% = nullptr;
     }
 
 
     /* get symbol */
-    void *get_symbol(void *handle, const char *symbol)
+    void *get_symbol(const char *symbol)
     {
 #ifdef GDO_USE_SDL
         return SDL_LoadFunction(handle, symbol);
@@ -124,7 +127,7 @@ namespace gdo
     /* throw an exception on error */
     void load_library_and_symbols(const char *filename) noexcept(false)
     {
-        handle = load_lib(filename);
+        load_lib(filename);
 
         if (!handle) {
             if (filename == NULL) {
@@ -139,9 +142,9 @@ namespace gdo
         /* %%symbol%% */@
         ptr::%%symbol%% =@
             reinterpret_cast<%%sym_type%%>(@
-                get_symbol(handle, "%%symbol%%"));@
+                get_symbol("%%symbol%%"));@
         if (!ptr::%%symbol%%) {@
-            free_lib(handle);@
+            free_lib();@
             throw SymbolError("%%symbol%%");@
         }
     }

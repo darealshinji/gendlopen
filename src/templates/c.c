@@ -406,30 +406,29 @@ GDO_LINKAGE int gdo_lib_flags(void)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_free_lib(void)
 {
+    bool rv = true;
+
     gdo_clear_errbuf();
 
-    if (!gdo_lib_is_loaded()) {
-        /* nothing to free */
-        return true;
-    }
-
+    if (gdo_lib_is_loaded()) {
 #ifdef GDO_WINAPI
-    if (FreeLibrary(gdo_hndl.handle) == FALSE) {
-        gdo_save_GetLastError(_T("FreeLibrary()"));
-        return false;
-    }
+        if (FreeLibrary(gdo_hndl.handle) == FALSE) {
+            gdo_save_GetLastError(_T("FreeLibrary()"));
+            rv = false;
+        }
 #else
-    if (dlclose(gdo_hndl.handle) != 0) {
-        gdo_save_dlerror();
-        return false;
-    }
+        if (dlclose(gdo_hndl.handle) != 0) {
+            gdo_save_dlerror();
+            rv = false;
+        }
 #endif
+    }
 
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
     gdo_hndl.ptr.%%symbol%% = NULL;
 
-    return true;
+    return rv;
 }
 /*****************************************************************************/
 
