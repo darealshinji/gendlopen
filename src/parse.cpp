@@ -55,6 +55,12 @@ namespace /* anonymous */
         /* first element was already checked in `parse_tokens()'
          * and is an identifier */
 
+        /* check if vector element e_vec matches sequence element e_seq;
+         * if e_seq is supposed to be a SYMBOL, check if e_vec is an identificator */
+        auto elements_matching = [] (const char &e_vec, const char &e_seq) -> bool {
+            return (e_vec == e_seq || (e_seq == SYMBOL[0] && parse::is_ident(e_vec)));
+        };
+
         /* check minimum vector size */
         if (static_cast<long>(v.size()) < sq.length) {
             return false;
@@ -69,13 +75,7 @@ namespace /* anonymous */
         }
 
         /* check last element */
-        if (v.back().empty()) {
-            return false;
-        }
-
-        char ch_elem = v.back()[0];
-
-        if (ch_elem != sq.end && !(sq.end == SYMBOL[0] && parse::is_ident(ch_elem))) {
+        if (v.back().empty() || !elements_matching(v.back()[0], sq.end)) {
             return false;
         }
 
@@ -87,9 +87,7 @@ namespace /* anonymous */
         /* check sequence */
         for (auto q : { sq.front, sq.middle }) {
             for (auto seq_ptr = q; *seq_ptr != 0; seq_ptr++, it++) {
-                ch_elem = (*it).front();
-
-                if (ch_elem == *seq_ptr || (*seq_ptr == SYMBOL[0] && parse::is_ident(ch_elem))) {
+                if (elements_matching((*it).front(), *seq_ptr)) {
                     continue;
                 }
                 return false;
