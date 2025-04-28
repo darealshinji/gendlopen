@@ -62,30 +62,31 @@ enum {
 };
 
 
-void show_gtk_message_box(const char *msg);  /* Gtk+ */
-void show_sdl_message_box(const char *msg);  /* SDL */
-void show_fltk_message_box(const char *msg); /* FLTK */
-void show_x11_message_box(const char *msg);  /* X11 */
+static void show_gtk_message_box(const char *msg);  /* Gtk+ */
+static void show_sdl_message_box(const char *msg);  /* SDL */
+static void show_fltk_message_box(const char *msg); /* FLTK */
+static void show_x11_message_box(const char *msg);  /* X11 */
 
 /* load libraries and symbols */
-bool load_gtk();
-bool load_sdl();
-bool load_fltk();
-bool load_x11();
+static bool load_gtk();
+static bool load_sdl();
+static bool load_fltk();
+static bool load_x11();
 
 /* load libraries and show message box window */
-void show_message_box(const char *msg, int tk);
+static void show_message_box(const char *msg, int tk);
 
 
 
-void print_origin(const char *path)
+static void print_origin(const char *path)
 {
-    if (path) {
+    if (path && *path) {
         printf("loaded: %s\n", path);
     }
 }
 
-void show_gtk_message_box(const char *msg)
+
+static void show_gtk_message_box(const char *msg)
 {
     const char *title = "Gtk+ Info";
 
@@ -104,18 +105,21 @@ void show_gtk_message_box(const char *msg)
     gtk_widget_destroy(dialog);
 }
 
-void show_sdl_message_box(const char *msg)
+
+static void show_sdl_message_box(const char *msg)
 {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "SDL Info", msg, NULL);
 }
 
-void show_fltk_message_box(const char *msg)
+
+static void show_fltk_message_box(const char *msg)
 {
     fl_message_title_MANGLED("FLTK Info");
     fl_message_MANGLED("%s", msg);
 }
 
-void show_x11_message_box(const char *msg)
+
+static void show_x11_message_box(const char *msg)
 {
     const char *title = "X11 Info";
 
@@ -211,61 +215,73 @@ void show_x11_message_box(const char *msg)
     XCloseDisplay(display);
 }
 
-bool load_gtk()
+
+#define MAKE_LIST(...) \
+    const char *list[] = { __VA_ARGS__, NULL };
+
+#define LOAD_FROM_LIST(PFX, NAME) \
+    for (const char **p = list; *p != NULL; p++) { \
+        if (!PFX##load_lib_name(*p)) { \
+            fprintf(stderr, "warning: %s\n", PFX##last_error()); \
+        } \
+    } \
+    \
+    if (!PFX##lib_is_loaded()) { \
+        fprintf(stderr, "error: %s\n", NAME " not loaded"); \
+        return false; \
+    } \
+    \
+    if (!PFX##load_all_symbols()) { \
+        fprintf(stderr, "error: %s\n", PFX##last_error()); \
+        return false; \
+    } \
+    \
+    print_origin(PFX##lib_origin());
+
+
+static bool load_gtk()
 {
-    /* try Gtk3 first, then Gtk2 */
-    if (!dl_gtk_load_lib_name( LIBNAME(gtk-3, 0) )) {
-        fprintf(stderr, "warning: %s\n", dl_gtk_last_error());
-        dl_gtk_load_lib_name( LIBNAME(gtk-x11-2.0, 0) );
-    }
+    MAKE_LIST(
+        LIBNAME(gtk-3, 0),
+        LIBNAME(gtk-x11-2.0, 0)
+    );
 
-    if (dl_gtk_lib_is_loaded() && dl_gtk_load_all_symbols()) {
-        print_origin(dl_gtk_lib_origin());
-        return true;
-    }
+    LOAD_FROM_LIST(dl_gtk_, "libgtk");
 
-    fprintf(stderr, "error: %s\n", dl_gtk_last_error());
-
-    return false;
+    return true;
 }
 
-bool load_sdl()
+
+static bool load_sdl()
 {
-    /* try SDL3 first, then SDL2 */
-    if (!dl_sdl_load_lib_name( LIBNAME(SDL3, 0) )) {
-        fprintf(stderr, "warning: %s\n", dl_sdl_last_error());
-        dl_sdl_load_lib_name( LIBNAME(SDL2-2.0, 0) );
-    }
+    MAKE_LIST(
+        LIBNAME(SDL3, 0),
+        LIBNAME(SDL2-2.0, 0)
+    );
 
-    if (dl_sdl_lib_is_loaded() && dl_sdl_load_all_symbols()) {
-        print_origin(dl_sdl_lib_origin());
-        return true;
-    }
+    LOAD_FROM_LIST(dl_sdl_, "libSDL");
 
-    fprintf(stderr, "error: %s\n", dl_sdl_last_error());
-
-    return false;
+    return true;
 }
 
-bool load_fltk()
+
+static bool load_fltk()
 {
-    /* try "libfltk.so.1.3" first, then "libfltk.so" */
-    if (!dl_fltk_load_lib_name( LIBNAME(fltk, 1.3) )) {
-        fprintf(stderr, "warning: %s\n", dl_fltk_last_error());
-        dl_fltk_load_lib_name( "libfltk" LIBEXT );
-    }
+    MAKE_LIST(
+        LIBNAME(fltk, 1.5),
+        LIBNAME(fltk, 1.4),
+        LIBNAME(fltk, 1.3),
+        "libfltk" LIBEXT,
+        "fltk" LIBEXT
+    );
 
-    if (dl_fltk_lib_is_loaded() && dl_fltk_load_all_symbols()) {
-        print_origin(dl_fltk_lib_origin());
-        return true;
-    }
+    LOAD_FROM_LIST(dl_fltk_, "libfltk");
 
-    fprintf(stderr, "error: %s\n", dl_fltk_last_error());
-
-    return false;
+    return true;
 }
 
-bool load_x11()
+
+static bool load_x11()
 {
     if (dl_x11_load_lib_name_and_symbols( LIBNAME(X11, 6) )) {
         print_origin(dl_x11_lib_origin());
@@ -277,7 +293,8 @@ bool load_x11()
     return false;
 }
 
-void show_message_box(const char *msg, int tk)
+
+static void show_message_box(const char *msg, int tk)
 {
     switch (tk)
     {
@@ -330,6 +347,7 @@ void show_message_box(const char *msg, int tk)
         break;
     }
 }
+
 
 int main(int argc, char **argv)
 {
