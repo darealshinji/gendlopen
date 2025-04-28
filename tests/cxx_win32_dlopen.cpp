@@ -1,10 +1,8 @@
-/* modified version of cxx_test.cpp */
-
 #include <iostream>
 #include <string>
 #include <list>
 #include <string.h>
-#include "../helloworld.h"
+#include "helloworld.h"
 
 /* include generated header file */
 #include "cxx_win32_dlopen.hpp"
@@ -14,14 +12,9 @@
 #endif
 
 
-static std::string make_libname()
-{
-    return std::string("../") + gdo::make_libname("helloworld", 0);
-}
-
 static void ctor_load_lib_and_symbols()
 {
-    const std::string filename = make_libname();
+    const auto filename = gdo::make_libname("helloworld", 0);
     const int flags = gdo::default_flags;
 
     /* whether or not to load symbols into a new namespace */
@@ -40,27 +33,27 @@ static void ctor_load_lib_and_symbols()
         std::exit(1);
     }
 
-    loader.free();
+    std::cerr << __func__ << " succeeded" << std::endl;
 }
 
 static void ctor_load()
 {
     /* set library name on initialization; nothing is loaded yet */
-    gdo::dl loader( make_libname() );
+    gdo::dl loader( gdo::make_libname("helloworld", 0) );
 
     if (!loader.load() || !loader.load_all_symbols()) {
         std::cerr << loader.error() << std::endl;
         std::exit(1);
     }
 
-    loader.free();
+    std::cerr << __func__ << " succeeded" << std::endl;
 }
 
 static void empty_ctor_load()
 {
     gdo::dl loader;
 
-    if (!loader.load( make_libname() ) ||
+    if (!loader.load( gdo::make_libname("helloworld", 0) ) ||
         !loader.load_symbol(GDO_LOAD_helloworld_init) ||
         !loader.load_symbol(GDO_LOAD_helloworld_callback) ||
         !loader.load_symbol(GDO_LOAD_helloworld_hello) ||
@@ -71,14 +64,14 @@ static void empty_ctor_load()
         std::exit(1);
     }
 
-    loader.free();
+    std::cerr << __func__ << " succeeded" << std::endl;
 }
 
 static void empty_ctor_load2()
 {
     gdo::dl loader;
 
-    if (!loader.load( make_libname() ) ||
+    if (!loader.load( gdo::make_libname("helloworld", 0) ) ||
         !loader.load_symbol("helloworld_init") ||
         !loader.load_symbol("helloworld_callback") ||
         !loader.load_symbol("helloworld_hello") ||
@@ -89,46 +82,7 @@ static void empty_ctor_load2()
         std::exit(1);
     }
 
-    loader.free();
-}
-
-static void load_from_list(gdo::dl &loader)
-{
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
-    std::list<std::wstring> list = {
-        L"helloworld.dll",
-        L"helloworld-0.dll",
-        L"libhelloworld.dll",
-        L"libhelloworld-0.dll"
-    };
-#else
-    std::list<std::string> list = {
-# ifdef _WIN32
-        "../helloworld.dll",
-        "../helloworld-0.dll",
-        "../libhelloworld.dll",
-        "../libhelloworld-0.dll"
-# else
-        "libhelloworld" LIBEXT
-        LIBNAMEA(helloworld,0)
-# endif
-    };
-#endif
-
-    if (!loader.load_from_list(list) || !loader.load_all_symbols()) {
-        std::cerr << loader.error() << std::endl;
-        std::exit(1);
-    }
-
-    /* get and print the full library path */
-    std::string orig = loader.origin();
-
-    if (orig.empty()) {
-        /* print error and return */
-        std::cerr << loader.error() << std::endl;
-    } else {
-        std::cout << "library loaded at: " << orig << std::endl;
-    }
+    std::cerr << __func__ << " succeeded" << std::endl;
 }
 
 
@@ -139,8 +93,12 @@ int main()
     empty_ctor_load();
     empty_ctor_load2();
 
-    gdo::dl loader;
-    load_from_list(loader);
+    gdo::dl loader( gdo::make_libname("helloworld", 0) );
+
+    if (!loader.load_lib_and_symbols()) {
+        std::cerr << loader.error() << std::endl;
+        return 1;
+    }
 
     /* our code */
 

@@ -52,7 +52,12 @@ if not host_system_win32 and get_option('enable_examples')
         wno_deprecated_declarations = '-Wno-deprecated-declarations'
     endif
 
-    gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
+    gtk_dep = dependency('gtk+-3.0', required: false).partial_dependency(compile_args: true)
+
+    if not gtk_dep.found()
+        gtk_dep = dependency('gtk+-2.0', required: false).partial_dependency(compile_args: true)
+    endif
+
     glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
     x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
 endif
