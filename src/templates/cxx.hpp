@@ -252,6 +252,13 @@ GDO_HOOK_<function>(...)
 # define GDO_HAS_MSG_CB
 #endif
 
+/* attributes */
+#ifdef __GNUC__
+# define GDO_ATTR(x)  __attribute__ ((x))
+#else
+# define GDO_ATTR(x)  /**/
+#endif
+
 
 
 /* enumeration values for `load_symbol()' method */
@@ -286,7 +293,7 @@ constexpr const int default_flags = GDO_DEFAULT_FLAGS;
 
 /* Shared library file extension without dot ("dll", "dylib" or "so").
  * Useful i.e. on plugins. */
-constexpr const char * const libext = LIBEXTA;
+constexpr const char    * const libext   = LIBEXTA;
 #ifdef GDO_WINAPI
 constexpr const wchar_t * const libext_w = LIBEXTW;
 #endif
@@ -532,9 +539,7 @@ private:
             return {};
         }
 
-        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
-         * technically the path could exceed 260 characters, but in reality
-         * it's practically still stuck at the old MAX_PATH value */
+        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
         if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
             delete[] origin;
 
@@ -776,6 +781,7 @@ public:
     bool load()
     {
 #ifdef GDO_WINAPI
+        /* prefer wide characters filename */
         if (m_filename.empty() && !m_wfilename.empty()) {
             return load(m_wfilename, m_flags, m_new_namespace);
         }
@@ -1073,10 +1079,12 @@ public:
 #ifdef GDO_HAVE_DLINFO
         struct link_map *lm = nullptr;
 
-        int ret = ::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm));
-        save_error();
+        if (::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm)) == -1) {
+            save_error();
+            return {};
+        }
 
-        return (ret != -1 && lm->l_name) ? lm->l_name : "";
+        return lm->l_name ? lm->l_name : "";
 #else
         /* use dladdr() to get the library path from a symbol pointer */
         std::string fname;

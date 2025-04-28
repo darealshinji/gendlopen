@@ -9,7 +9,7 @@
 #endif
 
 #ifndef _tcsdup
-# ifdef _WIN32
+# ifdef _MSC_VER
 #  define _tcsdup _strdup
 # else
 #  define _tcsdup strdup
@@ -37,14 +37,14 @@
 /* load list of plugins */
 GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
 {
-    if (num == 0) {
+    if (!files || num == 0) {
         return NULL;
     }
 
     gdo_plugin_t *plug = (gdo_plugin_t *)malloc(sizeof(gdo_plugin_t));
     plug->num = num;
 
-    /* same as malloc(num * sizeof(gdo_plugin_t)) and memset() */
+    /* same as malloc(num * sizeof(gdo_plugin_t)) plus memset() */
     plug->list = (gdo_handle_t *)calloc(num, sizeof(gdo_handle_t));
 
     for (size_t i = 0; i < num; i++) {

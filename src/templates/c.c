@@ -71,7 +71,9 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 /* forward declarations */
 GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_INLINE void gdo_register_free_lib(void);
-GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg);
+
+GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
+    GDO_ATTR (nonnull);
 
 #if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
 GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
@@ -87,7 +89,7 @@ GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt
 #if !defined(_GDO_TARGET_WIDECHAR)
     GDO_ATTR (format (printf, 3, 4))
 #endif
-    GDO_ATTR (nonnull (1));
+    GDO_ATTR (nonnull (1, 3));
 
 
 /* GDO_STRLCPY */
@@ -95,7 +97,7 @@ GDO_INLINE void gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt
     gdo_strlcpy(dst, src, _countof(dst))
 
 GDO_INLINE void gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
-    GDO_ATTR (nonnull (1, 2));
+    GDO_ATTR (nonnull);
 
 
 /* GDO_STRDUP */
@@ -710,6 +712,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     }
 
 #ifdef GDO_WINAPI
+
     gdo_char_t *origin;
     DWORD len = 260; /* MAX_PATH */
 
@@ -724,9 +727,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation
-     * technically the path could exceed 260 characters, but in reality
-     * it's practically still stuck at the old MAX_PATH value */
+    /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
     if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
         len = 32*1024;
         origin = (gdo_char_t *)realloc(origin, len * sizeof(gdo_char_t));
@@ -740,7 +741,9 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     }
 
     return origin;
+
 #elif defined(GDO_HAVE_DLINFO)
+
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
 
@@ -750,7 +753,9 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     }
 
     return lm->l_name ? GDO_STRDUP(lm->l_name) : NULL;
+
 #else
+
     /* use dladdr() to get the library path from a symbol pointer */
     char *fname;
 
@@ -765,6 +770,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     gdo_save_to_errbuf("dladdr() failed to get library path");
 
     return NULL;
+
 #endif //GDO_WINAPI
 }
 
@@ -789,6 +795,7 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 /*                                wrap code                                  */
 /*****************************************************************************/
 
+/* #define empty hooks by default */
 #ifndef GDO_HOOK_%%func_symbol%%@
 #define GDO_HOOK_%%func_symbol%%(...) /**/@
 #endif
@@ -827,9 +834,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 /* Windows: show message in a MessageBox window */
 GDO_INLINE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 {
-    const gdo_char_t *fmt = _T("error in wrapper function for symbol")
-        _T("`") GDO_XS _T("':\n\n") GDO_XS;
-
+    const gdo_char_t *fmt = _T("error in wrapper function for symbol `") GDO_XS _T("':\n\n") GDO_XS;
     const gdo_char_t *err = gdo_last_error();
 
     const size_t buflen = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;
@@ -845,7 +850,7 @@ GDO_INLINE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
 
 
 /* This function is used by the wrapper functions to perform the loading
- * and handle errors. */
+ * and to handle errors. */
 GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 {
 #ifdef GDO_DELAYLOAD

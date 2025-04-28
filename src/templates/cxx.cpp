@@ -73,6 +73,7 @@ namespace gdo
 #endif //GDO_HAS_MSG_CB
 
 
+/* #define empty hooks by default */
 #ifndef GDO_HOOK_%%func_symbol%%@
 #define GDO_HOOK_%%func_symbol%%(...) /**/@
 #endif
@@ -97,29 +98,32 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 namespace gdo
 {
     namespace /* anonymous */ {
-        auto _gdo_al = gdo::dl(GDO_DEFAULT_LIBA);
+        auto loader = gdo::dl(GDO_DEFAULT_LIBA);
     }
 
     namespace helper
     {
-        /* used internally by wrapper functions, symbol is never NULL */
+        static void quick_load(int symbol_num, const char *symbol)
+            GDO_ATTR (nonnull);
+
+        /* used internally by wrapper functions */
         static void quick_load(int symbol_num, const char *symbol)
         {
-            if (!_gdo_al.load()) {
-                std::string msg = "error loading library `" GDO_DEFAULT_LIBA "':\n" + _gdo_al.error();
+            if (!loader.load()) {
+                std::string msg = "error loading library `" GDO_DEFAULT_LIBA "':\n" + loader.error();
                 error_exit(msg.c_str());
             }
 
 #ifdef GDO_DELAYLOAD
-            bool loaded = _gdo_al.load_symbol(symbol_num);
+            bool loaded = loader.load_symbol(symbol_num);
 #else
-            bool loaded = _gdo_al.load_all_symbols();
+            bool loaded = loader.load_all_symbols();
             UNUSED_VAL_(symbol_num);
 #endif
 
             if (!loaded) {
                 std::string msg = "error in auto-loading wrapper function `gdo::autoload::";
-                msg += symbol + ("': " + _gdo_al.error());
+                msg += symbol + ("': " + loader.error());
                 error_exit(msg.c_str());
             }
         }
