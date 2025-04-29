@@ -11,7 +11,7 @@ else
 endif
 
 if host_system_win32
-    test_flags = '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
+    test_flags = ['-DBUILDING_STATIC']  # avoid dllimport/dllexport issues
 elif host_system == 'darwin'
     test_rpath = '@executable_path'
 endif
@@ -65,13 +65,6 @@ components = [
     ['pp',  'cxx_prefix',           'C++ custom symbol prefix',             hw,                             ['-format=C++', '-prefix=MyPrefix']]
 ]
 
-if sdl_dep.found()
-    components += [
-        ['',    'c_minimal_sdl',    'C minimal header (SDL API)',    hw,  ['-format', 'minimal']],
-        ['pp',  'cxx_minimal_sdl',  'C++ minimal header (SDL API)',  hw,  ['-format', 'minimal-c++']]
-    ]
-endif
-
 foreach p : components
     command = [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
 
@@ -86,7 +79,7 @@ foreach p : components
         command : command)
 
     e = executable(p[1], [p[1]+'.c'+p[0], gen_hdr],
-        dependencies : [dl_dep, sdl_dep],
+        dependencies : dl_dep,
         override_options : test_overrides,
         c_args : test_flags,
         cpp_args : test_flags,
@@ -113,7 +106,7 @@ foreach p : components
         command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
 
     e = executable(p[0], [p[0]+'.cpp', gen_hdr],
-        dependencies : [dl_dep, sdl_dep],
+        dependencies : dl_dep,
         override_options : test_overrides,
         cpp_args : test_flags,
         build_rpath : test_rpath,

@@ -1,10 +1,4 @@
-#ifdef GDO_USE_SDL
-/* SDL API */
-# include <SDL_loadso.h>
-# define GDO_LOAD_LIB(filename)       SDL_LoadObject(filename)
-# define GDO_FREE_LIB(handle)         SDL_UnloadObject(handle)
-# define GDO_GET_SYM(handle, symbol)  SDL_LoadFunction(handle, symbol)
-#elif defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
 /* WinAPI */
 # include <windows.h>
 # define GDO_LOAD_LIB(filename)       (void *)LoadLibraryA(filename)

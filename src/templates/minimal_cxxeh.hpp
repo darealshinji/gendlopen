@@ -1,9 +1,7 @@
 #include <stdexcept>
 #include <string>
 
-#ifdef GDO_USE_SDL
-# include <SDL_loadso.h>
-#elif defined(_WIN32) && !defined(GDO_USE_DLOPEN)
+#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
 # define GDO_WINAPI
 # include <windows.h>
 #else
@@ -44,8 +42,10 @@ namespace gdo
         %%obj_type%% *%%obj_symbol%% = nullptr;
     }
 
-#if defined(GDO_USE_SDL) || defined(GDO_WINAPI)
+#ifdef GDO_WINAPI
     const int default_flags = 0;
+#elif defined(_AIX)
+    const int default_flags = RTLD_LAZY | RTLD_MEMBER;
 #else
     const int default_flags = RTLD_LAZY;
 #endif
@@ -58,10 +58,7 @@ namespace gdo
     /* load library */
     void load_lib(const char *filename, int flags=default_flags)
     {
-#ifdef GDO_USE_SDL
-        static_cast<void>(flags);
-        handle = SDL_LoadObject(filename);
-#elif defined(GDO_WINAPI)
+#ifdef GDO_WINAPI
         handle = reinterpret_cast<void *>(::LoadLibraryExA(filename, nullptr, flags));
 #else
         handle = ::dlopen(filename, flags);
@@ -72,9 +69,7 @@ namespace gdo
     /* free library (no error checks) */
     void free_lib(void)
     {
-#ifdef GDO_USE_SDL
-        SDL_UnloadObject(handle);
-#elif defined(GDO_WINAPI)
+#ifdef GDO_WINAPI
         ::FreeLibrary(reinterpret_cast<HMODULE>(handle));
 #else
         ::dlclose(handle);
@@ -88,9 +83,7 @@ namespace gdo
     /* get symbol */
     void *get_symbol(const char *symbol)
     {
-#ifdef GDO_USE_SDL
-        return SDL_LoadFunction(handle, symbol);
-#elif defined(GDO_WINAPI)
+#ifdef GDO_WINAPI
         return reinterpret_cast<void *>(::GetProcAddress(
             reinterpret_cast<HMODULE>(handle), symbol));
 #else

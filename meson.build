@@ -62,17 +62,7 @@ if not host_system_win32 and get_option('enable_examples')
     x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
 endif
 
-if get_option('enable_tests') or get_option('enable_examples')
-    sdl_dep = dependency('sdl3', required: false)
-
-    if not sdl_dep.found()
-        sdl_dep = dependency('sdl2', required: false)
-    endif
-endif
-
-
 subdir('src')
-
 
 if get_option('enable_examples')
     subdir('examples')
