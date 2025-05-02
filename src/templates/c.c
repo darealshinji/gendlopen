@@ -803,8 +803,19 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
-GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
+GDO_INLINE void gdo_wrap_check_if_loaded(bool func_loaded, const gdo_char_t *func_msg)
 {
+    const gdo_char_t *msg;
+
+    if (!gdo_lib_is_loaded()) {
+        msg = _T("error: library not loaded");
+    } else if (!func_loaded) {
+        msg = func_msg;
+    } else {
+        /* everything loaded */
+        return;
+    }
+
 #ifdef GDO_USE_MESSAGE_BOX
     MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
 #else
@@ -819,9 +830,8 @@ GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 /* function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    if (!gdo_hndl.ptr.%%func_symbol%%) {@
-        gdo_error_exit("error: symbol `%%func_symbol%%' was not loaded");@
-    }@
+    const bool func_loaded = (gdo_hndl.ptr.%%func_symbol%% != NULL);@
+    gdo_wrap_check_if_loaded(func_loaded, _T("error: symbol `%%func_symbol%%' not loaded"));@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
@@ -830,56 +840,63 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-#ifdef GDO_USE_MESSAGE_BOX
-/* Windows: show message in a MessageBox window */
-GDO_INLINE void gdo_win32_last_error_messagebox(const gdo_char_t *symbol)
-{
-    const gdo_char_t *fmt = _T("error in wrapper function for symbol `") GDO_XS _T("':\n\n") GDO_XS;
-    const gdo_char_t *err = gdo_last_error();
+GDO_INLINE void gdo_error_exit(const gdo_char_t *fmt, const gdo_char_t *name)
+    GDO_ATTR (noreturn);
 
-    const size_t buflen = _tcslen(fmt) + _tcslen(symbol) + _tcslen(err) + 1;
+GDO_INLINE void gdo_error_exit(const gdo_char_t *fmt, const gdo_char_t *name)
+{
+#ifdef GDO_USE_MESSAGE_BOX
+    /* Windows: show message in a MessageBox window */
+    const gdo_char_t *msg = gdo_last_error();
+
+    const size_t buflen = _tcslen(fmt) + _tcslen(name) + _tcslen(msg) + 1;
     gdo_char_t *buf = (gdo_char_t *)malloc(buflen * sizeof(gdo_char_t));
     assert(buf != NULL);
 
-    gdo_snprintf(buf, buflen, fmt, symbol, err);
+    gdo_snprintf(buf, buflen, fmt, name, msg);
     MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
 
     free(buf);
+#else
+    _ftprintf(stderr, fmt, name, gdo_last_error());
+#endif
+
+    gdo_free_lib();
+    exit(1);
 }
-#endif // GDO_USE_MESSAGE_BOX
 
 
-/* This function is used by the wrapper functions to perform the loading
+/* This function is used by the autoload functions to perform the loading
  * and to handle errors. */
 GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 {
+    const gdo_char_t *fmt;
+
+    /* load library */
+    if (!gdo_load_lib()) {
+        fmt = _T("error loading library `") GDO_XS _T("':\n") GDO_XS _T("\n");
+        gdo_error_exit(fmt, GDO_DEFAULT_LIB);
+    }
+
+    /* load requested symbol or all symbols */
 #ifdef GDO_DELAYLOAD
-    /* load library + requested symbol */
-    if (gdo_load_lib() && gdo_load_symbol(symbol_num)) {
+    if (gdo_load_symbol(symbol_num)) {
         return;
     }
 #else
     (GDO_UNUSED_REF) symbol_num;
 
-    /* load library + all symbols */
-    if (gdo_load_lib_and_symbols()) {
+    if (gdo_load_all_symbols()) {
         return;
     }
 #endif
 
     /* an error has occured: display an error message */
+    fmt = _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
+        _T("library: ") GDO_DEFAULT_LIB _T("\n")
+        _T("error message: ") GDO_XS _T("\n");
 
-#ifdef GDO_USE_MESSAGE_BOX
-    /* Windows: popup message box window */
-    gdo_win32_last_error_messagebox(symbol);
-#else
-    _ftprintf(stderr, _T("error in wrapper function for symbol `") GDO_XS _T("':\n")
-        GDO_XS _T("\n"), symbol, gdo_last_error());
-#endif
-
-    /* free library handle and exit */
-    gdo_free_lib();
-    exit(1);
+    gdo_error_exit(fmt, symbol);
 }
 
 
