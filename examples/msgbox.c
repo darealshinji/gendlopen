@@ -78,14 +78,6 @@ static void show_message_box(const char *msg, int tk);
 
 
 
-static void print_origin(const char *path)
-{
-    if (path && *path) {
-        printf("loaded: %s\n", path);
-    }
-}
-
-
 static void show_gtk_message_box(const char *msg)
 {
     const char *title = "Gtk+ Info";
@@ -216,50 +208,78 @@ static void show_x11_message_box(const char *msg)
 }
 
 
-#define MAKE_LIST(...) \
-    const char *list[] = { __VA_ARGS__, NULL };
-
-#define LOAD_FROM_LIST(PFX, NAME) \
-    for (const char **p = list; *p != NULL; p++) { \
-        if (!PFX##load_lib_name(*p)) { \
-            fprintf(stderr, "warning: %s\n", PFX##last_error()); \
-        } \
-    } \
-    \
-    if (!PFX##lib_is_loaded()) { \
-        fprintf(stderr, "error: %s\n", NAME " not loaded"); \
-        return false; \
-    } \
-    \
-    if (!PFX##load_all_symbols()) { \
-        fprintf(stderr, "error: %s\n", PFX##last_error()); \
-        return false; \
-    } \
-    \
-    print_origin(PFX##lib_origin());
-
-
-static bool load_gtk()
+static bool load_from_list(const char *name,
+                           const char **list,
+                           bool (*load_lib_name)(const char *),
+                           const char *(*last_error)(),
+                           bool (*lib_is_loaded)(),
+                           bool (*load_all_symbols)(),
+                           char *(*lib_origin)())
 {
-    MAKE_LIST(
-        LIBNAME(gtk-3, 0),
-        LIBNAME(gtk-x11-2.0, 0)
-    );
+    const char *lib = *list;
 
-    LOAD_FROM_LIST(dl_gtk_, "libgtk");
+    for (const char **p = list; *p != NULL; p++) {
+        lib = *p;
+
+        if (load_lib_name(lib)) {
+            break;
+        } else {
+            fprintf(stderr, "warning: %s: %s\n", lib, last_error());
+        }
+    }
+
+    if (!lib_is_loaded()) {
+        fprintf(stderr, "error: %s not loaded\n", name);
+        return false;
+    }
+
+    if (!load_all_symbols()) {
+        fprintf(stderr, "error: %s: %s\n", lib, last_error());
+        return false;
+    }
+
+    char *orig = lib_origin();
+
+    if (orig) {
+        printf("loaded: %s\n", orig);
+        free(orig);
+    }
 
     return true;
 }
 
 
+static bool load_gtk()
+{
+    const char *list[] = {
+        LIBNAME(gtk-3, 0),
+        LIBNAME(gtk-x11-2.0, 0),
+        NULL
+    };
+
+    return load_from_list("libgtk", list,
+        dl_gtk_load_lib_name,
+        dl_gtk_last_error,
+        dl_gtk_lib_is_loaded,
+        dl_gtk_load_all_symbols,
+        dl_gtk_lib_origin);
+}
+
+
 static bool load_sdl()
 {
-    MAKE_LIST(
+    const char *list[] = {
         LIBNAME(SDL3, 0),
-        LIBNAME(SDL2-2.0, 0)
-    );
+        LIBNAME(SDL2-2.0, 0),
+        NULL
+    };
 
-    LOAD_FROM_LIST(dl_sdl_, "libSDL");
+    return load_from_list("libSDL", list,
+        dl_sdl_load_lib_name,
+        dl_sdl_last_error,
+        dl_sdl_lib_is_loaded,
+        dl_sdl_load_all_symbols,
+        dl_sdl_lib_origin);
 
     return true;
 }
@@ -267,15 +287,21 @@ static bool load_sdl()
 
 static bool load_fltk()
 {
-    MAKE_LIST(
+    const char *list[] = {
         LIBNAME(fltk, 1.5),
         LIBNAME(fltk, 1.4),
         LIBNAME(fltk, 1.3),
         "libfltk" LIBEXT,
-        "fltk" LIBEXT
-    );
+        "fltk" LIBEXT,
+        NULL
+    };
 
-    LOAD_FROM_LIST(dl_fltk_, "libfltk");
+    return load_from_list("libfltk", list,
+        dl_fltk_load_lib_name,
+        dl_fltk_last_error,
+        dl_fltk_lib_is_loaded,
+        dl_fltk_load_all_symbols,
+        dl_fltk_lib_origin);
 
     return true;
 }
@@ -284,7 +310,12 @@ static bool load_fltk()
 static bool load_x11()
 {
     if (dl_x11_load_lib_name_and_symbols( LIBNAME(X11, 6) )) {
-        print_origin(dl_x11_lib_origin());
+        char *orig = dl_x11_lib_origin();
+
+        if (orig) {
+            printf("loaded: %s\n", orig);
+            free(orig);
+        }
         return true;
     }
 

@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     }
 
     if (!gdo_load_lib_name_and_symbols(lib)) {
-        fprintf(stderr, "error: %s\n", gdo_last_error());
+        fprintf(stderr, "error: %s: %s\n", lib, gdo_last_error());
         gdo_free_lib();
         return 1;
     }

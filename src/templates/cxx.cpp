@@ -110,7 +110,15 @@ namespace gdo
         static void quick_load(int symbol_num, const char *symbol)
         {
             if (!loader.load()) {
-                std::string msg = "error loading library `" GDO_DEFAULT_LIBA "':\n" + loader.error();
+                std::string msg = loader.error();
+
+                if (msg.find(GDO_DEFAULT_LIBA) == std::string::npos) {
+                    msg.insert(0, "error loading library `" GDO_DEFAULT_LIBA "':\n");
+                } else {
+                    /* library name is already part of error message */
+                    msg.insert(0, "error loading library:\n");
+                }
+
                 error_exit(msg.c_str());
             }
 
