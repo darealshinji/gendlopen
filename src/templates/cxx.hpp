@@ -248,10 +248,6 @@ GDO_HOOK_<function>(...)
 #endif
 #include <string>
 
-#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-# define GDO_HAS_MSG_CB
-#endif
-
 /* attributes */
 #ifdef __GNUC__
 # define GDO_ATTR(x)  __attribute__ ((x))
@@ -317,7 +313,7 @@ public:
 
 private:
 
-#ifdef GDO_HAS_MSG_CB
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
     /* function pointer to error message callback */
     static message_callback_t m_message_callback;
 #endif
@@ -978,7 +974,7 @@ public:
     }
 
 
-#ifdef GDO_HAS_MSG_CB
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
     /* Set a message callback function. */
     static void message_callback(message_callback_t cb)
@@ -993,7 +989,7 @@ public:
         return m_message_callback;
     }
 
-#endif //GDO_HAS_MSG_CB
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
 
 #ifdef GDO_WINAPI

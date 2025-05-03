@@ -1,6 +1,7 @@
-#ifdef GDO_HAS_MSG_CB
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;
 #endif
+
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 %%type%% (*gdo::ptr::%%func_symbol%%)(%%args%%) = nullptr;
@@ -49,23 +50,20 @@ std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 #include <iostream>
 #include <cstdlib>
 
-
-/* helpers used by function wrappers */
 namespace gdo
 {
     namespace helper
     {
         static void error_exit(const char *msg)
         {
-#ifdef GDO_HAS_MSG_CB
             auto cb = gdo::dl::message_callback();
 
             if (cb) {
                 cb(msg);
-                std::exit(1);
+            } else {
+                std::cerr << msg << std::endl;
             }
-#endif
-            std::cerr << msg << std::endl;
+
             std::exit(1);
         }
     }
