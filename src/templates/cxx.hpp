@@ -67,7 +67,7 @@ public:
 
 
     /* check if the library is loaded */
-    bool lib_loaded();
+    static bool lib_loaded();
 
 
     /* return the flags used to load the library */
@@ -798,7 +798,7 @@ public:
 
 
     /* check if library is loaded */
-    bool lib_loaded() const
+    static bool lib_loaded()
     {
         return (m_handle != nullptr);
     }

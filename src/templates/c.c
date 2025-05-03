@@ -803,22 +803,14 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 #define GDO_HOOK_%%func_symbol%%(...) /**/@
 #endif
 
-#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
+/* show error message and exit program */
+GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
+    GDO_ATTR (nonnull)
+    GDO_ATTR (noreturn);
 
-GDO_INLINE void gdo_wrap_check_if_loaded(bool func_loaded, const gdo_char_t *func_msg)
+GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 {
-    const gdo_char_t *msg;
-
-    if (!gdo_lib_is_loaded()) {
-        msg = _T("error: library not loaded");
-    } else if (!func_loaded) {
-        msg = func_msg;
-    } else {
-        /* everything loaded */
-        return;
-    }
-
 #ifdef GDO_USE_MESSAGE_BOX
     MessageBox(NULL, msg, _T("Error"), MB_OK | MB_ICONERROR);
 #else
@@ -830,11 +822,24 @@ GDO_INLINE void gdo_wrap_check_if_loaded(bool func_loaded, const gdo_char_t *fun
 }
 
 
+#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
+
+
+GDO_INLINE void gdo_wrap_check_if_loaded(void *func_ptr, const gdo_char_t *func_msg)
+{
+    if (!gdo_lib_is_loaded()) {
+        gdo_error_exit(_T("error: library not loaded"));
+    } else if (!func_ptr) {
+        gdo_error_exit(func_msg);
+    }
+}
+
+
 /* function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    const bool func_loaded = (gdo_hndl.ptr.%%func_symbol%% != NULL);@
-    gdo_wrap_check_if_loaded(func_loaded, _T("error: symbol `%%func_symbol%%' not loaded"));@
+    gdo_wrap_check_if_loaded((void *)gdo_hndl.ptr.%%func_symbol%%,@
+        _T("error: symbol `%%func_symbol%%' not loaded"));@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
@@ -843,36 +848,16 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-GDO_INLINE void gdo_error_exit(const gdo_char_t *fmt, const gdo_char_t *name, const gdo_char_t *msg)
-    GDO_ATTR (nonnull)
-    GDO_ATTR (noreturn);
-
-GDO_INLINE void gdo_error_exit(const gdo_char_t *fmt, const gdo_char_t *name, const gdo_char_t *msg)
-{
-#ifdef GDO_USE_MESSAGE_BOX
-    /* Windows: show message in a MessageBox window */
-    const size_t buflen = _tcslen(fmt) + _tcslen(name) + _tcslen(msg) + 1;
-    gdo_char_t *buf = (gdo_char_t *)malloc(buflen * sizeof(gdo_char_t));
-    assert(buf != NULL);
-
-    gdo_snprintf(buf, buflen, fmt, name, msg);
-    MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
-
-    free(buf);
-#else
-    _ftprintf(stderr, fmt, name, msg);
-#endif
-
-    gdo_free_lib();
-    exit(1);
-}
-
-
 /* This function is used by the autoload functions to perform the loading
  * and to handle errors. */
 GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 {
-    const gdo_char_t *fmt, *msg;
+    const gdo_char_t *msg;
+#ifdef _WIN32
+    gdo_char_t buf[64*1024];
+#else
+    gdo_char_t buf[8*1024];
+#endif
 
     /* load library */
     if (!gdo_load_lib()) {
@@ -880,17 +865,15 @@ GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 
         if (_tcsstr(msg, GDO_DEFAULT_LIB)) {
             /* library name is already part of error message */
-            fmt = _T("error loading library:\n")
-                GDO_XS            /* empty */
-                GDO_XS _T("\n");  /* msg */
+            GDO_SNPRINTF(buf, _T("error loading library:\n")
+                GDO_XS _T("\n"), msg);
         } else {
-            fmt = _T("error loading library:\n")
-                GDO_DEFAULT_LIB _T(":\n")
-                GDO_XS            /* empty */
-                GDO_XS _T("\n");  /* msg */
+            GDO_SNPRINTF(buf, _T("error loading library`") GDO_DEFAULT_LIB _T("':\n")
+                GDO_XS _T("\n"), msg);
         }
 
-        gdo_error_exit(fmt, _T(""), msg);
+        gdo_error_exit(buf);
+        return;
     }
 
     /* load requested symbol or all symbols */
@@ -910,15 +893,15 @@ GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
 
     if (_tcsstr(msg, GDO_DEFAULT_LIB)) {
         /* library name is already part of error message */
-        fmt = _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
-            GDO_XS _T("\n");
+        GDO_SNPRINTF(buf, _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
+            GDO_XS _T("\n"), symbol, msg);
     } else {
-        fmt = _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
-            GDO_DEFAULT_LIB _T(":\n")
-            GDO_XS _T("\n");
+        GDO_SNPRINTF(buf, _T("error: ") GDO_DEFAULT_LIB _T(":\n")
+            _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
+            GDO_XS _T("\n"), symbol, msg);
     }
 
-    gdo_error_exit(fmt, symbol, msg);
+    gdo_error_exit(buf);
 }
 
 

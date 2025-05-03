@@ -44,7 +44,7 @@ std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 %PARAM_SKIP_REMOVE_BEGIN%
 
 
-#ifdef GDO_HAS_MSG_CB
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 #include <iostream>
 #include <cstdlib>
@@ -57,20 +57,21 @@ namespace gdo
     {
         static void error_exit(const char *msg)
         {
+#ifdef GDO_HAS_MSG_CB
             auto cb = gdo::dl::message_callback();
 
             if (cb) {
                 cb(msg);
-            } else {
-                std::cerr << msg << std::endl;
+                std::exit(1);
             }
-
+#endif
+            std::cerr << msg << std::endl;
             std::exit(1);
         }
     }
 }
 
-#endif //GDO_HAS_MSG_CB
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
 
 /* #define empty hooks by default */
@@ -81,12 +82,27 @@ namespace gdo
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
+namespace gdo
+{
+    namespace helper
+    {
+        static void check_if_loaded(bool func_loaded, const char *func_msg)
+        {
+            if (!gdo::dl::lib_loaded()) {
+                error_exit("error: library not loaded");
+            } else if (!func_loaded) {
+                error_exit(func_msg);
+            }
+        }
+    }
+}
+
+
 /* function wrappers (functions with `...' arguments are omitted) */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    if (!gdo::ptr::%%func_symbol%%) {@
-        gdo::helper::error_exit("error: symbol `%%func_symbol%%' was not loaded");@
-    }@
+    const bool func_loaded = (gdo::ptr::%%func_symbol%% != nullptr);@
+    gdo::helper::error_exit(func_loaded, "error: symbol `%%func_symbol%%' was not loaded");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }

@@ -125,6 +125,7 @@ const gdo_char_t *gdo_last_error ();
     Returns a pointer to the error message buffer with the last saved error string.
     The message will indicate if no error occured in a function.
     This function doesn't return a null pointer or empty string.
+    Do not free the returned pointer!
 
 
 gdo_char_t *gdo_lib_origin ();
