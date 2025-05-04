@@ -144,7 +144,7 @@ namespace /* anonymous */
     {
         /* create typename */
         auto mk_name = [&] (const std::string &symbol) {
-            return '_' + pfx_lower + '_' + symbol + "_t";
+            return pfx_lower + '_' + symbol + "__t";
         };
 
         for (auto &p : objects) {

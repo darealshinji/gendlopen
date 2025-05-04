@@ -309,12 +309,12 @@ void gendlopen::print_symbols_to_stdout()
     cio::ofstream out; /* defaults to STDOUT */
 
     if (!m_typedefs.empty()) {
-        std::string str = "/* typedefs */\n";
+        std::cout << "/* typedefs */\n";
 
         for (const auto &e : m_typedefs) {
-            str += "typedef " + e + ";\n";
+            std::cout << "typedef " << e << ";\n";
         }
-        str += '\n';
+        std::cout << '\n';
     }
 
     std::cout << "/* prototypes */\n";
