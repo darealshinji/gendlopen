@@ -39,19 +39,10 @@
 namespace /* anonymous */
 {
     /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
-    bool prefixed_and_longer_case_len(const std::string &str, const char *pfx, const size_t &pfxlen)
-    {
-        if (str.size() > pfxlen) {
-            auto tmp = str.substr(0, pfxlen);
-            return (strcasecmp(tmp.c_str(), pfx) == 0);
-        }
-        return false;
-    }
-
     template<size_t N>
-    constexpr bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
+    bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
     {
-        return prefixed_and_longer_case_len(str, pfx, N-1);
+        return (str.size() > N-1 && strncasecmp(str.c_str(), pfx, N-1) == 0);
     }
 
     /* quote header name if needed */
