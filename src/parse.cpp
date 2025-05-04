@@ -87,10 +87,9 @@ namespace /* anonymous */
         /* check sequence */
         for (auto q : { sq.front, sq.middle }) {
             for (auto seq_ptr = q; *seq_ptr != 0; seq_ptr++, it++) {
-                if (elements_matching((*it).front(), *seq_ptr)) {
-                    continue;
+                if (!elements_matching((*it).front(), *seq_ptr)) {
+                    return false;
                 }
-                return false;
             }
         }
 
@@ -190,6 +189,7 @@ namespace /* anonymous */
     }
 
 
+    /* TYPE SYMBOL */
     bool check_object_prototype(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_object(v, it)) {
@@ -204,6 +204,7 @@ namespace /* anonymous */
     }
 
 
+    /* TYPE SYMBOL [ ] */
     bool check_array_prototype(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_array(v, it)) {
@@ -219,6 +220,7 @@ namespace /* anonymous */
     }
 
 
+    /* TYPE ( * SYMBOL ) ( ) */
     bool check_function_pointer_prototype(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_function_pointer(v, it)) {
@@ -239,7 +241,7 @@ namespace /* anonymous */
     }
 
 
-    /* function name within parentheses */
+    /* TYPE ( SYMBOL ) ( ) */
     bool check_function_prototype_with_parentheses(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_function_with_parentheses(v, it)) {
@@ -257,7 +259,7 @@ namespace /* anonymous */
         return true;
     }
 
-
+    /* TYPE SYMBOL ( ) */
     bool check_function_prototype(vstring_t &v, proto_t &p, iter_t &it)
     {
         /* check for function name within parentheses first */
@@ -278,31 +280,40 @@ namespace /* anonymous */
     }
 
 
+    /* check and parse tokens, save prototype */
+    bool check_prototype(vstring_t &v, proto_t &p)
+    {
+        /* minimum size is 2 (type + symbol) */
+        if (v.size() < 2) {
+            return false;
+        }
+
+        /* first element must be an identifier */
+        if (!parse::is_ident(utils::str_front(v.front()))) {
+            return false;
+        }
+
+        iter_t it = parse::find_first_not_pointer_or_ident(v);
+
+        return (check_function_prototype(v, p, it) ||
+                check_function_pointer_prototype(v, p, it) ||
+                check_object_prototype(v, p, it) ||
+                check_array_prototype(v, p, it));
+    }
+
+
     /* parse tokens vector and save prototypes */
     bool parse_tokens(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
     {
         for (vstring_t &v : vec_tokens) {
-            /* minimum size is 2 (type + symbol),
-             * first element must be an identifier */
-            if (v.size() >= 2 && parse::is_ident(utils::str_at(v.front(), 0))) {
-                proto_t p;
+            proto_t p;
 
-                /* `it' won't be v.begin() */
-                iter_t it = parse::find_first_not_pointer_or_ident(v);
-
-                /* check for function pointer first! */
-                if (check_function_pointer_prototype(v, p, it) ||
-                    check_function_prototype(v, p, it) ||
-                    check_object_prototype(v, p, it) ||
-                    check_array_prototype(v, p, it))
-                {
-                    vproto.push_back(p);
-                    continue;
-                }
+            if (!check_prototype(v, p)) {
+                print_tokens(v);
+                return false;
             }
 
-            print_tokens(v);
-            return false;
+            vproto.push_back(p);
         }
 
         return true;
@@ -334,27 +345,25 @@ namespace /* anonymous */
 
 
 #define PARSE(NAME,FRONT,MID,END) \
-    bool parse::NAME(vstring_t &v, const iter_t &it) { \
+    bool parse::is_##NAME(vstring_t &v, const iter_t &it) { \
         return pattern(v, it, seq(FRONT, MID, END)); \
     }
 
-PARSE( is_function,                   TYPE       SYMBOL, "(", ")" )
-PARSE( is_function_with_parentheses,  TYPE, "("  SYMBOL ")(", ")" )
-PARSE( is_function_pointer,           TYPE, "(*" SYMBOL ")(", ")" )
-PARSE( is_function_pointer_no_name,   TYPE, "(*"        ")(", ")" )
-PARSE( is_object,                     TYPE, "",  SYMBOL           )
-PARSE( is_array,                      TYPE       SYMBOL, "[", "]" )
-PARSE( is_array_no_name,              TYPE,              "[", "]" )
+PARSE( function,                   TYPE        SYMBOL,     "(", ")" )
+PARSE( function_with_parentheses,  TYPE,  "("  SYMBOL ")"  "(", ")" )
+PARSE( function_pointer,           TYPE,  "(*" SYMBOL ")"  "(", ")" )
+PARSE( function_pointer_no_name,   TYPE,  "(*"        ")"  "(", ")" )
+PARSE( object,                     TYPE,  "",  SYMBOL               )
+PARSE( array,                      TYPE        SYMBOL,     "[", "]" )
+PARSE( array_no_name,              TYPE,                   "[", "]" )
 
 
 vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
 {
     for (auto i = v.begin(); i != v.end(); i++) {
-        if (utils::starts_with(*i, '*') || is_ident(utils::str_at(*i, 0))) {
-            continue;
+        if (!utils::starts_with(*i, '*') && !is_ident(utils::str_front(*i))) {
+            return i;
         }
-
-        return i;
     }
 
     return v.end();

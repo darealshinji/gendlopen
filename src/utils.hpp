@@ -52,10 +52,14 @@ void replace(const std::string &from, const std::string &to, std::string &s);
 /* count '\n' characters */
 size_t count_linefeed(const std::string &str);
 
-
 /* return char at position pos or NUL */
 inline char str_at(const std::string &str, size_t pos) {
     return (str.size() > pos) ? str.at(pos) : 0;
+}
+
+/* return char at position 0 or NUL */
+inline char str_front(const std::string &str) {
+    return str.empty() ? 0 : str.front();
 }
 
 
