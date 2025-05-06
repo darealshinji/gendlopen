@@ -825,12 +825,16 @@ GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
-GDO_INLINE void gdo_wrap_check_if_loaded(void *func_ptr, const gdo_char_t *func_msg)
+GDO_INLINE void gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *msg)
 {
+    gdo_char_t buf[256];
+
     if (!gdo_lib_is_loaded()) {
-        gdo_error_exit(_T("error: library not loaded"));
-    } else if (!func_ptr) {
-        gdo_error_exit(func_msg);
+        GDO_SNPRINTF(buf, GDO_XS _T("library not loaded\n"), msg);
+        gdo_error_exit(buf);
+    } else if (!sym_loaded) {
+        GDO_SNPRINTF(buf, GDO_XS _T("symbol not loaded\n"), msg);
+        gdo_error_exit(buf);
     }
 }
 
@@ -838,8 +842,8 @@ GDO_INLINE void gdo_wrap_check_if_loaded(void *func_ptr, const gdo_char_t *func_
 /* function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo_wrap_check_if_loaded((void *)gdo_hndl.ptr.%%func_symbol%%,@
-        _T("error: symbol `%%func_symbol%%' not loaded"));@
+    const bool sym_loaded = (gdo_hndl.ptr.%%func_symbol%% != NULL);@
+    gdo_wrap_check_if_loaded(sym_loaded, "fatal error: %%func_symbol%%: ");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
@@ -848,67 +852,59 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 #elif defined(GDO_ENABLE_AUTOLOAD)
 
 
-/* This function is used by the autoload functions to perform the loading
- * and to handle errors. */
-GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *symbol)
+GDO_INLINE void gdo_quick_load_error_exit(const gdo_char_t *msg)
+    GDO_ATTR_NORETURN;
+
+GDO_INLINE void gdo_quick_load_error_exit(const gdo_char_t *msg)
 {
-    const gdo_char_t *msg;
 #ifdef _WIN32
     gdo_char_t buf[64*1024];
 #else
     gdo_char_t buf[8*1024];
 #endif
 
-    /* load library */
-    if (!gdo_load_lib()) {
-        msg = gdo_last_error();
+    const gdo_char_t *perr = gdo_last_error();
 
-        if (_tcsstr(msg, GDO_DEFAULT_LIB)) {
-            /* library name is already part of error message */
-            GDO_SNPRINTF(buf, _T("error loading library:\n")
-                GDO_XS _T("\n"), msg);
-        } else {
-            GDO_SNPRINTF(buf, _T("error loading library`") GDO_DEFAULT_LIB _T("':\n")
-                GDO_XS _T("\n"), msg);
-        }
-
-        gdo_error_exit(buf);
-        return;
-    }
-
-    /* load requested symbol or all symbols */
-#ifdef GDO_DELAYLOAD
-    if (gdo_load_symbol(symbol_num)) {
-        return;
-    }
-#else
-    (GDO_UNUSED_REF) symbol_num;
-
-    if (gdo_load_all_symbols()) {
-        return;
-    }
-#endif
-
-    msg = gdo_last_error();
-
-    if (_tcsstr(msg, GDO_DEFAULT_LIB)) {
+    if (_tcsstr(perr, GDO_DEFAULT_LIB)) {
         /* library name is already part of error message */
-        GDO_SNPRINTF(buf, _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
-            GDO_XS _T("\n"), symbol, msg);
+        GDO_SNPRINTF(buf, GDO_XS GDO_XS _T("\n"), msg, perr);
     } else {
-        GDO_SNPRINTF(buf, _T("error: ") GDO_DEFAULT_LIB _T(":\n")
-            _T("error in auto-loading wrapper function `") GDO_XS _T("':\n")
-            GDO_XS _T("\n"), symbol, msg);
+        GDO_SNPRINTF(buf, GDO_XS GDO_DEFAULT_LIB _T(": ") GDO_XS _T("\n"), msg, perr);
     }
 
     gdo_error_exit(buf);
 }
 
 
+/* This function is used by the autoload functions to perform the loading
+ * and to handle errors. */
+GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *msg)
+{
+    /* load library */
+    if (!gdo_load_lib()) {
+        gdo_quick_load_error_exit(msg);
+        return;
+    }
+
+    /* load symbol(s) */
+#ifdef GDO_DELAYLOAD
+    bool loaded = gdo_load_symbol(symbol_num);
+#else
+    (GDO_UNUSED_REF) symbol_num;
+
+    bool loaded = gdo_load_all_symbols();
+#endif
+
+    if (!loaded) {
+        gdo_quick_load_error_exit(msg);
+    }
+}
+
+
 /* autoload function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%"));@
+    gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("error: %%func_symbol%%: "));@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
