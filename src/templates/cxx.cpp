@@ -54,7 +54,7 @@ namespace gdo
 {
     namespace helper
     {
-        static void error_exit(const char *msg)
+        [[noreturn]] static void error_exit(const char *msg)
         {
             auto cb = gdo::dl::message_callback();
 
@@ -100,7 +100,7 @@ namespace gdo
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     const bool func_loaded = (gdo::ptr::%%func_symbol%% != nullptr);@
-    gdo::helper::error_exit(func_loaded, "error: symbol `%%func_symbol%%' was not loaded");@
+    gdo::helper::check_if_loaded(func_loaded, "error: symbol `%%func_symbol%%' was not loaded");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }

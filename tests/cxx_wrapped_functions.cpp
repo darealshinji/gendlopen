@@ -7,7 +7,9 @@
 #define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
 
 /* include generated header file */
-#include "c_wrapped_functions.h"
+#include "cxx_wrapped_functions.hpp"
+
+#include <iostream>
 
 
 void cb(const char *msg)
@@ -17,8 +19,10 @@ void cb(const char *msg)
 
 int main()
 {
-    if (!gdo_load_lib_and_symbols()) {
-        fprintf(stderr, "%s\n", gdo_last_error());
+    gdo::dl loader(gdo::make_libname("helloworld", 0));
+
+    if (!loader.load_lib_and_symbols()) {
+        std::cerr << loader.error() << std::endl;
         return 1;
     }
 
@@ -27,7 +31,6 @@ int main()
     helloworld_hello(hw);
     helloworld_release(hw);
 
-    gdo_free_lib();
-
     return 0;
 }
+

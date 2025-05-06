@@ -807,7 +807,7 @@ GDO_INLINE char *gdo_dladdr_get_fname(const void *ptr)
 /* show error message and exit program */
 GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
     GDO_ATTR (nonnull)
-    GDO_ATTR (noreturn);
+    GDO_ATTR_NORETURN;
 
 GDO_INLINE void gdo_error_exit(const gdo_char_t *msg)
 {

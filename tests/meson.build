@@ -45,24 +45,25 @@ symbol_list = [
 ]
 
 components = [
-    ['',    'c_test',               'C',                                    hw,                             []],
-    ['',    'c_autoload',           'C automatic loading',                  hw,                             []],
-    ['',    'c_auto_release',       'C automatic release',                  hw,                             []],
-    ['',    'c_clang_ast',          'C generated from clang AST',           'ast.txt',                      symbol_list],
-    ['',    'c_line',               'C generated with #line directives',    hw,                             ['-line']],
-    ['',    'c_load_symbol',        'C load individual symbols',            hw,                             []],
-    ['',    'c_minimal',            'C minimal header',                     hw,                             ['-format', 'minimal']],
-    ['',    'c_no_date',            'C generated without date in header',   hw,                             ['-no-date']],
-    ['',    'c_option',             'C generated with %option lines',       'helloworld_option.txt',        []],
-    ['',    'c_param_create',       'C parameter names created',            'helloworld_param_create.txt',  ['-param=create']],
-    ['',    'c_param_skip',         'C parameter names skipped',            hw,                             ['-param=skip']],
-    ['',    'c_prefix',             'C custom symbol prefix',               hw,                             ['-prefix', 'MyPrefix']],
-    ['',    'c_static_linkage',     'C static inline linkage',              hw,                             []],
-    ['',    'c_wrapped_functions',  'C wrapped functions',                  hw,                             []],
-    ['pp',  'cxx_test',             'C++',                                  hw,                             ['-format=c++']],
-    ['pp',  'cxx_autoload',         'C++ automatic loading',                'helloworld_cxx_autoload.txt',  ['-format=c++']],
-    ['pp',  'cxx_minimal',          'C++ minimal header',                   hw,                             ['-format', 'minimal-c++']],
-    ['pp',  'cxx_prefix',           'C++ custom symbol prefix',             hw,                             ['-format=C++', '-prefix=MyPrefix']]
+    ['',    'c_test',                 'C',                                    hw,                             []],
+    ['',    'c_autoload',             'C automatic loading',                  hw,                             []],
+    ['',    'c_auto_release',         'C automatic release',                  hw,                             []],
+    ['',    'c_clang_ast',            'C generated from clang AST',           'ast.txt',                      symbol_list],
+    ['',    'c_line',                 'C generated with #line directives',    hw,                             ['-line']],
+    ['',    'c_load_symbol',          'C load individual symbols',            hw,                             []],
+    ['',    'c_minimal',              'C minimal header',                     hw,                             ['-format', 'minimal']],
+    ['',    'c_no_date',              'C generated without date in header',   hw,                             ['-no-date']],
+    ['',    'c_option',               'C generated with %option lines',       'helloworld_option.txt',        []],
+    ['',    'c_param_create',         'C parameter names created',            'helloworld_param_create.txt',  ['-param=create']],
+    ['',    'c_param_skip',           'C parameter names skipped',            hw,                             ['-param=skip']],
+    ['',    'c_prefix',               'C custom symbol prefix',               hw,                             ['-prefix', 'MyPrefix']],
+    ['',    'c_static_linkage',       'C static inline linkage',              hw,                             []],
+    ['',    'c_wrapped_functions',    'C wrapped functions',                  hw,                             []],
+    ['pp',  'cxx_test',               'C++',                                  hw,                             ['-format=c++']],
+    ['pp',  'cxx_autoload',           'C++ automatic loading',                'helloworld_cxx_autoload.txt',  ['-format=c++']],
+    ['pp',  'cxx_minimal',            'C++ minimal header',                   hw,                             ['-format', 'minimal-c++']],
+    ['pp',  'cxx_prefix',             'C++ custom symbol prefix',             hw,                             ['-format=C++', '-prefix=MyPrefix']],
+    ['pp',  'cxx_wrapped_functions',  'C++ wrapped functions',                hw,                             ['-format=c++']]
 ]
 
 foreach p : components
