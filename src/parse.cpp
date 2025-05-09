@@ -295,10 +295,16 @@ namespace /* anonymous */
 
         iter_t it = parse::find_first_not_pointer_or_ident(v);
 
-        return (check_function_prototype(v, p, it) ||
-                check_function_pointer_prototype(v, p, it) ||
-                check_object_prototype(v, p, it) ||
-                check_array_prototype(v, p, it));
+        if (it == v.end()) {
+            return check_object_prototype(v, p, it);
+        } else if (utils::starts_with(*it, '(')) {
+            return (check_function_prototype(v, p, it) ||
+                    check_function_pointer_prototype(v, p, it));
+        } else if (utils::starts_with(*it, '[')) {
+            return check_array_prototype(v, p, it);
+        }
+
+        return false;
     }
 
 
