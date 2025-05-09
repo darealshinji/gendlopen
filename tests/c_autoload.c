@@ -13,10 +13,6 @@
 /* enable delayloading (each function is only loaded when it's first used) */
 #define GDO_DELAYLOAD 1
 
-/* automatically release library on exit using
- * the atexit() function */
-#define GDO_AUTO_RELEASE 1
-
 /* show error messages for errors that occurred during
  * auto-loading in a message box window (Windows only) */
 #define GDO_USE_MESSAGE_BOX 1

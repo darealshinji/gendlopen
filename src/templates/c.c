@@ -73,7 +73,6 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 
 /* forward declarations */
 GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
-GDO_INLINE void gdo_register_free_lib(void);
 
 GDO_INLINE void *gdo_sym(const char *symbol, const gdo_char_t *msg)
     GDO_ATTR (nonnull);
@@ -321,8 +320,6 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 
 #endif //!GDO_WINAPI
 
-    gdo_register_free_lib();
-
     return true;
 }
 
@@ -352,33 +349,6 @@ GDO_INLINE void gdo_load_library(const gdo_char_t *filename, int flags, bool new
 #endif //!GDO_WINAPI
 
     gdo_hndl.flags = flags;
-}
-
-/* If registered with atexit() this function will be called at
- * the program's exit. Function must be of type "void (*)(void)". */
-#ifdef GDO_AUTO_RELEASE
-GDO_INLINE void gdo_call_free_lib(void)
-{
-    if (gdo_lib_is_loaded()) {
-#ifdef GDO_WINAPI
-        FreeLibrary(gdo_hndl.handle);
-#else
-        dlclose(gdo_hndl.handle);
-#endif
-    }
-}
-#endif //GDO_AUTO_RELEASE
-
-/* register our call to free the library handle with atexit()
- * so that the library will automatically be freed upon exit */
-GDO_INLINE void gdo_register_free_lib(void)
-{
-#ifdef GDO_AUTO_RELEASE
-    if (!gdo_hndl.call_free_lib_is_registered) {
-        atexit(gdo_call_free_lib);
-        gdo_hndl.call_free_lib_is_registered = true;
-    }
-#endif
 }
 /*****************************************************************************/
 
@@ -434,6 +404,27 @@ GDO_LINKAGE bool gdo_free_lib(void)
     gdo_hndl.ptr.%%symbol%% = NULL;
 
     return rv;
+}
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
+/*                   automatically free library upon exit                    */
+/*****************************************************************************/
+GDO_LINKAGE bool gdo_enable_autorelease(void)
+{
+    gdo_clear_errbuf();
+
+    if (!gdo_hndl.free_lib_registered) {
+        if (atexit((void (*)())gdo_free_lib) == 0) {
+            gdo_hndl.free_lib_registered = true;
+        } else {
+            gdo_save_to_errbuf("setting function with `atexit()' has failed");
+        }
+    }
+
+    return gdo_hndl.free_lib_registered;
 }
 /*****************************************************************************/
 
@@ -880,24 +871,22 @@ GDO_INLINE void gdo_quick_load_error_exit(const gdo_char_t *msg)
  * and to handle errors. */
 GDO_INLINE void gdo_quick_load(int symbol_num, const gdo_char_t *msg)
 {
-    /* load library */
-    if (!gdo_load_lib()) {
-        gdo_quick_load_error_exit(msg);
-        return;
-    }
+    /* set auto-release, ignore errors */
+    gdo_enable_autorelease();
 
-    /* load symbol(s) */
 #ifdef GDO_DELAYLOAD
-    bool loaded = gdo_load_symbol(symbol_num);
+    /* load a specific symbol */
+    if (!gdo_load_lib() || !gdo_load_symbol(symbol_num)) {
+        gdo_quick_load_error_exit(msg);
+    }
 #else
     (GDO_UNUSED_REF) symbol_num;
 
-    bool loaded = gdo_load_all_symbols();
-#endif
-
-    if (!loaded) {
+    /* load all symbols */
+    if (!gdo_load_lib_and_symbols()) {
         gdo_quick_load_error_exit(msg);
     }
+#endif
 }
 
 

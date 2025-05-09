@@ -3,9 +3,6 @@ dynamically loads shared libraries.
 It takes text files with C prototype declarations as input and creates C or C++
 header files as output.
 
-This is still experimental and the main goal is to simply try out how much can
-be automized and find out how useful it is.
-
 Features:
  * can generate code for C and C++
  * win32 API `LoadLibraryEx()` and POSIX `dlopen()`

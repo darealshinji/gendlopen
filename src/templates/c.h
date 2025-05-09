@@ -30,6 +30,7 @@ bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, boo
 bool               gdo_lib_is_loaded ();
 int                gdo_lib_flags ();
 bool               gdo_free_lib ();
+bool               gdo_enable_autorelease ();
 
 bool               gdo_all_symbols_loaded ();
 bool               gdo_no_symbols_loaded ();
@@ -92,6 +93,12 @@ int gdo_lib_flags ();
 bool gdo_free_lib ();
 
     Free/release library handle.
+
+
+bool gdo_enable_autorelease ();
+
+    Registers a function to automatically free the library upon the program's exit.
+    You may want to use this function first before you attempt to load anything.
 
 
 bool gdo_load_all_symbols ();
@@ -157,6 +164,8 @@ GDO_DEFAULT_LIB
 GDO_WRAP_FUNCTIONS
     Use actual wrapped functions instead of a name alias. This is useful if you
     want to create a library to later link an application against.
+    These functions print an error message and call `exit(1)' if they were called
+    and the library and symbols weren't loaded properly.
 
 GDO_ENABLE_AUTOLOAD
     Define this macro if you want to use auto-loading wrapper functions.
@@ -165,14 +174,12 @@ GDO_ENABLE_AUTOLOAD
     It requires GDO_DEFAULT_LIB to be defined.
     If an error occures during loading these functions print an error message
     and call `exit(1)'!
+    The library handle will be freed automatically on program exit.
 
 GDO_DELAYLOAD
     Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its
     wrapper function is called instead of all symbols.
     It requires GDO_ENABLE_AUTOLOAD to be defined.
-
-GDO_AUTO_RELEASE
-    If defined the library handle will automatically be released on program exit.
 
 GDO_VISIBILITY
     You can set the symbol visibility of wrapped functions (enabled with GDO_WRAP_FUNCTIONS)
@@ -285,7 +292,7 @@ typedef struct gdo_handle
 #endif
 
     int flags;
-    bool call_free_lib_is_registered;
+    bool free_lib_registered;
 
 #ifdef _WIN32
     gdo_char_t buf[64*1024];
@@ -315,6 +322,7 @@ GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_
 GDO_DECL bool gdo_lib_is_loaded(void);
 GDO_DECL int  gdo_lib_flags(void);
 GDO_DECL bool gdo_free_lib(void);
+GDO_DECL bool gdo_enable_autorelease(void);
 
 GDO_DECL bool gdo_all_symbols_loaded(void);
 GDO_DECL bool gdo_no_symbols_loaded(void);
