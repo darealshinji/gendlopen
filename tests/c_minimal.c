@@ -21,12 +21,13 @@ int main()
         return 1;
     }
 
+    /* our code */
     helloworld *hw = helloworld_init();
     helloworld_callback = cb;
     helloworld_hello(hw);
     helloworld_release(hw);
 
-    /* release */
+    /* free resources */
     gdo_free_library();
 
     return 0;

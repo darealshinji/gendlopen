@@ -1,4 +1,6 @@
-/* example file without generated headers */
+/* example file without generated headers;
+ * generated auto-loading code will be linked in
+ * form of a static library */
 
 #include <stdio.h>
 #include "helloworld.h"

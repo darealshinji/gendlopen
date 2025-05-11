@@ -1,8 +1,10 @@
-/* enable wide char API */
+/* enable wide char API on Windows */
 #ifdef _WIN32
 #define _UNICODE 1
 #define UNICODE  1
 #endif
+
+#include <stdio.h>
 
 /* our "hello world" API */
 #include "helloworld.h"
@@ -24,7 +26,7 @@
 #define GDO_HOOK_helloworld_hello(...) \
     puts("helloworld_hello() function hooked!");
 
-/* manually call the function and return early */
+/* hook: manually call the function and return early */
 #define GDO_HOOK_helloworld_hello2(...) \
     puts("helloworld_hello2() function hooked!"); \
     GDO_ALIAS_helloworld_hello2(__VA_ARGS__); \

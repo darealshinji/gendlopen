@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "helloworld.h"
 
 #define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
@@ -13,6 +14,7 @@ void cb(const char *msg)
 
 int main()
 {
+    /* enable auto-release, load library and symbols */
     if (!gdo_enable_autorelease() || !gdo_load_lib_and_symbols()) {
         fprintf(stderr, "%s\n", gdo_last_error());
         return 1;

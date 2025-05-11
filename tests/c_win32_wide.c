@@ -1,5 +1,5 @@
 /* this is a win32 API example using wide characters */
-
+#include <stdio.h>
 #include "helloworld.h"
 
 /* set a default library to load */
@@ -13,7 +13,6 @@ void cb(const char *msg)
 {
     puts(msg);
 }
-
 
 int wmain()
 {

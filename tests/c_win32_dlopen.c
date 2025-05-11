@@ -1,3 +1,5 @@
+/* copy of c_test.c */
+
 #include <stdio.h>
 #include <assert.h>
 

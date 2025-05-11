@@ -1,3 +1,5 @@
+/* call2 */
+
 #include "c_multi_generated.h"
 
 extern void cb(const char *msg);

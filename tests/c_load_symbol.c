@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "helloworld.h"
 
 /* include generated header file */
@@ -19,12 +20,8 @@ int main()
         !gdo_load_symbol(GDO_LOAD_helloworld_hello2) ||
         !gdo_load_symbol(GDO_LOAD_helloworld_release))
     {
-        /* print the last saved error */
         fprintf(stderr, "%s\n", gdo_last_error());
-
-        /* free library */
         gdo_free_lib();
-
         return 1;
     }
 
@@ -35,7 +32,7 @@ int main()
     helloworld_hello2(hw, cb);
     helloworld_release(hw);
 
-    /* free library */
+    /* free resources */
     gdo_free_lib();
 
     return 0;

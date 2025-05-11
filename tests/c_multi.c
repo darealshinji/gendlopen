@@ -1,3 +1,5 @@
+/* main compilation unit */
+
 #include "c_multi_generated.h"
 
 extern void cb(const char *msg);
