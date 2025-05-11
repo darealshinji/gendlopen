@@ -1,28 +1,4 @@
 /**
- Licensed under the MIT License <http://opensource.org/licenses/MIT>.
- SPDX-License-Identifier: MIT
- Copyright (c) 2024-2025 Carsten Janssen
-
- Permission is hereby  granted, free of charge, to any  person obtaining a copy
- of this software and associated  documentation files (the "Software"), to deal
- in the Software  without restriction, including without  limitation the rights
- to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
- copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
- IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
- FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
- AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
- LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
-**/
-
-/**
  * This example should illustrate how to use dynamic loading to show a message window.
  * We try Gtk+, SDL, FLTK and X11 in that order.
  */
@@ -30,19 +6,20 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 
+/* toolkit/X11 headers */
 #include <gtk/gtk.h>
 #include <SDL.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
+#include <X11/XKBlib.h>
 
-/* GNU name mangling scheme */
+/* FLTK, declared in "FL/fl_ask.H" */
 #define fl_message_MANGLED        _Z10fl_messagePKcz
 #define fl_message_title_MANGLED  _Z16fl_message_titlePKc
-
-/* <FL/fl_ask.H> */
 extern void fl_message_MANGLED(const char *format, const char *message);
 extern void fl_message_title_MANGLED(const char *title);
 
@@ -51,6 +28,9 @@ extern void fl_message_title_MANGLED(const char *title);
 #include "example_msgbox_sdl.h"
 #include "example_msgbox_fltk.h"
 #include "example_msgbox_x11.h"
+
+/* same as _countof() */
+#define COUNTOF(array) (sizeof(array) / sizeof(array[0]))
 
 
 enum {
@@ -61,23 +41,12 @@ enum {
     TK_X11  = 4
 };
 
-
-static void show_gtk_message_box(const char *msg);  /* Gtk+ */
-static void show_sdl_message_box(const char *msg);  /* SDL */
-static void show_fltk_message_box(const char *msg); /* FLTK */
-static void show_x11_message_box(const char *msg);  /* X11 */
-
-/* load libraries and symbols */
-static bool load_gtk();
-static bool load_sdl();
-static bool load_fltk();
-static bool load_x11();
-
-/* load libraries and show message box window */
-static void show_message_box(const char *msg, int tk);
+/* forward declarations */
+static bool keycode_is_esc(Display *display, KeyCode keycode);
+static void print_error(const char *title, const char *library, const char *errmsg);
 
 
-
+/* Gtk+ message box */
 static void show_gtk_message_box(const char *msg)
 {
     const char *title = "Gtk+ Info";
@@ -98,12 +67,14 @@ static void show_gtk_message_box(const char *msg)
 }
 
 
+/* SDL message box */
 static void show_sdl_message_box(const char *msg)
 {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "SDL Info", msg, NULL);
 }
 
 
+/* FLTK message box */
 static void show_fltk_message_box(const char *msg)
 {
     fl_message_title_MANGLED("FLTK Info");
@@ -111,6 +82,7 @@ static void show_fltk_message_box(const char *msg)
 }
 
 
+/* X11 message box (lowlevel Xlib API) */
 static void show_x11_message_box(const char *msg)
 {
     const char *title = "X11 Info";
@@ -164,7 +136,6 @@ static void show_x11_message_box(const char *msg)
     XMoveWindow(display, window, x, y);
 
     /* event loop */
-    const int ESCAPE_KEY = 9; /* Linux only? */
     bool loop = true;
     XEvent event;
 
@@ -177,20 +148,21 @@ static void show_x11_message_box(const char *msg)
         switch (event.type)
         {
         case Expose:
-            x = 16;
-            y = h/2;
-            /* _countof macro provided by generated headers */
-            XDrawText(display, window, gc, x, y, items, _countof(items));
+            /* draw text */
+            x = 16; y = h/2;
+            XDrawText(display, window, gc, x, y, items, COUNTOF(items));
             break;
 
         case ClientMessage:
             if ((Atom)event.xclient.data.l[0] == wm_delete) {
+                /* stop main loop */
                 loop = false;
             }
             break;
 
         case KeyPress:
-            if (event.xkey.keycode == ESCAPE_KEY) {
+            /* stop if ESC was pressed */
+            if (keycode_is_esc(display, event.xkey.keycode)) {
                 loop = false;
             }
             break;
@@ -208,23 +180,38 @@ static void show_x11_message_box(const char *msg)
 }
 
 
-static bool load_from_list(const char *name,
-                           const char **list,
-                           bool (*load_lib_name)(const char *),
-                           const char *(*last_error)(),
-                           bool (*lib_is_loaded)(),
-                           bool (*load_all_symbols)(),
-                           char *(*lib_origin)())
+/* check if keycode was Escape key */
+static bool keycode_is_esc(Display *display, KeyCode keycode)
 {
-    const char *lib = *list;
+    char *keyname = XKeysymToString(XkbKeycodeToKeysym(display, keycode, 0, 0));
+
+    return (keyname && (strcasecmp(keyname, "Escape") == 0 ||
+                        strcasecmp(keyname, "ESC") == 0));
+}
+
+
+/* try to load from a list of library names */
+static bool load_from_list(
+        const char *name,  /* generic name of library/API for error messages */
+        const char **list, /* list of filenames; last element must be NULL */
+
+        /* pointers to functions from the generated headers,
+         * used to load library and symbols */
+        bool        (*load_lib_name) (const char *),
+        const char *(*last_error) (),
+        bool        (*lib_is_loaded) (),
+        bool        (*load_all_symbols) (),
+        char *      (*lib_origin) ())
+{
+    const char *library = *list;
 
     for (const char **p = list; *p != NULL; p++) {
-        lib = *p;
+        library = *p;
 
-        if (load_lib_name(lib)) {
+        if (load_lib_name(library)) {
             break;
         } else {
-            fprintf(stderr, "warning: %s: %s\n", lib, last_error());
+            print_error("warning", library, last_error());
         }
     }
 
@@ -234,7 +221,7 @@ static bool load_from_list(const char *name,
     }
 
     if (!load_all_symbols()) {
-        fprintf(stderr, "error: %s: %s\n", lib, last_error());
+        print_error("error", library, last_error());
         return false;
     }
 
@@ -249,6 +236,18 @@ static bool load_from_list(const char *name,
 }
 
 
+/* print error message, avoid double printing of library name */
+static void print_error(const char *title, const char *library, const char *errmsg)
+{
+    if (strstr(errmsg, library)) {
+        fprintf(stderr, "%s: %s\n", title, errmsg);
+    } else {
+        fprintf(stderr, "%s: %s: %s\n", title, library, errmsg);
+    }
+}
+
+
+/* load Gtk+ v3 or v2 */
 static bool load_gtk()
 {
     const char *list[] = {
@@ -266,6 +265,7 @@ static bool load_gtk()
 }
 
 
+/* load SDL v3 or v2 */
 static bool load_sdl()
 {
     const char *list[] = {
@@ -285,6 +285,7 @@ static bool load_sdl()
 }
 
 
+/* try to load different versions of FLTK */
 static bool load_fltk()
 {
     const char *list[] = {
@@ -307,6 +308,7 @@ static bool load_fltk()
 }
 
 
+/* load libX11 */
 static bool load_x11()
 {
     if (dl_x11_load_lib_name_and_symbols( LIBNAME(X11, 6) )) {
@@ -325,6 +327,7 @@ static bool load_x11()
 }
 
 
+/* try to show a message box window */
 static void show_message_box(const char *msg, int tk)
 {
     switch (tk)
@@ -383,8 +386,11 @@ static void show_message_box(const char *msg, int tk)
 int main(int argc, char **argv)
 {
     const char *msg = "Very important information!";
-    int tk = TK_ALL;
 
+    /* by default try through all the toolkits */
+    int toolkit = TK_ALL;
+
+    /* parse argument */
     if (argc > 1) {
         if (strcmp(argv[1], "--help") == 0) {
             printf("usage:\n"
@@ -395,22 +401,23 @@ int main(int argc, char **argv)
 
         /* test a specific toolkit */
         if (strcasecmp(argv[1], "gtk") == 0) {
-            tk = TK_GTK;
+            toolkit = TK_GTK;
         } else if (strcasecmp(argv[1], "sdl") == 0) {
-            tk = TK_SDL;
+            toolkit = TK_SDL;
         } else if (strcasecmp(argv[1], "fltk") == 0) {
-            tk = TK_FLTK;
+            toolkit = TK_FLTK;
         } else if (strcasecmp(argv[1], "x11") == 0) {
-            tk = TK_X11;
+            toolkit = TK_X11;
         } else {
             fprintf(stderr, "warning: command ignored: %s\n", argv[1]);
         }
     }
 
     printf("Message: %s\n", msg);
-    show_message_box(msg, tk);
 
-    /* can safely be called even if nothing was loaded */
+    show_message_box(msg, toolkit);
+
+    /* free resources (can safely be called even if nothing was loaded) */
     dl_gtk_free_lib();
     dl_sdl_free_lib();
     dl_fltk_free_lib();

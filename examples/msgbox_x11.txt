@@ -79,6 +79,17 @@ extern int XDrawText(
     int			/* nitems */
 );
 
+extern	KeySym XkbKeycodeToKeysym(
+		Display *	/* dpy */,
+		 KeyCode 	/* kc */,
+		 int 		/* group */,
+		 int		/* level */
+);
+
+extern char *XKeysymToString(
+    KeySym		/* keysym */
+);
+
 extern int XFreeGC(
     Display*		/* display */,
     GC			/* gc */
