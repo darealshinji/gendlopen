@@ -264,11 +264,6 @@ GDO_HOOK_<function>(...)
 #else
 # define GDO_ATTR(x)  /**/
 #endif
-#ifdef _MSC_VER
-# define GDO_ATTR_NORETURN  __declspec(noreturn)
-#else
-# define GDO_ATTR_NORETURN  GDO_ATTR (noreturn)
-#endif
 
 
 /* char / wchar_t */
