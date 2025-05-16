@@ -417,7 +417,7 @@ GDO_LINKAGE bool gdo_enable_autorelease(void)
     _gdo_clear_errbuf();
 
     if (!gdo_hndl.free_lib_registered) {
-        if (atexit((void (*)())gdo_free_lib) == 0) {
+        if (atexit((void (*)(void))gdo_free_lib) == 0) {
             gdo_hndl.free_lib_registered = true;
         } else {
             _gdo_save_to_errbuf(_T("atexit(): failed to register `gdo_free_lib()'"));
