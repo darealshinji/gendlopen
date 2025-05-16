@@ -1,6 +1,11 @@
 %option prefix=dl_x11 \
         param=skip
 
+// XCreateWindow() has many arguments;
+// uncomment to check the generated result
+%option param=create
+
+
 extern Display *XOpenDisplay(
     _Xconst char*	/* display_name */
 );

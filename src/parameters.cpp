@@ -71,19 +71,18 @@ namespace /* anonymous */
     }
 
 
-    void append_name(proto_t &proto, char &name, const char *sep)
+    void append_name(proto_t &proto, int &param_count, const char *seperator)
     {
-        proto.args += name;
-        proto.args += sep;
-        proto.notype_args += name;
-        proto.notype_args += ", ";
+        std::string name = "a" + std::to_string(param_count);
+        proto.args += name + seperator;
+        proto.notype_args += name + ", ";
 
-        /* iterate letter */
-        ++name;
+        /* iterate counter */
+        param_count++;
     }
 
 
-    bool get_array_type(vstring_t &v, iter_t &it, proto_t &proto, char &name)
+    bool get_array_type(vstring_t &v, iter_t &it, proto_t &proto, int &param_count)
     {
         if (!parse::is_array_no_name(v, it)) {
             return false;
@@ -92,7 +91,7 @@ namespace /* anonymous */
         /*  type [ ]   */
         /*       ^iter */
         parse::append_strings(proto.args, v.begin(), it);
-        append_name(proto, name, " ");
+        append_name(proto, param_count, " ");
         parse::append_strings(proto.args, it, v.end());
         proto.args += ", ";
 
@@ -100,7 +99,7 @@ namespace /* anonymous */
     }
 
 
-    bool get_function_pointer_type(vstring_t &v, iter_t &it, proto_t &proto, char &name)
+    bool get_function_pointer_type(vstring_t &v, iter_t &it, proto_t &proto, int &param_count)
     {
         int offset;
 
@@ -118,7 +117,7 @@ namespace /* anonymous */
         }
 
         parse::append_strings(proto.args, v.begin(), it + 2);
-        append_name(proto, name, " ");
+        append_name(proto, param_count, " ");
         parse::append_strings(proto.args, it + offset, v.end());
         proto.args += ", ";
 
@@ -200,12 +199,12 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, s
 }
 
 
-/* create parameter names `a-z'; */
-/* unless type is function pointer, don't make any assumptions on which
+/* create parameter names; */
+/* unless type is a function pointer, don't make any assumptions which
  * element could be the name (it could also be a keyword like `const') */
 bool parse::create_names(proto_t &proto, std::string &msg)
 {
-    char name = 'a';
+    int param_count = 1;
 
     if (proto.prototype != proto::function || param_void_or_empty(proto)) {
         /* nothing to do */
@@ -214,11 +213,6 @@ bool parse::create_names(proto_t &proto, std::string &msg)
 
     for (auto &v : proto.args_vec)
     {
-        if (name > 'z') {
-            msg = "too many parameters to handle in function `" + proto.symbol + "'";
-            return false;
-        }
-
         if (v.empty()) {
             msg = "empty parameter in function `" + proto.symbol + "'";
             return false;
@@ -241,8 +235,8 @@ bool parse::create_names(proto_t &proto, std::string &msg)
         iter_t it = parse::find_first_not_pointer_or_ident(v);
 
         if (it != v.end()) {
-            if (get_function_pointer_type(v, it, proto, name) ||
-                get_array_type(v, it, proto, name))
+            if (get_function_pointer_type(v, it, proto, param_count) ||
+                get_array_type(v, it, proto, param_count))
             {
                 continue;
             }
@@ -253,7 +247,7 @@ bool parse::create_names(proto_t &proto, std::string &msg)
 
         /* regular object or pointer */
         append_strings(proto.args, v.begin(), v.end());
-        append_name(proto, name, ", ");
+        append_name(proto, param_count, ", ");
     }
 
     utils::delete_suffix(proto.args, ", ");
