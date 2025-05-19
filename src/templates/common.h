@@ -20,6 +20,45 @@
 #endif
 
 
+/* attributes */
+#ifdef __GNUC__
+# define GDO_ATTR(x)  __attribute__ ((x))
+#else
+# define GDO_ATTR(x)  /**/
+#endif
+
+
+/* provide a declaration for `dladdr(3)'
+ * if _GNU_SOURCE was not defined on Glibc */
+#if !defined(_GNU_SOURCE) && defined(__GLIBC__)
+
+# ifndef GDO_DISABLE_DLINFO
+# define GDO_DISABLE_DLINFO
+# endif
+# ifndef GDO_DISABLE_DLMOPEN
+# define GDO_DISABLE_DLMOPEN
+# endif
+
+# ifndef HAVE_TYPE_DL_INFO
+# define HAVE_TYPE_DL_INFO
+typedef struct {
+  const char *dli_fname;
+  void       *dli_fbase;
+  const char *dli_sname;
+  void       *dli_saddr;
+} Dl_info;
+# endif //!HAVE_TYPE_DL_INFO
+
+# ifdef __cplusplus
+extern "C" int dladdr(const void *, Dl_info *)
+# else
+extern     int dladdr(const void *, Dl_info *)
+# endif
+    GDO_ATTR (nonnull(2));
+
+#endif //!_GNU_SOURCE && __GLIBC__
+
+
 /* symbol visibility, i.e. __declspec(dllexport)
  * or __attribute__((visibility("default"))) */
 #ifndef GDO_VISIBILITY

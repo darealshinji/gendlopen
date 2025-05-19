@@ -25,7 +25,9 @@ host_system       = host_machine.system()
 host_system_win32 = false
 
 if host_system == 'linux' or host_system == 'gnu'
-    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+    if get_option('with_gnu_source')
+        add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+    endif
 elif host_system == 'windows' or host_system == 'cygwin'
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
     host_system_win32 = true

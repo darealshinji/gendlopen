@@ -124,7 +124,7 @@ bool gdo_no_symbols_loaded ();
 
 bool gdo_any_symbol_loaded ();
 
-    Returns true if 1 or more symbols were successfully loaded.
+    Returns true if one or more symbols were successfully loaded.
 
 
 const gdo_char_t *gdo_last_error ();
@@ -139,6 +139,8 @@ gdo_char_t *gdo_lib_origin ();
 
     Return the full library path. The returned string must be deallocated with free().
     On error or if no library was loaded NULL is returned.
+    On some systems and configurations the path is taken from the loaded symbols
+    in which case at least one symbol must have been successfully loaded.
 
 
 
@@ -195,9 +197,11 @@ GDO_DISABLE_ALIASING
 GDO_DISABLE_DLINFO
     Always disable usage of `dlinfo(3)' to retrieve the library path.
     `dladdr(3)' will be used instead.
+    Note: on Linux you need to define _GNU_SOURCE to enable `dlinfo(3)'.
 
 GDO_DISABLE_DLMOPEN
     Always disable usage of `dlmopen(3)'.
+    Note: on Linux you need to define _GNU_SOURCE to enable `dlmopen(3)'.
 
 
 
@@ -256,13 +260,6 @@ GDO_HOOK_<function>(...)
 #else
 # define GDO_DECL      extern
 # define GDO_OBJ_DECL  extern
-#endif
-
-/* attributes */
-#ifdef __GNUC__
-# define GDO_ATTR(x)  __attribute__ ((x))
-#else
-# define GDO_ATTR(x)  /**/
 #endif
 
 

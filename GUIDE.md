@@ -166,10 +166,8 @@ int main(int argc, char **argv)
 ```
 
 Compile but don't link against libnotify.
-You may have to link explicitly against libdl.
-On Linux you will also need to enable `-D_GNU_SOURCE`.
 ``` sh
-gcc -Wall -O2 -D_GNU_SOURCE $(pkg-config --cflags libnotify gobject-2.0) main.c -o prog $(pkg-config --libs gobject-2.0) -ldl
+gcc -Wall -O2 $(pkg-config --cflags libnotify gobject-2.0) main.c -o prog $(pkg-config --libs gobject-2.0) -ldl
 ./prog
 ```
 
@@ -182,4 +180,64 @@ replace `LIBNAME(notify,4)` with something like `LIBNAME(notify,99)`:
 $ ./prog 
 >> program was started
 libnotify.so.99: error: libnotify.so.99: cannot open shared object file: No such file or directory
+```
+
+Instead of doing all the loading inside one function you can also load at the beginning
+of your `main()` function.
+For convenience you can set automatic release of resources with `gdo_enable_autorelease()`.
+``` C
+#include <stdio.h>
+#include <glib.h>
+#include <libnotify/notify.h>
+
+/// NEW ///
+#include "libnotify_dynamic.h"
+///////////
+
+static void send_notification(const char *app, const char *msg)
+{
+    NotifyNotification *notify;
+
+    printf(">> %s\n", msg);
+
+    /// NEW ///
+    if (!gdo_all_symbols_loaded()) {
+        return;
+    }
+    ///////////
+
+    if (notify_init(app) && notify_is_initted()) {
+        notify = notify_notification_new(msg, NULL, "dialog-information");
+        notify_notification_show(notify, NULL);
+        g_object_unref(G_OBJECT(notify));
+        notify_uninit();
+    }
+}
+
+static void my_program()
+{
+    // this would be our program's actual code ...
+}
+
+int main(int argc, char **argv)
+{
+    (void)argc;
+
+    /// NEW ///
+    if (gdo_enable_autorelease()) {
+        gdo_load_lib_name_and_symbols( LIBNAME(notify,4) );
+    }
+    ///////////
+
+    send_notification(argv[0], "program was started");
+    my_program();
+
+    return 0;
+}
+```
+
+Compile and test:
+``` sh
+gcc -Wall -O2 $(pkg-config --cflags libnotify gobject-2.0) main.c -o prog $(pkg-config --libs gobject-2.0) -ldl
+./prog
 ```
