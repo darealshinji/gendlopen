@@ -96,6 +96,14 @@ int main()
         return 1;
     }
 
+    std::string orig = loader.origin();
+
+    if (orig.empty()) {
+        std::cerr << loader.error() << std::endl;
+    } else {
+        std::cout << "library loaded at: " << orig << std::endl;
+    }
+
     /* our code */
 
     auto cb = [] (const char *msg) {

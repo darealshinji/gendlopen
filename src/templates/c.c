@@ -104,6 +104,7 @@ GDO_INLINE void _gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size
 
 /* GDO_STRDUP */
 #ifdef _MSC_VER
+/* MSVC warns if we don't use the one with the underscore */
 # define GDO_STRDUP(x) _strdup(x)
 #else
 # define GDO_STRDUP(x) strdup(x)
@@ -707,34 +708,15 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
 #ifdef GDO_WINAPI
 
-    gdo_char_t *origin;
-    DWORD len = 260; /* MAX_PATH */
+    gdo_char_t buf[32*1024];
+    DWORD nSize = GetModuleFileName(gdo_hndl.handle, buf, _countof(buf));
 
-    /* allocate enough space */
-    origin = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
-    assert(origin != NULL);
-
-    /* receive path from handle */
-    if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {
+    if (nSize == 0 || nSize == _countof(buf)) {
         _gdo_save_GetLastError(_T("GetModuleFileName"));
-        free(origin);
         return NULL;
     }
 
-    /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
-    if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-        len = 32*1024;
-        origin = (gdo_char_t *)realloc(origin, len * sizeof(gdo_char_t));
-        assert(origin != NULL);
-
-        if (GetModuleFileName(gdo_hndl.handle, origin, len-1) == 0) {
-            _gdo_save_GetLastError(_T("GetModuleFileName"));
-            free(origin);
-            return NULL;
-        }
-    }
-
-    return origin;
+    return _tcsdup(buf);
 
 #elif defined(GDO_HAVE_DLINFO)
 
@@ -779,7 +761,7 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 
     return NULL;
 }
-#endif // !GDO_WINAPI && !GDO_HAVE_DLINFO
+#endif //!GDO_WINAPI && !GDO_HAVE_DLINFO
 /*****************************************************************************/
 %PARAM_SKIP_REMOVE_BEGIN%
 

@@ -389,7 +389,7 @@ private:
             return {};
         }
 
-        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+        buf = new wchar_t[len + 1];
         if (!buf) return {};
 
         if (::mbstowcs_s(&n, buf, len+1, str.c_str(), len) != 0 || n == 0) {
@@ -507,12 +507,12 @@ private:
     }
 
 
-    DWORD get_module_filename(HMODULE handle, wchar_t *buf, DWORD len) {
-        return ::GetModuleFileNameW(handle, buf, len);
+    DWORD get_module_filename(wchar_t *buf, DWORD len) {
+        return ::GetModuleFileNameW(m_handle, buf, len);
     }
 
-    DWORD get_module_filename(HMODULE handle, char *buf, DWORD len) {
-        return ::GetModuleFileNameA(handle, buf, len);
+    DWORD get_module_filename(char *buf, DWORD len) {
+        return ::GetModuleFileNameA(m_handle, buf, len);
     }
 
 
@@ -525,35 +525,15 @@ private:
             return {};
         }
 
-        DWORD len = 260; /* MAX_PATH */
-        T *origin = new T[len * sizeof(T)]();
-        ::memset(origin, 0, len * sizeof(T));
+        T buf[32*1024];
+        DWORD nSize = get_module_filename(buf, _countof(buf));
 
-        if (get_module_filename(m_handle, origin, len-1) == 0) {
-            save_error();
-            delete[] origin;
+        if (nSize == 0 || nSize == _countof(buf)) {
+            save_error("GetModuleFileName");
             return {};
         }
 
-        /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
-        if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-            delete[] origin;
-
-            len = 32*1024;
-            origin = new T[len * sizeof(T)]();
-            ::memset(origin, 0, len * sizeof(T));
-
-            if (get_module_filename(m_handle, origin, len-1) == 0) {
-                save_error();
-                delete[] origin;
-                return {};
-            }
-        }
-
-        std::basic_string<T> str = origin;
-        delete[] origin;
-
-        return str;
+        return buf;
     }
 
 
