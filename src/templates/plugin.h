@@ -68,16 +68,6 @@ LIBEXTW
 # define GDO_DECL  extern
 #endif
 
-#ifndef _Nullable
-# define _Nullable /**/
-#endif
-
-#ifdef __GNUC__
-# define GDO_ATTR(x)  __attribute__ ((x))
-#else
-# define GDO_ATTR(x)  /**/
-#endif
-
 
 /* char / wchar_t */
 #if defined(GDO_WINAPI) && defined(_UNICODE)
@@ -121,5 +111,5 @@ typedef struct gdo_plugin
 GDO_DECL gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
     GDO_ATTR (warn_unused_result);
 
-GDO_DECL void gdo_release_plugins(gdo_plugin_t *_Nullable handle);
+GDO_DECL void gdo_release_plugins(gdo_plugin_t *handle);
 

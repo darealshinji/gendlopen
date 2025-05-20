@@ -8,14 +8,6 @@
 # include <tchar.h>
 #endif
 
-#ifndef _tcsdup
-# ifdef _MSC_VER
-#  define _tcsdup _strdup
-# else
-#  define _tcsdup strdup
-# endif
-#endif
-
 /* linkage */
 #ifdef GDO_STATIC
 # define GDO_LINKAGE  static inline
@@ -43,8 +35,6 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
 
     gdo_plugin_t *plug = (gdo_plugin_t *)malloc(sizeof(gdo_plugin_t));
     plug->num = num;
-
-    /* same as malloc(num * sizeof(gdo_plugin_t)) plus memset() */
     plug->list = (gdo_handle_t *)calloc(num, sizeof(gdo_handle_t));
 
     for (size_t i = 0; i < num; i++) {
@@ -54,7 +44,11 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
         }
 
         /* copy filename */
+#ifdef GDO_WINAPI
         plug->list[i].filename = _tcsdup(files[i]);
+#else
+        plug->list[i].filename = strdup(files[i]);
+#endif
 
         /* load plugin */
         if ((plug->list[i].handle = GDO_LOAD_LIB(files[i])) == NULL) {
@@ -72,7 +66,7 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
 
 
 /* release plugins */
-GDO_LINKAGE void gdo_release_plugins(gdo_plugin_t *_Nullable plug)
+GDO_LINKAGE void gdo_release_plugins(gdo_plugin_t *plug)
 {
     if (!plug) {
         return;
