@@ -718,6 +718,23 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
     return _tcsdup(buf);
 
+#elif defined(_WIN32)
+
+    /* dlfcn-win32:
+     * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
+     * We can directly use GetModuleFileNameA() to receive the DLL path
+     * and don't need to invoke dladdr() on a loaded symbol address. */
+
+    char buf[32*1024];
+    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, buf, sizeof(buf));
+
+    if (nSize == 0 || nSize == sizeof(buf)) {
+        _gdo_save_to_errbuf("GetModuleFileNameA() failed to get library path");
+        return NULL;
+    }
+
+    return GDO_STRDUP(buf);
+
 #elif defined(GDO_HAVE_DLINFO)
 
     /* use dlinfo() to get a link map */

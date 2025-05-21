@@ -1052,7 +1052,27 @@ public:
             return {};
         }
 
-#ifdef GDO_HAVE_DLINFO
+#ifdef _WIN32
+
+        /* dlfcn-win32:
+         * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
+         * We can directly use GetModuleFileNameA() to receive the DLL path
+         * and don't need to invoke dladdr() on a loaded symbol address. */
+
+        char buf[32*1024];
+
+        DWORD nSize = ::GetModuleFileNameA(reinterpret_cast<HMODULE>(m_handle),
+            buf, sizeof(buf));
+
+        if (nSize == 0 || nSize == sizeof(buf)) {
+            m_errmsg = "GetModuleFileNameA() failed to get library path";
+            return {};
+        }
+
+        return buf;
+
+#elif defined(GDO_HAVE_DLINFO)
+
         struct link_map *lm = nullptr;
 
         if (::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm)) == -1) {
@@ -1061,7 +1081,9 @@ public:
         }
 
         return lm->l_name ? lm->l_name : "";
+
 #else
+
         /* use dladdr() to get the library path from a symbol pointer */
         std::string fname;
 
@@ -1085,7 +1107,8 @@ public:
         m_errmsg = "dladdr() failed to get library path";
 
         return {};
-#endif // !GDO_HAVE_DLINFO
+
+#endif // !_WIN32
     }
 
 
