@@ -246,14 +246,8 @@ GDO_HOOK_<function>(...)
 # include <cerrno>
 # include <cstring>
 #endif
+#include <algorithm>
 #include <string>
-
-/* attributes */
-#ifdef __GNUC__
-# define GDO_ATTR(x)  __attribute__ ((x))
-#else
-# define GDO_ATTR(x)  /**/
-#endif
 
 
 
@@ -458,6 +452,39 @@ private:
     }
 
 
+    HMODULE load_library_ex(const wchar_t *path) {
+        return ::LoadLibraryExW(path, NULL, m_flags);
+    }
+
+    HMODULE load_library_ex(const char *path) {
+        return ::LoadLibraryExA(path, NULL, m_flags);
+    }
+
+
+    /* documentation says only backward slash path separators shall be used on
+     * LoadLibraryEx(), so transform the path if needed */
+    template<typename T>
+    void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash)
+    {
+        if (filename.find(fwd_slash) == std::basic_string<T>::npos) {
+            /* no forward slash found */
+            m_handle = load_library_ex(filename.c_str());
+            return;
+        }
+
+        auto repl = [&] (T &c) {
+            if (c == fwd_slash) {
+                c = bwd_slash;
+            }
+        };
+
+        auto copy = filename;
+        std::for_each(copy.begin(), copy.end(), repl);
+
+        m_handle = load_library_ex(copy.c_str());
+    }
+
+
     /* load library */
     void load_lib(const std::string &filename, int flags, bool new_namespace)
     {
@@ -467,7 +494,7 @@ private:
         m_filename = filename;
         m_flags = flags;
 
-        m_handle = ::LoadLibraryExA(filename.c_str(), NULL, m_flags);
+        transform_path_and_load_library<char>(filename, '/', '\\');
     }
 
 
@@ -480,7 +507,7 @@ private:
         m_wfilename = filename;
         m_flags = flags;
 
-        m_handle = ::LoadLibraryExW(filename.c_str(), NULL, m_flags);
+        transform_path_and_load_library<wchar_t>(filename, L'/', L'\\');
     }
 
 

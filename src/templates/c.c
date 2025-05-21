@@ -327,10 +327,30 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 /* call LoadLibraryEx/dlopen/dlmopen */
 GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)
 {
+    gdo_hndl.flags = flags;
+
 #ifdef GDO_WINAPI
 
+    /* documentation says only backward slash path separators shall
+     * be used on LoadLibraryEx() */
+
+    if (_tcschr(filename, _T('/')) == NULL) {
+        /* no forward slash found */
+        gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
+        return;
+    }
+
+    gdo_char_t *copy = _tcsdup(filename);
+
+    for (gdo_char_t *p = copy; *p != 0; p++) {
+        if (*p == _T('/')) {
+            *p = _T('\\');
+        }
+    }
+
     (GDO_UNUSED_REF) new_namespace;
-    gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
+    gdo_hndl.handle = LoadLibraryEx(copy, NULL, flags);
+    free(copy);
 
 #elif defined(GDO_HAVE_DLMOPEN)
 
@@ -348,8 +368,6 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
     gdo_hndl.handle = dlopen(filename, flags);
 
 #endif //!GDO_WINAPI
-
-    gdo_hndl.flags = flags;
 }
 /*****************************************************************************/
 

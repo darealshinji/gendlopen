@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include "helloworld.h"
 
-/* set a default library to load */
-#define GDO_DEFAULT_LIB  LIBNAMEW(helloworld,0)
-
 /* include generated header file */
 #include "c_test.h"
 
@@ -16,8 +13,12 @@ void cb(const char *msg)
 
 int wmain()
 {
+    const wchar_t *lib = L"./" LIBNAMEW(helloworld, 0);
+
     /* load library and symbols */
-    if (!gdo_load_lib_and_symbols()) {
+    if (!gdo_load_lib_args(lib, GDO_DEFAULT_FLAGS, false) ||
+        !gdo_load_all_symbols())
+    {
         /* print error */
         fwprintf(stderr, L"%ls\n", gdo_last_error());
 
