@@ -56,7 +56,7 @@ namespace gdo
 {
     namespace helper
     {
-        [[noreturn]] static void error_exit(const std::string &msg)
+        static inline void print_error_msg(const std::string &msg)
         {
             auto cb = gdo::dl::message_callback();
 
@@ -65,8 +65,6 @@ namespace gdo
             } else {
                 std::cerr << msg << std::endl;
             }
-
-            std::exit(1);
         }
     }
 }
@@ -86,13 +84,25 @@ namespace gdo
 {
     namespace helper
     {
-        static void check_if_loaded(bool sym_loaded, const char *msg)
+        static void check_if_loaded(bool sym_loaded, const char *sym)
         {
-            if (!gdo::dl::lib_loaded()) {
-                error_exit(std::string(msg) + "library not loaded");
-            } else if (!sym_loaded) {
-                error_exit(std::string(msg) + "symbol not loaded");
+            if (gdo::dl::lib_loaded() && sym_loaded) {
+                return;
             }
+
+            /* error */
+
+            std::string msg = "fatal error: ";
+            msg += sym;
+
+            if (!gdo::dl::lib_loaded()) {
+                msg += ": library not loaded";
+            } else {
+                msg += ": symbol not loaded";
+            }
+
+            print_error_msg(msg);
+            std::abort();
         }
     }
 }
@@ -102,7 +112,7 @@ namespace gdo
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     const bool sym_loaded = (gdo::ptr::%%func_symbol%% != nullptr);@
-    gdo::helper::check_if_loaded(sym_loaded, "fatal error: %%func_symbol%%: ");@
+    gdo::helper::check_if_loaded(sym_loaded, "%%func_symbol%%");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }
@@ -119,41 +129,43 @@ namespace gdo
 
     namespace helper
     {
-        static void quick_load(int symbol_num, const char *msg)
-            GDO_ATTR (nonnull);
-
         /* used internally by wrapper functions */
-        static void quick_load(int symbol_num, const char *msg)
+        static void quick_load(int symbol_num, const char *sym)
         {
-            auto call_error_exit = [&] ()
-            {
-                std::string s = loader.error();
+            if (!loader.lib_loaded()) {
+                loader.load();
+            }
 
-                if (s.find(GDO_DEFAULT_LIBA) == std::string::npos) {
-                    /* library name not part of error message */
-                    s.insert(0, GDO_DEFAULT_LIBA ": ");
-                }
-
-                error_exit(msg + s);
-            };
-
-            /* load library */
-            if (!loader.load()) {
-                call_error_exit();
+#ifdef GDO_DELAYLOAD
+            /* load a specific symbol */
+            if (loader.load_symbol(symbol_num)) {
                 return;
             }
-
-            /* load symbol(s) */
-#ifdef GDO_DELAYLOAD
-            bool loaded = loader.load_symbol(symbol_num);
 #else
-            bool loaded = loader.load_all_symbols();
+            /* load all symbols */
             UNUSED_VAL_(symbol_num);
+
+            if (loader.load_all_symbols()) {
+                return;
+            }
 #endif
 
-            if (!loaded) {
-                call_error_exit();
+            /* error */
+
+            std::string s = "error: ";
+            std::string msg = loader.error();
+
+            if (msg.find(GDO_DEFAULT_LIBA) == std::string::npos) {
+                /* library name is not part of error message */
+                s += GDO_DEFAULT_LIBA ": ";
             }
+
+            s += sym;
+            s += ": ";
+            s += msg;
+
+            print_error_msg(s);
+            std::exit(1);
         }
     }
 }
@@ -162,7 +174,7 @@ namespace gdo
 /* autoload function wrappers (functions with `...' arguments are omitted) */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, "error: %%func_symbol%%: ");@
+    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }

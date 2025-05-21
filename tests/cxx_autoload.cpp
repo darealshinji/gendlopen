@@ -32,7 +32,7 @@ void print_error(const char *msg)
 #ifdef _WIN32
     MessageBoxA(NULL, msg, "Error", MB_OK | MB_ICONERROR);
 #else
-    std::cout << "ERROR >>> " << msg << std::endl;
+    std::cout << "Custom callback >>> " << msg << std::endl;
 #endif
 }
 
