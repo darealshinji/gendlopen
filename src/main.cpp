@@ -34,7 +34,6 @@
 #endif
 #include <errno.h>    /* program_invocation_short_name */
 
-#include <assert.h>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -273,9 +272,6 @@ namespace
 int main(int argc, char **argv)
 {
     gendlopen gdo;
-
-    assert(argc > 0);
-    assert(argv[0] != NULL);
 
 #ifdef SAVE_ARGV0
     argv0 = argv[0];
