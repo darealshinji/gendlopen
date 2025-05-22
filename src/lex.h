@@ -18,7 +18,7 @@ enum {
     LEX_SEMICOLON
 };
 
-extern char *lex_errmsg;
+extern const char *lex_errmsg;
 extern char *yytext;
 
 int yylex();

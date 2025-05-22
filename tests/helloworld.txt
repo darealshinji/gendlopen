@@ -2,7 +2,7 @@
 
 /* testing if the parser can read everything */
 
-# define ZZZ //line-wrap \
+# define ZZZ // split line, \
   continued to next line
 
 # define XXX /* comment */ \
@@ -22,6 +22,12 @@
 
 // multi-line \
    comment
+
+/\ 
+/ split
+/\
+* split too *\
+/
 
 /* empty statements ignored */;;;
 
