@@ -54,17 +54,14 @@ std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 
 namespace gdo
 {
-    namespace helper
+    static inline void print_error_msg(const std::string &msg)
     {
-        static inline void print_error_msg(const std::string &msg)
-        {
-            auto cb = gdo::dl::message_callback();
+        auto cb = dl::message_callback();
 
-            if (cb) {
-                cb(msg.c_str());
-            } else {
-                std::cerr << msg << std::endl;
-            }
+        if (cb) {
+            cb(msg.c_str());
+        } else {
+            std::cerr << msg << std::endl;
         }
     }
 }
@@ -82,11 +79,11 @@ namespace gdo
 
 namespace gdo
 {
-    namespace helper
+    namespace wrap
     {
         static void check_if_loaded(bool sym_loaded, const char *sym)
         {
-            if (gdo::dl::lib_loaded() && sym_loaded) {
+            if (dl::lib_loaded() && sym_loaded) {
                 return;
             }
 
@@ -95,7 +92,7 @@ namespace gdo
             std::string msg = "fatal error: ";
             msg += sym;
 
-            if (!gdo::dl::lib_loaded()) {
+            if (!dl::lib_loaded()) {
                 msg += ": library not loaded";
             } else {
                 msg += ": symbol not loaded";
@@ -112,7 +109,7 @@ namespace gdo
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     const bool sym_loaded = (gdo::ptr::%%func_symbol%% != nullptr);@
-    gdo::helper::check_if_loaded(sym_loaded, "%%func_symbol%%");@
+    gdo::wrap::check_if_loaded(sym_loaded, "%%func_symbol%%");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }
@@ -123,14 +120,12 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 
 namespace gdo
 {
-    namespace /* anonymous */ {
-        auto loader = gdo::dl(GDO_DEFAULT_LIBA);
-    }
-
-    namespace helper
+    namespace autoload
     {
+        auto loader = dl(GDO_DEFAULT_LIBA);
+
         /* used internally by wrapper functions */
-        static void quick_load(int symbol_num, const char *sym)
+        void quick_load(int symbol_num, const char *sym)
         {
             if (!loader.lib_loaded()) {
                 loader.load();
@@ -174,7 +169,7 @@ namespace gdo
 /* autoload function wrappers (functions with `...' arguments are omitted) */
 @
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo::helper::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
+    gdo::autoload::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
 }
