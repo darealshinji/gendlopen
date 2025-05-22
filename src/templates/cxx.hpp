@@ -1107,7 +1107,7 @@ public:
 
         auto get_fname = [&fname] (const void *ptr)
         {
-            Dl_info info;
+            _GDO_Dl_info info;
 
             if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {
                 fname = info.dli_fname;

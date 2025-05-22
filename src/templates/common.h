@@ -28,10 +28,9 @@
 #endif
 
 
-/* provide a declaration for `dladdr(3)'
- * if _GNU_SOURCE was not defined on Glibc */
-#if !defined(_GNU_SOURCE) && defined(__GLIBC__)
+#if defined(__GLIBC__) && !defined(_GNU_SOURCE)
 
+/* disable GNU extensions */
 # ifndef GDO_DISABLE_DLINFO
 # define GDO_DISABLE_DLINFO
 # endif
@@ -39,24 +38,30 @@
 # define GDO_DISABLE_DLMOPEN
 # endif
 
-# ifndef HAVE_TYPE_DL_INFO
-# define HAVE_TYPE_DL_INFO
+/* Provide a declaration for `dladdr(3)'.
+ * This is simply for convenience so that it's not required
+ * to always set _GNU_SOURCE on Linux. */
+
 typedef struct {
   const char *dli_fname;
   void       *dli_fbase;
   const char *dli_sname;
   void       *dli_saddr;
-} Dl_info;
-# endif //!HAVE_TYPE_DL_INFO
+} _GDO_Dl_info;
 
 # ifdef __cplusplus
-extern "C" int dladdr(const void *, Dl_info *)
+extern "C" int dladdr(const void *, _GDO_Dl_info *);
 # else
-extern     int dladdr(const void *, Dl_info *)
+extern     int dladdr(const void *, _GDO_Dl_info *);
 # endif
-    GDO_ATTR (nonnull(2));
 
-#endif //!_GNU_SOURCE && __GLIBC__
+#else
+
+/* typename in POSIX-2024 is `Dl_info_t' but systems that
+ * conform to it usually provide `Dl_info' too */
+typedef Dl_info _GDO_Dl_info;
+
+#endif //__GLIBC__ && !_GNU_SOURCE
 
 
 /* symbol visibility, i.e. __declspec(dllexport)
