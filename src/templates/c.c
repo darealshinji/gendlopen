@@ -10,9 +10,6 @@
 # endif
 #endif
 
-#ifdef _AIX
-# include <errno.h>
-#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -151,6 +148,8 @@ GDO_INLINE void _gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size
 /* save message to error buffer */
 GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
 {
+    gdo_hndl.buf[0] = 0;
+
     if (msg) {
         GDO_STRLCPY(gdo_hndl.buf, msg);
     }
@@ -159,7 +158,7 @@ GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
 #ifdef GDO_WINAPI
 
 /* Clear error buffers. */
-GDO_INLINE void _gdo_clear_errbuf(void)
+GDO_INLINE void _gdo_clear_error(void)
 {
     gdo_hndl.buf[0] = 0;
     gdo_hndl.buf_formatted[0] = 0;
@@ -170,7 +169,7 @@ GDO_INLINE void _gdo_clear_errbuf(void)
  * can be provided too. */
 GDO_INLINE void _gdo_save_GetLastError(const gdo_char_t *msg)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
     gdo_hndl.last_errno = GetLastError();
     _gdo_save_to_errbuf(msg);
 }
@@ -178,7 +177,7 @@ GDO_INLINE void _gdo_save_GetLastError(const gdo_char_t *msg)
 /* Sets the "no library was loaded" error message */
 GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
     gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
     _gdo_save_to_errbuf(_T("no library was loaded"));
 }
@@ -187,22 +186,21 @@ GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 /*********************************** dlfcn ***********************************/
 
 /* Clear error buffers. */
-GDO_INLINE void _gdo_clear_errbuf(void)
+GDO_INLINE void _gdo_clear_error(void)
 {
+    dlerror();
     gdo_hndl.buf[0] = 0;
 }
 
 /* Save the last message provided by dlerror() */
 GDO_INLINE void _gdo_save_dlerror(void)
 {
-    _gdo_clear_errbuf();
     _gdo_save_to_errbuf(dlerror());
 }
 
 /* Sets the "no library was loaded" error message */
 GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 {
-    _gdo_clear_errbuf();
     _gdo_save_to_errbuf("no library was loaded");
 }
 
@@ -265,7 +263,7 @@ GDO_LINKAGE bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     /* release old libhandle */
     if (gdo_lib_is_loaded() && !gdo_free_lib()) {
@@ -292,29 +290,16 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
     /* an empty filename will actually return a handle to the main program,
      * but we don't want that */
     if (!filename || *filename == 0) {
-        _gdo_clear_errbuf();
         _gdo_save_to_errbuf("empty filename");
         return false;
     }
 
-#ifdef _AIX
-    errno = 0;
-    _gdo_load_library(filename, flags, new_namespace);
-    int errsav = errno;
-
-    if (!gdo_lib_is_loaded()) {
-        const char *ptr = (errsav == ENOEXEC) ? dlerror() : strerror(errsav);
-        _gdo_save_to_errbuf(ptr);
-        return false;
-    }
-#else
     _gdo_load_library(filename, flags, new_namespace);
 
     if (!gdo_lib_is_loaded()) {
         _gdo_save_dlerror();
         return false;
     }
-#endif //!_AIX
 
 #endif //!GDO_WINAPI
 
@@ -324,6 +309,8 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 /* call LoadLibraryEx/dlopen/dlmopen */
 GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)
 {
+    _gdo_clear_error();
+
     gdo_hndl.flags = flags;
 
 #ifdef GDO_WINAPI
@@ -397,20 +384,18 @@ GDO_LINKAGE int gdo_lib_flags(void)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_free_lib(void)
 {
-    bool rv = true;
-
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     if (gdo_lib_is_loaded()) {
 #ifdef GDO_WINAPI
         if (FreeLibrary(gdo_hndl.handle) == FALSE) {
             _gdo_save_GetLastError(_T("FreeLibrary()"));
-            rv = false;
+            return false;
         }
 #else
         if (dlclose(gdo_hndl.handle) != 0) {
             _gdo_save_dlerror();
-            rv = false;
+            return false;
         }
 #endif
     }
@@ -419,7 +404,7 @@ GDO_LINKAGE bool gdo_free_lib(void)
     gdo_hndl.handle = NULL;
     gdo_hndl.ptr.%%symbol%% = NULL;
 
-    return rv;
+    return true;
 }
 /*****************************************************************************/
 
@@ -430,7 +415,7 @@ GDO_LINKAGE bool gdo_free_lib(void)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_enable_autorelease(void)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     if (!gdo_hndl.free_lib_registered) {
         if (atexit((void (*)(void))gdo_free_lib) == 0) {
@@ -502,7 +487,7 @@ GDO_LINKAGE bool gdo_any_symbol_loaded(void)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_all_symbols(void)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     /* already loaded all symbols */
     if (gdo_all_symbols_loaded()) {
@@ -524,14 +509,12 @@ GDO_LINKAGE bool gdo_load_all_symbols(void)
         return false;@
     }@
 
-    _gdo_clear_errbuf();
-
     return gdo_all_symbols_loaded();
 }
 
 GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
 #ifdef GDO_WINAPI
 
@@ -568,7 +551,7 @@ GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     /* no library was loaded */
     if (!gdo_lib_is_loaded()) {
@@ -611,7 +594,7 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     /* no library was loaded */
     if (!gdo_lib_is_loaded()) {
@@ -713,7 +696,7 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 /*****************************************************************************/
 GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 {
-    _gdo_clear_errbuf();
+    _gdo_clear_error();
 
     /* check if library was loaded */
     if (!gdo_lib_is_loaded()) {
@@ -939,7 +922,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
 /* keep these functions "private" */
 #ifdef __GNUC__
 #pragma GCC poison \
-    _gdo_clear_errbuf \
+    _gdo_clear_error \
     _gdo_dladdr_get_fname \
     _gdo_load_library \
     _gdo_quick_load \

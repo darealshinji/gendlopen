@@ -242,10 +242,6 @@ GDO_HOOK_<function>(...)
 # include <cstdlib>
 # include <cstring>
 #endif
-#ifdef _AIX
-# include <cerrno>
-# include <cstring>
-#endif
 #include <algorithm>
 #include <string>
 
@@ -620,7 +616,7 @@ private:
     /* save last error */
     void save_error()
     {
-        auto ptr = ::dlerror();
+        const char *ptr = ::dlerror();
         m_errmsg = ptr ? ptr : "";
     }
 
@@ -649,6 +645,8 @@ private:
     /* load library */
     void load_lib(const std::string &filename, int flags, bool new_namespace)
     {
+        clear_error();
+
         m_flags = flags;
         m_filename = filename;
 
@@ -696,6 +694,8 @@ private:
     template<typename T>
     bool load_filename(const T &filename, int flags, bool new_namespace)
     {
+        clear_error();
+
         /* release old libhandle */
         if (lib_loaded() && !free()) {
             return false;
@@ -706,26 +706,14 @@ private:
             return false;
         }
 
-        clear_error();
-
-#ifdef _AIX
-        errno = 0;
         load_lib(filename, flags, new_namespace);
-        int errsav = errno;
 
         if (!lib_loaded()) {
-            const char *ptr = (errsav == ENOEXEC) ? ::dlerror() : ::strerror(errsav);
-            m_errmsg = ptr ? ptr : "";
+            save_error(filename);
             return false;
         }
 
         return true;
-#else
-        load_lib(filename, flags, new_namespace);
-        save_error(filename);
-
-        return lib_loaded();
-#endif //!_AIX
     }
 
 
@@ -785,7 +773,7 @@ public:
     {
 #ifdef GDO_WINAPI
         /* prefer wide characters filename */
-        if (m_filename.empty() && !m_wfilename.empty()) {
+        if (!m_wfilename.empty()) {
             return load(m_wfilename, m_flags, m_new_namespace);
         }
 #endif
@@ -958,19 +946,17 @@ public:
     /* free library */
     bool free()
     {
-        bool rv = true;
-
         clear_error();
 
-        if (lib_loaded()) {
-            rv = free_lib();
+        if (lib_loaded() && !free_lib()) {
             save_error();
+            return false;
         }
 
         m_handle = nullptr;
         ptr::%%symbol%% = nullptr;
 
-        return rv;
+        return true;
     }
 
 
