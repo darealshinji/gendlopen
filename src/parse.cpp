@@ -50,13 +50,13 @@ namespace /* anonymous */
 
 
     /* compare vector elements to pattern sequence */
-    bool pattern(vstring_t &v, iter_t it, const seq_t &sq)
+    bool check_pattern(vstring_t &v, iter_t it, const seq_t &sq)
     {
         /* first element was already checked in `parse_tokens()'
          * and is an identifier */
 
-        /* check if vector element e_vec matches sequence element e_seq;
-         * if e_seq is supposed to be a SYMBOL, check if e_vec is an identificator */
+        /* compare e_vec (vector) against e_seq (sequence);
+         * if e_seq is SYMBOL: check if e_vec is an identificator */
         auto elements_matching = [] (const char &e_vec, const char &e_seq) -> bool {
             return (e_vec == e_seq || (e_seq == SYMBOL[0] && parse::is_ident(e_vec)));
         };
@@ -75,17 +75,16 @@ namespace /* anonymous */
         }
 
         /* check last element */
-        if (v.back().empty() || !elements_matching(v.back()[0], sq.end)) {
+        if (v.back().empty() || !elements_matching(utils::str_front(v.back()), sq.end)) {
             return false;
         }
 
-        /* "-1" because sq.front doesn't
-         * contain a leading TYPE entry */
-        const int offset = sq.iter_pos - 1;
-        it -= offset;
+        /* skip leading TYPE placeholder entry */
+        const char *ptr_sq_front = sq.front + 1;
+        it -= sq.iter_pos - 1;
 
         /* check sequence */
-        for (auto q : { sq.front, sq.middle }) {
+        for (auto q : { ptr_sq_front, sq.middle }) {
             for (auto seq_ptr = q; *seq_ptr != 0; seq_ptr++, it++) {
                 if (!elements_matching((*it).front(), *seq_ptr)) {
                     return false;
@@ -288,19 +287,26 @@ namespace /* anonymous */
             return false;
         }
 
+        iter_t it = v.begin();
+        char c = utils::str_front(*it);
+
         /* first element must be an identifier */
-        if (!parse::is_ident(utils::str_front(v.front()))) {
+        if (!parse::is_ident(c)) {
             return false;
         }
 
-        iter_t it = parse::find_first_not_pointer_or_ident(v);
+        it = parse::find_first_not_pointer_or_ident(v);
 
         if (it == v.end()) {
             return check_object_prototype(v, p, it);
-        } else if (utils::starts_with(*it, '(')) {
+        }
+
+        c = utils::str_front(*it);
+
+        if (c == '(') {
             return (check_function_prototype(v, p, it) ||
                     check_function_pointer_prototype(v, p, it));
-        } else if (utils::starts_with(*it, '[')) {
+        } else if (c == '[') {
             return check_array_prototype(v, p, it);
         }
 
@@ -325,49 +331,37 @@ namespace /* anonymous */
         return true;
     }
 
-
-    /* create a seq_t struct */
-    template<size_t sz_front, size_t sz_mid>
-    constexpr seq_t seq(char const (&front)[sz_front], char const (&mid)[sz_mid], char const (&end)[2])
-    {
-        static_assert(sz_front > 1,
-            "parameter `front' must contain at least TYPE and NUL");
-
-        /* strlen(front) + strlen(mid) + strlen(end) */
-        constexpr const int len = (sz_front-1) + (sz_mid-1) + 1;
-
-        const seq_t sq = {
-            .front    = front + 1,  /* skip leading TYPE element */
-            .middle   = mid,
-            .end      = end[0],
-            .length   = len,
-            .iter_pos = sz_front - 1
-        };
-
-        return sq;
-    }
-
 } /* end anonymous namespace */
 
 
-#define PARSE(NAME,FRONT,MID,END) \
-    bool parse::is_##NAME(vstring_t &v, const iter_t &it) { \
-        return pattern(v, it, seq(FRONT, MID, END)); \
+#define MKFUNC(NAME,FRONT,MID,END) \
+    bool NAME(vstring_t &v, const iter_t &it) \
+    { \
+        const seq_t sq = { \
+            .front    = FRONT, \
+            .middle   = MID, \
+            .end      = END[0], \
+            .length   = (sizeof(FRONT)-1) + (sizeof(MID)-1) + sizeof(END[0]), \
+            .iter_pos = (sizeof(FRONT)-1) \
+        }; \
+        return check_pattern(v, it, sq); \
     }
 
-PARSE( function,                   TYPE        SYMBOL,     "(", ")" )
-PARSE( function_with_parentheses,  TYPE,  "("  SYMBOL ")"  "(", ")" )
-PARSE( function_pointer,           TYPE,  "(*" SYMBOL ")"  "(", ")" )
-PARSE( function_pointer_no_name,   TYPE,  "(*"        ")"  "(", ")" )
-PARSE( object,                     TYPE,  "",  SYMBOL               )
-PARSE( array,                      TYPE        SYMBOL,     "[", "]" )
-PARSE( array_no_name,              TYPE,                   "[", "]" )
+MKFUNC( parse::is_function,                   TYPE        SYMBOL,     "(", ")" )
+MKFUNC( parse::is_function_with_parentheses,  TYPE,  "("  SYMBOL ")"  "(", ")" )
+MKFUNC( parse::is_function_pointer,           TYPE,  "(*" SYMBOL ")"  "(", ")" )
+MKFUNC( parse::is_function_pointer_no_name,   TYPE,  "(*"        ")"  "(", ")" )
+MKFUNC( parse::is_object,                     TYPE,  "",  SYMBOL               )
+MKFUNC( parse::is_array,                      TYPE        SYMBOL,     "[", "]" )
+MKFUNC( parse::is_array_no_name,              TYPE,                   "[", "]" )
 
 
 vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
 {
     for (auto i = v.begin(); i != v.end(); i++) {
-        if (!utils::starts_with(*i, '*') && !is_ident(utils::str_front(*i))) {
+        char c = utils::str_front(*i);
+
+        if (c != '*' && !is_ident(c)) {
             return i;
         }
     }
