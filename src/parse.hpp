@@ -26,7 +26,6 @@
 
 #include <iterator>
 #include <string>
-#include <ctype.h>
 #include "types.hpp"
 
 class gendlopen;
@@ -34,10 +33,6 @@ class gendlopen;
 
 namespace parse
 {
-    inline bool is_ident(char c) {
-        return (c == '_' || isalnum(c));
-    }
-
     /* append strings, separated by space */
     template <typename T>
     void append_strings(std::string &buf, const T &it_beg, const T &it_end) {

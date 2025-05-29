@@ -27,6 +27,7 @@
 #include <iterator>
 #include <string>
 #include <vector>
+#include <ctype.h>
 #include "gendlopen.hpp"
 #include "types.hpp"
 #include "utils.hpp"
@@ -49,16 +50,21 @@ namespace /* anonymous */
     } seq_t;
 
 
+    inline bool is_ident(char c) {
+        return (c == '_' || isalnum(c));
+    }
+
+
     /* compare vector elements to pattern sequence */
     bool check_pattern(vstring_t &v, iter_t it, const seq_t &sq)
     {
-        /* first element was already checked in `parse_tokens()'
+        /* first element was already checked in `check_prototype()'
          * and is an identifier */
 
         /* compare e_vec (vector) against e_seq (sequence);
          * if e_seq is SYMBOL: check if e_vec is an identificator */
         auto elements_matching = [] (const char &e_vec, const char &e_seq) -> bool {
-            return (e_vec == e_seq || (e_seq == SYMBOL[0] && parse::is_ident(e_vec)));
+            return (e_vec == e_seq || (e_seq == SYMBOL[0] && is_ident(e_vec)));
         };
 
         /* check minimum vector size */
@@ -291,7 +297,7 @@ namespace /* anonymous */
         char c = utils::str_front(*it);
 
         /* first element must be an identifier */
-        if (!parse::is_ident(c)) {
+        if (!is_ident(c)) {
             return false;
         }
 
@@ -334,14 +340,14 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
-#define MKFUNC(NAME,FRONT,MID,END) \
+#define MKFUNC(NAME,FRONT,MIDDLE,END) \
     bool NAME(vstring_t &v, const iter_t &it) \
     { \
         const seq_t sq = { \
             .front    = FRONT, \
-            .middle   = MID, \
+            .middle   = MIDDLE, \
             .end      = END[0], \
-            .length   = (sizeof(FRONT)-1) + (sizeof(MID)-1) + sizeof(END[0]), \
+            .length   = (sizeof(FRONT)-1) + (sizeof(MIDDLE)-1) + sizeof(END[0]), \
             .iter_pos = (sizeof(FRONT)-1) \
         }; \
         return check_pattern(v, it, sq); \
