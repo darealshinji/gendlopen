@@ -81,7 +81,7 @@ namespace /* anonymous */
         }
 
         /* check last element */
-        if (v.back().empty() || !elements_matching(utils::str_front(v.back()), sq.end)) {
+        if (!elements_matching(utils::str_front(v.back()), sq.end)) {
             return false;
         }
 

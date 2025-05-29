@@ -33,14 +33,10 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-#define POINTER    "*"
-#define TRIPLE_DOT "..."
-
 
 namespace /* anonymous */
 {
-    /* check if prototype parameters are empty or of type "void"
-     * and save "void" parameter if true */
+    /* check if prototype parameters are empty or of type "void" */
     bool param_void_or_empty(proto_t &proto)
     {
         if (proto.args_vec.empty()) {
@@ -61,7 +57,7 @@ namespace /* anonymous */
         }
 
         if (strcasecmp(v.front().c_str(), "void") == 0) {
-            /* "void" parameter */
+            /* save "void" parameter */
             proto.args = v.front();
             return true;
         }
@@ -71,10 +67,10 @@ namespace /* anonymous */
     }
 
 
-    void append_name(proto_t &proto, int &param_count, const char *seperator)
+    void append_name(proto_t &proto, int &param_count, const char *separator)
     {
         std::string name = "a" + std::to_string(param_count);
-        proto.args += name + seperator;
+        proto.args += name + separator;
         proto.notype_args += name + ", ";
 
         /* iterate counter */
@@ -157,8 +153,8 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, s
             return false;
         } else if (v.size() == 1) {
             /* check for `...' */
-            if (v.back() == TRIPLE_DOT) {
-                proto.notype_args += TRIPLE_DOT ", ";
+            if (v.back() == "...") {
+                proto.notype_args += "... , ";
                 continue;
             }
 
@@ -166,8 +162,8 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, s
             return false;
         }
 
-        /* check if a parameter begins with `*' */
-        if (v.front() == POINTER) {
+        /* check if a parameter begins with pointer */
+        if (utils::str_front(v.front()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer `*'";
             return false;
         }
@@ -218,16 +214,16 @@ bool parse::create_names(proto_t &proto, std::string &msg)
             return false;
         }
 
-        /* check if a parameter begins with `*' */
-        if (v.front() == POINTER) {
+        /* check if a parameter begins with pointer */
+        if (utils::str_front(v.front()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer";
             return false;
         }
 
         /* don't append anything to `...' */
-        if (v.size() == 1 && v.back() == TRIPLE_DOT) {
-            proto.args += TRIPLE_DOT ", ";
-            proto.notype_args += TRIPLE_DOT ", ";
+        if (v.size() == 1 && v.back() == "...") {
+            proto.args += "... , ";
+            proto.notype_args += "... , ";
             continue;
         }
 
