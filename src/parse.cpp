@@ -51,7 +51,7 @@ namespace /* anonymous */
 
 
     inline bool is_ident(char c) {
-        return (c == '_' || isalnum(c));
+        return (isalnum(c) || c == '_');
     }
 
 
