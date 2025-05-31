@@ -100,7 +100,7 @@ std::string strip_line(const char *line)
 }
 
 /* get function parameter declaration */
-bool get_parameters(std::string &args, std::string &notype_args, char letter)
+bool get_parameters(std::string &args, std::string &notype_args, int &param_count)
 {
     std::smatch m;
 
@@ -115,12 +115,13 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         return false;
     }
 
-    notype_args += letter;
-    notype_args += ", ";
+    const std::string name = "a" + std::to_string(param_count);
+
+    notype_args += name + ", ";
 
     /* search for function pointer */
     std::string str = m[1].str();
-    size_t pos = str.find("(*)");
+    const size_t pos = str.find("(*)");
 
     if (pos == std::string::npos) {
         /* regular parameter */
@@ -129,16 +130,15 @@ bool get_parameters(std::string &args, std::string &notype_args, char letter)
         if (!utils::ends_with(args, '*')) {
             args += ' ';
         }
-        args += letter;
-        args += ", ";
+        args += name + ", ";
     } else {
         /* function pointer */
-        std::string insert = "(*x)";
-        insert[2] = letter;
-
-        str.replace(pos, 3, insert);
+        str.insert(pos + 2, name);
         args += str + ", ";
     }
+
+    /* iterate counter */
+    param_count++;
 
     return true;
 }
@@ -221,8 +221,7 @@ bool gendlopen::get_declarations(int mode)
     if (is_function) {
         /* function declaration */
         std::string args, notype_args;
-        char letter = 'a';
-        int rv;
+        int rv, param_count = 1;
 
         size_t pos = m.str(2).find('(');
 
@@ -236,14 +235,9 @@ bool gendlopen::get_declarations(int mode)
 
         /* read next lines for parameters */
         while ((rv = yylex()) == LEX_AST_PARMVAR) {
-            if (letter > 'z') {
-                throw error(decl.symbol + ": too many parameters");
-            }
-
-            if (!get_parameters(args, notype_args, letter)) {
+            if (!get_parameters(args, notype_args, param_count)) {
                 break;
             }
-            letter++;
         }
 
         utils::delete_suffix(args, ", ");
