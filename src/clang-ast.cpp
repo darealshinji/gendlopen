@@ -63,14 +63,10 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 #include "types.hpp"
 #include "utils.hpp"
 
-
 /* command line option strings used in error messages */
 #define OPT_SYMBOL_NAME     "-S"
 #define OPT_SYMBOL_PREFIX   "-P"
 #define OPT_AST_ALL_SYMBOLS "-ast-all-symbols"
-#define OPT_SKIP_PARAM      "-param=skip"
-#define OPT_CREATE_PARAM    "-param=create"
-
 
 
 namespace /* anonymous */

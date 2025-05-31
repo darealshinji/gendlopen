@@ -42,9 +42,9 @@ namespace parse
         }
     }
 
-    /* parameters.cpp */
-    bool read_and_copy_names(proto_t &proto, param::names &parameter_names, std::string &msg);
-    bool create_names(proto_t &proto, std::string &msg);
+    /* parse_parameters.cpp */
+    bool get_parameter_names(proto_t &proto, param::names &parameter_names, std::string &msg);
+    bool create_parameter_names(proto_t &proto, std::string &msg);
 
     /* parse_options.cpp */
     void options(gendlopen *gdo, const vstring_t &options);

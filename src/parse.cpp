@@ -415,14 +415,14 @@ void gendlopen::parse(std::vector<vstring_t> &vec_tokens, const std::string &inp
     if (m_parameter_names == param::create) {
         /* create parameter names */
         for (auto &proto : vproto) {
-            if (!parse::create_names(proto, msg)) {
+            if (!parse::create_parameter_names(proto, msg)) {
                 throw error(input_name + '\n' + msg);
             }
         }
     } else {
         /* param::read or param::skip */
         for (auto &proto : vproto) {
-            if (!parse::read_and_copy_names(proto, m_parameter_names, msg)) {
+            if (!parse::get_parameter_names(proto, m_parameter_names, msg)) {
                 throw error(input_name + '\n' + msg);
             }
         }

@@ -124,7 +124,7 @@ namespace /* anonymous */
 
 
 /* get parameter names from function parameter list */
-bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, std::string &msg)
+bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, std::string &msg)
 {
     if (proto.prototype != proto::function || param_void_or_empty(proto)) {
         /* nothing to do */
@@ -195,10 +195,11 @@ bool parse::read_and_copy_names(proto_t &proto, param::names &parameter_names, s
 }
 
 
-/* create parameter names; */
-/* unless type is a function pointer, don't make any assumptions which
+/* create parameter names
+ *
+ * unless type is a function pointer, don't make any assumptions which
  * element could be the name (it could also be a keyword like `const') */
-bool parse::create_names(proto_t &proto, std::string &msg)
+bool parse::create_parameter_names(proto_t &proto, std::string &msg)
 {
     int param_count = 1;
 
