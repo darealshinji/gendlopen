@@ -55,7 +55,7 @@ extern "C" int dladdr(const void *, _GDO_Dl_info *);
 extern     int dladdr(const void *, _GDO_Dl_info *);
 # endif
 
-#else
+#elif !defined(GDO_WINAPI)
 
 /* typename in POSIX-2024 is `Dl_info_t' but systems that
  * conform to it usually provide `Dl_info' too */
