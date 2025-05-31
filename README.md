@@ -132,3 +132,9 @@ export PATH="$PWD/cross-files/clang-cl-wrapper:$PATH"
 meson setup --cross-file cross-files/x86_64-windows-msvc-clang.ini build
 meson compile -C build
 ```
+
+This project is regularly tested on Linux (Ubuntu), OpenBSD, Haiku and Windows 11 (MSVC).
+It's also tested with the following cross-toolchains on Ubuntu:
+ * x86_64-w64-mingw32
+ * x86_64-windows-msvc-clang (clang-cl)
+ * x86_64-apple-darwin24
