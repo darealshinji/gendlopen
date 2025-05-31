@@ -42,11 +42,12 @@
 namespace /* anonymous */
 {
     typedef struct _seq {
-        const char *front;   /* only TYPE or TYPE + SYMBOL */
-        const char *middle;  /* the part where the iterator is */
-        const char end;      /* last element */
-        const int length;    /* pattern sequence length in bytes */
-        const int iter_pos;  /* iterator position within pattern sequence */
+        const bool front_has_sym;  /* SYMBOL is among the first part */
+        const char *middle;        /* the part where the iterator is */
+        const char end;            /* last element */
+        const size_t length;       /* pattern sequence length in bytes */
+        const int dist_front;      /* distance between front and iterator */
+        const int dist_end;        /* distance between end and iterator */
     } seq_t;
 
 
@@ -55,46 +56,45 @@ namespace /* anonymous */
     }
 
 
-    /* compare vector elements to pattern sequence */
+    /* compare vector elements to pattern sequence
+     *
+     * first element was already checked in `check_prototype()'
+     * and is an identifier and iterator is NOT v.begin() */
     bool check_pattern(vstring_t &v, iter_t it, const seq_t &sq)
     {
-        /* first element was already checked in `check_prototype()'
-         * and is an identifier */
-
         /* compare e_vec (vector) against e_seq (sequence);
          * if e_seq is SYMBOL: check if e_vec is an identificator */
-        auto elements_matching = [] (const char &e_vec, const char &e_seq) -> bool {
+        auto matching = [] (const char &e_vec, const char &e_seq) -> bool {
             return (e_vec == e_seq || (e_seq == SYMBOL[0] && is_ident(e_vec)));
         };
 
-        /* check minimum vector size */
-        if (static_cast<long>(v.size()) < sq.length) {
+        /* check vector size and boundaries */
+
+        if (v.size() < sq.length) {
             return false;
         }
 
-        /* check iterator distance to begin() and end() */
         if (it != v.end() &&  /* vector contains parentheses/brackets/etc. */
-            (std::distance(v.begin(), it) < sq.iter_pos ||
-             std::distance(it, v.end()) < (sq.length - sq.iter_pos)))
+            (std::distance(v.begin(), it) < sq.dist_front ||
+             std::distance(it, v.end()) < sq.dist_end))
         {
             return false;
         }
 
-        /* check last element */
-        if (!elements_matching(utils::str_front(v.back()), sq.end)) {
+        /* front */
+        if (sq.front_has_sym && !is_ident(utils::str_front(*(it-1)))) {
             return false;
         }
 
-        /* skip leading TYPE placeholder entry */
-        const char *ptr_sq_front = sq.front + 1;
-        it -= sq.iter_pos - 1;
+        /* end */
+        if (!matching(utils::str_front(v.back()), sq.end)) {
+            return false;
+        }
 
-        /* check sequence */
-        for (auto q : { ptr_sq_front, sq.middle }) {
-            for (auto seq_ptr = q; *seq_ptr != 0; seq_ptr++, it++) {
-                if (!elements_matching((*it).front(), *seq_ptr)) {
-                    return false;
-                }
+        /* middle */
+        for (auto p = sq.middle; *p != 0; p++, it++) {
+            if (!matching(utils::str_front(*it), *p)) {
+                return false;
             }
         }
 
@@ -305,6 +305,8 @@ namespace /* anonymous */
 
         if (it == v.end()) {
             return check_object_prototype(v, p, it);
+        } else if (it == v.begin()) {
+            return false;
         }
 
         c = utils::str_front(*it);
@@ -340,26 +342,39 @@ namespace /* anonymous */
 } /* end anonymous namespace */
 
 
+#define XSTRLEN(x) (sizeof(x)-1)
+
 #define MKFUNC(NAME,FRONT,MIDDLE,END) \
     bool NAME(vstring_t &v, const iter_t &it) \
     { \
+        static_assert(*FRONT == *TYPE, \
+            "macro parameter `FRONT' must begin with `TYPE'"); \
+            \
+        static_assert(XSTRLEN(FRONT) == 1 || XSTRLEN(FRONT) == 2, \
+            "macro parameter `FRONT' must contain exactly 1 or 2 elements"); \
+            \
+        static_assert(XSTRLEN(END) == 1, \
+            "macro parameter `END' must contain exactly 1 element"); \
+        \
         const seq_t sq = { \
-            .front    = FRONT, \
-            .middle   = MIDDLE, \
-            .end      = END[0], \
-            .length   = (sizeof(FRONT)-1) + (sizeof(MIDDLE)-1) + sizeof(END[0]), \
-            .iter_pos = (sizeof(FRONT)-1) \
+            .front_has_sym = (XSTRLEN(FRONT) == 2 && FRONT[1] == SYMBOL[0]), \
+            .middle        = MIDDLE, \
+            .end           = *END, \
+            .length        = XSTRLEN(FRONT) + XSTRLEN(MIDDLE) + XSTRLEN(END), \
+            .dist_front    = XSTRLEN(FRONT), \
+            .dist_end      = XSTRLEN(MIDDLE) + XSTRLEN(END) \
         }; \
+        \
         return check_pattern(v, it, sq); \
     }
 
 MKFUNC( parse::is_function,                   TYPE        SYMBOL,     "(", ")" )
 MKFUNC( parse::is_function_with_parentheses,  TYPE,  "("  SYMBOL ")"  "(", ")" )
 MKFUNC( parse::is_function_pointer,           TYPE,  "(*" SYMBOL ")"  "(", ")" )
-MKFUNC( parse::is_function_pointer_no_name,   TYPE,  "(*"        ")"  "(", ")" )
+MKFUNC( parse::is_function_pointer_no_name,   TYPE,  "(*" /****/ ")"  "(", ")" )
 MKFUNC( parse::is_object,                     TYPE,  "",  SYMBOL               )
 MKFUNC( parse::is_array,                      TYPE        SYMBOL,     "[", "]" )
-MKFUNC( parse::is_array_no_name,              TYPE,                   "[", "]" )
+MKFUNC( parse::is_array_no_name,              TYPE,       /****/      "[", "]" )
 
 
 vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
@@ -376,9 +391,10 @@ vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
 }
 
 
-void gendlopen::parse(std::vector<vstring_t> &vec_tokens, vproto_t &vproto, const std::string &input_name)
+void gendlopen::parse(std::vector<vstring_t> &vec_tokens, const std::string &input_name)
 {
     std::string sym, msg;
+    vproto_t vproto;
 
     /* parse tokens */
     if (!parse_tokens(vec_tokens, vproto)) {

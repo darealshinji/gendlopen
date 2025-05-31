@@ -137,38 +137,40 @@ namespace /* anonymous */
 
         return s.insert(pos, name);
     }
-
-
-    /* create typedefs for function pointers and arrays */
-    void create_typedefs(vstring_t &typedefs, vproto_t &objects, const std::string &pfx_lower)
-    {
-        /* create typename */
-        auto mk_name = [&] (const std::string &symbol) {
-            return pfx_lower + '_' + symbol + "__t";
-        };
-
-        for (auto &p : objects) {
-            std::string def, name;
-
-            if (p.prototype == proto::function_pointer) {
-                /* function pointer */
-                name = mk_name(p.symbol);
-                def = fptr_typedef(p.type, name);
-            } else if (p.prototype == proto::object_array) {
-                /* array type */
-                name = mk_name(p.symbol);
-                def = array_typedef(p.type, name);
-            } else {
-                continue;
-            }
-
-            if (!def.empty()) {
-                typedefs.push_back(def); /* add to typedefs */
-                p.type = name; /* replace old type */
-            }
-        }
-    }
 } /* end anonymous namespace */
+
+
+/* create typedefs for function pointers and arrays */
+void gendlopen::create_typedefs()
+{
+    /* create typename */
+    auto mk_name = [this] (const std::string &symbol) {
+        return m_pfx_lower + '_' + symbol + "__t";
+    };
+
+    for (auto &p : m_objects) {
+        std::string def, name;
+
+        if (p.prototype == proto::function_pointer) {
+            /* function pointer */
+            name = mk_name(p.symbol);
+            def = fptr_typedef(p.type, name);
+        } else if (p.prototype == proto::object_array) {
+            /* array type */
+            name = mk_name(p.symbol);
+            def = array_typedef(p.type, name);
+        } else {
+            continue;
+        }
+
+        if (def.empty()) {
+            throw error("failed to create typedef for symbol `" + p.symbol + "'");
+        }
+
+        m_typedefs.push_back(def); /* add to typedefs */
+        p.type = name; /* replace old type */
+    }
+}
 
 
 /* read input and tokenize */
@@ -177,7 +179,6 @@ void gendlopen::tokenize()
     std::vector<vstring_t> vec_tokens;
     vstring_t options;
     vstring_t *poptions = m_read_options ? &options : NULL;
-    vproto_t vproto;
 
     /* open input file */
 
@@ -213,7 +214,7 @@ void gendlopen::tokenize()
     } else if (ret == LEX_AST_BEGIN) {
         /* input is a clang AST file */
         parse_clang_ast();
-        create_typedefs(m_typedefs, m_objects, m_pfx_lower);
+        create_typedefs();
         return;
     }
 
@@ -222,6 +223,6 @@ void gendlopen::tokenize()
         parse::options(this, options);
     }
 
-    parse(vec_tokens, vproto, input_name);
-    create_typedefs(m_typedefs, m_objects, m_pfx_lower);
+    parse(vec_tokens, input_name);
+    create_typedefs();
 }

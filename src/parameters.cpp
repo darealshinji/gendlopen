@@ -69,7 +69,7 @@ namespace /* anonymous */
 
     void append_name(proto_t &proto, int &param_count, const char *separator)
     {
-        std::string name = "a" + std::to_string(param_count);
+        const std::string name = "a" + std::to_string(param_count);
         proto.args += name + separator;
         proto.notype_args += name + ", ";
 

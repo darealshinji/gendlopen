@@ -98,12 +98,15 @@ private:
     std::string m_defines;
     std::string m_deflib_a, m_deflib_w;
 
+    /* tokenize.cpp */
+    void create_typedefs();
+
     /* clang-ast.cpp */
     bool get_declarations(int mode);
     void parse_clang_ast();
 
     /* parse.cpp */
-    void parse(std::vector<vstring_t> &vec_tokens, vproto_t &vproto, const std::string &input_name);
+    void parse(std::vector<vstring_t> &vec_tokens, const std::string &input_name);
 
     /* generate.cpp */
     void open_ofstream(const fs_path_t &opath);
