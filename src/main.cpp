@@ -29,21 +29,23 @@
 #endif
 #include <string.h>
 
-#ifdef HAVE_LIBGEN_H
-# include <libgen.h>  /* basename */
-#endif
-#include <errno.h>    /* program_invocation_short_name */
+#include <errno.h>  /* program_invocation_short_name */
 
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
-#include "filesystem_compat.hpp"
 #include "parse_args.hpp"
 #include "types.hpp"
 
 #if !defined(HAVE_GETPROGNAME) && !defined(HAVE_PROGRAM_INVOCATION_SHORT_NAME)
 # define SAVE_ARGV0
+#endif
+
+#ifdef _WIN32
+# define PATH_SEPARATOR '\\'
+#else
+# define PATH_SEPARATOR '/'
 #endif
 
 
@@ -52,11 +54,11 @@
 namespace
 {
 #ifdef SAVE_ARGV0
-    std::string argv0;
+    const char *argv0;
 #endif
 
     /* get program name without full path */
-    std::string get_prog_name()
+    const char *get_prog_name()
     {
 #ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
         return program_invocation_short_name; /* GNU */
@@ -64,15 +66,14 @@ namespace
 #elif defined(HAVE_GETPROGNAME)
         return getprogname(); /* BSD */
 
-#elif defined(HAVE_BASENAME)
-        return basename(const_cast<char *>(argv0.data()));
-
-#elif defined(MINGW32_NEED_CONVERT_FILENAME)
-        /* see filesystem_compat.cpp */
-        return fs::filename(fs::convert_filename(argv0));
-
 #else
-        return fs::filename(argv0);
+        const char *p = strrchr(argv0, PATH_SEPARATOR);
+
+        if (p && *(p+1) != 0) {
+            return p + 1;
+        }
+
+        return argv0;
 #endif
     }
 

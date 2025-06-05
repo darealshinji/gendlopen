@@ -37,12 +37,6 @@ if compiler.has_function('program_invocation_short_name', prefix : '#include <er
     cpp_args_extra = '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
 elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
     cpp_args_extra = '-DHAVE_GETPROGNAME'
-elif compiler.has_header('libgen.h')
-    cpp_args_extra = ['-DHAVE_LIBGEN_H']
-
-    if compiler.has_function('basename', prefix : '#include <libgen.h>')
-        cpp_args_extra += ['-DHAVE_BASENAME']
-    endif
 endif
 
 if not host_system_win32
