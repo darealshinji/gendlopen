@@ -265,8 +265,9 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 {
     _gdo_clear_error();
 
-    /* release old libhandle */
-    if (gdo_lib_is_loaded() && !gdo_free_lib()) {
+    /* consider it an error if the library was already loaded */
+    if (gdo_lib_is_loaded()) {
+        _gdo_save_to_errbuf(_T("library already loaded"));
         return false;
     }
 

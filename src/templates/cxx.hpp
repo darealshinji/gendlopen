@@ -696,8 +696,9 @@ private:
     {
         clear_error();
 
-        /* release old libhandle */
-        if (lib_loaded() && !free()) {
+        /* consider it an error if the library was already loaded */
+        if (lib_loaded()) {
+            m_errmsg = "library already loaded";
             return false;
         }
 
