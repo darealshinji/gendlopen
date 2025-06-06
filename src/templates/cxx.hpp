@@ -439,15 +439,6 @@ private:
     }
 
 
-    /* if filename is empty */
-    void set_error_empty_filename()
-    {
-        clear_error();
-        m_last_error = ERROR_INVALID_NAME;
-        m_errmsg = "empty filename";
-    }
-
-
     HMODULE load_library_ex(const wchar_t *path) {
         return ::LoadLibraryExW(path, NULL, m_flags);
     }
@@ -634,14 +625,6 @@ private:
     }
 
 
-    /* if filename is empty */
-    void set_error_empty_filename()
-    {
-        clear_error();
-        m_errmsg = "empty filename";
-    }
-
-
     /* load library */
     void load_lib(const std::string &filename, int flags, bool new_namespace)
     {
@@ -703,7 +686,11 @@ private:
         }
 
         if (filename.empty()) {
-            set_error_empty_filename();
+            clear_error();
+#ifdef GDO_WINAPI
+            m_last_error = ERROR_INVALID_NAME;
+#endif
+            m_errmsg = "empty filename";
             return false;
         }
 
