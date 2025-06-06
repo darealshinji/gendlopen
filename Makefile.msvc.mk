@@ -11,10 +11,10 @@ CXX_SRCS = \
 	..\$(SRC)\help.cpp \
 	..\$(SRC)\main.cpp \
 	..\$(SRC)\open_file.cpp \
-	..\$(SRC)\parameters.cpp \
-	..\$(SRC)\parse_args.cpp \
 	..\$(SRC)\parse.cpp \
+	..\$(SRC)\parse_args.cpp \
 	..\$(SRC)\parse_options.cpp \
+	..\$(SRC)\parse_parameters.cpp \
 	..\$(SRC)\substitute.cpp \
 	..\$(SRC)\symbol_name_lookup.cpp \
 	..\$(SRC)\tokenize.cpp \
