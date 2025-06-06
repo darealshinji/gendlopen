@@ -412,6 +412,29 @@ GDO_LINKAGE bool gdo_free_lib(void)
 
 
 /*****************************************************************************/
+/*    free the library handle and set pointers to NULL (no error checks)     */
+/*****************************************************************************/
+GDO_LINKAGE void gdo_force_free_lib(void)
+{
+    if (gdo_lib_is_loaded()) {
+#ifdef GDO_WINAPI
+        FreeLibrary(gdo_hndl.handle);
+#else
+        dlclose(gdo_hndl.handle);
+#endif
+    }
+
+    _gdo_clear_error();
+
+    /* set pointers back to NULL */
+    gdo_hndl.handle = NULL;
+    gdo_hndl.ptr.%%symbol%% = NULL;
+}
+/*****************************************************************************/
+
+
+
+/*****************************************************************************/
 /*                   automatically free library upon exit                    */
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_enable_autorelease(void)
@@ -419,7 +442,7 @@ GDO_LINKAGE bool gdo_enable_autorelease(void)
     _gdo_clear_error();
 
     if (!gdo_hndl.free_lib_registered) {
-        if (atexit((void (*)(void))gdo_free_lib) == 0) {
+        if (atexit(gdo_force_free_lib) == 0) {
             gdo_hndl.free_lib_registered = true;
         } else {
             _gdo_save_to_errbuf(_T("atexit(): failed to register `gdo_free_lib()'"));

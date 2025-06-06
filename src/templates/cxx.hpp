@@ -96,8 +96,8 @@ public:
     bool any_symbol_loaded();
 
 
-    /* free library */
-    bool free();
+    /* free library; always succeeds if `force == true` */
+    bool free(bool force=false);
 
 
     /* whether to free the library in the class destructor */
@@ -498,13 +498,6 @@ private:
     }
 
 
-    /* free library handle */
-    bool free_lib()
-    {
-        return (::FreeLibrary(m_handle) == TRUE);
-    }
-
-
     /* load symbol address */
     template<typename T>
     T sym_load(const char *symbol)
@@ -648,13 +641,6 @@ private:
     }
 
 
-    /* free library handle */
-    bool free_lib()
-    {
-        return (::dlclose(m_handle) == 0);
-    }
-
-
     /* load symbol address */
     template<typename T>
     T sym_load(const char *symbol)
@@ -735,7 +721,7 @@ public:
     ~dl()
     {
         if (m_free_lib_in_dtor) {
-            free();
+            free(true);
         }
     }
 
@@ -931,15 +917,29 @@ public:
     }
 
 
-    /* free library */
-    bool free()
+    /* free library; always succeeds if `force == true` */
+    bool free(bool force=false)
     {
+        auto release_lib_handle = [this] () -> bool
+        {
+#ifdef GDO_WINAPI
+            return (::FreeLibrary(m_handle) == TRUE);
+#else
+            return (::dlclose(m_handle) == 0);
+#endif
+        };
+
         clear_error();
 
-        if (lib_loaded() && !free_lib()) {
+        /* don't exit on error if `force` was enabled */
+        const bool exit_on_error = !force;
+
+        if (lib_loaded() && !release_lib_handle() && exit_on_error) {
             save_error();
             return false;
         }
+
+        clear_error();
 
         m_handle = nullptr;
         ptr::%%symbol%% = nullptr;

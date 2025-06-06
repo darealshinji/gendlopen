@@ -30,6 +30,7 @@ bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, boo
 bool               gdo_lib_is_loaded ();
 int                gdo_lib_flags ();
 bool               gdo_free_lib ();
+void               gdo_force_free_lib ();
 bool               gdo_enable_autorelease ();
 
 bool               gdo_all_symbols_loaded ();
@@ -92,7 +93,14 @@ int gdo_lib_flags ();
 
 bool gdo_free_lib ();
 
-    Free/release library handle.
+    Free/release library handle. Internal handle and pointers are set back to NULL if the
+    underlying call to dlclose()/FreeLibrary() was successful.
+
+
+void gdo_force_free_lib ();
+
+    Free/release library handle. Doesn't check if the underlying call to dlclose() or
+    FreeLibrary() was successful. Always sets back internal handle and pointers to NULL.
 
 
 bool gdo_enable_autorelease ();
