@@ -31,14 +31,6 @@
 typedef struct _NotifyNotification NotifyNotification;
 typedef struct _NotifyNotificationPrivate NotifyNotificationPrivate;
 
-struct _NotifyNotification
-{
-        /*< private >*/
-        GObject                    parent_object;
-
-        NotifyNotificationPrivate *priv;
-};
-
 NotifyNotification *notify_notification_new                  (const char         *summary,
                                                               const char         *body,
                                                               const char         *icon);

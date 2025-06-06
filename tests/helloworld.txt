@@ -31,6 +31,9 @@
 
 /* empty statements ignored */;;;
 
+/* simple typedefs are ignored */
+typedef int myint_t;
+
 
 /* no parameters */
 helloworld *(helloworld_init) (  );

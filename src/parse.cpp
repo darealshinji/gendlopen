@@ -328,6 +328,11 @@ namespace /* anonymous */
         for (vstring_t &v : vec_tokens) {
             proto_t p;
 
+            /* ignore (simple) typedefs */
+            if (!v.empty() && v.front() == "typedef") {
+                continue;
+            }
+
             if (!check_prototype(v, p)) {
                 print_tokens(v);
                 return false;
