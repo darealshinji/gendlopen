@@ -7,151 +7,6 @@
 
 /***
 
-******************
-*   gdo_char_t   *
-******************
-
-If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT defined
-`gdo_char_t` will become `wchar_t`.
-
-Otherwise `gdo_char_t` will become `char`.
-
-
-**************************
-*   Functions provided   *
-**************************
-
-bool               gdo_load_lib ();
-bool               gdo_load_lib_and_symbols ();
-bool               gdo_load_lib_name (const gdo_char_t *filename);
-bool               gdo_load_lib_name_and_symbols (const gdo_char_t *filename);
-bool               gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
-
-bool               gdo_lib_is_loaded ();
-int                gdo_lib_flags ();
-bool               gdo_free_lib ();
-void               gdo_force_free_lib ();
-bool               gdo_enable_autorelease ();
-
-bool               gdo_all_symbols_loaded ();
-bool               gdo_no_symbols_loaded ();
-bool               gdo_any_symbol_loaded ();
-bool               gdo_load_all_symbols ();
-bool               gdo_load_symbol (int symbol_num);
-bool               gdo_load_symbol_name (const char *symbol);
-
-bool               gdo_all_symbols_loaded ();
-bool               gdo_no_symbols_loaded ();
-bool               gdo_any_symbol_loaded ();
-
-const gdo_char_t * gdo_last_error ();
-gdo_char_t *       gdo_lib_origin ();
-
-
-
-bool gdo_load_lib ();
-
-    Load the library specified by the macro GDO_DEFAULT_LIB using default flags.
-    This function is not available if GDO_DEFAULT_LIB was not defined.
-
-
-bool gdo_load_lib_and_symbols ();
-
-    Calls gdo_load_lib() and gdo_load_symbols().
-
-
-bool gdo_load_lib_name (const gdo_char_t *filename);
-
-    Load the library specified by `filename' using default flags.
-
-
-bool gdo_load_lib_name_and_symbols (const gdo_char_t *filename);
-
-    Calls gdo_load_lib_name() and gdo_load_symbols().
-
-
-bool gdo_load_lib_args (const gdo_char_t *filename, int flags, bool new_namespace);
-
-    Load the library; `filename' and `flags' are passed to the underlying library
-    loading functions.
-
-    If `new_namespace' is true the library will be loaded into a new namespace.
-    This is done using dlmopen() with the LM_ID_NEWLM argument.
-    This argument is only used on Glibc and if _GNU_SOURCE was defined.
-
-
-bool gdo_lib_is_loaded ();
-
-    Returns true if the library was successfully loaded.
-
-
-int gdo_lib_flags ();
-
-    Returns the flags used to load the library, which is the last time gdo_load_lib_args()
-    was invoked directly or indirectly.
-
-
-bool gdo_free_lib ();
-
-    Free/release library handle. Internal handle and pointers are set back to NULL if the
-    underlying call to dlclose()/FreeLibrary() was successful.
-
-
-void gdo_force_free_lib ();
-
-    Free/release library handle. Doesn't check if the underlying call to dlclose() or
-    FreeLibrary() was successful. Always sets back internal handle and pointers to NULL.
-
-
-bool gdo_enable_autorelease ();
-
-    Registers a function to automatically free the library upon the program's exit.
-    You may want to use this function first before you attempt to load anything.
-
-
-bool gdo_load_all_symbols ();
-
-    Load the symbols. This function can safely be called multiple times.
-
-
-bool gdo_load_symbol (int symbol_num);
-
-    Load a specific symbol.
-    `symbol_num' is an enumeration value: `GDO_LOAD_<symbol_name>'
-
-
-bool gdo_all_symbols_loaded ();
-
-    Returns true if ALL symbols were successfully loaded.
-
-
-bool gdo_no_symbols_loaded ();
-
-    Returns true if NO symbols were loaded at all.
-
-
-bool gdo_any_symbol_loaded ();
-
-    Returns true if one or more symbols were successfully loaded.
-
-
-const gdo_char_t *gdo_last_error ();
-
-    Returns a pointer to the error message buffer with the last saved error string.
-    The message will indicate if no error occured in a function.
-    This function doesn't return a null pointer or empty string.
-    Do not free the returned pointer!
-
-
-gdo_char_t *gdo_lib_origin ();
-
-    Return the full library path. The returned string must be deallocated with free().
-    On error or if no library was loaded NULL is returned.
-    On some systems and configurations the path is taken from the loaded symbols
-    in which case at least one symbol must have been successfully loaded.
-
-
-
 ****************************************************
 * The following options may be set through macros: *
 ****************************************************
@@ -212,30 +67,6 @@ GDO_DISABLE_DLMOPEN
     Note: on Linux you need to define _GNU_SOURCE to enable `dlmopen(3)'.
 
 
-
-*****************
-* Helper macros *
-*****************
-
-GDO_ALIAS_<symbol>
-    Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will
-    access the pointer to `helloworld'.
-
-LIBNAME(NAME, API)
-LIBNAMEA(NAME, API)
-LIBNAMEW(NAME, API)
-    Convenience macro to create versioned library names for DLLs, dylibs and DSOs,
-    including double quote marks.
-    LIBNAME(z,1) for example will become "libz-1.dll", "libz.1.dylib" or "libz.so.1".
-
-LIBEXT
-LIBEXTA
-LIBEXTW
-    Shared library file extension without dot ("dll", "dylib" or "so").
-    Useful i.e. on plugins.
-
-
-
 *********
 * Hooks *
 *********
@@ -271,7 +102,10 @@ GDO_HOOK_<function>(...)
 #endif
 
 
-/* char / wchar_t */
+/**
+ * If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT
+ * defined `gdo_char_t` will become `wchar_t`.
+ */
 #ifdef _GDO_TARGET_WIDECHAR
 typedef wchar_t gdo_char_t;
 #else
@@ -308,31 +142,7 @@ typedef struct gdo_handle
 
 } gdo_handle_t;
 
-
 GDO_OBJ_DECL gdo_handle_t gdo_hndl;
-
-#ifdef GDO_DEFAULT_LIB
-GDO_DECL bool gdo_load_lib(void);
-GDO_DECL bool gdo_load_lib_and_symbols(void);
-#endif
-GDO_DECL bool gdo_load_lib_name(const gdo_char_t *filename);
-GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
-GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
-
-GDO_DECL bool gdo_lib_is_loaded(void);
-GDO_DECL int  gdo_lib_flags(void);
-GDO_DECL bool gdo_free_lib(void);
-GDO_DECL bool gdo_enable_autorelease(void);
-
-GDO_DECL bool gdo_all_symbols_loaded(void);
-GDO_DECL bool gdo_no_symbols_loaded(void);
-GDO_DECL bool gdo_any_symbol_loaded(void);
-GDO_DECL bool gdo_load_all_symbols(void);
-GDO_DECL bool gdo_load_symbol(int symbol_num);
-GDO_DECL bool gdo_load_symbol_name(const char *symbol);
-
-GDO_DECL const gdo_char_t *gdo_last_error(void)  GDO_ATTR (returns_nonnull);
-GDO_DECL gdo_char_t *gdo_lib_origin(void)  GDO_ATTR (warn_unused_result);
 
 
 /* enumeration values for gdo_load_symbol() */
@@ -340,6 +150,181 @@ enum {
     GDO_LOAD_%%symbol%%,
     GDO_ENUM_LAST
 };
+
+
+#ifdef GDO_DEFAULT_LIB
+/**
+ * Load the default library specified by the macro GDO_DEFAULT_LIB using default flags.
+ *
+ * On success `true' is returned.
+ * On an error or if the library is already loaded the return value is `false'.
+ */
+GDO_DECL bool gdo_load_lib(void);
+#endif
+
+
+#ifdef GDO_DEFAULT_LIB
+/**
+ * Load the default library and all symbols.
+ *
+ * On success `true' is returned.
+ * On an error or if the library is already loaded the return value is `false'.
+ */
+GDO_DECL bool gdo_load_lib_and_symbols(void);
+#endif
+
+
+/**
+ * Load a library using default flags.
+ *
+ * filename:
+ *   Library filename or path to load. Must not be empty or NULL.
+ *
+ * On success `true' is returned.
+ * On an error or if the library is already loaded the return value is `false'.
+ */
+GDO_DECL bool gdo_load_lib_name(const gdo_char_t *filename);
+
+
+/**
+ * Load a library using default flags and all symbols.
+ *
+ * filename:
+ *   Library filename or path to load. Must not be empty or NULL.
+ *
+ * On success `true' is returned.
+ * On an error or if the library is already loaded the return value is `false'.
+ */
+GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
+
+
+/**
+ * Load a library.
+ *
+ * filename:
+ *   Library filename or path to load. Must not be empty or NULL.
+ *
+ * flags:
+ *   These are passed to the underlying library loading functions.
+ *
+ * new_namespace:
+ *   If true the library will be loaded into a new namespace.
+ *   This is done using dlmopen() with the LM_ID_NEWLM argument.
+ *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
+ *   it has no effect otherwise.
+ *
+ * On success `true' is returned.
+ * On an error or if the library is already loaded the return value is `false'.
+ */
+GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
+
+
+/**
+ * Returns `true' if the library was successfully loaded.
+ */
+GDO_DECL bool gdo_lib_is_loaded(void);
+
+
+/**
+ * Returns the flags used on the last attempt to load the library or zero.
+ */
+GDO_DECL int gdo_lib_flags(void);
+
+
+/**
+ * Free/release the library. Internal handle and pointers are set back to NULL
+ * if the underlying calls were successful, in which case `true' is returned.
+ * Return value is `true' if no library was loaded.
+ */
+GDO_DECL bool gdo_free_lib(void);
+
+
+/**
+ * Free/release the library. Don't check if the underlying calls were successful.
+ * Internal handle and pointers are always set back to NULL.
+ * Can safely be called even if no library was loaded.
+ */
+GDO_DECL void gdo_force_free_lib(void);
+
+
+/**
+ * Registers the function `gdo_force_free_lib()' to be called upon the program's exit.
+ * It's recommended to do this before you attempt to load anything.
+ *
+ * It returns `false' if registering the function wasn't successful.
+ * On success or if a function was already registered the return value is `true'.
+ */
+GDO_DECL bool gdo_enable_autorelease(void);
+
+
+/**
+ * Load all symbols. Returns `true' on success.
+ * If all symbols were already loaded, nothing is done and the return value is `true'.
+ */
+GDO_DECL bool gdo_load_all_symbols(void);
+
+
+/**
+ * Load a specific symbol from an enum value.
+ *
+ * symbol_num:
+ *   Auto-generated enumeration value `GDO_LOAD_<symbol_name>'.
+ *   For example use `GDO_LOAD_foo' to load the symbol `foo'.
+ *
+ * Returns `true' on success or if the symbol was already loaded.
+ */
+GDO_DECL bool gdo_load_symbol(int symbol_num);
+
+
+/**
+ * Load a specific symbol.
+ *
+ * symbol:
+ *   Name of the symbol to load.
+ *
+ * Returns `true' on success or if the symbol was already loaded.
+ */
+GDO_DECL bool gdo_load_symbol_name(const char *symbol);
+
+
+/**
+ * Returns true if ALL symbols were loaded.
+ */
+GDO_DECL bool gdo_all_symbols_loaded(void);
+
+
+/**
+ * Returns true if NO symbols were loaded.
+ */
+GDO_DECL bool gdo_no_symbols_loaded(void);
+
+
+/**
+ * Returns true if one or more symbols were loaded.
+ */
+GDO_DECL bool gdo_any_symbol_loaded(void);
+
+
+/**
+ * Returns a pointer to the error message buffer with the last saved error string.
+ * The message will indicate if no error had occured.
+ * This function doesn't return a null pointer or empty string.
+ * Do not free the returned pointer!
+ */
+GDO_DECL const gdo_char_t *gdo_last_error(void)
+    GDO_ATTR (returns_nonnull);
+
+
+/**
+ * Return the full library path. The returned string MUST be deallocated with free().
+ * On error or if no library was loaded NULL is returned.
+ *
+ * On some systems and configurations the path is taken from the loaded symbols
+ * in which case at least one symbol must have been successfully loaded before
+ * using this function.
+ */
+GDO_DECL gdo_char_t *gdo_lib_origin(void)
+    GDO_ATTR (warn_unused_result);
 
 
 /* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
