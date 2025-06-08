@@ -2,6 +2,21 @@
 /*                              filename macros                              */
 /*****************************************************************************/
 
+/***
+
+LIBNAME(NAME, API)
+LIBNAMEA(NAME, API)
+LIBNAMEW(NAME, API)
+    Convenience macro to create versioned library names including double quote marks.
+    LIBNAME(z,1) for example will become "libz.1.dylib" on macOS.
+
+LIBEXT
+LIBEXTA
+LIBEXTW
+    Shared library file extension without dot. Useful i.e. on plugins.
+
+***/
+
 /* default library filename extension */
 #ifdef LIBEXT
 # undef LIBEXT

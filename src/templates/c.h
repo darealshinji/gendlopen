@@ -211,7 +211,7 @@ GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
  *   If true the library will be loaded into a new namespace.
  *   This is done using dlmopen() with the LM_ID_NEWLM argument.
  *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
- *   it has no effect otherwise.
+ *   otherwise it has no effect.
  *
  * On success `true' is returned.
  * On an error or if the library is already loaded the return value is `false'.
