@@ -42,20 +42,34 @@ namespace gdo
         %%obj_type%% *%%obj_symbol%% = nullptr;
     }
 
+
+    /**
+     * Default flags to use when loading a library.
+     */
 #ifdef GDO_WINAPI
-    const int default_flags = 0;
+    constexpr const int default_flags = 0;
 #elif defined(_AIX)
-    const int default_flags = RTLD_LAZY | RTLD_MEMBER;
+    constexpr const int default_flags = RTLD_LAZY | RTLD_MEMBER;
 #else
-    const int default_flags = RTLD_LAZY;
+    constexpr const int default_flags = RTLD_LAZY;
 #endif
 
 
-    /* library handle */
+    /**
+     * Library handle
+     */
     void *handle = nullptr;
 
 
-    /* load library */
+    /**
+     * Load a library.
+     *
+     * filename:
+     *   Library filename or path to load.
+     *
+     * flags:
+     *   These are passed to the underlying library loading functions.
+     */
     void load_lib(const char *filename, int flags=default_flags)
     {
 #ifdef GDO_WINAPI
@@ -66,7 +80,10 @@ namespace gdo
     }
 
 
-    /* free library (no error checks) */
+    /**
+     * Free library handle without error checks.
+     * Internal handle and pointers are always set back to NULL.
+     */
     void free_lib(void)
     {
 #ifdef GDO_WINAPI
@@ -80,7 +97,14 @@ namespace gdo
     }
 
 
-    /* get symbol */
+    /**
+     * Load a specific symbol.
+     *
+     * symbol:
+     *   Name of the symbol to load.
+     *
+     * Returns NULL on error.
+     */
     void *get_symbol(const char *symbol)
     {
 #ifdef GDO_WINAPI
@@ -92,7 +116,9 @@ namespace gdo
     }
 
 
-    /* base error class */
+    /**
+     * Base error class
+     */
     class Error : public std::runtime_error
     {
         public:
@@ -100,7 +126,10 @@ namespace gdo
             virtual ~Error() {}
     };
 
-    /* library loading error */
+
+    /**
+     * An error has occurred trying to load a library.
+     */
     class LibraryError : public Error
     {
         public:
@@ -108,7 +137,10 @@ namespace gdo
             virtual ~LibraryError() {}
     };
 
-    /* symbol loading error */
+
+    /**
+     * An error has occurred trying to load a symbol.
+     */
     class SymbolError : public Error
     {
         public:
@@ -117,18 +149,25 @@ namespace gdo
     };
 
 
-    /* throw an exception on error */
+    /**
+     * Load library and all symbols.
+     *
+     * filename:
+     *   Library filename or path to load. Must not be empty or NULL.
+     *
+     * Throws an exception on error.
+     */
     void load_library_and_symbols(const char *filename) noexcept(false)
     {
+        if (filename == NULL) {
+            throw LibraryError("<NULL>");
+        } else if (*filename == 0) {
+            throw LibraryError("<EMPTY>");
+        }
+
         load_lib(filename);
 
         if (!handle) {
-            if (filename == NULL) {
-                filename = "<NULL>";
-            } else if (*filename == 0) {
-                filename = "<EMPTY>";
-            }
-
             throw LibraryError(filename);
         }
 @
@@ -145,10 +184,13 @@ namespace gdo
 }; /* end namespace */
 
 
-#if !defined(GDO_NOALIAS)
+#if !defined(GDO_DISABLE_ALIASING)
 
-/* aliases to raw symbol pointers */
-#define %%func_symbol%%  gdo::ptr::%%func_symbol%%
-#define %%obj_symbol%%  *gdo::ptr::%%obj_symbol%%
+/**
+ * Aliases to raw symbol pointers
+ */
+#define %%func_symbol_pad%%  gdo::ptr::%%func_symbol%%
+#define %%obj_symbol_pad%%  *gdo::ptr::%%obj_symbol%%
 
-#endif // !GDO_NOALIAS
+#endif // !GDO_DISABLE_ALIASING
+

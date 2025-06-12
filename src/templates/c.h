@@ -1,3 +1,7 @@
+/*****************************************************************************/
+/*                                   C API                                   */
+/*****************************************************************************/
+
 #ifdef GDO_WINAPI
 # include <wchar.h>
 #endif
@@ -5,94 +9,8 @@
 # include <stdbool.h>
 #endif
 
-/***
 
-****************************************************
-* The following options may be set through macros: *
-****************************************************
-
-GDO_USE_DLOPEN
-    If defined use `dlopen()' API on win32 targets.
-    On other targets `dlopen()' is always used.
-
-GDO_STATIC
-    If defined `static inline' linkage is used for all functions.
-
-GDO_DEFAULT_FLAGS
-    Override the default flags to use when loading a library.
-
-GDO_DEFAULT_LIB
-    Set a default library name through this macro (including double quote
-    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD
-    or if you want to use the `gdo_load_lib()' function.
-
-GDO_WRAP_FUNCTIONS
-    Use actual wrapped functions instead of a name alias. This is useful if you
-    want to create a library to later link an application against.
-    These functions print an error message and call `exit(1)' if they were called
-    and the library and symbols weren't loaded properly.
-
-GDO_ENABLE_AUTOLOAD
-    Define this macro if you want to use auto-loading wrapper functions.
-    This means you don't need to explicitly call library load functions.
-    The first wrapper function called will load all symbols at once.
-    It requires GDO_DEFAULT_LIB to be defined.
-    If an error occures during loading these functions print an error message
-    and call `exit(1)'!
-    The library handle will be freed automatically on program exit.
-
-GDO_DELAYLOAD
-    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its
-    wrapper function is called instead of all symbols.
-    It requires GDO_ENABLE_AUTOLOAD to be defined.
-
-GDO_VISIBILITY
-    You can set the symbol visibility of wrapped functions (enabled with GDO_WRAP_FUNCTIONS)
-    using this macro.
-
-GDO_USE_MESSAGE_BOX
-    Windows only: if GDO_ENABLE_AUTOLOAD was activated this will enable
-    error messages from auto-loading to be displayed in MessageBox windows.
-
-GDO_DISABLE_ALIASING
-    Don't use preprocessor macros to alias symbol names. Use with care.
-
-GDO_DISABLE_DLINFO
-    Always disable usage of `dlinfo(3)' to retrieve the library path.
-    `dladdr(3)' will be used instead.
-    Note: on Linux you need to define _GNU_SOURCE to enable `dlinfo(3)'.
-
-GDO_DISABLE_DLMOPEN
-    Always disable usage of `dlmopen(3)'.
-    Note: on Linux you need to define _GNU_SOURCE to enable `dlmopen(3)'.
-
-
-*********
-* Hooks *
-*********
-
-GDO_HOOK_<function>(...)
-    Define a hook macro that will be inserted into a wrap function.
-    The hook is placed before the actual function call.
-    If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.
-    Parameter names are taken from the function prototype declarations (or it's "a, b, c" and so on
-    if the header was created with `-param=create'). A hook may be left undefined.
-
-    For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':
-
-    #define GDO_HOOK_sum_of_a_and_b(...) \
-      printf("debug: the sum of %d and %d is %d\n", \
-        val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
-
-***/
-
-
-/*****************************************************************************/
-/*                                   C API                                   */
-/*****************************************************************************/
-
-
-/* declaration */
+/* static/extern declarations */
 #ifdef GDO_STATIC
 # define GDO_DECL      static inline
 # define GDO_OBJ_DECL  static
@@ -104,7 +22,7 @@ GDO_HOOK_<function>(...)
 
 /**
  * If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT
- * defined `gdo_char_t` will become `wchar_t`.
+ * defined, then `gdo_char_t` will become `wchar_t`.
  */
 #ifdef _GDO_TARGET_WIDECHAR
 typedef wchar_t gdo_char_t;
@@ -113,51 +31,51 @@ typedef char    gdo_char_t;
 #endif
 
 
-/* our library and symbols handle */
-typedef struct gdo_handle
-{
-#ifdef GDO_WINAPI
-    HMODULE handle;
-    DWORD last_errno;
-    /* FormatMessage: according to MSDN the maximum message length is 64k */
-    gdo_char_t buf_formatted[64*1024];
-#else
-    void *handle;
-#endif
-
-    int flags;
-    bool free_lib_registered;
-
-#ifdef _WIN32
-    gdo_char_t buf[64*1024];
-#else
-    gdo_char_t buf[8*1024];
-#endif
-
-    /* symbols */
-    struct _gdo_ptr {
-        %%type%% (*%%func_symbol%%)(%%args%%);
-        %%obj_type%% *%%obj_symbol%%;
-    } ptr;
-
-} gdo_handle_t;
-
-GDO_OBJ_DECL gdo_handle_t gdo_hndl;
-
-
-/* enumeration values for gdo_load_symbol() */
+/**
+ * Enumeration values for gdo_load_symbol()
+ */
 enum {
     GDO_LOAD_%%symbol%%,
     GDO_ENUM_LAST
 };
 
 
+/**
+ * Library and symbols handle
+ */
+typedef struct gdo_handle
+{
+    /* symbol pointers */
+    struct _gdo_ptr {
+        %%type%% (*%%func_symbol%%)(%%args%%);
+        %%obj_type%% *%%obj_symbol%%;
+    } ptr;
+
+#ifdef GDO_WINAPI
+    HMODULE handle;
+    DWORD last_errno;
+    gdo_char_t buf[64*1024];
+    gdo_char_t buf_formatted[64*1024]; /* Used by FormatMessage; MSDN says the maximum message length is 64k */
+#else
+    void *handle;
+    gdo_char_t buf[8*1024];
+#endif
+
+    int flags;
+    bool free_lib_registered;
+
+} gdo_handle_t;
+
+GDO_OBJ_DECL gdo_handle_t gdo_hndl;
+
+
 #ifdef GDO_DEFAULT_LIB
 /**
- * Load the default library specified by the macro GDO_DEFAULT_LIB using default flags.
+ * \brief Load default library
  *
- * On success `true' is returned.
- * On an error or if the library is already loaded the return value is `false'.
+ * Load the default library specified by the macro GDO_DEFAULT_LIB.
+ *
+ * \return On success `true'. On error or if the library was already loaded the return value is `false'.
  */
 GDO_DECL bool gdo_load_lib(void);
 #endif
@@ -175,7 +93,7 @@ GDO_DECL bool gdo_load_lib_and_symbols(void);
 
 
 /**
- * Load a library using default flags.
+ * Load a library from a given filename.
  *
  * filename:
  *   Library filename or path to load. Must not be empty or NULL.
@@ -208,10 +126,9 @@ GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
  *   These are passed to the underlying library loading functions.
  *
  * new_namespace:
- *   If true the library will be loaded into a new namespace.
- *   This is done using dlmopen() with the LM_ID_NEWLM argument.
- *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
- *   otherwise it has no effect.
+ *   If true the library will be loaded into a new namespace using dlmopen().
+ *   This argument is only used on Linux (if `_GNU_SOURCE' was defined) and
+ *   Solaris/IllumOS.
  *
  * On success `true' is returned.
  * On an error or if the library is already loaded the return value is `false'.
@@ -232,15 +149,19 @@ GDO_DECL int gdo_lib_flags(void);
 
 
 /**
- * Free/release the library. Internal handle and pointers are set back to NULL
- * if the underlying calls were successful, in which case `true' is returned.
- * Return value is `true' if no library was loaded.
+ * Free/release the library.
+ *
+ * Internal handle and pointers are only set back to NULL if the underlying calls
+ * were successful, in which case `true' is returned.
+ * Return value is also `true' if no library was loaded.
  */
 GDO_DECL bool gdo_free_lib(void);
 
 
 /**
- * Free/release the library. Don't check if the underlying calls were successful.
+ * Free/release the library.
+ * Don't check if the underlying calls were successful.
+ *
  * Internal handle and pointers are always set back to NULL.
  * Can safely be called even if no library was loaded.
  */
@@ -327,21 +248,29 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
     GDO_ATTR (warn_unused_result);
 
 
-/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
+/**
+ * Prefixed aliases, useful if GDO_DISABLE_ALIASING was defined.
+ */
 #define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.ptr.%%func_symbol%%
 #define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.ptr.%%obj_symbol%%
 
 
-/* disable aliasing if we saved into separate files and the
- * header file was included from the body file */
+/**
+ * Disable aliasing if we saved into separate files and the
+ * header file was included from the body file.
+ */
 #if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
 
-/* aliases to raw function pointers */
+/**
+ * Aliases to raw function pointers
+ */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%
 #endif
 
-/* aliases to raw object pointers */
+/**
+ * Aliases to raw object pointers
+ */
 #if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
 #endif

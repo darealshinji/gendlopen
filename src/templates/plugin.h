@@ -2,22 +2,6 @@
 # include <wchar.h>
 #endif
 
-/***
-
-The following options may be set through macros:
-
-GDO_USE_DLOPEN
-    If defined use `dlopen()' API on win32 targets.
-    On other targets `dlopen()' is always used.
-
-GDO_STATIC
-    If defined `static inline' linkage is used for all functions.
-
-GDO_DEFAULT_FLAGS
-    Override the default flags to use when loading a library.
-
-***/
-
 
 /* declaration */
 #ifdef GDO_STATIC
@@ -38,9 +22,17 @@ typedef char    gdo_char_t;
 #endif
 
 
-/* our library and symbols handle */
+/**
+ * Library and symbols handle
+ */
 typedef struct gdo_handle
 {
+    /* symbol pointers */
+    struct _gdo_ptr {
+        %%type%% (*%%func_symbol%%)(%%args%%);
+        %%obj_type%% *%%obj_symbol%%;
+    } ptr;
+
     /* copy of module filename */
     gdo_char_t *filename;
 
@@ -51,19 +43,18 @@ typedef struct gdo_handle
     void *handle;
 #endif
 
-    /* symbol pointers */
-    struct _gdo_ptr {
-        %%type%% (*%%func_symbol%%)(%%args%%);
-        %%obj_type%% *%%obj_symbol%%;
-    } ptr;
-
 } gdo_handle_t;
 
 
-/* plugins handle */
+/**
+ * Plugin handle
+ */
 typedef struct gdo_plugin
 {
+    /* number of elements in `list' */
     size_t num;
+
+    /* list of library handles */
     gdo_handle_t *list;
 
 } gdo_plugin_t;

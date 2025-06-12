@@ -3,12 +3,26 @@
 # include <cstring>
 #endif
 #include <algorithm>
-#include <string>
+#include <iostream>
+#include <cstdlib>
 
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-gdo::dl::message_callback_t gdo::dl::m_message_callback = nullptr;
+
+/* the default message callback function to use */
+void gdo::dl::default_message_callback(const char *msg)
+{
+#ifdef GDO_USE_MESSAGE_BOX
+    MessageBoxA(NULL, msg, "Error", MB_OK | MB_ICONERROR);
+#else
+    std::cerr << msg << std::endl;
 #endif
+}
+
+/* save callback function pointer */
+gdo::dl::message_callback_t gdo::dl::m_message_callback = gdo::dl::default_message_callback;
+
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
 
 /* library handle */
@@ -20,10 +34,12 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 %%obj_type%% *gdo::ptr::%%obj_symbol%% = nullptr;
 
 
-/* silence `unused' compiler warnings */
-template<typename T>
-void gdo::UNUSED_REF(T x) {
-    static_cast<void>(x);
+/* silence `unused reference' compiler warnings */
+namespace gdo {
+    template<typename T>
+    void UNUSED_REF(T x) {
+        static_cast<void>(x);
+    }
 }
 
 
@@ -66,11 +82,11 @@ std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 #ifdef GDO_WINAPI
 
 
-errno_t gdo::dl::mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count) {
+inline errno_t gdo::dl::mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count) {
     return ::mbstowcs_s(rv, out, sz, in, count);
 }
 
-errno_t gdo::dl::mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count) {
+inline errno_t gdo::dl::mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count) {
     return ::wcstombs_s(rv, out, sz, in, count);
 }
 
@@ -150,17 +166,21 @@ void gdo::dl::set_error_invalid_handle()
 }
 
 
-HMODULE gdo::dl::load_library_ex(const wchar_t *path) {
+inline HMODULE gdo::dl::load_library_ex(const wchar_t *path) {
     return ::LoadLibraryExW(path, NULL, m_flags);
 }
 
-HMODULE gdo::dl::load_library_ex(const char *path) {
+inline HMODULE gdo::dl::load_library_ex(const char *path) {
     return ::LoadLibraryExA(path, NULL, m_flags);
 }
 
 
-/* documentation says only backward slash path separators shall be used on
-    * LoadLibraryEx(), so transform the path if needed */
+/**
+ * Call the underlying LoadLibraryEx() function.
+ *
+ * According to MSDN only backward slash path separators shall be used,
+ * so the path is transformed if needed.
+ */
 template<typename T>
 void gdo::dl::transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash)
 {
@@ -228,11 +248,11 @@ T gdo::dl::sym_load(const char *symbol)
 }
 
 
-DWORD gdo::dl::get_module_filename(wchar_t *buf, DWORD len) {
+inline DWORD gdo::dl::get_module_filename(wchar_t *buf, DWORD len) {
     return ::GetModuleFileNameW(m_handle, buf, len);
 }
 
-DWORD gdo::dl::get_module_filename(char *buf, DWORD len) {
+inline DWORD gdo::dl::get_module_filename(char *buf, DWORD len) {
     return ::GetModuleFileNameA(m_handle, buf, len);
 }
 
@@ -258,11 +278,11 @@ std::basic_string<T> gdo::dl::get_origin_from_module_handle()
 }
 
 
-void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf) {
+inline void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf) {
     ::FormatMessageW(flags, NULL, msgId, langId, buf, 0, NULL);
 }
 
-void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf) {
+inline void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf) {
     ::FormatMessageA(flags, NULL, msgId, langId, buf, 0, NULL);
 }
 
@@ -763,9 +783,9 @@ std::string gdo::dl::origin()
 #ifdef _WIN32
 
     /* dlfcn-win32:
-        * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
-        * We can directly use GetModuleFileNameA() to receive the DLL path
-        * and don't need to invoke dladdr() on a loaded symbol address. */
+     * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
+     * We can directly use GetModuleFileNameA() to receive the DLL path
+     * and don't need to invoke dladdr() on a loaded symbol address. */
 
     char buf[32*1024];
 
@@ -838,9 +858,6 @@ std::string gdo::dl::filename() const
 
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-
-#include <iostream>
-#include <cstdlib>
 
 namespace gdo
 {
@@ -921,7 +938,7 @@ namespace gdo
                 loader.load();
             }
 
-#ifdef GDO_DELAYLOAD
+#ifdef GDO_ENABLE_AUTOLOAD_LAZY
             /* load a specific symbol */
             if (loader.load_symbol(symbol_num)) {
                 return;

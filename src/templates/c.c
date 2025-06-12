@@ -866,7 +866,7 @@ GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
         gdo_load_lib();
     }
 
-#ifdef GDO_DELAYLOAD
+#ifdef GDO_ENABLE_AUTOLOAD_LAZY
     /* load a specific symbol */
     if (gdo_load_symbol(symbol_num)) {
         return;

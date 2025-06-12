@@ -23,25 +23,40 @@
 #endif
 
 
-/* Our library and symbols handle */
+/**
+ * Library and symbols handle
+ */
 typedef struct gdo_handle
 {
-    void *handle;
-
-    /* symbols */
+    /* symbol pointers */
     struct _gdo_ptr {
         %%type%% (*%%func_symbol%%)(%%args%%);
         %%obj_type%% *%%obj_symbol%%;
     } ptr;
+
+    void *handle;
 
 } gdo_handle_t;
 
 GDO_LINKAGE gdo_handle_t gdo_hndl;
 
 
-/* returns NULL on success and an error message if loading failed */
+/**
+ * Load library and all symbols.
+ *
+ * filename:
+ *   Library filename or path to load. Must not be empty or NULL.
+ *
+ * Returns NULL on success and an error message if loading has failed.
+ */
 GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 {
+    if (!filename) {
+        return "filename is <NULL>";
+    } else if (!*filename) {
+        return "filename is empty";
+    }
+
     gdo_hndl.handle = GDO_LOAD_LIB(filename);
 
     if (!gdo_hndl.handle) {
@@ -60,20 +75,29 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
     return NULL;
 }
 
-/* free library handle, no error checks */
+
+/**
+ * Free library handle without error checks.
+ * Internal handle and pointers are always set back to NULL.
+ */
 GDO_LINKAGE void gdo_free_library(void)
 {
-    GDO_FREE_LIB(gdo_hndl.handle);
+    if (gdo_hndl.handle) {
+        GDO_FREE_LIB(gdo_hndl.handle);
+    }
 
     gdo_hndl.handle = NULL;
     gdo_hndl.ptr.%%symbol%% = NULL;
 }
 
 
-#if !defined(GDO_NOALIAS)
+#if !defined(GDO_DISABLE_ALIASING)
 
-/* aliases to raw symbol pointers */
-#define %%func_symbol%%  gdo_hndl.ptr.%%func_symbol%%
-#define %%obj_symbol%%  *gdo_hndl.ptr.%%obj_symbol%%
+/**
+ * Aliases to raw symbol pointers
+ */
+#define %%func_symbol_pad%%  gdo_hndl.ptr.%%func_symbol%%
+#define %%obj_symbol_pad%%  *gdo_hndl.ptr.%%obj_symbol%%
 
-#endif // !GDO_NOALIAS
+#endif // !GDO_DISABLE_ALIASING
+

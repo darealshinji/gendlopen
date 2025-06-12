@@ -1,85 +1,9 @@
-/***
-
-****************************************************
-* The following options may be set through macros: *
-****************************************************
-
-GDO_USE_DLOPEN
-    If defined `dlopen()' API is used on win32 targets.
-    On other targets `dlopen()' is always used.
-
-GDO_DEFAULT_FLAGS
-    Override the default flags to use when loading a library.
-
-GDO_DEFAULT_LIB
-    Set a default library name through this macro (including double quote
-    marks). This macro must be defined if you want to set GDO_ENABLE_AUTOLOAD.
-
-GDO_WRAP_FUNCTIONS
-    Use actual wrapped functions instead of a name alias. This is useful if you
-    want to create a library to later link an application against.
-
-GDO_ENABLE_AUTOLOAD
-    Define this macro if you want to use auto-loading wrapper functions.
-    This means you don't need to explicitly call library load functions.
-    The first wrapper function called will load all symbols at once.
-    It requires GDO_DEFAULT_LIB to be defined.
-    If an error occures during loading these functions print an error message
-    and call `std::exit(1)'!
-
-GDO_DELAYLOAD
-    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its
-    wrapper function is called instead of all symbols.
-    It requires GDO_ENABLE_AUTOLOAD to be defined.
-
-GDO_VISIBILITY
-    You can set the symbol visibility of wrapped functions (enabled with
-    GDO_WRAP_FUNCTIONS) using this macro.
-
-GDO_DISABLE_ALIASING
-    Don't use preprocessor macros to alias symbol names. Use with care.
-
-GDO_DISABLE_DLINFO
-    Always disable usage of `dlinfo(3)' to retrieve the library path.
-    `dladdr(3)' will be used instead.
-
-GDO_DISABLE_DLMOPEN
-    Always disable usage of `dlmopen(3)'.
-
-
-
-*****************
-* Helper macros *
-*****************
-
-GDO_ALIAS_<symbol>
-    Convenience macro to access the symbol pointer. I.e. `GDO_ALIAS_helloworld' will
-    access the pointer to `helloworld'.
-
-
-*********
-* Hooks *
-*********
-
-GDO_HOOK_<function>(...)
-    Define a hook macro that will be inserted into a wrap function.
-    The hook is placed before the actual function call.
-    If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.
-    Parameter names are taken from the function prototype declarations (or it's "a, b, c" and so on
-    if the header was created with `-param=create'). A hook may be left undefined.
-
-    For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':
-
-    #define GDO_HOOK_sum_of_a_and_b(...) \
-      printf("debug: the sum of %d and %d is %d\n", \
-        val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
-
-***/
-
 #include <string>
 
 
-/* enumeration values for `load_symbol()' method */
+/**
+ * Enumeration values for `load_symbol()' method
+ */
 enum {
     GDO_LOAD_%%symbol%%,
     GDO_ENUM_LAST
@@ -88,36 +12,46 @@ enum {
 
 namespace gdo
 {
-/* silence `unused reference' compiler warnings */
-template<typename T>
-void UNUSED_REF(T x);
 
-
-/* Create versioned library names for DLLs, dylibs and DSOs.
- * make_libname("z",1) for example will return "libz-1.dll", "libz.1.dylib" or "libz.so.1" */
+/**
+ * Create versioned library names.
+ * make_libname(example,1) for example will become "libexample.1.dylib" on macOS.
+ *
+ * name:
+ *   library name without prefix
+ *
+ * api:
+ *   API number to add to filename
+ */
 std::string make_libname(const std::string &name, const size_t api);
 #ifdef GDO_WINAPI
 std::wstring make_libname(const std::wstring &name, const size_t api);
 #endif
 
 
-/* default flags */
+/**
+ * Default flags to use when loading a library.
+ */
 constexpr const int default_flags = GDO_DEFAULT_FLAGS;
 
 
-/* Shared library file extension without dot ("dll", "dylib" or "so").
- * Useful i.e. on plugins. */
+/**
+ * Shared library file extension without dot. Useful i.e. on plugins.
+ */
 constexpr const char    * const libext   = LIBEXTA;
 #ifdef GDO_WINAPI
 constexpr const wchar_t * const libext_w = LIBEXTW;
 #endif
 
 
-/* symbol pointers */
-namespace ptr {
+/**
+ * Symbol pointers
+ */
+namespace ptr
+{
     extern %%type%% (*%%func_symbol%%)(%%args%%);
     extern %%obj_type%% *%%obj_symbol%%;
-};
+}
 
 
 /*****************************************************************************/
@@ -131,10 +65,10 @@ public:
     using message_callback_t = void (*)(const char *);
 
 private:
-    /* function pointer to error message callback */
+    static void default_message_callback(const char *msg);
     static message_callback_t m_message_callback;
 
-#endif
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
 private:
 
@@ -149,176 +83,294 @@ private:
 
 #ifdef GDO_WINAPI
 
-    /* library handle */
     using handle_t = HMODULE;
     static handle_t m_handle;
 
-    /* error message */
     DWORD m_last_error = 0;
     std::string m_errmsg;
     std::wstring m_werrmsg;
 
-    errno_t mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count);
-    errno_t mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count);
+    inline errno_t mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count);
+    inline errno_t mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count);
 
-    /* convert string */
     template<typename T_out, typename T_in>
-    std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
+      std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
 
-    /* clear error */
     void clear_error();
 
-    /* save last error */
     void save_error();
     void save_error(const std::string &msg);
     void save_error(const std::wstring &msg);
 
-    /* if m_handle is NULL */
     void set_error_invalid_handle();
 
-    HMODULE load_library_ex(const wchar_t *path);
-    HMODULE load_library_ex(const char *path);
+    inline HMODULE load_library_ex(const wchar_t *path);
+    inline HMODULE load_library_ex(const char *path);
 
-    /* documentation says only backward slash path separators shall be used on
-     * LoadLibraryEx(), so transform the path if needed */
     template<typename T>
-    void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
+      void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
 
-    /* load library */
     void load_lib(const std::string &filename, int flags, bool new_namespace);
     void load_lib(const std::wstring &filename, int flags, bool new_namespace);
 
-    /* load symbol address */
     template<typename T>
-    T sym_load(const char *symbol);
+      T sym_load(const char *symbol);
 
-    DWORD get_module_filename(wchar_t *buf, DWORD len);
-    DWORD get_module_filename(char *buf, DWORD len);
+    inline DWORD get_module_filename(wchar_t *buf, DWORD len);
+    inline DWORD get_module_filename(char *buf, DWORD len);
 
-    /* get the module's full path using GetModuleFileName() */
     template<typename T>
-    std::basic_string<T> get_origin_from_module_handle();
+      std::basic_string<T> get_origin_from_module_handle();
 
-    void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
-    void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
+    inline void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
+    inline void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
-    /* return a formatted error message */
     template<typename T>
-    std::basic_string<T> format_last_error_message();
+      std::basic_string<T> format_last_error_message();
 
 #else // !GDO_WINAPI
 
-    /* library handle */
     using handle_t = void*;
     static handle_t m_handle;
 
-    /* error message */
     std::string m_errmsg;
 
-    /* clear error */
     void clear_error();
 
-    /* save last error */
     void save_error();
     void save_error(const std::string&);
 
-    /* if m_handle is NULL */
     void set_error_invalid_handle();
 
-    /* load library */
     void load_lib(const std::string &filename, int flags, bool new_namespace);
 
-    /* load symbol address */
     template<typename T>
-    T sym_load(const char *symbol);
+      T sym_load(const char *symbol);
 
 #endif // !GDO_WINAPI
 
-    /* load library by filename */
     template<typename T>
-    bool load_filename(const T &filename, int flags, bool new_namespace);
+      bool load_filename(const T &filename, int flags, bool new_namespace);
 
 
 public:
 
-    /* c'tor */
+    /**
+     * Empty constructor
+     */
     dl();
+
+
+    /**
+     * Constructor. The specified filename is not loaded yet.
+     *
+     * filename:
+     *   Library filename or path to load. Must not be empty.
+     *
+     * flags:
+     *   These are passed to the underlying library loading functions.
+     *
+     * new_namespace:
+     *   If true the library will be loaded into a new namespace.
+     *   This is done using dlmopen() with the LM_ID_NEWLM argument.
+     *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
+     *   otherwise it has no effect.
+     */
     dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 #ifdef GDO_WINAPI
     dl(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
 #endif
 
-    /* d'tor */
+
+    /**
+     * Destructor. Will free library handle by default (see also `free_lib_in_dtor()').
+     */
     ~dl();
 
-    /* load library */
+
+    /**
+     * Load a library.
+     *
+     * filename:
+     *   Library filename or path to load. Must not be empty.
+     *
+     * flags:
+     *   These are passed to the underlying library loading functions.
+     *
+     * new_namespace:
+     *   If true the library will be loaded into a new namespace.
+     *   This is done using dlmopen() with the LM_ID_NEWLM argument.
+     *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
+     *   otherwise it has no effect.
+     *
+     * On success `true' is returned.
+     * On an error or if the library is already loaded the return value is `false'.
+     */
     bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 #ifdef GDO_WINAPI
     bool load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
 #endif
+
+
+    /**
+     * Load the library filename or path specified in the class constructor.
+     *
+     * On success `true' is returned.
+     * On an error or if the library is already loaded the return value is `false'.
+     */
     bool load();
 
-    /* load library and symbols */
+
+    /**
+     * Load the library filename or path specified in the class constructor
+     * and all the symbols.
+     *
+     * On success `true' is returned.
+     * On an error or if the library is already loaded the return value is `false'.
+     */
     bool load_lib_and_symbols();
 
-    /* check if library is loaded */
+
+    /**
+     * Returns `true' if the library was successfully loaded.
+     */
     static bool lib_loaded();
 
-    /* return the flags used to load the library */
+
+    /**
+     * Returns the flags used on the last attempt to load the library or zero.
+     */
     int flags() const;
 
-    /* load all symbols */
+
+    /**
+     * Load all symbols. Returns `true' on success.
+     * If all symbols were already loaded, nothing is done and the return value is `true'.
+     */
     bool load_all_symbols();
 
-    /* load a specific symbol */
+
+    /**
+     * Load a specific symbol from an enum value.
+     *
+     * symbol_num:
+     *   Auto-generated enumeration value `GDO_LOAD_<symbol_name>'.
+     *   For example use `GDO_LOAD_foo' to load the symbol `foo'.
+     *
+     * Returns `true' on success or if the symbol was already loaded.
+     */
     bool load_symbol(int symbol_num);
+
+
+    /**
+     * Load a specific symbol.
+     *
+     * symbol:
+     *   Name of the symbol to load.
+     *
+     * Returns `true' on success or if the symbol was already loaded.
+     */
     bool load_symbol(const char *symbol);
 
-    /* check if symbols were loaded */
+
+    /**
+     * Returns true if ALL symbols were loaded.
+     */
     bool all_symbols_loaded() const;
+
+
+    /**
+     * Returns true if NO symbols were loaded.
+     */
     bool no_symbols_loaded() const;
+
+
+    /**
+     * Returns true if one or more symbols were loaded.
+     */
     bool any_symbol_loaded() const;
 
-    /* free library; always succeeds if `force == true` */
+
+    /**
+     * Free/release the library. Internal handle and pointers are set back to NULL
+     * if the underlying calls were successful, in which case `true' is returned.
+     *
+     * force:
+     *   Don't check if the underlying calls were successful.
+     *   Internal handle and pointers are always set back to NULL.
+     *   Can safely be called even if no library was loaded.
+     *
+     * Return value is `true' if no library was loaded or if `force' was set `true'.
+     */
     bool free(bool force=false);
 
-    /* whether to free the library in the class destructor */
+
+    /**
+     * Enable or disable automatic library freeing through class destructor.
+     *
+     * b:
+     *   true == enable
+     *   false == disable
+     */
     void free_lib_in_dtor(bool b);
+
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
-    /* Get/set message callback function. */
+    /**
+     * Set a custom message callback function to be used if an error
+     * occurred in the wrapped functions.
+     *
+     * cb:
+     *   Callback function pointer of type `void (*)(const char *)'.
+     *   The function shall take a `const char *' type error message
+     *   as argument.
+     */
     static void message_callback(message_callback_t cb);
+
+
+    /**
+     * Return pointer to currently used message callback function.
+     */
     static message_callback_t message_callback();
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
-#ifdef GDO_WINAPI
 
-    /* get path of loaded library */
+    /**
+     * Return the full library path.
+     * On error or if no library was loaded an empty string is returned.
+     *
+     * On some systems and configurations the path is taken from the loaded symbols
+     * in which case at least one symbol must have been successfully loaded before
+     * using this function.
+     */
     std::string origin();
+#ifdef GDO_WINAPI
     std::wstring origin_w();
+#endif
 
-    /* retrieve the last error */
+
+    /**
+     * Return a string with the last saved error message.
+     * The message will indicate if no error had occured.
+     * This function doesn't return an empty string.
+     */
+#ifdef GDO_WINAPI
     std::string error();
     std::wstring error_w();
-
-    /* get filename passed to load */
-    std::string filename();
-    std::wstring filename_w();
-
 #else
-
-    /* get path of loaded library */
-    std::string origin();
-
-    /* retrieve the last error */
     std::string error() const;
+#endif
 
-    /* get filename passed to load */
+    /**
+     * Return the original filename passed to load.
+     * This is not the same as `origin()'.
+     */
     std::string filename() const;
-
-#endif // !GDO_WINAPI
+#ifdef GDO_WINAPI
+    std::wstring filename_w();
+#endif
 
 };
 /******************************* end of class ********************************/
@@ -326,21 +378,29 @@ public:
 } /* end namespace */
 
 
-/* prefixed aliases, useful if GDO_DISABLE_ALIASING was defined */
+/**
+ * Prefixed aliases, useful if GDO_DISABLE_ALIASING was defined.
+ */
 #define GDO_ALIAS_%%func_symbol_pad%% gdo::ptr::%%func_symbol%%
 #define GDO_ALIAS_%%obj_symbol_pad%% *gdo::ptr::%%obj_symbol%%
 
 
-/* disable aliasing if we saved into separate files and the
- * header file was included from the body file */
+/**
+ * Disable aliasing if we saved into separate files and the
+ * header file was included from the body file.
+ */
 #if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
 
-/* aliases to raw function pointers */
+/**
+ * Aliases to raw function pointers
+ */
 #if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol_pad%%
 #endif
 
-/* aliases to raw object pointers */
+/**
+ * Aliases to raw object pointers
+ */
 #if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol_pad%%
 #endif

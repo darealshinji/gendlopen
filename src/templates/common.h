@@ -2,7 +2,67 @@
 /*                         common macros and headers                         */
 /*****************************************************************************/
 
-/* whether to use WinAPI or dlfcn */
+
+/***
+
+*** flags ***
+
+GDO_USE_DLOPEN
+    If defined use `dlopen()' API on win32 targets.
+    On other targets `dlopen()' is always used.
+
+GDO_STATIC
+    If defined `static inline' linkage is used for all functions.
+
+GDO_WRAP_FUNCTIONS
+    Use actual wrapped functions instead of a name alias.
+
+GDO_ENABLE_AUTOLOAD
+    Define this macro if you want to use auto-loading wrapper functions.
+    It requires GDO_DEFAULT_LIB to be defined.
+
+GDO_ENABLE_AUTOLOAD_LAZY
+    Same as GDO_ENABLE_AUTOLOAD but only the requested symbol is loaded when its
+    wrapper function is called instead of all symbols.
+
+GDO_USE_MESSAGE_BOX
+    Windows only: if GDO_ENABLE_AUTOLOAD was activated this will enable
+    error messages from auto-loading to be displayed in MessageBox windows.
+
+GDO_DISABLE_ALIASING
+    Don't use preprocessor macros to alias symbol names.
+
+
+*** settings ***
+
+GDO_DEFAULT_FLAGS
+    Override the default flags to use when loading a library.
+
+GDO_DEFAULT_LIB
+    Set a default library name through this macro.
+
+GDO_VISIBILITY
+    Set the symbol visibility of wrapped functions.
+
+
+*** hooks ***
+
+GDO_HOOK_<function>(...)
+    Define a hook macro that will be inserted into a wrap function.
+    The hook is placed before the actual function call.
+    If you want to call the function inside the macro you must do so using the GDO_ALIAS_* prefix.
+    Parameter names are taken from the function prototype declarations (or it's "a1, a2, a3" and so on
+    if the header was created with `-param=create').
+
+    For example if a function declaration is `int sum_of_a_and_b(int val_a, int val_b)':
+
+    #define GDO_HOOK_sum_of_a_and_b(...) \
+      printf("debug: the sum of %d and %d is %d\n", \
+        val_a, val_b, GDO_ALIAS_sum_of_a_and_b(__VA_ARGS__));
+
+***/
+
+
 #if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
 # define GDO_WINAPI
 #endif
@@ -20,23 +80,7 @@
 #endif
 
 
-/* attributes */
-#ifdef __GNUC__
-# define GDO_ATTR(x)  __attribute__ ((x))
-#else
-# define GDO_ATTR(x)  /**/
-#endif
-
-
 #if defined(__GLIBC__) && !defined(_GNU_SOURCE)
-
-/* disable GNU extensions */
-# ifndef GDO_DISABLE_DLINFO
-# define GDO_DISABLE_DLINFO
-# endif
-# ifndef GDO_DISABLE_DLMOPEN
-# define GDO_DISABLE_DLMOPEN
-# endif
 
 /* Provide a declaration for `dladdr(3)'.
  * This is simply for convenience so that it's not required
@@ -64,14 +108,42 @@ typedef Dl_info _GDO_Dl_info;
 #endif //__GLIBC__ && !_GNU_SOURCE
 
 
-/* symbol visibility, i.e. __declspec(dllexport)
- * or __attribute__((visibility("default"))) */
-#ifndef GDO_VISIBILITY
-# define GDO_VISIBILITY
+/* dlinfo(3); n/a on Windows, macOS, OpenBSD and Haiku */
+#if !defined(_WIN32) && \
+    !defined(__APPLE__) && \
+    !defined(__OpenBSD__) && \
+    !defined(__HAIKU__) && \
+    !defined(GDO_HAVE_DLINFO)
+# define GDO_HAVE_DLINFO
+#endif
+
+#ifdef GDO_HAVE_DLINFO
+# include <link.h>
 #endif
 
 
-/* set default library name values */
+/* dlmopen(3); only on Glibc and Solaris/IllumOS */
+#if (defined(__GLIBC__) || defined(__sun)) && \
+    !defined(GDO_HAVE_DLMOPEN)
+# define GDO_HAVE_DLMOPEN
+#endif
+
+
+/* attributes */
+#ifdef __GNUC__
+# define GDO_ATTR(x)  __attribute__ ((x))
+#else
+# define GDO_ATTR(x)  /**/
+#endif
+
+
+/* symbol visibility for wrapped functions */
+#ifndef GDO_VISIBILITY
+# define GDO_VISIBILITY /**/
+#endif
+
+
+/* default library name */
 
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 # define _GDO_TARGET_WIDECHAR
@@ -106,45 +178,6 @@ typedef Dl_info _GDO_Dl_info;
 /* GDO_DEFAULT_LIBW ?= GDO_DEFAULT_LIB */
 #if !defined(GDO_DEFAULT_LIBW) && defined(GDO_DEFAULT_LIB) && defined(_GDO_TARGET_WIDECHAR)
 # define GDO_DEFAULT_LIBW  GDO_DEFAULT_LIB
-#endif
-
-
-/* dlinfo(3); n/a on Windows, macOS, OpenBSD and Haiku */
-#if defined(_WIN32) || \
-    defined(__APPLE__) || \
-    defined(__OpenBSD__) || \
-    defined(__HAIKU__)
-# define _GDO_TARGET_NO_DLINFO
-#endif
-
-#ifdef GDO_DISABLE_DLINFO
-# ifdef GDO_HAVE_DLINFO
-# undef GDO_HAVE_DLINFO
-# endif
-#endif
-
-#if !defined(GDO_DISABLE_DLINFO) && \
-    !defined(_GDO_TARGET_NO_DLINFO) && \
-    !defined(GDO_HAVE_DLINFO)
-# define GDO_HAVE_DLINFO
-#endif
-
-#ifdef GDO_HAVE_DLINFO
-# include <link.h>
-#endif
-
-
-/* dlmopen(3); only on Glibc and Solaris/IllumOS */
-#ifdef GDO_DISABLE_DLMOPEN
-# ifdef GDO_HAVE_DLMOPEN
-# undef GDO_HAVE_DLMOPEN
-# endif
-#endif
-
-#if !defined(GDO_DISABLE_DLMOPEN) && \
-    (defined(__GLIBC__) || defined(__sun)) && \
-    !defined(GDO_HAVE_DLMOPEN)
-# define GDO_HAVE_DLMOPEN
 #endif
 
 
@@ -261,21 +294,23 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-%PARAM_SKIP_REMOVE_BEGIN%
-/* wrapped functions are enabled */
-#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
-# error You need to define GDO_DEFAULT_LIB if you want to make use of GDO_ENABLE_AUTOLOAD
+#if defined(GDO_ENABLE_AUTOLOAD_LAZY) && !defined(GDO_ENABLE_AUTOLOAD)
+# define GDO_ENABLE_AUTOLOAD
 #endif
-#if defined(GDO_DELAYLOAD) && !defined(GDO_ENABLE_AUTOLOAD)
-# error You need to define GDO_ENABLE_AUTOLOAD if you want to make use of GDO_DELAYLOAD
+
+
+%PARAM_SKIP_REMOVE_BEGIN%
+/* wrapped functions can be used */
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
+# error "GDO_ENABLE_AUTOLOAD" requires "GDO_DEFAULT_LIB" to be set
 #endif
 %PARAM_SKIP_USE_BEGIN%
-/* wrapped functions are disabled */
+/* wrapped functions cannot be used */
 #if defined(GDO_WRAP_FUNCTIONS)
-# error "GDO_WRAP_FUNCTIONS" defined but wrapped functions were disabled with "-param=skip"
+# error Wrapped functions cannot be used because "-param=skip" was set
 #endif
 #if defined(GDO_ENABLE_AUTOLOAD)
-# error "GDO_ENABLE_AUTOLOAD" defined but wrapped functions were disabled with "-param=skip"
+# error Auto-loading functions cannot be used because "-param=skip" was set
 #endif
 %PARAM_SKIP_END%
 

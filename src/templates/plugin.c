@@ -33,6 +33,7 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
         return NULL;
     }
 
+    /* allocate struct */
     gdo_plugin_t *plug = (gdo_plugin_t *)malloc(sizeof(gdo_plugin_t));
     plug->num = num;
     plug->list = (gdo_handle_t *)calloc(num, sizeof(gdo_handle_t));
