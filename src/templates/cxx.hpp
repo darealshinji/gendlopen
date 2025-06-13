@@ -367,9 +367,11 @@ public:
      * Return the original filename passed to load.
      * This is not the same as `origin()'.
      */
-    std::string filename() const;
 #ifdef GDO_WINAPI
+    std::string filename();
     std::wstring filename_w();
+#else
+    std::string filename() const;
 #endif
 
 };

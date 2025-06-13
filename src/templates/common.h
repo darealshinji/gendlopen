@@ -299,18 +299,14 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
+/* whether wrapped functions can be used */
 %PARAM_SKIP_REMOVE_BEGIN%
-/* wrapped functions can be used */
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 # error "GDO_ENABLE_AUTOLOAD" requires "GDO_DEFAULT_LIB" to be set
 #endif
 %PARAM_SKIP_USE_BEGIN%
-/* wrapped functions cannot be used */
-#if defined(GDO_WRAP_FUNCTIONS)
-# error Wrapped functions cannot be used because "-param=skip" was set
-#endif
-#if defined(GDO_ENABLE_AUTOLOAD)
-# error Auto-loading functions cannot be used because "-param=skip" was set
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+# error Auto-loading and wrapped functions cannot be used because "-param=skip" was set
 #endif
 %PARAM_SKIP_END%
 

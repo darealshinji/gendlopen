@@ -16,8 +16,7 @@ Limitations:
  * any type declaration more complicated than a function pointer will not be recognized (use a typedef)
 
 ¹ I recommend using your own get/set wrapper functions to auto-load objects<br>
-² You can however replace a prototype such as `int myprintf(const char *format, ...)`
-  with one that has a fixed number of arguments: `int myprintf(const char *format, int arg1, const char *arg2, float arg3)`
+² You can however replace a prototype with one that has a fixed number of arguments
 
 
 Input format

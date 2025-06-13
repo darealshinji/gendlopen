@@ -71,11 +71,10 @@ GDO_OBJ_DECL gdo_handle_t gdo_hndl;
 
 #ifdef GDO_DEFAULT_LIB
 /**
- * \brief Load default library
- *
  * Load the default library specified by the macro GDO_DEFAULT_LIB.
  *
- * \return On success `true'. On error or if the library was already loaded the return value is `false'.
+ * On success `true' is returned.
+ * On an error or if the library is already loaded the return value is `false'.
  */
 GDO_DECL bool gdo_load_lib(void);
 #endif

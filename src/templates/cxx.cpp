@@ -438,9 +438,9 @@ gdo::dl::dl(const std::string &filename, int flags, bool new_namespace)
 /* c'tor (set wide character filename) */
 gdo::dl::dl(const std::wstring &filename, int flags, bool new_namespace)
  : m_wfilename(filename),
-   m_flags(flags)
+   m_flags(flags),
+   m_new_namespace(new_namespace)
 {
-    UNUSED_REF(new_namespace);
 }
 #endif
 
@@ -647,7 +647,7 @@ bool gdo::dl::any_symbol_loaded() const
 /* free library; always succeeds if `force == true` */
 bool gdo::dl::free(bool force)
 {
-    auto release_lib_handle = [this] () -> bool
+    auto release_lib_handle = []() -> bool
     {
 #ifdef GDO_WINAPI
         return (::FreeLibrary(m_handle) == TRUE);
