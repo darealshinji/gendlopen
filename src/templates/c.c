@@ -60,6 +60,31 @@ typedef void GDO_UNUSED_RESULT;
 
 
 /* library handle */
+typedef struct _gdo_handle
+{
+    /* symbol pointers */
+    struct _gdo_ptr {
+        %%type%% (*%%func_symbol%%)(%%args%%);
+        %%obj_type%% *%%obj_symbol%%;
+    } ptr;
+
+    /* private */
+
+#ifdef GDO_WINAPI
+    HMODULE handle;
+    DWORD last_errno;
+    gdo_char_t buf[64*1024];
+    gdo_char_t buf_formatted[64*1024]; /* Used by FormatMessage; MSDN says the maximum message length is 64k */
+#else
+    void *handle;
+    gdo_char_t buf[8*1024];
+#endif
+
+    int flags;
+    bool free_lib_registered;
+
+} gdo_handle_t;
+
 GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 
 

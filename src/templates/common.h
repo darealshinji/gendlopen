@@ -294,6 +294,7 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
+/* use the default autoload macro for most checks */
 #if defined(GDO_ENABLE_AUTOLOAD_LAZY) && !defined(GDO_ENABLE_AUTOLOAD)
 # define GDO_ENABLE_AUTOLOAD
 #endif
@@ -302,7 +303,7 @@ typedef Dl_info _GDO_Dl_info;
 /* whether wrapped functions can be used */
 %PARAM_SKIP_REMOVE_BEGIN%
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
-# error "GDO_ENABLE_AUTOLOAD" requires "GDO_DEFAULT_LIB" to be set
+# error Auto-loading functions require "GDO_DEFAULT_LIB" to be set
 #endif
 %PARAM_SKIP_USE_BEGIN%
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)

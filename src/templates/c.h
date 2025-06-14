@@ -12,7 +12,7 @@
 
 /* static/extern declarations */
 #ifdef GDO_STATIC
-# define GDO_DECL      static inline
+# define GDO_DECL      static inline /* use `inline' to silence warnings */
 # define GDO_OBJ_DECL  static
 #else
 # define GDO_DECL      extern
@@ -40,10 +40,11 @@ enum {
 };
 
 
+#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
 /**
  * Library and symbols handle
  */
-typedef struct gdo_handle
+typedef struct _gdo_handle
 {
     /* symbol pointers */
     struct _gdo_ptr {
@@ -51,22 +52,12 @@ typedef struct gdo_handle
         %%obj_type%% *%%obj_symbol%%;
     } ptr;
 
-#ifdef GDO_WINAPI
-    HMODULE handle;
-    DWORD last_errno;
-    gdo_char_t buf[64*1024];
-    gdo_char_t buf_formatted[64*1024]; /* Used by FormatMessage; MSDN says the maximum message length is 64k */
-#else
-    void *handle;
-    gdo_char_t buf[8*1024];
-#endif
-
-    int flags;
-    bool free_lib_registered;
+    /* private */
 
 } gdo_handle_t;
 
 GDO_OBJ_DECL gdo_handle_t gdo_hndl;
+#endif
 
 
 #ifdef GDO_DEFAULT_LIB

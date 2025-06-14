@@ -1,4 +1,4 @@
-#ifdef GDO_WINAPI
+#if defined(GDO_WINAPI) && defined(_UNICODE)
 # include <wchar.h>
 #endif
 
@@ -25,7 +25,7 @@ typedef char    gdo_char_t;
 /**
  * Library and symbols handle
  */
-typedef struct gdo_handle
+typedef struct _gdo_handle
 {
     /* symbol pointers */
     struct _gdo_ptr {
@@ -49,7 +49,7 @@ typedef struct gdo_handle
 /**
  * Plugin handle
  */
-typedef struct gdo_plugin
+typedef struct _gdo_plugin
 {
     /* number of elements in `list' */
     size_t num;
