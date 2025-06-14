@@ -60,52 +60,6 @@ GDO_OBJ_DECL gdo_handle_t gdo_hndl;
 #endif
 
 
-#ifdef GDO_DEFAULT_LIB
-/**
- * Load the default library specified by the macro GDO_DEFAULT_LIB.
- *
- * On success `true' is returned.
- * On an error or if the library is already loaded the return value is `false'.
- */
-GDO_DECL bool gdo_load_lib(void);
-#endif
-
-
-#ifdef GDO_DEFAULT_LIB
-/**
- * Load the default library and all symbols.
- *
- * On success `true' is returned.
- * On an error or if the library is already loaded the return value is `false'.
- */
-GDO_DECL bool gdo_load_lib_and_symbols(void);
-#endif
-
-
-/**
- * Load a library from a given filename.
- *
- * filename:
- *   Library filename or path to load. Must not be empty or NULL.
- *
- * On success `true' is returned.
- * On an error or if the library is already loaded the return value is `false'.
- */
-GDO_DECL bool gdo_load_lib_name(const gdo_char_t *filename);
-
-
-/**
- * Load a library using default flags and all symbols.
- *
- * filename:
- *   Library filename or path to load. Must not be empty or NULL.
- *
- * On success `true' is returned.
- * On an error or if the library is already loaded the return value is `false'.
- */
-GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
-
-
 /**
  * Load a library.
  *
@@ -123,6 +77,12 @@ GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
  * On success `true' is returned.
  * On an error or if the library is already loaded the return value is `false'.
  */
+#ifdef GDO_DEFAULT_LIB
+GDO_DECL bool gdo_load_lib(void);
+GDO_DECL bool gdo_load_lib_and_symbols(void);
+#endif
+GDO_DECL bool gdo_load_lib_name(const gdo_char_t *filename);
+GDO_DECL bool gdo_load_lib_name_and_symbols(const gdo_char_t *filename);
 GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_namespace);
 
 
@@ -130,12 +90,6 @@ GDO_DECL bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool new_
  * Returns `true' if the library was successfully loaded.
  */
 GDO_DECL bool gdo_lib_is_loaded(void);
-
-
-/**
- * Returns the flags used on the last attempt to load the library or zero.
- */
-GDO_DECL int gdo_lib_flags(void);
 
 
 /**
@@ -169,50 +123,27 @@ GDO_DECL bool gdo_enable_autorelease(void);
 
 
 /**
- * Load all symbols. Returns `true' on success.
- * If all symbols were already loaded, nothing is done and the return value is `true'.
- */
-GDO_DECL bool gdo_load_all_symbols(void);
-
-
-/**
- * Load a specific symbol from an enum value.
+ * Load symbols.
  *
  * symbol_num:
  *   Auto-generated enumeration value `GDO_LOAD_<symbol_name>'.
  *   For example use `GDO_LOAD_foo' to load the symbol `foo'.
- *
- * Returns `true' on success or if the symbol was already loaded.
- */
-GDO_DECL bool gdo_load_symbol(int symbol_num);
-
-
-/**
- * Load a specific symbol.
  *
  * symbol:
  *   Name of the symbol to load.
  *
  * Returns `true' on success or if the symbol was already loaded.
  */
+GDO_DECL bool gdo_load_all_symbols(void);
+GDO_DECL bool gdo_load_symbol(int symbol_num);
 GDO_DECL bool gdo_load_symbol_name(const char *symbol);
 
 
 /**
- * Returns true if ALL symbols were loaded.
+ * Check if symbols were loaded.
  */
 GDO_DECL bool gdo_all_symbols_loaded(void);
-
-
-/**
- * Returns true if NO symbols were loaded.
- */
 GDO_DECL bool gdo_no_symbols_loaded(void);
-
-
-/**
- * Returns true if one or more symbols were loaded.
- */
 GDO_DECL bool gdo_any_symbol_loaded(void);
 
 
@@ -249,21 +180,15 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
  * Disable aliasing if we saved into separate files and the
  * header file was included from the body file.
  */
-#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
+#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY) && !defined(GDO_DISABLE_ALIASING)
 
 /**
- * Aliases to raw function pointers
+ * Aliases to raw pointers
  */
-#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
+#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 #define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%
 #endif
-
-/**
- * Aliases to raw object pointers
- */
-#if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
-#endif
 
-#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY
+#endif //GDO_SEPARATE ...
 

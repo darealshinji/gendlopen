@@ -244,50 +244,27 @@ public:
 
 
     /**
-     * Load all symbols. Returns `true' on success.
-     * If all symbols were already loaded, nothing is done and the return value is `true'.
-     */
-    bool load_all_symbols();
-
-
-    /**
-     * Load a specific symbol from an enum value.
+     * Load symbols.
      *
      * symbol_num:
      *   Auto-generated enumeration value `GDO_LOAD_<symbol_name>'.
      *   For example use `GDO_LOAD_foo' to load the symbol `foo'.
-     *
-     * Returns `true' on success or if the symbol was already loaded.
-     */
-    bool load_symbol(int symbol_num);
-
-
-    /**
-     * Load a specific symbol.
      *
      * symbol:
      *   Name of the symbol to load.
      *
      * Returns `true' on success or if the symbol was already loaded.
      */
+    bool load_all_symbols();
+    bool load_symbol(int symbol_num);
     bool load_symbol(const char *symbol);
 
 
     /**
-     * Returns true if ALL symbols were loaded.
+     * Check if symbols were loaded.
      */
     bool all_symbols_loaded() const;
-
-
-    /**
-     * Returns true if NO symbols were loaded.
-     */
     bool no_symbols_loaded() const;
-
-
-    /**
-     * Returns true if one or more symbols were loaded.
-     */
     bool any_symbol_loaded() const;
 
 
@@ -391,21 +368,15 @@ public:
  * Disable aliasing if we saved into separate files and the
  * header file was included from the body file.
  */
-#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
+#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY) && !defined(GDO_DISABLE_ALIASING)
 
 /**
- * Aliases to raw function pointers
+ * Aliases to raw pointers
  */
-#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol_pad%%
+#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
+#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%
 #endif
+#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
 
-/**
- * Aliases to raw object pointers
- */
-#if !defined(GDO_DISABLE_ALIASING)
-#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol_pad%%
-#endif
-
-#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY
+#endif //GDO_SEPARATE ...
 

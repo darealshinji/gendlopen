@@ -332,8 +332,6 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 {
     _gdo_clear_error();
 
-    gdo_hndl.flags = flags;
-
 #ifdef GDO_WINAPI
 
     /* documentation says only backward slash path separators shall
@@ -384,17 +382,6 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 GDO_LINKAGE bool gdo_lib_is_loaded(void)
 {
     return (gdo_hndl.handle != NULL);
-}
-/*****************************************************************************/
-
-
-
-/*****************************************************************************/
-/*                 return the flags used to load the library                 */
-/*****************************************************************************/
-GDO_LINKAGE int gdo_lib_flags(void)
-{
-    return gdo_hndl.flags;
 }
 /*****************************************************************************/
 
