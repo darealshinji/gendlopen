@@ -1,3 +1,7 @@
+#if defined(_MSC_VER) && defined(GDO_USE_MESSAGE_BOX)
+# pragma comment(lib, "user32.lib")
+#endif
+
 #ifdef GDO_WINAPI
 # include <cstdlib>
 # include <cstring>
@@ -12,7 +16,7 @@
 /* the default message callback function to use */
 void gdo::dl::default_message_callback(const char *msg)
 {
-#ifdef GDO_USE_MESSAGE_BOX
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
     MessageBoxA(NULL, msg, "Error", MB_OK | MB_ICONERROR);
 #else
     std::cerr << msg << std::endl;

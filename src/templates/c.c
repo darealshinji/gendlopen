@@ -2,12 +2,8 @@
 /*                           C API implementation                            */
 /*****************************************************************************/
 
-#ifdef GDO_USE_MESSAGE_BOX
-# if !defined(_WIN32)
-#  undef GDO_USE_MESSAGE_BOX
-# elif defined(_MSC_VER)
-#  pragma comment(lib, "user32.lib")
-# endif
+#if defined(_MSC_VER) && defined(GDO_USE_MESSAGE_BOX)
+# pragma comment(lib, "user32.lib")
 #endif
 
 #include <stdarg.h>
@@ -17,23 +13,35 @@
 
 #ifdef GDO_WINAPI
 # include <tchar.h>
-#endif
-#ifndef _T
-# define _T(x) x
-#endif
-#ifndef _ftprintf
-# define _ftprintf fprintf
-#endif
-#ifndef _vsntprintf_s
-# define _vsntprintf_s _vsnprintf_s
-#endif
-#ifndef _tcsstr
-# define _tcsstr strstr
+# define _gdo_ftprintf     _ftprintf
+# define _gdo_sntprintf    _sntprintf
+# define _gdo_sntprintf_s  _sntprintf_s
+# define _gdo_tcsstr       _tcsstr
+# define GDO_T(x)          _T(x)
+#else
+/* dlfcn: use `char' API */
+# define _gdo_ftprintf     fprintf
+# define _gdo_sntprintf    snprintf
+# define _gdo_sntprintf_s  _snprintf_s
+# define _gdo_tcsstr       strstr
+# define GDO_T(x)          x
 #endif
 
-#ifndef _countof
-# define _countof(array) (sizeof(array) / sizeof(array[0]))
+#ifdef _MSC_VER
+# define _gdo_strdup  _strdup
+#else
+# define _gdo_strdup  strdup
 #endif
+
+/* GDO_SNPRINTF macro */
+#ifdef _MSC_VER
+# define GDO_SNPRINTF(dst, fmt, ...) \
+    _gdo_sntprintf_s(dst, _countof(dst), _TRUNCATE, fmt, __VA_ARGS__)
+#else
+# define GDO_SNPRINTF(dst, fmt, ...) \
+    _gdo_sntprintf(dst, _countof(dst), fmt, __VA_ARGS__)
+#endif
+
 
 #ifdef _GDO_TARGET_WIDECHAR
 # define GDO_XHS  L"%hs"  /* always type LPSTR */
@@ -52,6 +60,11 @@
 #endif
 
 #define GDO_INLINE  static inline
+
+
+#ifndef _countof
+# define _countof(array)  (sizeof(array) / sizeof(array[0]))
+#endif
 
 
 /* typedefs */
@@ -96,70 +109,6 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr) GDO_ATTR (warn_unused_re
 #endif
 
 
-/* GDO_STRDUP */
-#ifdef _MSC_VER
-/* MSVC warns if we don't use the one with the underscore */
-# define GDO_STRDUP(x) _strdup(x)
-#else
-# define GDO_STRDUP(x) strdup(x)
-#endif
-
-
-
-/*****************************************************************************/
-/*               local implementations of snprintf and strlcpy               */
-/*****************************************************************************/
-
-#define GDO_SNPRINTF(dst, fmt, ...)  _gdo_snprintf(dst, _countof(dst), fmt, __VA_ARGS__)
-#define GDO_STRLCPY(dst, src)        _gdo_strlcpy(dst, src, _countof(dst))
-
-/* like snprintf(3), no return value */
-GDO_INLINE void _gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt, ...)
-#if !defined(_GDO_TARGET_WIDECHAR)
-    GDO_ATTR (format (printf, 3, 4))
-#endif
-    GDO_ATTR (nonnull (1, 3));
-
-GDO_INLINE void _gdo_snprintf(gdo_char_t *str, size_t size, const gdo_char_t *fmt, ...)
-{
-    va_list ap;
-
-    va_start(ap, fmt);
-
-#ifdef _WIN32
-    _vsntprintf_s(str, size, _TRUNCATE, fmt, ap);
-#else
-    vsnprintf(str, size, fmt, ap);
-#endif
-
-    va_end(ap);
-}
-
-/* like strlcpy(3), no return value */
-GDO_INLINE void _gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
-    GDO_ATTR (nonnull);
-
-GDO_INLINE void _gdo_strlcpy(gdo_char_t *dst, const gdo_char_t *src, size_t size)
-{
-    if (size == 0) {
-        return;
-    }
-
-    gdo_char_t *end = dst + size - 1;
-
-    for ( ; dst != end; dst++, src++) {
-        *dst = *src;
-
-        if (*src == 0) {
-            return;
-        }
-    }
-
-    *end = 0;
-}
-/*****************************************************************************/
-
-
 
 /*****************************************************************************/
 /*                                save error                                 */
@@ -171,7 +120,7 @@ GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
     gdo_hndl.buf[0] = 0;
 
     if (msg) {
-        GDO_STRLCPY(gdo_hndl.buf, msg);
+        GDO_SNPRINTF(gdo_hndl.buf, GDO_T("%s"), msg);
     }
 }
 
@@ -199,7 +148,7 @@ GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 {
     _gdo_clear_error();
     gdo_hndl.last_errno = ERROR_INVALID_HANDLE;
-    _gdo_save_to_errbuf(_T("no library was loaded"));
+    _gdo_save_to_errbuf(GDO_T("no library was loaded"));
 }
 
 #else
@@ -235,7 +184,7 @@ GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib(void)
 {
-    return gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false);
+    return gdo_load_lib_name(GDO_DEFAULT_LIB);
 }
 #endif
 /*****************************************************************************/
@@ -248,8 +197,7 @@ GDO_LINKAGE bool gdo_load_lib(void)
 #ifdef GDO_DEFAULT_LIB
 GDO_LINKAGE bool gdo_load_lib_and_symbols(void)
 {
-    return (gdo_load_lib_args(GDO_DEFAULT_LIB, GDO_DEFAULT_FLAGS, false) &&
-        gdo_load_all_symbols());
+    return (gdo_load_lib() && gdo_load_all_symbols());
 }
 #endif
 /*****************************************************************************/
@@ -287,7 +235,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 
     /* consider it an error if the library was already loaded */
     if (gdo_lib_is_loaded()) {
-        _gdo_save_to_errbuf(_T("library already loaded"));
+        _gdo_save_to_errbuf(GDO_T("library already loaded"));
         return false;
     }
 
@@ -295,7 +243,7 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
     /* empty filename */
     if (!filename || *filename == 0) {
         gdo_hndl.last_errno = ERROR_INVALID_NAME;
-        _gdo_save_to_errbuf(_T("empty filename"));
+        _gdo_save_to_errbuf(GDO_T("empty filename"));
         return false;
     }
 
@@ -337,7 +285,7 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
     /* documentation says only backward slash path separators shall
      * be used on LoadLibraryEx() */
 
-    if (_tcschr(filename, _T('/')) == NULL) {
+    if (_tcschr(filename, GDO_T('/')) == NULL) {
         /* no forward slash found */
         gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
         return;
@@ -346,8 +294,8 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
     gdo_char_t *copy = _tcsdup(filename);
 
     for (gdo_char_t *p = copy; *p != 0; p++) {
-        if (*p == _T('/')) {
-            *p = _T('\\');
+        if (*p == GDO_T('/')) {
+            *p = GDO_T('\\');
         }
     }
 
@@ -397,7 +345,7 @@ GDO_LINKAGE bool gdo_free_lib(void)
     if (gdo_lib_is_loaded()) {
 #ifdef GDO_WINAPI
         if (FreeLibrary(gdo_hndl.handle) == FALSE) {
-            _gdo_save_GetLastError(_T("FreeLibrary()"));
+            _gdo_save_GetLastError(GDO_T("FreeLibrary()"));
             return false;
         }
 #else
@@ -452,7 +400,7 @@ GDO_LINKAGE bool gdo_enable_autorelease(void)
         if (atexit(gdo_force_free_lib) == 0) {
             gdo_hndl.free_lib_registered = true;
         } else {
-            _gdo_save_to_errbuf(_T("atexit(): failed to register `gdo_free_lib()'"));
+            _gdo_save_to_errbuf(GDO_T("atexit(): failed to register `gdo_force_free_lib()'"));
         }
     }
 
@@ -536,7 +484,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(void)
     /* %%symbol%% */@
     if ((gdo_hndl.ptr.%%symbol%% =@
             (%%sym_type%%)@
-                _gdo_sym("%%symbol%%", _T("%%symbol%%"))) == NULL) {@
+                _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"))) == NULL) {@
         return false;@
     }@
 
@@ -597,7 +545,7 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
         if (!gdo_hndl.ptr.%%symbol%%) {@
             gdo_hndl.ptr.%%symbol%% =@
                 (%%sym_type%%)@
-                    _gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+                    _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"));@
         }@
         return (gdo_hndl.ptr.%%symbol%% != NULL);@
 
@@ -609,7 +557,7 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
     gdo_hndl.last_errno = ERROR_NOT_FOUND;
 #endif
 
-    GDO_SNPRINTF(gdo_hndl.buf, _T("unknown symbol number: %d"), symbol_num);
+    GDO_SNPRINTF(gdo_hndl.buf, GDO_T("unknown symbol number: %d"), symbol_num);
 
     return false;
 }
@@ -637,7 +585,7 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
 #ifdef GDO_WINAPI
         gdo_hndl.last_errno = ERROR_INVALID_PARAMETER;
 #endif
-        _gdo_save_to_errbuf(_T("empty symbol name"));
+        _gdo_save_to_errbuf(GDO_T("empty symbol name"));
     } else {
         /* jumps to `GDO_JUMP_<..>' label if symbol was found */
         GDO_CHECK_SYMBOL_NAME(symbol);
@@ -645,7 +593,7 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
 #ifdef GDO_WINAPI
         gdo_hndl.last_errno = ERROR_NOT_FOUND;
 #endif
-        GDO_SNPRINTF(gdo_hndl.buf, _T("unknown symbol: ") GDO_XHS, symbol);
+        GDO_SNPRINTF(gdo_hndl.buf, GDO_T("unknown symbol: ") GDO_XHS, symbol);
     }
 
     return false;
@@ -657,7 +605,7 @@ GDO_JUMP_%%symbol%%:@
     if (!gdo_hndl.ptr.%%symbol%%) {@
         gdo_hndl.ptr.%%symbol%% =@
             (%%sym_type%%)@
-                _gdo_sym("%%symbol%%", _T("%%symbol%%"));@
+                _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"));@
     }@
     return (gdo_hndl.ptr.%%symbol%% != NULL);
 }
@@ -694,14 +642,14 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     if (buf) {
         /* put custom message in front of system error message */
         if (msg[0] != 0 && (_tcslen(buf) + _tcslen(msg) + 2) < _countof(gdo_hndl.buf_formatted)) {
-            GDO_SNPRINTF(gdo_hndl.buf_formatted, _T("%s: %s"), msg, buf);
+            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_T("%s: %s"), msg, buf);
         } else {
-            GDO_STRLCPY(gdo_hndl.buf_formatted, buf);
+            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_T("%s"), buf);
         }
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, save the error code */
-        GDO_SNPRINTF(gdo_hndl.buf_formatted, _T("Last saved error code: %lu"), gdo_hndl.last_errno);
+        GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_T("Last saved error code: %lu"), gdo_hndl.last_errno);
     }
 
     return gdo_hndl.buf_formatted;
@@ -709,7 +657,7 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 #else
 
     if (gdo_hndl.buf[0] == 0) {
-        GDO_STRLCPY(gdo_hndl.buf, "no error");
+        GDO_SNPRINTF(gdo_hndl.buf, GDO_T("%s"), "no error");
     }
 
     return gdo_hndl.buf;
@@ -741,7 +689,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
     DWORD nSize = GetModuleFileName(gdo_hndl.handle, buf, _countof(buf));
 
     if (nSize == 0 || nSize == _countof(buf)) {
-        _gdo_save_GetLastError(_T("GetModuleFileName"));
+        _gdo_save_GetLastError(GDO_T("GetModuleFileName"));
         return NULL;
     }
 
@@ -762,7 +710,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    return GDO_STRDUP(buf);
+    return _gdo_strdup(buf);
 
 #elif defined(GDO_HAVE_DLINFO)
 
@@ -774,7 +722,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    return lm->l_name ? GDO_STRDUP(lm->l_name) : NULL;
+    return lm->l_name ? _gdo_strdup(lm->l_name) : NULL;
 
 #else
 
@@ -802,7 +750,7 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
     _GDO_Dl_info info;
 
     if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {
-        return GDO_STRDUP(info.dli_fname);
+        return _gdo_strdup(info.dli_fname);
     }
 
     return NULL;
@@ -823,32 +771,57 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #endif
 
 
+#if (defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)) && \
+    defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+
+GDO_INLINE void _gdo_print_MessageBox(const gdo_char_t *fmt, ...)
+{
+    size_t len;
+    gdo_char_t *msg;
+    va_list ap;
+
+    /* get message length in characters */
+    len = _tcslen(fmt);
+    va_start(ap, fmt);
+    len += _tcslen(va_arg(ap, const gdo_char_t *));
+    va_end(ap);
+
+    /* save message */
+    msg = (gdo_char_t *)malloc(len * sizeof(gdo_char_t)); /* gdo_char_t can be wide chars! */
+    _vsntprintf_s(msg, len, _TRUNCATE, fmt, ap);
+
+    /* show window */
+    MessageBox(NULL, msg, GDO_T("Error"), MB_OK | MB_ICONERROR);
+    free(msg);
+}
+
+#endif
+
+
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
 
 GDO_INLINE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym)
 {
-    if (gdo_lib_is_loaded() && sym_loaded) {
+    const bool lib_loaded = gdo_lib_is_loaded();
+
+    if (lib_loaded && sym_loaded) {
         return;
     }
 
     /* error */
 
-    const gdo_char_t *fmt = gdo_lib_is_loaded()
-        ? _T("fatal error: %s: symbol not loaded\n")
-        : _T("fatal error: %s: library not loaded\n");
+    const gdo_char_t *fmt = lib_loaded ?
+          GDO_T("fatal error: %s: symbol not loaded\n")
+        : GDO_T("fatal error: %s: library not loaded\n");
 
-#ifdef GDO_USE_MESSAGE_BOX
-    size_t len = _tcslen(fmt) + _tcslen(sym);
-    gdo_char_t *buf = (gdo_char_t *)malloc(len);
-    _gdo_snprintf(buf, len, fmt, sym);
-    MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
-    free(buf);
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+    _gdo_print_MessageBox(fmt, sym);
 #else
-    _ftprintf(stderr, fmt, sym);
+    _gdo_ftprintf(stderr, fmt, sym);
 #endif
 
-    //gdo_free_lib();
+    //gdo_force_free_lib();
     abort();
 }
 
@@ -857,7 +830,7 @@ GDO_INLINE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     const bool sym_loaded = (gdo_hndl.ptr.%%func_symbol%% != NULL);@
-    _gdo_wrap_check_if_loaded(sym_loaded, _T("%%func_symbol%%"));@
+    _gdo_wrap_check_if_loaded(sym_loaded, GDO_T("%%func_symbol%%"));@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
@@ -894,31 +867,28 @@ GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
 
     /* error */
 
+    const gdo_char_t *fmt;
     const gdo_char_t *msg = gdo_last_error();
 
-    const gdo_char_t *fmt = _T("error: ")
-        GDO_DEFAULT_LIB _T(": ")
-        _T("%s: ")   /* sym */
-        _T("%s\n");  /* msg */
-
-    if (_tcsstr(msg, GDO_DEFAULT_LIB)) {
+    if (_gdo_tcsstr(msg, GDO_DEFAULT_LIB)) {
         /* library name is already part of error message */
-        fmt = _T("error: ")
-            _T("%s: ")   /* sym */
-            _T("%s\n");  /* msg */
+        fmt = GDO_T("error: ")
+            GDO_T("%s: ")   /* sym */
+            GDO_T("%s\n");  /* msg */
+    } else {
+        fmt = GDO_T("error: ")
+            GDO_DEFAULT_LIB GDO_T(": ")
+            GDO_T("%s: ")   /* sym */
+            GDO_T("%s\n");  /* msg */
     }
 
-#ifdef GDO_USE_MESSAGE_BOX
-    size_t len = _tcslen(fmt) + _tcslen(sym) + _tcslen(msg);
-    gdo_char_t *buf = (gdo_char_t *)malloc(len);
-    _gdo_snprintf(buf, len, fmt, sym, msg);
-    MessageBox(NULL, buf, _T("Error"), MB_OK | MB_ICONERROR);
-    free(buf);
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+    _gdo_print_MessageBox(fmt, sym, msg);
 #else
-    _ftprintf(stderr, fmt, sym, msg);
+    _gdo_ftprintf(stderr, fmt, sym, msg);
 #endif
 
-    gdo_free_lib();
+    gdo_force_free_lib();
     exit(1);
 }
 
@@ -926,7 +896,7 @@ GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
 /* autoload function wrappers (functions with `...' arguments are omitted) */
 
 GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    _gdo_quick_load(GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%"));@
+    _gdo_quick_load(GDO_LOAD_%%func_symbol%%, GDO_T("%%func_symbol%%"));@
     GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
     %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
 }@
@@ -957,18 +927,13 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     _gdo_clear_error \
     _gdo_dladdr_get_fname \
     _gdo_load_library \
+    _gdo_print_MessageBox \
     _gdo_quick_load \
     _gdo_save_GetLastError \
     _gdo_save_dlerror \
     _gdo_save_to_errbuf \
     _gdo_set_error_no_library_loaded \
-    _gdo_snprintf \
-    _gdo_strlcpy \
     _gdo_sym \
     _gdo_wrap_check_if_loaded
-#endif
-
-#undef GDO_SNPRINTF
-#undef GDO_STRDUP
-#undef GDO_STRLCPY
+#endif //__GNUC__
 

@@ -1,4 +1,4 @@
-#if defined(GDO_WINAPI) && defined(_UNICODE)
+#ifdef _GDO_TARGET_WIDECHAR
 # include <wchar.h>
 #endif
 
@@ -15,7 +15,7 @@
  * If compiling for win32 and `_UNICODE` is defined and `GDO_USE_DLOPEN` is NOT
  * defined `gdo_char_t` will become `wchar_t`.
  */
-#if defined(GDO_WINAPI) && defined(_UNICODE)
+#ifdef _GDO_TARGET_WIDECHAR
 typedef wchar_t gdo_char_t;
 #else
 typedef char    gdo_char_t;

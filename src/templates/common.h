@@ -70,9 +70,9 @@ GDO_HOOK_<function>(...)
 #ifdef _WIN32
 # include <windows.h>
 #else
-/* <features.h> is a Glibc header that defines __GLIBC__
- * and will be automatically included with a system header if present */
-# include <stdio.h>
+/* __GLIBC__ is defined in <features.h> which isn't present on all
+ * systems, so we include it indirectly */
+# include <limits.h>
 #endif
 
 #ifndef GDO_WINAPI
@@ -122,7 +122,7 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-/* dlmopen(3); only on Glibc and Solaris/IllumOS */
+/* dlmopen(3); only on Glibc (or compatible C libraries) and Solaris/IllumOS */
 #if (defined(__GLIBC__) || defined(__sun)) && \
     !defined(GDO_HAVE_DLMOPEN)
 # define GDO_HAVE_DLMOPEN

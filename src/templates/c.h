@@ -2,7 +2,7 @@
 /*                                   C API                                   */
 /*****************************************************************************/
 
-#ifdef GDO_WINAPI
+#ifdef _GDO_TARGET_WIDECHAR
 # include <wchar.h>
 #endif
 #ifndef __cplusplus
