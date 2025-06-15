@@ -6,7 +6,6 @@
 # pragma comment(lib, "user32.lib")
 #endif
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -774,26 +773,22 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #if (defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)) && \
     defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 
-GDO_INLINE void _gdo_print_MessageBox(const gdo_char_t *fmt, ...)
+GDO_INLINE void _gdo_show_MessageBox(const gdo_char_t *fmt, const gdo_char_t *sym, const gdo_char_t *msg)
 {
-    size_t len;
-    gdo_char_t *msg;
-    va_list ap;
+    const size_t len = _tcslen(fmt) + _tcslen(sym) + _tcslen(msg);
+    gdo_char_t *buf = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
 
-    /* get message length in characters */
-    len = _tcslen(fmt);
-    va_start(ap, fmt);
-    len += _tcslen(va_arg(ap, const gdo_char_t *));
-    va_end(ap);
+    _sntprintf_s(buf, len, _TRUNCATE, fmt, sym, msg);
+    MessageBox(NULL, buf, GDO_T("Error"), MB_OK | MB_ICONERROR);
 
-    /* save message */
-    msg = (gdo_char_t *)malloc(len * sizeof(gdo_char_t)); /* gdo_char_t can be wide chars! */
-    _vsntprintf_s(msg, len, _TRUNCATE, fmt, ap);
-
-    /* show window */
-    MessageBox(NULL, msg, GDO_T("Error"), MB_OK | MB_ICONERROR);
-    free(msg);
+    free(buf);
 }
+
+# define GDO_PRINT_ERROR(...)  _gdo_show_MessageBox(__VA_ARGS__)
+
+#else
+
+# define GDO_PRINT_ERROR(...)  _gdo_ftprintf(stderr, __VA_ARGS__)
 
 #endif
 
@@ -803,23 +798,17 @@ GDO_INLINE void _gdo_print_MessageBox(const gdo_char_t *fmt, ...)
 
 GDO_INLINE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym)
 {
-    const bool lib_loaded = gdo_lib_is_loaded();
+    const gdo_char_t *msg;
 
-    if (lib_loaded && sym_loaded) {
-        return;
+    if (!gdo_lib_is_loaded()) {
+        msg = GDO_T("library not loaded");
+    } else if (!sym_loaded) {
+        msg = GDO_T("symbol not loaded");
+    } else {
+        return; /* library and symbol loaded */
     }
 
-    /* error */
-
-    const gdo_char_t *fmt = lib_loaded ?
-          GDO_T("fatal error: %s: symbol not loaded\n")
-        : GDO_T("fatal error: %s: library not loaded\n");
-
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-    _gdo_print_MessageBox(fmt, sym);
-#else
-    _gdo_ftprintf(stderr, fmt, sym);
-#endif
+    GDO_PRINT_ERROR(GDO_T("fatal error: %s: %s\n"), sym, msg);
 
     //gdo_force_free_lib();
     abort();
@@ -843,6 +832,8 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
  * and to handle errors. */
 GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
 {
+    const gdo_char_t *fmt, *msg;
+
     /* set auto-release, ignore errors */
     gdo_enable_autorelease();
 
@@ -866,9 +857,7 @@ GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
 #endif
 
     /* error */
-
-    const gdo_char_t *fmt;
-    const gdo_char_t *msg = gdo_last_error();
+    msg = gdo_last_error();
 
     if (_gdo_tcsstr(msg, GDO_DEFAULT_LIB)) {
         /* library name is already part of error message */
@@ -882,11 +871,7 @@ GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
             GDO_T("%s\n");  /* msg */
     }
 
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-    _gdo_print_MessageBox(fmt, sym, msg);
-#else
-    _gdo_ftprintf(stderr, fmt, sym, msg);
-#endif
+    GDO_PRINT_ERROR(fmt, sym, msg);
 
     gdo_force_free_lib();
     exit(1);
@@ -927,7 +912,7 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     _gdo_clear_error \
     _gdo_dladdr_get_fname \
     _gdo_load_library \
-    _gdo_print_MessageBox \
+    _gdo_show_MessageBox \
     _gdo_quick_load \
     _gdo_save_GetLastError \
     _gdo_save_dlerror \
