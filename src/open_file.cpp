@@ -22,6 +22,13 @@
  SOFTWARE.
 **/
 
+/* fopen() is secure */
+#ifdef _MSC_VER
+# ifndef _CRT_SECURE_NO_WARNINGS
+# define _CRT_SECURE_NO_WARNINGS
+# endif
+#endif
+
 #include "open_file.hpp"
 
 
@@ -30,14 +37,7 @@ open_file::open_file(const std::string &path)
     if (path.empty() || path == "-") {
         m_fp = stdin;
     } else {
-#ifdef _MSC_VER
-        /* "secure" variant for MSVC */
-        if (fopen_s(&m_fp, path.c_str(), "rb") != 0) {
-            m_fp = NULL;
-        }
-#else
         m_fp = fopen(path.c_str(), "rb");
-#endif
     }
 }
 
