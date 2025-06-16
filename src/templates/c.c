@@ -768,13 +768,9 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 
 GDO_INLINE void _gdo_show_MessageBox(const gdo_char_t *fmt, const gdo_char_t *sym, const gdo_char_t *msg)
 {
-    const size_t len = _tcslen(fmt) + _tcslen(sym) + _tcslen(msg);
-    gdo_char_t *buf = (gdo_char_t *)malloc(len * sizeof(gdo_char_t));
-
-    _sntprintf_s(buf, len, _TRUNCATE, fmt, sym, msg);
+    gdo_char_t buf[GDO_BUFLEN];
+    GDO_SNPRINTF(buf, fmt, sym, msg);
     MessageBox(NULL, buf, GDO_T("Error"), MB_OK | MB_ICONERROR);
-
-    free(buf);
 }
 
 # define GDO_PRINT_ERROR(...)  _gdo_show_MessageBox(__VA_ARGS__)
