@@ -32,16 +32,6 @@
 # define _gdo_strdup  strdup
 #endif
 
-/* GDO_SNPRINTF macro */
-#ifdef _MSC_VER
-# define GDO_SNPRINTF(dst, fmt, ...) \
-    _gdo_sntprintf_s(dst, _countof(dst), _TRUNCATE, fmt, __VA_ARGS__)
-#else
-# define GDO_SNPRINTF(dst, fmt, ...) \
-    _gdo_sntprintf(dst, _countof(dst), fmt, __VA_ARGS__)
-#endif
-
-
 #ifdef _GDO_TARGET_WIDECHAR
 # define GDO_XHS  L"%hs"  /* always type LPSTR */
 #else
@@ -59,6 +49,15 @@
 #endif
 
 #define GDO_INLINE  static inline
+
+
+#ifdef _WIN32
+/* FormatMessage: maximum message length according to MSDN */
+# define GDO_BUFLEN (64*1024)
+#else
+/* Linux MAX_PATH*2 */
+# define GDO_BUFLEN (8*1024)
+#endif
 
 
 #ifndef _countof
@@ -81,16 +80,15 @@ typedef struct _gdo_handle
     } ptr;
 
     /* private */
-
 #ifdef GDO_WINAPI
     HMODULE handle;
     DWORD last_errno;
-    gdo_char_t buf[64*1024];
-    gdo_char_t buf_formatted[64*1024]; /* Used by FormatMessage; MSDN says the maximum message length is 64k */
+    gdo_char_t buf_formatted[GDO_BUFLEN];
 #else
     void *handle;
-    gdo_char_t buf[8*1024];
 #endif
+
+    gdo_char_t buf[GDO_BUFLEN];
 
     int flags;
     bool free_lib_registered;
@@ -113,6 +111,22 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr) GDO_ATTR (warn_unused_re
 /*                                save error                                 */
 /*****************************************************************************/
 
+/* GDO_SNPRINTF: use as a macro so we can use __VA_ARGS__ directly;
+ * don't trust implementations and always explicitly null-termintate the string */
+#ifdef _MSC_VER
+# define GDO_SNPRINTF(DEST, FORMAT, ...) \
+    do { /* make MSVC happy by using the *_s function */ \
+        _gdo_sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__); \
+        DEST[_countof(DEST) - 1] = 0; \
+    } while (0)
+#else
+# define GDO_SNPRINTF(DEST, FORMAT, ...) \
+    do { \
+        _gdo_sntprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__); \
+        DEST[_countof(DEST) - 1] = 0; \
+    } while (0)
+#endif
+
 /* save message to error buffer */
 GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
 {
@@ -125,7 +139,7 @@ GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
 
 #ifdef GDO_WINAPI
 
-/* Clear error buffers. */
+/* clear error buffers. */
 GDO_INLINE void _gdo_clear_error(void)
 {
     gdo_hndl.buf[0] = 0;
@@ -133,7 +147,7 @@ GDO_INLINE void _gdo_clear_error(void)
     gdo_hndl.last_errno = 0;
 }
 
-/* Save the last system error code. A message for additional information
+/* save the last system error code. A message for additional information
  * can be provided too. */
 GDO_INLINE void _gdo_save_GetLastError(const gdo_char_t *msg)
 {
@@ -142,7 +156,7 @@ GDO_INLINE void _gdo_save_GetLastError(const gdo_char_t *msg)
     _gdo_save_to_errbuf(msg);
 }
 
-/* Sets the "no library was loaded" error message */
+/* sets the "no library was loaded" error message */
 GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 {
     _gdo_clear_error();
@@ -153,20 +167,20 @@ GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 #else
 /*********************************** dlfcn ***********************************/
 
-/* Clear error buffers. */
+/* clear error buffers. */
 GDO_INLINE void _gdo_clear_error(void)
 {
     dlerror();
     gdo_hndl.buf[0] = 0;
 }
 
-/* Save the last message provided by dlerror() */
+/* save the last message provided by dlerror() */
 GDO_INLINE void _gdo_save_dlerror(void)
 {
     _gdo_save_to_errbuf(dlerror());
 }
 
-/* Sets the "no library was loaded" error message */
+/* sets the "no library was loaded" error message */
 GDO_INLINE void _gdo_set_error_no_library_loaded(void)
 {
     _gdo_save_to_errbuf("no library was loaded");
