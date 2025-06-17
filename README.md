@@ -11,12 +11,9 @@ Features:
  * option to automatically load library and symbols
 
 Limitations:
- * auto-loading only works on functions ¹
- * auto-loading does not work on functions with variable arguments ²
- * any type declaration more complicated than a function pointer will not be recognized (use a typedef)
-
-¹ I recommend using your own get/set wrapper functions to auto-load objects<br>
-² You can however replace a prototype with one that has a fixed number of arguments
+ * auto-loading only works on functions
+ * auto-loading does not work on functions with variable arguments
+ * any type declaration more complicated than a function pointer will not be recognized
 
 
 Input format
@@ -97,40 +94,15 @@ in the generated output files.
 Compiling
 ---------
 
-Meson build system is used:
+Compile using Meson build system:
 ``` sh
-meson setup build
-meson compile -C build
-
-# or with tests and examples enabled
 meson setup -Denable_tests=true -Denable_examples=true build
 meson compile -C build
 meson test -C build
 ```
 
-Cross-compiling with MinGW:
-``` sh
-meson setup --cross-file cross-files/x86_64-w64-mingw32.ini build
-meson compile -C build
-```
-
-Cross-compiling with clang-cl/LLD:
-```sh
-# tools to help download VS on Linux
-git clone https://github.com/mstorsjo/msvc-wine
-cd msvc-wine
-./vsdownload.py --dest msvc
-./install.sh msvc
-cd ..
-
-# setup clang-cl toolchain
-export CLANGVER=19
-export WINSYSROOT="$PWD/msvc-wine/msvc"
-export PATH="$PWD/cross-files/clang-cl-wrapper:$PATH"
-
-meson setup --cross-file cross-files/x86_64-windows-msvc-clang.ini build
-meson compile -C build
-```
+Or use the provided Makefiles:
+`make -f Makefile.posix.mk` or for MSVC `nmake -f Makefile.msvc.mk`
 
 This project is regularly tested on Linux (Ubuntu), OpenBSD, Haiku and Windows 11 (MSVC).
 It's also tested with the following cross-toolchains on Ubuntu:
