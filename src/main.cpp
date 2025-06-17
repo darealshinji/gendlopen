@@ -193,6 +193,9 @@ namespace
                 if ( a.get_arg("define") ) {
                     gdo.add_def(a.opt());
                     continue;
+                } else if ( a.get_noarg("dump-templates") ) {
+                    data::dump_templates();
+                    std::exit(0);
                 }
                 break;
 

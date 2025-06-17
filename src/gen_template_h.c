@@ -66,6 +66,7 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
 
     /* write output */
     fprintf(fpOut, "/* %s */\n", in_file);
+    fprintf(fpOut, "#define FILENAME_%s \"%s\"\n", varName, in_file);
     fprintf(fpOut, "static const template_t %s[] = {\n", varName);
 
     if (line_directive) {

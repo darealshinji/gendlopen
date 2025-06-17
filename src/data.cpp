@@ -24,10 +24,14 @@
 
 /* use a separate compilation unit for the template data */
 
+#include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include <ostream>
 #include <string>
+#include <cstdlib>
 #include "cio_ofstream.hpp"
+#include "filesystem_compat.hpp"
 #include "gendlopen.hpp"
 #include "types.hpp"
 
@@ -36,6 +40,21 @@ namespace templates
 #include "template.h"
 }
 
+
+static void save_to_file(const std::string &filename, const template_t *list)
+{
+    cio::ofstream ofs;
+
+    if (!ofs.open(filename)) {
+        throw gendlopen::error("failed to open file for writing: " + filename);
+    }
+
+    std::cout << "saving " << filename << std::endl;
+
+    for ( ; list->data != NULL; list++) {
+        ofs << list->data << '\n';
+    }
+}
 
 static size_t save_data(bool line_directive, const template_t *list, size_t line_count)
 {
@@ -99,4 +118,31 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
     [[unlikely]] case output::error:
         throw gendlopen::error(std::string(__func__) + ": format == output::error");
     }
+}
+
+
+#define OUTDIR "templates"
+
+/* dump templates */
+void data::dump_templates()
+{
+    if (!fs::create_directory(OUTDIR)) {
+        int errsav = errno;
+        std::string msg = "failed to create directory `" OUTDIR "': ";
+        throw gendlopen::error(msg + strerror(errsav));
+    }
+
+#define SAVE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::x)
+
+    SAVE(license);
+    SAVE(filename_macros);
+    SAVE(common_header);
+    SAVE(c_header);
+    SAVE(c_body);
+    SAVE(cxx_header);
+    SAVE(cxx_body);
+    SAVE(plugin_header);
+    SAVE(plugin_body);
+    SAVE(min_c_header);
+    SAVE(min_cxx_header);
 }

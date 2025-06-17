@@ -33,6 +33,7 @@
 
 #if !defined(__cpp_lib_filesystem)
 # ifdef _WIN32
+#  include <direct.h>
 #  include <io.h>
 #  include <stdio.h>
 # else
@@ -68,6 +69,10 @@ namespace fs
         return std::filesystem::exists(std::filesystem::symlink_status(path));
     }
 
+    inline bool create_directory(const fs_path_t &path) {
+        return std::filesystem::create_directory(path);
+    }
+
 # ifdef MINGW32_NEED_CONVERT_FILENAME
     std::wstring convert_filename(const std::string &str);
 # endif
@@ -93,6 +98,10 @@ namespace fs
         return (_stat(path.c_str(), &st) == 0);
     }
 
+    inline bool create_directory(const std::string &path) {
+        return (_mkdir(path.c_str()) == 0);
+    }
+
 #else
 
     inline void remove_file(const std::string &path) {
@@ -102,6 +111,10 @@ namespace fs
     inline bool exists_lstat(const std::string &path) {
         struct stat st;
         return (lstat(path.c_str(), &st) == 0);
+    }
+
+    inline bool create_directory(const std::string &path) {
+        return (mkdir(path.c_str(), 0775) == 0);
     }
 
 #endif /* _WIN32 */

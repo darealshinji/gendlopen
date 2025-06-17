@@ -60,6 +60,9 @@ namespace data
 
     /* concatenate templates and create template_t vector lists */
     void create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate);
+
+    /* save all templates into current working directory */
+    void dump_templates();
 }
 
 

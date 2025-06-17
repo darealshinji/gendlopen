@@ -67,6 +67,7 @@ namespace help
             "  -no-date          don't show current date in output\n"
             "  -no-pragma-once   use `#ifndef' header guard instead of `#pragma once'\n"
             "  -line             add `#line' directives to output\n"
+            "  -dump-templates   dump internal template files in the current working directory and exit\n"
             "\n"
             "  * option may be passed multiple times" << std::endl;
     }
@@ -300,6 +301,11 @@ namespace help
             "  -line\n"
             "    Add `#line' directives to the output that will refer to the original template\n"
             "    files.\n"
+            "\n"
+
+
+            "  -dump-templates\n"
+            "    Dump internal template files in the current working directory and exit.\n"
             "\n"
 
             << std::endl;
