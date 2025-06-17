@@ -38,8 +38,11 @@ typedef int myint_t;
 /* no parameters */
 helloworld *(helloworld_init) (  );
 
-/* array in parameters */
-helloworld *helloworld_init_argv(int argc, char *argv[]);
+/* parentheses around pointer, name and parameters */
+helloworld (
+  /* array in parameters */
+  *helloworld_init_argv(int argc, char *argv[])
+);
 
 /* non-typedef'd function pointer */
 void (*helloworld_callback) (const char*);

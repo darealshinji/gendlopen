@@ -44,7 +44,7 @@ namespace /* anonymous */
     typedef struct _seq {
         const bool front_has_sym;  /* SYMBOL is among the first part */
         const char *middle;        /* the part where the iterator is */
-        const char end;            /* last element */
+        const char *end;           /* last element */
         const size_t length;       /* pattern sequence length in bytes */
         const int dist_front;      /* distance between front and iterator */
         const int dist_end;        /* distance between end and iterator */
@@ -87,7 +87,13 @@ namespace /* anonymous */
         }
 
         /* end */
-        if (!matching(utils::str_front(v.back()), sq.end)) {
+        if (sq.end[1] != 0) { /* strlen(sq.end) == 2 */
+            if (!matching(utils::str_front(*(v.end()-1)), sq.end[1]) ||
+                !matching(utils::str_front(*(v.end()-2)), sq.end[0]))
+            {
+                return false;
+            }
+        } else if (!matching(utils::str_front(v.back()), sq.end[0])) {
             return false;
         }
 
@@ -264,11 +270,34 @@ namespace /* anonymous */
         return true;
     }
 
+
+    /* TYPE ( * SYMBOL ( ) ) */
+    /* these are sometimes found in the output of "gcc -aux-info" */
+    bool check_function_prototype_paren_pointer(vstring_t &v, proto_t &p, iter_t &it)
+    {
+        if (!parse::is_function_paren_pointer(v, it)) {
+            return false;
+        }
+
+        p.prototype = proto::function;
+        parse::append_strings(p.type, v.begin(), it /* first lparen */);
+        p.type += "* ";
+        p.symbol = *(it + 2);
+
+        /*  type (   * symbol ( <..> ) )  */
+        /*       ^ + 1 2      3 4         */
+        copy_parameters(it + 4, v.end() - 2, p);
+
+        return true;
+    }
+
+
     /* TYPE SYMBOL ( ) */
     bool check_function_prototype(vstring_t &v, proto_t &p, iter_t &it)
     {
-        /* check for function name within parentheses first */
-        if (check_function_prototype_with_parentheses(v, p, it)) {
+        if (check_function_prototype_with_parentheses(v, p, it) || /* TYPE ( SYMBOL ) ( ) */
+            check_function_prototype_paren_pointer(v, p, it))      /* TYPE ( * SYMBOL ( ) ) */
+        {
             return true;
         }
 
@@ -358,13 +387,13 @@ namespace /* anonymous */
         static_assert(XSTRLEN(FRONT) == 1 || XSTRLEN(FRONT) == 2, \
             "macro parameter `FRONT' must contain exactly 1 or 2 elements"); \
             \
-        static_assert(XSTRLEN(END) == 1, \
-            "macro parameter `END' must contain exactly 1 element"); \
+        static_assert(XSTRLEN(END) == 1 || XSTRLEN(END) == 2, \
+            "macro parameter `END' must contain exactly 1 or 2 elements"); \
         \
         const seq_t sq = { \
             .front_has_sym = (XSTRLEN(FRONT) == 2 && FRONT[1] == SYMBOL[0]), \
             .middle        = MIDDLE, \
-            .end           = *END, \
+            .end           = END, \
             .length        = XSTRLEN(FRONT) + XSTRLEN(MIDDLE) + XSTRLEN(END), \
             .dist_front    = XSTRLEN(FRONT), \
             .dist_end      = XSTRLEN(MIDDLE) + XSTRLEN(END) \
@@ -373,13 +402,14 @@ namespace /* anonymous */
         return check_pattern(v, it, sq); \
     }
 
-MKFUNC( parse::is_function,                   TYPE        SYMBOL,     "(", ")" )
-MKFUNC( parse::is_function_with_parentheses,  TYPE,  "("  SYMBOL ")"  "(", ")" )
-MKFUNC( parse::is_function_pointer,           TYPE,  "(*" SYMBOL ")"  "(", ")" )
-MKFUNC( parse::is_function_pointer_no_name,   TYPE,  "(*" /****/ ")"  "(", ")" )
-MKFUNC( parse::is_object,                     TYPE,  "",  SYMBOL               )
-MKFUNC( parse::is_array,                      TYPE        SYMBOL,     "[", "]" )
-MKFUNC( parse::is_array_no_name,              TYPE,       /****/      "[", "]" )
+MKFUNC( parse::is_function,                   TYPE        SYMBOL,     "(", ")"  )
+MKFUNC( parse::is_function_with_parentheses,  TYPE,  "("  SYMBOL ")"  "(", ")"  )
+MKFUNC( parse::is_function_paren_pointer,     TYPE,  "(*" SYMBOL      "(", "))" )
+MKFUNC( parse::is_function_pointer,           TYPE,  "(*" SYMBOL ")"  "(", ")"  )
+MKFUNC( parse::is_function_pointer_no_name,   TYPE,  "(*" /****/ ")"  "(", ")"  )
+MKFUNC( parse::is_object,                     TYPE,  "",  SYMBOL                )
+MKFUNC( parse::is_array,                      TYPE        SYMBOL,     "[", "]"  )
+MKFUNC( parse::is_array_no_name,              TYPE,       /****/      "[", "]"  )
 
 
 vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
