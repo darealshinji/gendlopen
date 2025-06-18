@@ -378,3 +378,25 @@ void gendlopen::process_custom_template()
         templ_lineno += entry.line_count;
     }
 }
+
+
+/* parse input and generate output */
+void gendlopen::process()
+{
+    /* parse input */
+    tokenize();
+
+    if (print_symbols()) {
+        /* print symbols */
+        print_symbols_to_stdout();
+    } else if (print_lookup()) {
+        /* print symbol lookup macro */
+        save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
+    } else if (!custom_template().empty()) {
+        /* use a custom template */
+        process_custom_template();
+    } else {
+        /* default */
+        generate();
+    }
+}

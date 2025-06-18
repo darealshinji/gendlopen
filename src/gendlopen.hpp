@@ -101,8 +101,13 @@ private:
     std::string m_defines;
     std::string m_deflib_a, m_deflib_w;
 
+    /* gendlopen.cpp */
+    void print_symbols_to_stdout();
+    void process_custom_template();
+
     /* tokenize.cpp */
     void create_typedefs();
+    void tokenize();
 
     /* clang-ast.cpp */
     bool get_declarations(int mode);
@@ -113,6 +118,7 @@ private:
 
     /* generate.cpp */
     void open_ofstream(const fs_path_t &opath);
+    void generate();
 
     /* substitute.cpp */
     size_t replace_function_prototypes(const size_t &templ_lineno, const std::string &entry);
@@ -129,11 +135,6 @@ public:
     /* d'tor */
     ~gendlopen();
 
-    void tokenize();
-    void print_symbols_to_stdout();
-    void process_custom_template();
-    void generate();
-
     /* get() / set() an option */
 
     /*   type            method name      default value */
@@ -146,6 +147,7 @@ public:
     OPT( bool,           separate,        false       )
     OPT( bool,           ast_all_symbols, false       )
     OPT( bool,           print_symbols,   false       )
+    OPT( bool,           print_lookup,    false       )
     OPT( bool,           read_options,    true        )
     OPT( bool,           print_date,      true        )
     OPT( bool,           line_directive,  false       )
@@ -155,6 +157,7 @@ public:
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }
 
     /* gendlopen.cpp */
+    void process();
     void add_inc(const std::string &s);
     void add_def(const std::string &s);
     void prefix(const std::string &s);

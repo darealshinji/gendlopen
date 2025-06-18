@@ -223,6 +223,9 @@ namespace
                 } else if ( a.get_noarg("print-symbols") ) {
                     gdo.print_symbols(true);
                     continue;
+                } else if ( a.get_noarg("print-lookup") ) {
+                    gdo.print_lookup(true);
+                    continue;
                 }
                 break;
 
@@ -275,32 +278,14 @@ namespace
 
 int main(int argc, char **argv)
 {
-    gendlopen gdo;
-
 #ifdef SAVE_ARGV0
     argv0 = argv[0];
 #endif
 
     try {
+        gendlopen gdo;
         parse_arguments(gdo, argc, argv);
-
-        /* read input */
-        gdo.tokenize();
-
-        /* print and exit */
-        if (gdo.print_symbols()) {
-            gdo.print_symbols_to_stdout();
-            return 0;
-        }
-
-        /* read and process custom template (`-format' will be ignored) */
-        if (!gdo.custom_template().empty()) {
-            gdo.process_custom_template();
-            return 0;
-        }
-
-        /* generate output */
-        gdo.generate();
+        gdo.process();
     }
     catch (const parse_args::error &e) {
         std::cerr << get_prog_name() << ": error: " << e.what() << std::endl;

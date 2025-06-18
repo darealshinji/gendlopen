@@ -63,6 +63,7 @@ namespace help
             "                    modes are: read (default), skip, create"
             "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
             "  -print-symbols    print list of found symbols and exit\n"
+            "  -print-lookup     print a C lookup code macro generated from the found symbols and exit\n"
             "  -ignore-options   ignore `%option' lines from input file\n"
             "  -no-date          don't show current date in output\n"
             "  -no-pragma-once   use `#ifndef' header guard instead of `#pragma once'\n"
@@ -279,6 +280,11 @@ namespace help
             "  -print-symbols\n"
             "    Don't create any output, just print a list of found symbols and exit.\n"
             "    This is useful for debugging.\n"
+            "\n"
+
+
+            "  -print-lookup\n"
+            "    Print a C lookup code macro generated from the found symbols and exit.\n"
             "\n"
 
 
