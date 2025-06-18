@@ -24,7 +24,6 @@
 
 /* use a separate compilation unit for the template data */
 
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <ostream>
@@ -120,16 +119,17 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
     }
 }
 
-
-#define OUTDIR "templates"
-
 /* dump templates */
 void data::dump_templates()
 {
+#define OUTDIR "templates"
+
+    if (fs::exists_lstat(OUTDIR)) {
+        throw gendlopen::error("`" OUTDIR "' already exists");
+    }
+
     if (!fs::create_directory(OUTDIR)) {
-        int errsav = errno;
-        std::string msg = "failed to create directory `" OUTDIR "': ";
-        throw gendlopen::error(msg + strerror(errsav));
+        throw gendlopen::error("failed to create directory `" OUTDIR "'");
     }
 
 #define SAVE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::x)
