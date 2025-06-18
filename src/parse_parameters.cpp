@@ -33,6 +33,10 @@
 #include "types.hpp"
 #include "utils.hpp"
 
+/* command line option strings used in error messages */
+#define OPT_PARAM_CREATE "-param=create"
+#define OPT_PARAM_SKIP   "-param=skip"
+
 
 namespace /* anonymous */
 {
@@ -141,11 +145,13 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
     utils::strip_spaces(proto.args);
 
     if (parameter_names == param::skip) {
-        /* `-param=skip' was given */
         return true;
     }
 
-    /* get parameter names */
+    /* parameter_names == param::read */
+
+#define HINT_MSG  "hint: try `" OPT_PARAM_SKIP "' or `" OPT_PARAM_CREATE "'"
+
     for (vstring_t &v : proto.args_vec)
     {
         if (v.empty()) {
@@ -153,18 +159,26 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
             return false;
         } else if (v.size() == 1) {
             /* check for `...' */
-            if (v.back() == "...") {
+            if (v.front() == "...") {
                 proto.notype_args += "... , ";
                 continue;
             }
 
-            msg = "typename only or incorrect parameter format in function `" + proto.symbol + "'";
+            msg = "typename only or incorrect parameter format in function `" + proto.symbol + "': "
+                + v.front() + "\n"
+                HINT_MSG;
             return false;
         }
 
-        /* check if a parameter begins with pointer */
+        /* check if a parameter begins or ends with pointer */
         if (utils::str_front(v.front()) == '*') {
-            msg = "parameter in function `" + proto.symbol + "' begins with pointer `*'";
+            msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
+            append_strings(msg, v.begin(), v.end());
+            return false;
+        } else if (utils::str_front(v.back()) == '*') {
+            msg = "parameter in function `" + proto.symbol + "' is missing a typename: ";
+            append_strings(msg, v.begin(), v.end());
+            msg += "\n" HINT_MSG;
             return false;
         }
 
@@ -185,7 +199,9 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
             continue;
         }
 
-        msg = "incorrect parameter format in function `" + proto.symbol + "'";
+        msg = "incorrect parameter format in function `" + proto.symbol + "': ";
+        append_strings(msg, v.begin(), v.end());
+        msg += "\n" HINT_MSG;
         return false;
     }
 
@@ -217,7 +233,8 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
 
         /* check if a parameter begins with pointer */
         if (utils::str_front(v.front()) == '*') {
-            msg = "parameter in function `" + proto.symbol + "' begins with pointer";
+            msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
+            append_strings(msg, v.begin(), v.end());
             return false;
         }
 
@@ -238,7 +255,8 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
                 continue;
             }
 
-            msg = "cannot read parameter in function `" + proto.symbol + "'";
+            msg = "cannot read parameter in function `" + proto.symbol + "': ";
+            append_strings(msg, v.begin(), v.end());
             return false;
         }
 

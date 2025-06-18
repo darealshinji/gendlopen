@@ -60,7 +60,7 @@ namespace help
             "  -separate         save output into separate body and header files\n"
             "  -force            always overwrite existing output files\n"
             "  -param=<mode>     how to handle parameter names in function prototypes from input file;\n"
-            "                    modes are: read (default), skip, create"
+            "                    modes are: read (default), skip, create\n"
             "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
             "  -print-symbols    print list of found symbols and exit\n"
             "  -print-lookup     print a C lookup code macro generated from the found symbols and exit\n"
