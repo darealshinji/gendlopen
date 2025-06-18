@@ -1,19 +1,8 @@
 #if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
-/* WinAPI */
+# define GDO_WINAPI
 # include <windows.h>
-# define GDO_LOAD_LIB(filename)       (void *)LoadLibraryA(filename)
-# define GDO_FREE_LIB(handle)         FreeLibrary((HMODULE)handle)
-# define GDO_GET_SYM(handle, symbol)  (void *)GetProcAddress((HMODULE)handle, symbol)
 #else
-/* POSIX */
 # include <dlfcn.h>
-# ifdef _AIX
-#  define GDO_LOAD_LIB(filename)      dlopen(filename, RTLD_LAZY | RTLD_MEMBER)
-# else
-#  define GDO_LOAD_LIB(filename)      dlopen(filename, RTLD_LAZY)
-# endif
-# define GDO_FREE_LIB(handle)         dlclose(handle)
-# define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
 #endif
 
 #ifdef GDO_STATIC
@@ -34,46 +23,15 @@ typedef struct gdo_handle
         %%obj_type%% *%%obj_symbol%%;
     } ptr;
 
+#ifdef GDO_WINAPI
+    HMODULE handle;
+#else
     void *handle;
+#endif
 
 } gdo_handle_t;
 
 GDO_LINKAGE gdo_handle_t gdo_hndl;
-
-
-/**
- * Load library and all symbols.
- *
- * filename:
- *   Library filename or path to load. Must not be empty or NULL.
- *
- * Returns NULL on success and an error message if loading has failed.
- */
-GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
-{
-    if (!filename) {
-        return "filename is <NULL>";
-    } else if (!*filename) {
-        return "filename is empty";
-    }
-
-    gdo_hndl.handle = GDO_LOAD_LIB(filename);
-
-    if (!gdo_hndl.handle) {
-        return "failed to load library";
-    }
-@
-    /* %%symbol%% */@
-    gdo_hndl.ptr.%%symbol%% =@
-        (%%sym_type%%)@
-            GDO_GET_SYM(gdo_hndl.handle, "%%symbol%%");@
-    if (!gdo_hndl.ptr.%%symbol%%) {@
-        GDO_FREE_LIB(gdo_hndl.handle);@
-        return "failed to load symbol: %%symbol%%";@
-    }
-
-    return NULL;
-}
 
 
 /**
@@ -83,11 +41,67 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 GDO_LINKAGE void gdo_free_library(void)
 {
     if (gdo_hndl.handle) {
-        GDO_FREE_LIB(gdo_hndl.handle);
+#ifdef GDO_WINAPI
+        FreeLibrary(gdo_hndl.handle);
+#else
+        dlclose(gdo_hndl.handle);
+#endif
     }
 
     gdo_hndl.handle = NULL;
     gdo_hndl.ptr.%%symbol%% = NULL;
+}
+
+
+/**
+ * Load library and all symbols.
+ *
+ * filename:
+ *   Library filename or path to load. Must not be empty or NULL.
+ *
+ * Returns NULL on success and an error message if loading has failed.
+ * Library handle is always freed on an error.
+ */
+GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
+{
+    if (!filename) {
+        return "filename is <NULL>";
+    } else if (!*filename) {
+        return "filename is empty";
+    }
+
+    /* load library */
+#ifdef GDO_WINAPI
+    gdo_hndl.handle = LoadLibraryA(filename);
+#elif defined(_AIX)
+    gdo_hndl.handle = dlopen(filename, RTLD_LAZY | RTLD_MEMBER);
+#else
+    gdo_hndl.handle = dlopen(filename, RTLD_LAZY);
+#endif
+
+    if (!gdo_hndl.handle) {
+        return "failed to load library";
+    }
+
+    /* load symbols */
+#ifdef GDO_WINAPI
+# define _GDO_LOAD_SYM(SYMBOL)  (void *)GetProcAddress(gdo_hndl.handle, SYMBOL)
+#else
+# define _GDO_LOAD_SYM(SYMBOL)  dlsym(gdo_hndl.handle, SYMBOL)
+#endif
+@
+    /* %%symbol%% */@
+    gdo_hndl.ptr.%%symbol%% =@
+        (%%sym_type%%)@
+            _GDO_LOAD_SYM("%%symbol%%");@
+    if (!gdo_hndl.ptr.%%symbol%%) {@
+        gdo_free_library();@
+        return "failed to load symbol: %%symbol%%";@
+    }
+
+#undef _GDO_LOAD_SYM
+
+    return NULL;
 }
 
 

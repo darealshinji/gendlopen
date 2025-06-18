@@ -44,75 +44,31 @@ namespace gdo
 
 
     /**
-     * Default flags to use when loading a library.
-     */
-#ifdef GDO_WINAPI
-    constexpr const int default_flags = 0;
-#elif defined(_AIX)
-    constexpr const int default_flags = RTLD_LAZY | RTLD_MEMBER;
-#else
-    constexpr const int default_flags = RTLD_LAZY;
-#endif
-
-
-    /**
      * Library handle
      */
-    void *handle = nullptr;
-
-
-    /**
-     * Load a library.
-     *
-     * filename:
-     *   Library filename or path to load.
-     *
-     * flags:
-     *   These are passed to the underlying library loading functions.
-     */
-    void load_lib(const char *filename, int flags=default_flags)
-    {
 #ifdef GDO_WINAPI
-        handle = reinterpret_cast<void *>(::LoadLibraryExA(filename, nullptr, flags));
+    HMODULE handle = nullptr;
 #else
-        handle = ::dlopen(filename, flags);
+    void *handle = nullptr;
 #endif
-    }
 
 
     /**
      * Free library handle without error checks.
      * Internal handle and pointers are always set back to NULL.
      */
-    void free_lib(void)
+    void free_library(void)
     {
+        if (handle) {
 #ifdef GDO_WINAPI
-        ::FreeLibrary(reinterpret_cast<HMODULE>(handle));
+            ::FreeLibrary(handle);
 #else
-        ::dlclose(handle);
+            ::dlclose(handle);
 #endif
+        }
 
         handle = nullptr;
         ptr::%%symbol%% = nullptr;
-    }
-
-
-    /**
-     * Load a specific symbol.
-     *
-     * symbol:
-     *   Name of the symbol to load.
-     *
-     * Returns NULL on error.
-     */
-    void *get_symbol(const char *symbol)
-    {
-#ifdef GDO_WINAPI
-        return reinterpret_cast<void *>(::GetProcAddress(
-            reinterpret_cast<HMODULE>(handle), symbol));
-#else
-        return ::dlsym(handle, symbol);
-#endif
     }
 
 
@@ -155,7 +111,7 @@ namespace gdo
      * filename:
      *   Library filename or path to load. Must not be empty or NULL.
      *
-     * Throws an exception on error.
+     * If an error occurs the library handle is freed and an exception is thrown.
      */
     void load_library_and_symbols(const char *filename) noexcept(false)
     {
@@ -165,18 +121,35 @@ namespace gdo
             throw LibraryError("<EMPTY>");
         }
 
-        load_lib(filename);
+        /* load library */
+#ifdef GDO_WINAPI
+        handle = ::LoadLibraryA(filename);
+#elif defined(_AIX)
+        handle = ::dlopen(filename, RTLD_LAZY | RTLD_MEMBER);
+#else
+        handle = ::dlopen(filename, RTLD_LAZY);
+#endif
 
         if (!handle) {
             throw LibraryError(filename);
         }
+
+        /* load symbols */
+        auto load_symbol = [] (const char *symbol) -> void*
+        {
+#ifdef GDO_WINAPI
+            return reinterpret_cast<void *>(::GetProcAddress(handle, symbol));
+#else
+            return ::dlsym(handle, symbol);
+#endif
+        };
 @
         /* %%symbol%% */@
         ptr::%%symbol%% =@
             reinterpret_cast<%%sym_type%%>(@
-                get_symbol("%%symbol%%"));@
+                load_symbol("%%symbol%%"));@
         if (!ptr::%%symbol%%) {@
-            free_lib();@
+            free_library();@
             throw SymbolError("%%symbol%%");@
         }
     }
