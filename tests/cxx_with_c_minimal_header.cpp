@@ -13,7 +13,7 @@ void cb(const char *msg)
 int main()
 {
     /* quick load and error check */
-    const char *lib = LIBNAME(helloworld,0);
+    const char *lib = GDO_LIBNAME(helloworld,0);
     const char *err = gdo_load_library_and_symbols(lib);
 
     if (err) {

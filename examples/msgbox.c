@@ -29,6 +29,9 @@ extern void fl_message_title_MANGLED(const char *title);
 #include "example_msgbox_fltk.h"
 #include "example_msgbox_x11.h"
 
+#define LIBNAME(...)  DL_GTK_LIBNAME(__VA_ARGS__)
+#define LIBEXT        DL_GTK_LIBEXT
+
 /* same as _countof() */
 #define COUNTOF(array) (sizeof(array) / sizeof(array[0]))
 

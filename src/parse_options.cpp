@@ -22,17 +22,13 @@
  SOFTWARE.
 **/
 
-#ifdef _MSC_VER
-# include "strcasecmp.hpp"
-#else
-# include <strings.h>
-#endif
 #include <string.h>
 #include <string>
 #include <vector>
 #include "gendlopen.hpp"
 #include "parse.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 
 namespace /* anonymous */
@@ -65,11 +61,11 @@ void parse::options(gendlopen *gdo, const vstring_t &options)
 {
     auto set_parameter_names = [&] (const char *opt)
     {
-        if (strcasecmp(opt, "skip") == 0) {
+        if (utils::strcasecmp(opt, "skip") == 0) {
             gdo->parameter_names(param::skip);
-        } else if (strcasecmp(opt, "create") == 0) {
+        } else if (utils::strcasecmp(opt, "create") == 0) {
             gdo->parameter_names(param::create);
-        } else if (strcasecmp(opt, "read") == 0) {
+        } else if (utils::strcasecmp(opt, "read") == 0) {
             gdo->parameter_names(param::read);
         } else {
             throw gendlopen::error("unknown argument for option 'param': " + std::string(opt));

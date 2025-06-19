@@ -4,7 +4,7 @@
 /* use static linkage */
 #define GDO_STATIC 1
 
-#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
+#define GDO_DEFAULT_LIB GDO_LIBNAME(helloworld,0)
 
 /* include generated header file */
 #include "c_static_linkage.h"

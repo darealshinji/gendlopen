@@ -40,6 +40,7 @@ namespace templates
 }
 
 
+/* save template data to file */
 static void save_to_file(const std::string &filename, const template_t *list)
 {
     cio::ofstream ofs;
@@ -55,32 +56,6 @@ static void save_to_file(const std::string &filename, const template_t *list)
     }
 }
 
-static size_t save_data(bool line_directive, const template_t *list, size_t line_count)
-{
-    if (!line_directive && strncmp(list->data, "#line", 5) == 0) {
-        /* skip initial line directive */
-        list++;
-        line_count--;
-    }
-
-    for ( ; list->data != NULL; list++) {
-        save::ofs << list->data << '\n';
-    }
-
-    return line_count;
-}
-
-/* license */
-size_t data::license(bool line_directive)
-{
-    return save_data(line_directive, templates::license, templates::license_lines);
-}
-
-/* filename macros */
-size_t data::filename_macros(bool line_directive)
-{
-    return save_data(line_directive, templates::filename_macros, templates::filename_macros_lines);
-}
 
 /* create template data */
 void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate)
@@ -118,6 +93,7 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
         throw gendlopen::error(std::string(__func__) + ": format == output::error");
     }
 }
+
 
 /* dump templates */
 void data::dump_templates()

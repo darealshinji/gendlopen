@@ -7,10 +7,10 @@ int main()
     const size_t num = 4;
 
     const char *files[num] = {
-        "plugin_a" LIBEXT,
-        "plugin_b" LIBEXT,
-        "plugin_does_not_exist" LIBEXT,
-        "plugin_c" LIBEXT
+        "plugin_a" GDO_LIBEXT,
+        "plugin_b" GDO_LIBEXT,
+        "plugin_does_not_exist" GDO_LIBEXT,
+        "plugin_c" GDO_LIBEXT
     };
 
     /* load plugins */

@@ -52,12 +52,6 @@ namespace save
 
 namespace data
 {
-    /* save filename macros to save::ofs */
-    size_t filename_macros(bool line_directive);
-
-    /* save license header to save::ofs */
-    size_t license(bool line_directive);
-
     /* concatenate templates and create template_t vector lists */
     void create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate);
 
@@ -99,11 +93,11 @@ private:
     std::string m_fmt_upper, m_fmt_lower, m_fmt_standalone;
 
     std::string m_defines;
-    std::string m_deflib_a, m_deflib_w;
 
     /* gendlopen.cpp */
     void print_symbols_to_stdout();
     void process_custom_template();
+    std::string replace_prefixes(const char *data);
 
     /* tokenize.cpp */
     void create_typedefs();
@@ -117,6 +111,7 @@ private:
     void parse(std::vector<vstring_t> &vec_tokens, const std::string &input_name);
 
     /* generate.cpp */
+    size_t save_data(const template_t *list);
     void open_ofstream(const fs_path_t &opath);
     void generate();
 
@@ -143,6 +138,7 @@ public:
     OPT( output::format, format,          output::c   )
     OPT( param::names,   parameter_names, param::read )
     OPT( std::string,    custom_template, {}          )
+    OPT( std::string,    default_lib,     {}          )
     OPT( bool,           force,           false       )
     OPT( bool,           separate,        false       )
     OPT( bool,           ast_all_symbols, false       )
@@ -161,7 +157,6 @@ public:
     void add_inc(const std::string &s);
     void add_def(const std::string &s);
     void prefix(const std::string &s);
-    void default_lib(const std::string &s);
     void format(const std::string &s);
 };
 

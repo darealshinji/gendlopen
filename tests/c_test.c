@@ -3,7 +3,7 @@
 
 #include "helloworld.h"
 
-#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
+#define GDO_DEFAULT_LIB GDO_LIBNAME(helloworld,0)
 
 /* include generated header file */
 #include "c_test.h"
@@ -17,8 +17,8 @@ static void cb(const char *msg)
 static void load_lib_args()
 {
     /* filename of the library we want to load;
-     * using the macro `LIBNAME` for cross-platform compatibility */
-    const gdo_char_t *filename = LIBNAME(helloworld,0);
+     * using the macro `GDO_LIBNAME` for cross-platform compatibility */
+    const gdo_char_t *filename = GDO_LIBNAME(helloworld,0);
 
     /* flags that will be passed to dlopen() or LoadLibraryEx() */
     const int flags = GDO_DEFAULT_FLAGS;
@@ -47,7 +47,7 @@ static void load_lib_args()
 
 static void load_lib_name()
 {
-    const gdo_char_t *filename = LIBNAME(helloworld,0);
+    const gdo_char_t *filename = GDO_LIBNAME(helloworld,0);
 
     /* load library and each individual symbol */
     if (!gdo_load_lib_name(filename) ||
@@ -66,7 +66,7 @@ static void load_lib_name()
 
 static void load_lib_name2()
 {
-    const gdo_char_t *filename = LIBNAME(helloworld,0);
+    const gdo_char_t *filename = GDO_LIBNAME(helloworld,0);
 
     /* load library and each individual symbol */
     if (!gdo_load_lib_name(filename) ||

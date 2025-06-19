@@ -31,7 +31,7 @@ static void show_gtk_message_box(const char *title, const char *msg1, const char
 int main(int argc, char **argv)
 {
     const char *title = "Gtk 3";
-    const char *library = LIBNAME(gtk-3, 0);
+    const char *library = GDO_LIBNAME(gtk-3, 0);
     const char *msg = "Library loaded:\n";
     const char *orig = "";
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
             return 0;
         } else if (strcmp(argv[1], "--gtk2") == 0) {
             title = "Gtk 2";
-            library = LIBNAME(gtk-x11-2.0, 0);
+            library = GDO_LIBNAME(gtk-x11-2.0, 0);
         } else if (strcmp(argv[1], "--gtk3") == 0) {
             /* use default values */
         } else {

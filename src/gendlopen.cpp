@@ -22,11 +22,6 @@
  SOFTWARE.
 **/
 
-#ifdef _MSC_VER
-# include "strcasecmp.hpp"
-#else
-# include <strings.h>
-#endif
 #include <stdio.h>
 #include <iostream>
 #include <regex>
@@ -38,17 +33,10 @@
 
 namespace /* anonymous */
 {
-    /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
-    template<size_t N>
-    bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
-    {
-        return (str.size() > N-1 && strncasecmp(str.c_str(), pfx, N-1) == 0);
-    }
-
     /* quote header name if needed */
     std::string format_inc(const std::string &inc)
     {
-        if (prefixed_and_longer_case(inc, "nq:")) {
+        if (utils::prefixed_and_longer_case(inc, "nq:")) {
             /* no quotes */
             return inc.substr(3);
         }
@@ -65,89 +53,6 @@ namespace /* anonymous */
         return '"' + inc + '"';
     }
 
-    /* quote library name */
-    std::string quote_lib(const std::string &lib, bool wide)
-    {
-        if (wide) {
-            if (lib.size() >= 3 && utils::starts_ends_with(lib, "L\"", '"')) {
-                /* already quoted */
-                return lib;
-            } else if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
-                /* prepend 'L' */
-                return 'L' + lib;
-            }
-
-            return "L\"" + lib + '"';
-        }
-
-        if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
-            /* already quoted */
-            return lib;
-        }
-
-        return '"' + lib + '"';
-    }
-
-    /**
-     * format library name
-     * foo        ==>  "foo"
-     * nq:foo     ==>  foo
-     * ext:foo    ==>  "foo" LIBEXTA
-     * api:2:foo  ==>  LIBNAMEA(foo,2)
-     */
-    void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w)
-    {
-        if (str.empty()) {
-            return;
-        }
-
-        switch(str.front())
-        {
-        case 'N':
-        case 'n':
-            /* no quotes */
-            if (prefixed_and_longer_case(str, "nq:")) {
-                lib_a = lib_w = str.substr(3);
-                return;
-            }
-            break;
-
-        case 'E':
-        case 'e':
-            /* quotes + file extension macro */
-            if (prefixed_and_longer_case(str, "ext:")) {
-                auto sub = str.substr(4);
-                lib_a = quote_lib(sub, false) + " LIBEXTA";
-                lib_w = quote_lib(sub, true) + " LIBEXTW";
-                return;
-            }
-            break;
-
-        case 'A':
-        case 'a':
-            /* no quotes, API libname macro */
-            if (prefixed_and_longer_case(str, "api:")) {
-                const std::regex reg("(.*?):(.*)");
-                std::smatch m;
-                auto sub = str.substr(4);
-
-                if (std::regex_match(sub, m, reg) && m.size() == 3) {
-                    /* LIBNAMEA(xxx,0) */
-                    lib_w = lib_a = "LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
-                    lib_w[7] = 'W';
-                    return;
-                }
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        /* quote string */
-        lib_a = quote_lib(str, false);
-        lib_w = quote_lib(str, true);
-    }
 
     /* read input lines */
     bool get_lines(FILE *fp, std::string &line, template_t &entry)
@@ -224,16 +129,6 @@ void gendlopen::prefix(const std::string &s)
     m_fmt_upper = "$1" + m_pfx_upper + '_';
     m_fmt_lower = "$1" + m_pfx_lower + '_';
     m_fmt_standalone = "$1" + m_pfx_lower + "$3";
-}
-
-
-/* set default library to load */
-void gendlopen::default_lib(const std::string &lib)
-{
-    std::string lib_a, lib_w;
-    format_libname(lib, lib_a, lib_w);
-    m_deflib_a = lib_a;
-    m_deflib_w = lib_w;
 }
 
 
@@ -339,6 +234,30 @@ void gendlopen::print_symbols_to_stdout()
     }
 
     std::cout << "\n/***  " << (m_objects.size() + m_prototypes.size()) << " matches  ***/" << std::endl;
+}
+
+
+/* replace prefixes in string */
+std::string gendlopen::replace_prefixes(const char *data)
+{
+    if (!data) {
+        return "";
+    }
+
+#define NOTALNUM "[^a-zA-Z0-9_]"
+
+    const std::regex reg_pfxupper("(" NOTALNUM "?[_]?)(GDO_)");
+    const std::regex reg_pfxlower("(" NOTALNUM "?[_]?)(gdo_)");
+    const std::regex reg_standalone("(" NOTALNUM "?)(gdo)(" NOTALNUM "?)");
+
+#undef NOTALNUM
+
+    std::string buf = data;
+    buf = std::regex_replace(buf, reg_pfxupper, m_fmt_upper);
+    buf = std::regex_replace(buf, reg_pfxlower, m_fmt_lower);
+    buf = std::regex_replace(buf, reg_standalone, m_fmt_standalone);
+
+    return buf;
 }
 
 

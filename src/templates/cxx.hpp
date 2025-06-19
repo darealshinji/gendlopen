@@ -38,9 +38,9 @@ constexpr const int default_flags = GDO_DEFAULT_FLAGS;
 /**
  * Shared library file extension without dot. Useful i.e. on plugins.
  */
-constexpr const char    * const libext   = LIBEXTA;
+constexpr const char    * const libext   = GDO_LIBEXTA;
 #ifdef GDO_WINAPI
-constexpr const wchar_t * const libext_w = LIBEXTW;
+constexpr const wchar_t * const libext_w = GDO_LIBEXTW;
 #endif
 
 

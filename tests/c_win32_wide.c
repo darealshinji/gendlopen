@@ -13,7 +13,7 @@ void cb(const char *msg)
 
 int wmain()
 {
-    const wchar_t *lib = L"./" LIBNAMEW(helloworld, 0);
+    const wchar_t *lib = L"./" GDO_LIBNAMEW(helloworld, 0);
 
     /* load library and symbols */
     if (!gdo_load_lib_args(lib, GDO_DEFAULT_FLAGS, false) ||

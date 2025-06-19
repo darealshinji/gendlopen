@@ -26,16 +26,10 @@
  * Substitute placeholders in embedded template data.
  */
 
-#ifdef _MSC_VER
-# include "strcasecmp.hpp"
-#else
-# include <strings.h>
-#endif
 #include <string.h>
 #include <algorithm>
 #include <list>
 #include <ostream>
-#include <regex>
 #include <string>
 #include <vector>
 #include "cio_ofstream.hpp"
@@ -137,7 +131,7 @@ size_t gendlopen::replace_function_prototypes(const size_t &templ_lineno, const 
         std::string copy = entry;
 
         /* don't "return" on "void" functions */
-        if (strcasecmp(e.type.c_str(), "void") == 0) {
+        if (utils::strcasecmp(e.type.c_str(), "void") == 0) {
             /* keep the indentation pretty */
             erase_string("%%return%% ", copy);
             erase_string("%%return%%", copy);
@@ -353,19 +347,11 @@ size_t gendlopen::substitute_line(const template_t &line, size_t &templ_lineno, 
         return 0;
     }
 
-    buf = line.data;
-
-#define NOTALNUM "[^a-zA-Z0-9_]"
-
     /* replace prefixes */
-    if (m_pfx_upper != "GDO") {
-        const std::regex reg_pfxupper("(" NOTALNUM "?[_]?)(GDO_)");
-        const std::regex reg_pfxlower("(" NOTALNUM "?[_]?)(gdo_)");
-        const std::regex reg_standalone("(" NOTALNUM "?)(gdo)(" NOTALNUM "?)");
-
-        buf = std::regex_replace(buf, reg_pfxupper, m_fmt_upper);
-        buf = std::regex_replace(buf, reg_pfxlower, m_fmt_lower);
-        buf = std::regex_replace(buf, reg_standalone, m_fmt_standalone);
+    if (m_pfx_upper == "GDO") {
+        buf = line.data;
+    } else {
+        buf = replace_prefixes(line.data);
     }
 
     /* nothing to loop, just append */

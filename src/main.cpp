@@ -22,21 +22,15 @@
  SOFTWARE.
 **/
 
-#ifdef _MSC_VER
-# include "strcasecmp.hpp"
-#else
-# include <strings.h>
-#endif
-#include <string.h>
-
 #include <errno.h>  /* program_invocation_short_name */
-
+#include <string.h>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
 #include "parse_args.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 #if !defined(HAVE_GETPROGNAME) && !defined(HAVE_PROGRAM_INVOCATION_SHORT_NAME)
 # define SAVE_ARGV0
@@ -80,11 +74,11 @@ namespace
     /* -param=... */
     void set_parameter_names(gendlopen &gdo, const char *opt, char optpfx)
     {
-        if (strcasecmp(opt, "skip") == 0) {
+        if (utils::strcasecmp(opt, "skip") == 0) {
             gdo.parameter_names(param::skip);
-        } else if (strcasecmp(opt, "create") == 0) {
+        } else if (utils::strcasecmp(opt, "create") == 0) {
             gdo.parameter_names(param::create);
-        } else if (strcasecmp(opt, "read") == 0) {
+        } else if (utils::strcasecmp(opt, "read") == 0) {
             gdo.parameter_names(param::read);
         } else {
             std::string msg = "unknown argument for option '";

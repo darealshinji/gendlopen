@@ -22,11 +22,6 @@
  SOFTWARE.
 **/
 
-#ifdef _MSC_VER
-# include "strcasecmp.hpp"
-#else
-# include <strings.h>
-#endif
 #include <string>
 #include <vector>
 #include "parse.hpp"
@@ -60,7 +55,7 @@ namespace /* anonymous */
             return false;
         }
 
-        if (strcasecmp(v.front().c_str(), "void") == 0) {
+        if (utils::strcasecmp(v.front().c_str(), "void") == 0) {
             /* save "void" parameter */
             proto.args = v.front();
             return true;

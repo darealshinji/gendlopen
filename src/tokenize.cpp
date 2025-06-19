@@ -27,11 +27,6 @@
  * into vectors.
  */
 
-#ifdef _MSC_VER
-# include "strcasecmp.hpp"
-#else
-# include <strings.h>
-#endif
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -61,7 +56,7 @@ namespace /* anonymous */
             /* identifier */
             case LEX_ID:
                 /* don't add "extern" keyword */
-                if (strcasecmp(yytext, "extern") != 0) {
+                if (utils::strcasecmp(yytext, "extern") != 0) {
                     tokens.push_back(yytext);
                 }
                 break;

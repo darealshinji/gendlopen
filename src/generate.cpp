@@ -32,6 +32,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -45,11 +46,100 @@
 
 
 
+/* template.h */
+namespace templates
+{
+    extern const template_t *ptr_license;
+    extern const template_t *ptr_filename_macros;
+}
+
+
 namespace save
 {
 
 cio::ofstream ofs;
 
+
+/* quote library name */
+std::string quote_lib(const std::string &lib, bool wide)
+{
+    if (wide) {
+        if (lib.size() >= 3 && utils::starts_ends_with(lib, "L\"", '"')) {
+            /* already quoted */
+            return lib;
+        } else if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
+            /* prepend 'L' */
+            return 'L' + lib;
+        }
+
+        return "L\"" + lib + '"';
+    }
+
+    if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
+        /* already quoted */
+        return lib;
+    }
+
+    return '"' + lib + '"';
+}
+
+
+/**
+    * format library name
+    * foo        ==>  "foo"
+    * nq:foo     ==>  foo
+    * ext:foo    ==>  "foo" GDO_LIBEXTA
+    * api:2:foo  ==>  GDO_LIBNAMEA(foo,2)
+    */
+void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w, const std::string &pfx)
+{
+    switch(str.front())
+    {
+    case 'N':
+    case 'n':
+        /* no quotes */
+        if (utils::prefixed_and_longer_case(str, "nq:")) {
+            lib_a = lib_w = str.substr(3);
+            return;
+        }
+        break;
+
+    case 'E':
+    case 'e':
+        /* quotes + file extension macro */
+        if (utils::prefixed_and_longer_case(str, "ext:")) {
+            auto sub = str.substr(4);
+            lib_a = quote_lib(sub, false) + ' ' + pfx + "_LIBEXTA";
+            lib_w = quote_lib(sub, true)  + ' ' + pfx + "_LIBEXTW";
+            return;
+        }
+        break;
+
+    case 'A':
+    case 'a':
+        /* no quotes, API libname macro */
+        if (utils::prefixed_and_longer_case(str, "api:")) {
+            const std::regex reg("(.*?):(.*)");
+            std::smatch m;
+            auto sub = str.substr(4);
+
+            if (std::regex_match(sub, m, reg) && m.size() == 3) {
+                /* GDO_LIBNAMEA(xxx,0) */
+                lib_a = pfx + "_LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
+                lib_w = pfx + "_LIBNAMEW(" + m[2].str() + ',' + m[1].str() + ')';
+                return;
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    /* quote string */
+    lib_a = quote_lib(str, false);
+    lib_w = quote_lib(str, true);
+}
 
 /* print note */
 size_t note(bool print_date)
@@ -184,6 +274,35 @@ void header_guard_end(const std::string &header_guard, bool is_cxx)
 } /* end namespace save */
 
 
+/* save data, replace prefixes */
+size_t gendlopen::save_data(const template_t *list)
+{
+    size_t total_lines = 0;
+
+    if (!m_line_directive && strncmp(list->data, "#line", 5) == 0) {
+        /* skip initial line directive */
+        list++;
+    }
+
+    for ( ; list->data != NULL; list++) {
+        std::string buf;
+
+        if (m_pfx_upper == "GDO") {
+            /* nothing to replace */
+            buf = list->data;
+        } else {
+            buf = replace_prefixes(list->data);
+        }
+
+        save::ofs << buf << '\n';
+
+        total_lines += utils::count_linefeed(buf);
+    }
+
+    return total_lines;
+}
+
+
 /* open output file for writing */
 void gendlopen::open_ofstream(const fs_path_t &opath)
 {
@@ -240,7 +359,7 @@ void gendlopen::generate()
 
     auto NOTE_AND_LICENSE = [&, this] () {
         lines += save::note(m_print_date);
-        lines += data::license(m_line_directive);
+        lines += save_data(templates::ptr_license);
     };
 
     auto HEADER_GUARD_BEGIN = [&, this] () {
@@ -251,7 +370,7 @@ void gendlopen::generate()
     };
 
     auto HEADER_FILENAME_MACROS = [&] () {
-        lines += data::filename_macros(m_line_directive);
+        lines += save_data(templates::ptr_filename_macros);
     };
 
     auto HEADER_GENERATED_DATA = [&, this] () {
@@ -368,9 +487,11 @@ void gendlopen::generate()
     }
 
     /* default library name */
-    if (!m_deflib_a.empty() && !m_deflib_w.empty()) {
-        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBA " + m_deflib_a + '\n';
-        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBW " + m_deflib_w + '\n';
+    if (!m_default_lib.empty()) {
+        std::string lib_a, lib_w;
+        save::format_libname(m_default_lib, lib_a, lib_w, m_pfx_upper);
+        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBA " + lib_a + '\n';
+        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBW " + lib_w + '\n';
     }
 
     /* save pointers to template lines in header_data and body_data */

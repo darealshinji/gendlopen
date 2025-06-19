@@ -24,8 +24,11 @@
 
 #pragma once
 
-#include <string>
+#if !defined(_MSC_VER)
+# include <strings.h>
+#endif
 #include <string.h>
+#include <string>
 #include "types.hpp"
 
 
@@ -33,6 +36,31 @@
 
 namespace utils
 {
+inline int strcasecmp(const char *a, const char *b)
+{
+#ifdef _MSC_VER
+    return ::_stricmp(a, b);
+#else
+    return ::strcasecmp(a, b);
+#endif
+}
+
+inline int strncasecmp(const char *a, const char *b, size_t n)
+{
+#ifdef _MSC_VER
+    return ::_strnicmp(a, b, n);
+#else
+    return ::strncasecmp(a, b, n);
+#endif
+}
+
+/* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
+template<size_t N>
+bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
+{
+    return (str.size() > N-1 && utils::strncasecmp(str.c_str(), pfx, N-1) == 0);
+}
+
 /* convert a string to uppercase or lowercase
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
@@ -82,12 +110,12 @@ template<size_t N>
 bool starts_with(const std::string &str, char const (&prefix)[N]) {
     constexpr size_t prefix_size = N-1;
     return (str.size() >= prefix_size &&
-            strncmp(str.c_str(), prefix, prefix_size) == 0);
+            ::strncmp(str.c_str(), prefix, prefix_size) == 0);
 }
 
 static inline bool starts_with(const std::string &str, const std::string &prefix) {
     return (str.size() >= prefix.size() &&
-            strncmp(str.c_str(), prefix.c_str(), prefix.size()) == 0);
+            ::strncmp(str.c_str(), prefix.c_str(), prefix.size()) == 0);
 }
 
 static inline bool starts_with(const std::string &str, const char &prefix) {
@@ -99,12 +127,12 @@ template<size_t N>
 bool ends_with(const std::string &str, char const (&suffix)[N]) {
     constexpr size_t suffix_size = N-1;
     return (str.size() >= suffix_size &&
-            strcmp(str.c_str() + (str.size() - suffix_size), suffix) == 0);
+            ::strcmp(str.c_str() + (str.size() - suffix_size), suffix) == 0);
 }
 
 static inline bool ends_with(const std::string &str, const std::string &suffix) {
     return (str.size() >= suffix.size() &&
-            strcmp(str.c_str() + (str.size() - suffix.size()), suffix.c_str()) == 0);
+            ::strcmp(str.c_str() + (str.size() - suffix.size()), suffix.c_str()) == 0);
 }
 
 static inline bool ends_with(const std::string &str, const char &prefix) {

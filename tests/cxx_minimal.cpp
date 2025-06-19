@@ -9,7 +9,7 @@
 int main()
 {
     try {
-        gdo::load_library_and_symbols( LIBNAME(helloworld,0) );
+        gdo::load_library_and_symbols( GDO_LIBNAME(helloworld,0) );
     }
     catch (const gdo::LibraryError &e) {
         std::cerr << "error: failed to load library: " << e.what() << std::endl;

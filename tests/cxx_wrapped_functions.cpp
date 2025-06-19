@@ -4,7 +4,7 @@
  * if the symbol wasn't loaded yet */
 #define GDO_WRAP_FUNCTIONS 1
 
-#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
+#define GDO_DEFAULT_LIB GDO_LIBNAME(helloworld,0)
 
 /* include generated header file */
 #include "cxx_wrapped_functions.hpp"

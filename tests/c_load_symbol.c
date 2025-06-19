@@ -13,7 +13,7 @@ void cb(const char *msg)
 int main()
 {
     /* load library and each individual symbol */
-    if (!gdo_load_lib_name(LIBNAME(helloworld,0)) ||
+    if (!gdo_load_lib_name(GDO_LIBNAME(helloworld,0)) ||
         !gdo_load_symbol(GDO_LOAD_helloworld_init) ||
         !gdo_load_symbol(GDO_LOAD_helloworld_callback) ||
         !gdo_load_symbol(GDO_LOAD_helloworld_hello) ||

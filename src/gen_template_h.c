@@ -37,14 +37,12 @@
 #include <string.h>
 
 
-static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const char *varName,
-    bool line_directive, bool print_line_count)
+static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const char *varName)
 {
     int c = 0;
     bool multi_line = false;
     bool new_line = true;
     size_t count = 0;
-    size_t total_line_count = 0;
     FILE *fp;
 
     const char * const true_false[2] = { "false", "true" };
@@ -67,11 +65,10 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
     /* write output */
     fprintf(fpOut, "/* %s */\n", in_file);
     fprintf(fpOut, "#define FILENAME_%s \"%s\"\n", varName, in_file);
-    fprintf(fpOut, "static const template_t %s[] = {\n", varName);
+    fprintf(fpOut, "const template_t %s[] = {\n", varName);
 
-    if (line_directive) {
+    if (strcmp("license", varName) != 0) {
         fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", false, 1 },\n", in_file);
-        total_line_count++;
     }
 
 #define READ_NEXT() (c = fgetc(fp))
@@ -112,7 +109,6 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
         case '\n':
             count++;
             fprintf(fpOut, "\", %s, %zd },\n", true_false[percent], count);
-            total_line_count += count;
             count = percent = 0;
             new_line = true;
             multi_line = false;
@@ -155,16 +151,11 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
     if (!new_line) {
         count++;
         fprintf(fpOut, "\", %s, %zd },\n", true_false[percent], count);
-        total_line_count += count;
     }
 
     fprintf(fpOut, "%s", "  { NULL, 0, 0 }\n");
     fprintf(fpOut, "%s", "};\n");
-
-    if (!print_line_count) {
-        fprintf(fpOut, "%s", "//");
-    }
-    fprintf(fpOut, "static const size_t %s_lines = %zd;\n\n", varName, total_line_count);
+    fprintf(fpOut, "const template_t *ptr_%s = %s;\n\n", varName, varName);
 
     fclose(fp);
 }
@@ -193,18 +184,18 @@ int main(int argc, char **argv)
         "\n"
         "#pragma once\n");
 
-/* fpOut, in_dir, in_file,           varName,           line_directive, print_line_count */
-    dump(fp, d, "license.h",         "license",         false, true);
-    dump(fp, d, "filename_macros.h", "filename_macros", true,  true);
-    dump(fp, d, "common.h",          "common_header",   true,  false);
-    dump(fp, d, "c.h",               "c_header",        true,  false);
-    dump(fp, d, "c.c",               "c_body",          true,  false);
-    dump(fp, d, "cxx.hpp",           "cxx_header",      true,  false);
-    dump(fp, d, "cxx.cpp",           "cxx_body",        true,  false);
-    dump(fp, d, "minimal.h",         "min_c_header",    true,  false);
-    dump(fp, d, "minimal_cxxeh.hpp", "min_cxx_header",  true,  false);
-    dump(fp, d, "plugin.h",          "plugin_header",   true,  false);
-    dump(fp, d, "plugin.c",          "plugin_body",     true,  false);
+/* fpOut, in_dir, in_file,           varName */
+    dump(fp, d, "license.h",         "license");
+    dump(fp, d, "filename_macros.h", "filename_macros");
+    dump(fp, d, "common.h",          "common_header");
+    dump(fp, d, "c.h",               "c_header");
+    dump(fp, d, "c.c",               "c_body");
+    dump(fp, d, "cxx.hpp",           "cxx_header");
+    dump(fp, d, "cxx.cpp",           "cxx_body");
+    dump(fp, d, "minimal.h",         "min_c_header");
+    dump(fp, d, "minimal_cxxeh.hpp", "min_cxx_header");
+    dump(fp, d, "plugin.h",          "plugin_header");
+    dump(fp, d, "plugin.c",          "plugin_body");
 
     fclose(fp);
 

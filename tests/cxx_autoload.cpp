@@ -9,7 +9,7 @@
 #define GDO_DELAYLOAD       1
 
 /* define a default library to load */
-#define GDO_DEFAULT_LIB LIBNAME(helloworld,0)
+#define GDO_DEFAULT_LIB GDO_LIBNAME(helloworld,0)
 
 /* simple function hook */
 #define GDO_HOOK_helloworld_hello(...) \

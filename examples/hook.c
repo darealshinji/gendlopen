@@ -36,7 +36,7 @@
 
 int main()
 {
-    const char *library = LIBNAME(glib-2.0,0);
+    const char *library = GDO_LIBNAME(glib-2.0,0);
 
     /* load library and symbols */
     if (!gdo_load_lib_name_and_symbols(library)) {
