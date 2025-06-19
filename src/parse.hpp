@@ -52,8 +52,9 @@ namespace parse
     /* parse.cpp */
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
-    bool is_function_with_parentheses(vstring_t &v, const iter_t &i);
-    bool is_function_paren_pointer(vstring_t &v, const iter_t &i);
+    bool is_function_parentheses(vstring_t &v, const iter_t &i);
+    bool is_function_paren_pointer1(vstring_t &v, const iter_t &i);
+    bool is_function_paren_pointer2(vstring_t &v, const iter_t &i);
     bool is_function(vstring_t &v, const iter_t &i);
     bool is_array(vstring_t &v, const iter_t &i);
     bool is_array_no_name(vstring_t &v, const iter_t &it);
