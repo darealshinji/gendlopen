@@ -42,12 +42,12 @@
 namespace /* anonymous */
 {
     typedef struct _seq {
-        const bool front_has_sym;  /* SYMBOL is among the first part */
-        const char *middle;        /* the part where the iterator is */
-        const char *end;           /* last element */
-        const size_t length;       /* pattern sequence length in bytes */
-        const int dist_front;      /* distance between front and iterator */
-        const int dist_end;        /* distance between end and iterator */
+        const char *front;      /* first part */
+        const char *middle;     /* the part where the iterator is */
+        const char *end;        /* last element */
+        const size_t min_size;  /* minimum vector size (pattern sequence length in bytes) */
+        const int dist_front;   /* distance between front and iterator */
+        const int dist_end;     /* distance between end and iterator */
     } seq_t;
 
 
@@ -62,18 +62,19 @@ namespace /* anonymous */
      * and is an identifier and iterator is NOT v.begin() */
     bool check_pattern(vstring_t &v, iter_t it, const seq_t &sq)
     {
-        /* compare e_vec (vector) against e_seq (sequence);
-         * if e_seq is SYMBOL: check if e_vec is an identificator */
+        /* compare vector element against sequence element */
         auto matching = [] (const char &e_vec, const char &e_seq) -> bool {
-            return (e_vec == e_seq || (e_seq == SYMBOL[0] && is_ident(e_vec)));
+            return (e_vec == e_seq ||
+                /* vector element must be identificator */
+                (e_seq == *SYMBOL && is_ident(e_vec)));
         };
 
-        /* check vector size and boundaries */
-
-        if (v.size() < sq.length) {
+        /* minimum vector size*/
+        if (v.size() < sq.min_size) {
             return false;
         }
 
+        /* boundaries */
         if (it != v.end() &&  /* vector contains parentheses/brackets/etc. */
             (std::distance(v.begin(), it) < sq.dist_front ||
              std::distance(it, v.end()) < sq.dist_end))
@@ -82,18 +83,28 @@ namespace /* anonymous */
         }
 
         /* front */
-        if (sq.front_has_sym && !is_ident(utils::str_front(*(it-1)))) {
+        if (sq.front[1] == *SYMBOL && /* front part must hold identificator */
+            !is_ident(utils::str_front(*(it-1))))
+        {
             return false;
         }
 
         /* end */
-        if (sq.end[1] != 0) { /* strlen(sq.end) == 2 */
-            if (!matching(utils::str_front(*(v.end()-1)), sq.end[1]) ||
-                !matching(utils::str_front(*(v.end()-2)), sq.end[0]))
-            {
-                return false;
+        switch (sq.end[1])
+        {
+        case 0: /* 1 element */
+            if (matching(utils::str_front(v.back()), sq.end[0])) {
+                break;
             }
-        } else if (!matching(utils::str_front(v.back()), sq.end[0])) {
+            return false;
+
+        default:
+            /* 2 elements */
+            if (matching(utils::str_front(*(v.end()-1)), sq.end[1]) &&
+                matching(utils::str_front(*(v.end()-2)), sq.end[0]))
+            {
+                break;
+            }
             return false;
         }
 
@@ -383,25 +394,26 @@ namespace /* anonymous */
 
 #define XSTRLEN(x) (sizeof(x)-1)
 
+#define CHECK_FRONT(FRONT) \
+    ((XSTRLEN(FRONT) == 1 && *FRONT == *TYPE) || \
+     (XSTRLEN(FRONT) == 2 && *FRONT == *TYPE && FRONT[1] == *SYMBOL))
+
 #define MKFUNC(NAME,FRONT,MIDDLE,END) \
     bool NAME(vstring_t &v, const iter_t &it) \
     { \
-        static_assert(*FRONT == *TYPE, \
-            "macro parameter `FRONT' must begin with `TYPE'"); \
-            \
-        static_assert(XSTRLEN(FRONT) == 1 || XSTRLEN(FRONT) == 2, \
-            "macro parameter `FRONT' must contain exactly 1 or 2 elements"); \
-            \
+        static_assert(CHECK_FRONT(FRONT), \
+            "macro parameter 'FRONT' must be either 'TYPE' or 'TYPE SYMBOL'"); \
+        \
         static_assert(XSTRLEN(END) == 1 || XSTRLEN(END) == 2, \
-            "macro parameter `END' must contain exactly 1 or 2 elements"); \
+            "macro parameter 'END' must contain exactly 1 or 2 elements"); \
         \
         const seq_t sq = { \
-            .front_has_sym = (XSTRLEN(FRONT) == 2 && FRONT[1] == SYMBOL[0]), \
-            .middle        = MIDDLE, \
-            .end           = END, \
-            .length        = XSTRLEN(FRONT) + XSTRLEN(MIDDLE) + XSTRLEN(END), \
-            .dist_front    = XSTRLEN(FRONT), \
-            .dist_end      = XSTRLEN(MIDDLE) + XSTRLEN(END) \
+            .front      = FRONT, \
+            .middle     = MIDDLE, \
+            .end        = END, \
+            .min_size   = XSTRLEN(FRONT) + XSTRLEN(MIDDLE) + XSTRLEN(END), \
+            .dist_front = XSTRLEN(FRONT), \
+            .dist_end   = XSTRLEN(MIDDLE) + XSTRLEN(END) \
         }; \
         \
         return check_pattern(v, it, sq); \

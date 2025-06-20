@@ -85,12 +85,12 @@ std::string quote_lib(const std::string &lib, bool wide)
 
 
 /**
-    * format library name
-    * foo        ==>  "foo"
-    * nq:foo     ==>  foo
-    * ext:foo    ==>  "foo" GDO_LIBEXTA
-    * api:2:foo  ==>  GDO_LIBNAMEA(foo,2)
-    */
+ * format library name
+ * foo        ==>  "foo"
+ * nq:foo     ==>  foo
+ * ext:foo    ==>  "foo" GDO_LIBEXTA
+ * api:2:foo  ==>  GDO_LIBNAMEA(foo,2)
+ */
 void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w, const std::string &pfx)
 {
     switch(str.front())
