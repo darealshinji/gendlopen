@@ -12,12 +12,16 @@ A couple of different output "formats" are supported right now:
 * `-format=minimal`: small C header
 * `-format=minimal-C++`: small C++ header with exception handling
 
-Furthermove you can save the output into separate body and header files
+Furthermore you can save the output into separate body and header files
 using the option `-separate`.
 The filename extensions will be set to .c/.h or .cpp/.hpp accordingly.
 This is ignored however for "minimal-C" and "minimal-C++".
 
 You can force to overwrite an existing output file with `-force`.
+
+To avoid conflicts all functions/macros/etc. are prefixed with `gdo_` or `GDO_`.
+If you want to use more than one generated header you can change the prefix
+in the output with `-prefix=<string>`.
 
 
 # Use output
@@ -75,6 +79,9 @@ void gdo_release_plugins(gdo_plugin_t *plug);
 Short examples
 --------------
 
+Theses are short examples quickly illustrating how to use the API.
+For more examples you can take a look at the `tests` and `examples` files.
+
 ``` C
 //-format=C
 if (gdo_load_lib_name("mylib.so") && gdo_load_all_symbols()) {
@@ -128,3 +135,18 @@ catch (...) {
 
 gdo::free_library();  // always safe to call
 ```
+
+
+Filename macros
+---------------
+
+Macros are available to help with using filenames for different targets:
+
+* `GDO_LIBNAME(NAME, API)` will create a default library name with API number;
+  `GDO_LIBNAME(xyz,0)` for example will become `libxyz.so.0` on Linux,
+  `libxyz.0.dylib` on macOS or `xyz-0.dll` on Windows (MSVC)
+* `GDO_LIBEXT` is the library file extension including dot (i.e. `.dll` or `.so`)
+* for compatibility with Windows there are always specific wide characters (`wchar_t`)
+  and narrow characters (`char`) versions available for these macros:
+  `GDO_LIBNAMEA GDO_LIBNAMEW` and `GDO_LIBEXTA GDO_LIBEXTW`
+

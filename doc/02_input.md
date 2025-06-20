@@ -72,9 +72,10 @@ guint gtk_get_major_version (void);
 guint gtk_get_micro_version (void);
 guint gtk_get_minor_version (void);
 
-#ifdef USE_GTK_INIT // << has no effect
+// this conditional has no effect
+#ifdef USE_GTK_INIT
 void gtk_init (int* argc, char*** argv);
-#endif              // << has no effect
+#endif
 ```
 
 However I recommend to keep it simple.
