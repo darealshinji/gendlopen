@@ -298,12 +298,13 @@ std::basic_string<T> gdo::dl::format_last_error_message()
     std::basic_string<T> str;
     T *buf = nullptr;
 
-    const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM |
-                        FORMAT_MESSAGE_IGNORE_INSERTS |
-                        FORMAT_MESSAGE_MAX_WIDTH_MASK;
-
-    format_message(flags, m_last_error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    format_message(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS |
+        FORMAT_MESSAGE_MAX_WIDTH_MASK,
+        m_last_error,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         reinterpret_cast<T*>(&buf));
 
     if (buf) {

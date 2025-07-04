@@ -621,14 +621,17 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
     gdo_char_t *buf = NULL;
     gdo_char_t *msg = gdo_hndl.buf;
 
-    const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM |
-                        FORMAT_MESSAGE_IGNORE_INSERTS |
-                        FORMAT_MESSAGE_MAX_WIDTH_MASK;
-
     /* format the message */
-    FormatMessage(flags, NULL, gdo_hndl.last_errno, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR)&buf, 0, NULL);
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS |
+        FORMAT_MESSAGE_MAX_WIDTH_MASK,
+        NULL,
+        gdo_hndl.last_errno,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR)&buf,
+        0, NULL);
 
     if (buf) {
         if (msg[0] != 0) {
@@ -641,7 +644,8 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, save the error code */
-        GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_T("Last saved error code: %lu"), gdo_hndl.last_errno);
+        GDO_SNPRINTF(gdo_hndl.buf_formatted,
+            GDO_T("Last saved error code: %lu"), gdo_hndl.last_errno);
     }
 
     return gdo_hndl.buf_formatted;
