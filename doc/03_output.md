@@ -46,14 +46,15 @@ const gdo_char_t *gdo_last_error();
 
 ``` C++
 //-format=C++
-gdo::dl(); // c'tor
+gdo::dl(); // empty c'tor
 bool gdo::load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 bool gdo::load_all_symbols();
 bool gdo::free(bool force=false); // called by d'tor
-std::string error();
+std::string gdo::error();
+
 #ifdef GDO_WINAPI
 bool gdo::load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
-std::wstring error_w();
+std::wstring gdo::error_w();
 #endif
 ```
 

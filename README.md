@@ -2,7 +2,7 @@ Gendlopen is a small tool intended to help with the creation of code that
 dynamically loads shared libraries.
 It takes text files with C prototype declarations as input and creates C or C++
 header files as output.
-It's designed to add dynamic loading support to existing code with minimal effort (see the Wiki).
+It's designed to add dynamic loading support to existing code with minimal effort.
 
 Features:
  * can generate code for C and C++
