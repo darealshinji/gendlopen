@@ -149,18 +149,6 @@ bool gendlopen::get_declarations(int mode)
     proto_t proto;
     std::smatch m;
 
-    auto find_and_erase = [] (vstring_t &v, const std::string &str)
-    {
-#ifdef __cpp_lib_erase_if
-        return std::erase(v, str);
-#else
-        const auto it = std::remove(v.begin(), v.end(), str);
-        const auto rv = v.end() - it;
-        v.erase(it, v.end());
-        return rv;
-#endif
-    };
-
     const std::regex reg_func(
         "^[|`]-FunctionDecl 0x.*?"
         " ([A-Za-z0-9_]*?) "  /* symbol */
@@ -205,7 +193,7 @@ bool gendlopen::get_declarations(int mode)
 
     case M_LIST:
         /* erase from list if found */
-        if (find_and_erase(m_symbol_list, decl.symbol) == 0) {
+        if (utils::find_and_erase(m_symbol_list, decl.symbol) == 0) {
             return false; /* not in list */
         }
         break;

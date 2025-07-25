@@ -46,47 +46,119 @@ namespace /* anonymous */
         int rv = LEX_ERROR;
         vstring_t tokens;
         bool loop = true;
+        bool block = false;
+        int curly_count = 0;
 
         while (loop)
         {
             rv = yylex();
 
-            switch (rv)
+            if (block)
             {
-            /* identifier */
-            case LEX_ID:
-                /* don't add "extern" keyword */
-                if (utils::strcasecmp(yytext, "extern") != 0) {
-                    tokens.push_back(yytext);
+                /* typedef or struct */
+                switch (rv)
+                {
+                case LEX_STRUCT:
+                case LEX_UNION:
+                case LEX_ENUM:
+                case LEX_TYPEDEF:
+                case LEX_ID:
+                case LEX_OTHER:
+                case LEX_EQUAL:
+                    /* ignore */
+                    break;
+
+                case LEX_CURLY_OPEN:
+                    curly_count++;
+                    break;
+
+                case LEX_CURLY_CLOSE:
+                    curly_count--;
+                    break;
+
+                /* end of block? */
+                case LEX_SEMICOLON:
+                    if (curly_count < 1) {
+                        curly_count = 0;
+                        block = false;
+                        tokens.clear();
+                    }
+                    break;
+
+                /* "%option" line */
+                case LEX_OPTION:
+                    if (options) {
+                        options->push_back(yytext);
+                    }
+                    break;
+
+                default:
+                    /* EOF, error, etc. */
+                    loop = false;
+                    break;
                 }
-                break;
-
-            /* other tokens */
-            case LEX_OTHER:
-                tokens.push_back(yytext);
-                break;
-
-            /* end of prototype declaration */
-            case LEX_SEMICOLON:
-                if (!tokens.empty()) {
-                    vec.push_back(tokens);
-                    tokens.clear();
-                }
-                break;
-
-            /* "%option" line */
-            case LEX_OPTION:
-                if (options) {
-                    options->push_back(yytext);
-                }
-                break;
-
-            default:
-                /* EOF, error, etc. */
-                loop = false;
-                break;
             }
-        }
+            else
+            {
+                switch (rv)
+                {
+                /* identifier */
+                case LEX_ID:
+                    tokens.push_back(yytext);
+                    break;
+
+                /* struct, union, enum or typedef */
+                case LEX_STRUCT:
+                case LEX_UNION:
+                case LEX_ENUM:
+                case LEX_TYPEDEF:
+                    if (tokens.empty()) {
+                        block = true;
+                    } else {
+                        tokens.push_back(yytext);
+                    }
+                    break;
+
+                /* other tokens */
+                case LEX_OTHER:
+                    tokens.push_back(yytext);
+                    break;
+
+                /* {}= */
+                case LEX_CURLY_OPEN:
+                case LEX_CURLY_CLOSE:
+                case LEX_EQUAL:
+                    set_illegal_char();
+                    rv = LEX_ERROR;
+                    loop = false;
+                    break;
+
+                /* end of prototype declaration */
+                case LEX_SEMICOLON:
+                    utils::find_and_erase(tokens, "extern");
+
+                    if (!tokens.empty()) {
+                        vec.push_back(tokens);
+                        tokens.clear();
+                    }
+                    break;
+
+                /* "%option" line */
+                case LEX_OPTION:
+                    if (options) {
+                        options->push_back(yytext);
+                    }
+                    break;
+
+                default:
+                    /* EOF, error, etc. */
+                    loop = false;
+                    break;
+                }
+            }
+        } /* end of loop body */
+
+        utils::find_and_erase(tokens, "extern");
 
         /* push back if last prototype didn't end on semicolon */
         if (!tokens.empty()) {

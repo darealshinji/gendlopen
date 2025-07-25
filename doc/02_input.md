@@ -4,7 +4,7 @@ gendlopen reads C prototype declarations from text files or STDIN.
 
 Here's how the input text format must be:
  * all symbols that should be loaded must be listed as C-style prototypes, ending on semi-colon (;)
- * comments, preprocessor lines and simple typedefs are ignored
+ * comments, preprocessor lines, structs, unions, enums and typedefs are ignored
  * line-breaks are treated as spaces
  * you can set some options on a line beginning with `%option`
 
@@ -49,24 +49,19 @@ gtk_init (
 );
 ```
 
-Since comments, preprocessor lines and simple typedefs are ignored
-this would be fine too:
+Since comments, preprocessor lines, structs, etc. are ignored this would be fine too:
 ``` C
 #include <xyz.h> // ignored!
 
-/* simple typedef ignored */
-typedef struct _myOwnStruct myOwnStruct_t;
-
-/*
-// gendlopen's parser is relatively simple,
-// a more complex struct typedef like this
-// would cause issues
-typedef struct _myOwnStruct {
+/* ignored */
+typedef struct _mystruct {
+  struct nested_struct {
     int a;
-    char b;
-    void *c;
-} myOwnStruct_t;
-*/
+    int b;
+  };
+  long l;
+  int i;
+} mystruct_t;
 
 guint gtk_get_major_version (void);
 guint gtk_get_micro_version (void);

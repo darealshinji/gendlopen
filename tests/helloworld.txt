@@ -31,8 +31,37 @@
 
 /* empty statements ignored */;;;
 
-/* simple typedefs are ignored */
+/* typedefs, structs, unions and enums are ignored */
 typedef int myint_t;
+
+typedef struct _mystruct {
+  struct struct_A { /* nested structs */
+    int a;
+    int b;
+  };
+  struct struct_B {
+    int a;
+    int b;
+  };
+  long l;
+  int i;
+} mystruct_t;
+
+struct mystruct {
+  long l;
+  int i;
+};
+
+union myunion {
+  struct struct_A;
+  struct struct_B;
+};
+
+enum {
+  E_ENTRY_1 = 1,
+  E_ENTRY_2 = 2,
+  E_ENTRY_3 = 3
+};
 
 
 /* no parameters */

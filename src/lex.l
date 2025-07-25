@@ -37,7 +37,7 @@ static char errbuf[128] = {0};
 const char *lex_errmsg = errbuf;
 
 static int handle_ast_begin();
-static void illegal_char();
+void set_illegal_char();
 
 %}
 
@@ -109,12 +109,21 @@ other               [*,()\[\]]
 {bom}                       { /* UTF-8 byte order mark */ }
 [[:space:]]                 { }
 
+"struct"                    { return LEX_STRUCT; }
+"union"                     { return LEX_UNION; }
+"enum"                      { return LEX_ENUM; }
+"typedef"                   { return LEX_TYPEDEF; }
+
 {identifier}                { return LEX_ID; }
 {other}                     { return LEX_OTHER; }
 "..."                       { return LEX_OTHER; }
+
+"{"                         { return LEX_CURLY_OPEN; }
+"}"                         { return LEX_CURLY_CLOSE; }
+"="                         { return LEX_EQUAL; }
 ";"                         { return LEX_SEMICOLON; }
 
-.                           { illegal_char(); return LEX_ERROR; }
+.                           { set_illegal_char(); return LEX_ERROR; }
 
 %%
 
@@ -133,7 +142,7 @@ static int handle_ast_begin()
 }
 
 /* save error message */
-static void illegal_char()
+void set_illegal_char()
 {
     const char *fmt = "illegal character [%c] at line %d";
     unsigned char c = (unsigned char)*yytext;

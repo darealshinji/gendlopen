@@ -29,6 +29,7 @@
 #endif
 #include <string.h>
 #include <string>
+#include <vector>
 #include "types.hpp"
 
 
@@ -89,6 +90,9 @@ inline char str_at(const std::string &str, size_t pos) {
 inline char str_front(const std::string &str) {
     return str.empty() ? 0 : str.front();
 }
+
+/* erase all occurences of string "str" from vector "v" */
+size_t find_and_erase(vstring_t &v, const std::string &str);
 
 
 #ifdef __cpp_lib_starts_ends_with

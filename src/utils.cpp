@@ -124,3 +124,21 @@ size_t utils::count_linefeed(const std::string &str)
 
     return n;
 }
+
+/* erase all occurences of string "str" from vector "v" */
+size_t utils::find_and_erase(vstring_t &v, const std::string &str)
+{
+    if (v.empty()) {
+        return 0;
+    }
+
+#ifdef __cpp_lib_erase_if
+    return std::erase(v, str);
+#else
+    const auto it = std::remove(v.begin(), v.end(), str);
+    const auto rv = v.end() - it;
+    v.erase(it, v.end());
+    return rv;
+#endif
+}
+
