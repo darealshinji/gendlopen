@@ -55,7 +55,7 @@ namespace /* anonymous */
 
             if (block)
             {
-                /* typedef or struct */
+                /* struct, union, enum or typedef block */
                 switch (rv)
                 {
                 case LEX_STRUCT:
@@ -69,17 +69,16 @@ namespace /* anonymous */
                     break;
 
                 case LEX_CURLY_OPEN:
-                    curly_count++;
+                    ++curly_count;
                     break;
 
                 case LEX_CURLY_CLOSE:
-                    curly_count--;
+                    --curly_count;
                     break;
 
                 /* end of block? */
                 case LEX_SEMICOLON:
                     if (curly_count < 1) {
-                        curly_count = 0;
                         block = false;
                         tokens.clear();
                     }
@@ -102,8 +101,9 @@ namespace /* anonymous */
             {
                 switch (rv)
                 {
-                /* identifier */
+                /* identifier, other tokens */
                 case LEX_ID:
+                case LEX_OTHER:
                     tokens.push_back(yytext);
                     break;
 
@@ -114,14 +114,10 @@ namespace /* anonymous */
                 case LEX_TYPEDEF:
                     if (tokens.empty()) {
                         block = true;
+                        curly_count = 0;
                     } else {
                         tokens.push_back(yytext);
                     }
-                    break;
-
-                /* other tokens */
-                case LEX_OTHER:
-                    tokens.push_back(yytext);
                     break;
 
                 /* {}= */
