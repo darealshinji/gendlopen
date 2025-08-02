@@ -10,21 +10,27 @@
 
 // gpointer g_malloc (gsize n_bytes);
 #define GDO_HOOK_g_malloc(...) \
-    { gpointer ptr = GDO_ALIAS_g_malloc(__VA_ARGS__); \
+    do { \
+      gpointer ptr = GDO_ALIAS_g_malloc(__VA_ARGS__); \
       printf("memory address %p: %ld bytes allocated using g_malloc()\n", &ptr, (long)n_bytes); \
-      return ptr; }
+      return ptr; \
+    } while(0)
 
 // gpointer g_realloc (gpointer mem, gsize n_bytes);
 #define GDO_HOOK_g_realloc(...) \
-    { mem = GDO_ALIAS_g_realloc(__VA_ARGS__); \
+    do { \
+      mem = GDO_ALIAS_g_realloc(__VA_ARGS__); \
       printf("memory address %p: %ld bytes allocated using g_realloc()\n", &mem, (long)n_bytes); \
-      return mem; }
+      return mem; \
+    } while(0)
 
 // void g_free (gpointer mem);
 #define GDO_HOOK_g_free(...) \
-    { GDO_ALIAS_g_free(__VA_ARGS__); \
+    do { \
+      GDO_ALIAS_g_free(__VA_ARGS__); \
       printf("memory address %p: memory released using g_free()\n", &mem); \
-      return; }
+      return; \
+    } while(0)
 
 
 /* enable wrap functions */
