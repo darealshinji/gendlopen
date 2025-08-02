@@ -44,9 +44,16 @@ enum {
     TK_X11  = 4
 };
 
-/* forward declarations */
-static bool keycode_is_esc(Display *display, KeyCode keycode);
-static void print_error(const char *title, const char *library, const char *errmsg);
+
+/* print error message, avoid double printing of library name */
+static void print_error(const char *title, const char *library, const char *errmsg)
+{
+    if (strstr(errmsg, library)) {
+        fprintf(stderr, "%s: %s\n", title, errmsg);
+    } else {
+        fprintf(stderr, "%s: %s: %s\n", title, library, errmsg);
+    }
+}
 
 
 /* Gtk+ message box */
@@ -164,8 +171,8 @@ static void show_x11_message_box(const char *msg)
             break;
 
         case KeyPress:
-            /* stop if ESC was pressed */
-            if (keycode_is_esc(display, event.xkey.keycode)) {
+            /* stop if ESCAPE was pressed */
+            if (XkbKeycodeToKeysym(display, event.xkey.keycode, 0, 0) == 0xFF1B) {
                 loop = false;
             }
             break;
@@ -180,16 +187,6 @@ static void show_x11_message_box(const char *msg)
     XUnmapWindow(display, window);
     XDestroyWindow(display, window);
     XCloseDisplay(display);
-}
-
-
-/* check if keycode was Escape key */
-static bool keycode_is_esc(Display *display, KeyCode keycode)
-{
-    char *keyname = XKeysymToString(XkbKeycodeToKeysym(display, keycode, 0, 0));
-
-    return (keyname && (strcasecmp(keyname, "Escape") == 0 ||
-                        strcasecmp(keyname, "ESC") == 0));
 }
 
 
@@ -236,17 +233,6 @@ static bool load_from_list(
     }
 
     return true;
-}
-
-
-/* print error message, avoid double printing of library name */
-static void print_error(const char *title, const char *library, const char *errmsg)
-{
-    if (strstr(errmsg, library)) {
-        fprintf(stderr, "%s: %s\n", title, errmsg);
-    } else {
-        fprintf(stderr, "%s: %s: %s\n", title, library, errmsg);
-    }
 }
 
 

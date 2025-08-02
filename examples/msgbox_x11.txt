@@ -84,15 +84,11 @@ extern int XDrawText(
     int			/* nitems */
 );
 
-extern	KeySym XkbKeycodeToKeysym(
-		Display *	/* dpy */,
-		 KeyCode 	/* kc */,
-		 int 		/* group */,
-		 int		/* level */
-);
-
-extern char *XKeysymToString(
-    KeySym		/* keysym */
+extern KeySym XkbKeycodeToKeysym(
+    Display*		/* display */,
+    KeyCode		/* keycode */,
+    int			/* group */,
+    int			/* level */
 );
 
 extern int XFreeGC(
