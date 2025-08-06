@@ -3,7 +3,7 @@
 Calling gendlopen with an input file will generate a header file and print
 it to STDOUT: `gendlopen input.txt`
 
-To save it into a file use `-o`: `gendlopen input.txt -o output.h`
+To save it into a file use `-out`: `gendlopen input.txt -out=output.h`
 
 A couple of different output "formats" are supported right now:
 * `-format=C`: C header file with many features (this is the default)

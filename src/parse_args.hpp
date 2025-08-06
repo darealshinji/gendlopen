@@ -46,6 +46,7 @@ private:
     char ** const m_argv;
     int m_it = 1; /* skip argv[0] */
     const char *m_opt = NULL;
+    int m_pfxlen = -1;
 
 public:
 
@@ -56,18 +57,16 @@ public:
     ~parse_args()
     {}
 
-    /* get first argument (argv[1]) */
-    const char *begin() const {
-        return (m_argc > 1) ? m_argv[1] : NULL;
-    }
-
     /* return option string (may be NULL) */
     const char *opt() const {
         return m_opt;
     }
 
+    int pfxlen();
+    std::string prefix();
+
+    const char *begin();
     const char *next();
-    bool has_prefix() const;
 
     bool get_arg(const char *str, size_t len);
     bool get_noarg(const char *str, size_t len);
@@ -81,6 +80,5 @@ public:
     bool get_noarg(char const (&str)[N]) {
         return get_noarg(str, N-1);
     }
-
 };
 

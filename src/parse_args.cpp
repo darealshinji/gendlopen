@@ -27,26 +27,76 @@
 #include "parse_args.hpp"
 
 
-/* whether argument has a prefix;
- * don't count "-" (and "/" on win32) as prefixed */
-bool parse_args::has_prefix() const
+/* prefix length */
+int parse_args::pfxlen()
 {
-    if (m_it >= m_argc) {
-        return false;
+    if (m_pfxlen != -1) {
+        /* prefix length was already set */
+        return m_pfxlen;
     }
 
-    const char *p = m_argv[m_it];
+    m_pfxlen = 0;
+
+    if (m_it >= m_argc) {
+        return m_pfxlen;
+    }
+
+    const char *arg = m_argv[m_it];
+
+    if (!arg) {
+        return m_pfxlen;
+    }
 
 #ifdef _WIN32
-    return ((p[0] == '-' || p[0] == '/') && p[1] != 0);
-#else
-    return (p[0] == '-' && p[1] != 0);
+    if (*arg == '/') {
+        m_pfxlen = (strcmp(arg, "/") == 0) ? 0 : 1;
+        return m_pfxlen;
+    }
 #endif
+
+    if (*arg == '-') {
+        if (strcmp(arg, "-") == 0 || strcmp(arg, "--") == 0) {
+            return m_pfxlen;
+        }
+
+        m_pfxlen = (strncmp(arg, "--", 2) == 0) ? 2 : 1;
+    }
+
+    return m_pfxlen;
+}
+
+/* return prefix */
+std::string parse_args::prefix()
+{
+    std::string pfx;
+    const char *arg = m_argv[m_it];
+
+    if (pfxlen() < 1 || !arg) {
+        return {};
+    }
+
+    for (int i = 0; i < pfxlen(); i++) {
+        pfx.push_back(arg[i]);
+    }
+
+    return pfx;
+}
+
+/* get first argument (argv[1]) */
+const char *parse_args::begin()
+{
+    /* reset */
+    m_pfxlen = -1;
+    m_it = 1;
+
+    return (m_argc > 1) ? m_argv[1] : NULL;
 }
 
 /* iterate to next item and return pointer to it */
 const char *parse_args::next()
 {
+    m_pfxlen = -1; /* reset */
+
     if (m_it < m_argc) {
         m_it++;
     }
@@ -58,7 +108,7 @@ const char *parse_args::next()
 bool parse_args::get_arg(const char *str, size_t len)
 {
     std::string msg;
-    const char *cur = m_argv[m_it] + 1; /* skip prefix */
+    const char *cur = m_argv[m_it] + pfxlen(); /* skip prefix */
 
     m_opt = NULL;
 
@@ -107,7 +157,7 @@ bool parse_args::get_arg(const char *str, size_t len)
 /* option without argument */
 bool parse_args::get_noarg(const char *str, size_t len)
 {
-    const char *cur = m_argv[m_it] + 1; /* skip prefix */
+    const char *cur = m_argv[m_it] + pfxlen(); /* skip prefix */
 
     m_opt = NULL;
 
@@ -119,7 +169,7 @@ bool parse_args::get_noarg(const char *str, size_t len)
     /* -foo=bar */
     if (strncmp(cur, str, len) == 0 && cur[len] == '=') {
         std::string msg = "option does not take an argument: ";
-        msg += *m_argv[m_it];
+        msg += prefix();
         msg += str;
         throw error(msg);
     }

@@ -67,7 +67,7 @@ components = [
 ]
 
 foreach p : components
-    command = [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+    command = [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@']
 
     foreach arg : p[4]
         command += arg
@@ -104,7 +104,7 @@ foreach p : components
         depends : helloworld_lib,
         output : p[0]+'.h',
         input : hw,
-        command : [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', p[2]])
+        command : [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@', p[2]])
 
     e = executable(p[0], [p[0]+'.cpp', gen_hdr],
         dependencies : dl_dep,
@@ -131,7 +131,7 @@ foreach p : components
         output : [p[0]+'multi_generated.c'+p[1], p[0]+'multi_generated.h'+p[1]],
         input : hw,
         command : [
-            gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT1@', '-format', p[2],
+            gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT1@', '-format', p[2],
             '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
             '-DGDO_ENABLE_AUTOLOAD'
         ]
@@ -158,7 +158,7 @@ gen_srcs = custom_target('libhelloworld_generated.c',
     output : ['libhelloworld_generated.c', 'libhelloworld_generated.h'],
     input : hw,
     command : [
-        gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT0@',
+        gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT0@',
         '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
         '-DGDO_ENABLE_AUTOLOAD'
     ]
@@ -229,7 +229,7 @@ if host_system_win32
         gen_hdr = custom_target(p[0]+'win32_wide.h'+p[1],
             output : p[0]+'win32_wide.h'+p[1],
             input : hw,
-            command : [gendlopen_bin, '@INPUT@', '-format', p[2], '-force', '-o', '@OUTPUT@']
+            command : [gendlopen_bin, '@INPUT@', '-format', p[2], '-force', '-out', '@OUTPUT@']
         )
 
         e = executable(p[0]+'win32_wide', [p[0]+'win32_wide.c'+p[1], gen_hdr],
@@ -262,7 +262,7 @@ if host_system_win32
     ]
 
     foreach p : components
-        command = [gendlopen_bin, '@INPUT@', '-force', '-o', '@OUTPUT@']
+        command = [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@']
 
         foreach arg : p[4]
             command += arg

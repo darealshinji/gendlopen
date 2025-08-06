@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     const char *exe    = argv[1];
     const char *output = argv[2];
     const char *input  = argv[3];
-    const char *format = "%s -force -o %s - < %s";
+    const char *format = "%s -force -out=%s - < %s";
     const size_t len   = strlen(format) + strlen(exe) + strlen(output) + strlen(input);
     char *command      = malloc(len);
 

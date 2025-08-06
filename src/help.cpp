@@ -26,23 +26,27 @@
 #include <string>
 
 
+#ifdef _WIN32
+# define PREFIX_MESSAGE "options may be prefixed with `-', `--' or `/'"
+#else
+# define PREFIX_MESSAGE "options may be prefixed with `-' or `--'"
+#endif
+
+
 namespace help
 {
     void print(const char *prog)
     {
         std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
             "\n"
-#ifdef _WIN32
-            "options may be prefixed with `-' or `/'\n"
+            PREFIX_MESSAGE "\n"
             "\n"
-#endif
             "  <file>            input file, use `-' to read from stdin\n"
             "\n"
             "options:\n"
-            //"  --help\n"
             "  -help             display this information\n"
             "  -full-help        show more detailed information\n"
-            "  -o<file>          save to file instead of stdout\n"
+            "  -out=<file>       save to file instead of stdout\n"
             "  -prefix=<string>  use <string> to prefix functions, macros and C++ namespaces (default: gdo)\n"
             "  -format=<string>  set output format: c (default), c++, plugin, minimal, minimal-c++\n"
             "  -template=<file>  use a custom template (`-format' is ignored)\n"
@@ -78,11 +82,8 @@ namespace help
     {
         std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
             "\n"
-#ifdef _WIN32
-            "options may be prefixed with `-' or `/'\n"
+            PREFIX_MESSAGE "\n"
             "\n"
-#endif
-
             "  <file>\n"
             "    Specify an input file. Use `-' to read data from stdin.\n"
             "\n"
@@ -107,7 +108,6 @@ namespace help
             "Options:\n"
             "\n"
 
-            //"  --help\n"
             "  -help\n"
             "    Show a brief description of all command line arguments.\n"
             "\n"
@@ -117,7 +117,7 @@ namespace help
             "\n"
 
 
-            "  -o<file>\n"
+            "  -out=<file>\n"
             "    Specify an output file.\n"
             "    If this flag isn't set or if <file> is `-' output will be printed to stdout.\n"
             "\n"

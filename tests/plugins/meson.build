@@ -10,7 +10,7 @@ gen_hdr = custom_target('load_plugins.h',
     depends : plugins,
     output : 'load_plugins.h',
     input : 'interface.txt',
-    command : [gendlopen_aux_bin, '@INPUT@', '-force', '-o', '@OUTPUT@', '-format=plugin'])
+    command : [gendlopen_aux_bin, '@INPUT@', '-force', '-out', '@OUTPUT@', '-format=plugin'])
 
 e = executable('load_plugins', 'load_plugins.cpp', gen_hdr,
     override_options : test_overrides,

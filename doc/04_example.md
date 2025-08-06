@@ -44,7 +44,7 @@ In this case it's only `SDL_ShowSimpleMessageBox`:
 ``` C
 extern int SDL_ShowSimpleMessageBox(Uint32 flags, const char *title, const char *message, SDL_Window *window);
 ```
-Save it as **sdl.txt** and generate a header file **sdl_dynload.h**: `gendlopen sdl.txt -o sdl_dynload.h`
+Save it as **sdl.txt** and generate a header file **sdl_dynload.h**: `gendlopen sdl.txt -out=sdl_dynload.h`
 
 
 ## gendlopen C API

@@ -72,8 +72,10 @@ namespace
     }
 
     /* -param=... */
-    void set_parameter_names(gendlopen &gdo, const char *opt, char optpfx)
+    void set_parameter_names(gendlopen &gdo, parse_args &arg)
     {
+        const char *opt = arg.opt();
+
         if (utils::strcasecmp(opt, "skip") == 0) {
             gdo.parameter_names(param::skip);
         } else if (utils::strcasecmp(opt, "create") == 0) {
@@ -82,7 +84,7 @@ namespace
             gdo.parameter_names(param::read);
         } else {
             std::string msg = "unknown argument for option '";
-            msg += optpfx;
+            msg += arg.prefix();
             msg += "param': ";
             msg += opt;
             throw parse_args::error(msg);
@@ -92,7 +94,6 @@ namespace
     /* parse argv[] and set options in 'gdo' object */
     void parse_arguments(gendlopen &gdo, const int &argc, char ** const &argv)
     {
-        std::string lib_a, lib_w;
         const char *input = NULL;
         const char *cur = NULL;
 
@@ -100,8 +101,8 @@ namespace
 
         /* parse arguments */
         for (cur = a.begin(); cur != NULL; cur = a.next()) {
-            /* use first non-option argument (including "-") as input */
-            if (!a.has_prefix()) {
+            /* use first non-option argument as input */
+            if (a.pfxlen() == 0) {
                 if (!input) {
                     input = cur;
                 } else {
@@ -110,75 +111,15 @@ namespace
                 continue;
             }
 
-            switch(*(cur+1)) /* skip prefix */
+            /* skip prefix */
+            const char *p = cur + a.pfxlen();
+
+            /* use uppercase for single-letter arguments only */
+            switch(*p)
             {
-            case '?':
-                if ( a.get_noarg("?") ) {
-                    help::print(get_prog_name());
-                    std::exit(0);
-                }
-                break;
-
-            case 'h':
-                if ( a.get_noarg("help") ) {
-                    help::print(get_prog_name());
-                    std::exit(0);
-                }
-                break;
-
-            case 'f':
-                if ( a.get_arg("format") ) {
-                    gdo.format(a.opt());
-                    continue;
-                } else if ( a.get_noarg("force") ) {
-                    gdo.force(true);
-                    continue;
-                } else if ( a.get_noarg("full-help") ) {
-                    help::print_full(get_prog_name());
-                    std::exit(0);
-                }
-                break;
-
-            case 'o':
-                if ( a.get_arg("o") ) {
-                    gdo.output(a.opt());
-                    continue;
-                }
-                break;
-
-            case 'n':
-                if ( a.get_noarg("no-date") ) {
-                    gdo.print_date(false);
-                    continue;
-                } else if ( a.get_noarg("no-pragma-once") ) {
-                    gdo.pragma_once(false);
-                    continue;
-                }
-                break;
-
-            case 't':
-                if ( a.get_arg("template") ) {
-                    gdo.custom_template(a.opt());
-                    continue;
-                }
-                break;
-
-            case 'l':
-                if ( a.get_arg("library") ) {
-                    gdo.default_lib(a.opt());
-                    continue;
-                } else if ( a.get_noarg("line") ) {
-                    gdo.line_directive(true);
-                    continue;
-                }
-                break;
-
-            case 'i':
-                if ( a.get_arg("include") ) {
-                    gdo.add_inc(a.opt());
-                    continue;
-                } else if ( a.get_noarg("ignore-options") ) {
-                    gdo.read_options(false);
+            case 'a':
+                if ( a.get_noarg("ast-all-symbols") ) {
+                    gdo.ast_all_symbols(true);
                     continue;
                 }
                 break;
@@ -200,9 +141,59 @@ namespace
                 }
                 break;
 
-            case 'P':
-                if ( a.get_arg("P") ) {
-                    gdo.add_pfx(a.opt());
+            case 'f':
+                if ( a.get_arg("format") ) {
+                    gdo.format(a.opt());
+                    continue;
+                } else if ( a.get_noarg("force") ) {
+                    gdo.force(true);
+                    continue;
+                } else if ( a.get_noarg("full-help") ) {
+                    help::print_full(get_prog_name());
+                    std::exit(0);
+                }
+                break;
+
+            case 'h':
+                if ( a.get_noarg("help") ) {
+                    help::print(get_prog_name());
+                    std::exit(0);
+                }
+                break;
+
+            case 'i':
+                if ( a.get_arg("include") ) {
+                    gdo.add_inc(a.opt());
+                    continue;
+                } else if ( a.get_noarg("ignore-options") ) {
+                    gdo.read_options(false);
+                    continue;
+                }
+                break;
+
+            case 'l':
+                if ( a.get_arg("library") ) {
+                    gdo.default_lib(a.opt());
+                    continue;
+                } else if ( a.get_noarg("line") ) {
+                    gdo.line_directive(true);
+                    continue;
+                }
+                break;
+
+            case 'n':
+                if ( a.get_noarg("no-date") ) {
+                    gdo.print_date(false);
+                    continue;
+                } else if ( a.get_noarg("no-pragma-once") ) {
+                    gdo.pragma_once(false);
+                    continue;
+                }
+                break;
+
+            case 'o':
+                if ( a.get_arg("out") ) {
+                    gdo.output(a.opt());
                     continue;
                 }
                 break;
@@ -212,7 +203,7 @@ namespace
                     gdo.prefix(a.opt());
                     continue;
                 } else if ( a.get_arg("param") ) {
-                    set_parameter_names(gdo, a.opt(), *cur);
+                    set_parameter_names(gdo, a);
                     continue;
                 } else if ( a.get_noarg("print-symbols") ) {
                     gdo.print_symbols(true);
@@ -223,9 +214,9 @@ namespace
                 }
                 break;
 
-            case 'S':
-                if ( a.get_arg("S") ) {
-                    gdo.add_sym(a.opt());
+            case 'P':
+                if ( a.get_arg("P") ) {
+                    gdo.add_pfx(a.opt());
                     continue;
                 }
                 break;
@@ -237,16 +228,22 @@ namespace
                 }
                 break;
 
-            case 'a':
-                if ( a.get_noarg("ast-all-symbols") ) {
-                    gdo.ast_all_symbols(true);
+            case 'S':
+                if ( a.get_arg("S") ) {
+                    gdo.add_sym(a.opt());
                     continue;
                 }
                 break;
 
-            case '-':
-                /* let's support a help option with two dashes too */
-                if (strcmp(cur, "--help") == 0) {
+            case 't':
+                if ( a.get_arg("template") ) {
+                    gdo.custom_template(a.opt());
+                    continue;
+                }
+                break;
+
+            case '?':
+                if ( a.get_noarg("?") ) {
                     help::print(get_prog_name());
                     std::exit(0);
                 }
