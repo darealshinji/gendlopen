@@ -35,6 +35,7 @@ int parse_args::pfxlen()
         return m_pfxlen;
     }
 
+    /* initialize prefix length as 0 */
     m_pfxlen = 0;
 
     if (m_it >= m_argc) {
@@ -47,19 +48,26 @@ int parse_args::pfxlen()
         return m_pfxlen;
     }
 
+    switch (*arg)
+    {
 #ifdef _WIN32
-    if (*arg == '/') {
-        m_pfxlen = (strcmp(arg, "/") == 0) ? 0 : 1;
-        return m_pfxlen;
-    }
+    case '/':
+        /* don't count string "/" as prefixed */
+        if (strcmp(arg, "/") != 0) {
+            m_pfxlen = 1;
+        }
+        break;
 #endif
 
-    if (*arg == '-') {
-        if (strcmp(arg, "-") == 0 || strcmp(arg, "--") == 0) {
-            return m_pfxlen;
+    case '-':
+        /* don't count strings "-" and "--" as prefixed */
+        if (strcmp(arg, "-") != 0 && strcmp(arg, "--") != 0) {
+            m_pfxlen = (strncmp(arg, "--", 2) == 0) ? 2 : 1;
         }
+        break;
 
-        m_pfxlen = (strncmp(arg, "--", 2) == 0) ? 2 : 1;
+    default:
+        break;
     }
 
     return m_pfxlen;

@@ -69,7 +69,7 @@ namespace /* anonymous */
                 (e_seq == *SYMBOL && is_ident(e_vec)));
         };
 
-        /* minimum vector size*/
+        /* minimum vector size */
         if (v.size() < sq.min_size) {
             return false;
         }
