@@ -26,21 +26,29 @@
 #include <string>
 
 
+/* anonymous */
+namespace
+{
+    void usage(const char *prog)
+    {
+        std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
+            "\n"
+            "options may also be prefixed with "
 #ifdef _WIN32
-# define PREFIX_MESSAGE "options may be prefixed with `-', `--' or `/'"
-#else
-# define PREFIX_MESSAGE "options may be prefixed with `-' or `--'"
+            "`/' or "
 #endif
+            "`--' (except single-letter options)" << std::endl;
+    }
+}
 
 
 namespace help
 {
     void print(const char *prog)
     {
-        std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
-            "\n"
-            PREFIX_MESSAGE "\n"
-            "\n"
+        usage(prog);
+
+        std::cout << "\n"
             "  <file>            input file, use `-' to read from stdin\n"
             "\n"
             "options:\n"
@@ -80,10 +88,9 @@ namespace help
 
     void print_full(const char *prog)
     {
-        std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
-            "\n"
-            PREFIX_MESSAGE "\n"
-            "\n"
+        usage(prog);
+
+        std::cout << "\n"
             "  <file>\n"
             "    Specify an input file. Use `-' to read data from stdin.\n"
             "\n"

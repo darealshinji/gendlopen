@@ -117,6 +117,36 @@ namespace
             /* use uppercase for single-letter arguments only */
             switch(*p)
             {
+            /* single letter */
+            case 'D':
+                if ( a.get_arg("D") ) {
+                    gdo.add_def(a.opt());
+                    continue;
+                }
+                break;
+
+            case 'P':
+                if ( a.get_arg("P") ) {
+                    gdo.add_pfx(a.opt());
+                    continue;
+                }
+                break;
+
+            case 'S':
+                if ( a.get_arg("S") ) {
+                    gdo.add_sym(a.opt());
+                    continue;
+                }
+                break;
+
+            case '?':
+                if ( a.get_noarg("?") ) {
+                    help::print(get_prog_name());
+                    std::exit(0);
+                }
+                break;
+
+            /* multiple letters */
             case 'a':
                 if ( a.get_noarg("ast-all-symbols") ) {
                     gdo.ast_all_symbols(true);
@@ -131,13 +161,6 @@ namespace
                 } else if ( a.get_noarg("dump-templates") ) {
                     data::dump_templates();
                     std::exit(0);
-                }
-                break;
-
-            case 'D':
-                if ( a.get_arg("D") ) {
-                    gdo.add_def(a.opt());
-                    continue;
                 }
                 break;
 
@@ -214,23 +237,9 @@ namespace
                 }
                 break;
 
-            case 'P':
-                if ( a.get_arg("P") ) {
-                    gdo.add_pfx(a.opt());
-                    continue;
-                }
-                break;
-
             case 's':
                 if ( a.get_noarg("separate") ) {
                     gdo.separate(true);
-                    continue;
-                }
-                break;
-
-            case 'S':
-                if ( a.get_arg("S") ) {
-                    gdo.add_sym(a.opt());
                     continue;
                 }
                 break;
@@ -239,13 +248,6 @@ namespace
                 if ( a.get_arg("template") ) {
                     gdo.custom_template(a.opt());
                     continue;
-                }
-                break;
-
-            case '?':
-                if ( a.get_noarg("?") ) {
-                    help::print(get_prog_name());
-                    std::exit(0);
                 }
                 break;
 
