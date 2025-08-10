@@ -26,6 +26,10 @@
  * Generate the output data (STDOUT or save to file).
  */
 
+#ifdef __MINGW32__
+# include <stdlib.h>
+# include <wchar.h>
+#endif
 #include <stdio.h>
 #include <algorithm>
 #include <ctime>
@@ -39,10 +43,11 @@
 
 #include "cio_ofstream.hpp"
 #include "gendlopen.hpp"
-#include "filesystem_compat.hpp"
 #include "open_file.hpp"
 #include "types.hpp"
 #include "utils.hpp"
+
+namespace fs = std::filesystem;
 
 
 
@@ -52,6 +57,58 @@ namespace templates
     extern const template_t *ptr_license;
     extern const template_t *ptr_filename_macros;
 }
+
+
+/**
+ * convert from string to wstring;
+ * this is required because on MinGW std::filesystem will throw an exception
+ * if an input string contains non-ASCII characters (this doesn't happend with MSVC)
+ */
+#ifdef __MINGW32__
+
+/* anonymous */
+namespace
+{
+    wchar_t *char_to_wchar(const char *str)
+    {
+        size_t len, n;
+        wchar_t *buf;
+
+        if (!str || ::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
+            return nullptr;
+        }
+
+        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
+        if (!buf) return nullptr;
+
+        if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
+            delete[] buf;
+            return nullptr;
+        }
+
+        buf[len] = L'\0';
+        return buf;
+    }
+
+    std::wstring string_to_wstring(const std::string &str)
+    {
+        wchar_t *buf = char_to_wchar(str.c_str());
+
+        if (!buf) {
+            std::string msg = __FILE__;
+            msg += ": char_to_wchar() failed to convert string to wide characters: ";
+            msg += str;
+
+            throw gendlopen::error(msg);
+        }
+
+        std::wstring ws = buf;
+        delete[] buf;
+
+        return ws;
+    }
+}
+#endif /* __MINGW32__ */
 
 
 namespace save
@@ -304,17 +361,9 @@ size_t gendlopen::save_data(const template_t *list)
 
 
 /* open output file for writing */
-void gendlopen::open_ofstream(const fs_path_t &opath)
+void gendlopen::open_ofstream(const fs::path &opath)
 {
-    std::string opath_str;
-
-#ifdef __cpp_lib_filesystem
-    opath_str = opath.string();
-#else
-    opath_str = opath;
-#endif
-
-    if (opath.empty() || opath_str == "-") {
+    if (opath.empty() || opath == "-") {
         /* default to STDOUT */
         save::ofs.close();
         return;
@@ -322,17 +371,17 @@ void gendlopen::open_ofstream(const fs_path_t &opath)
 
     /* delete file to prevent writing data into symlink target */
     if (m_force) {
-        fs::remove_file(opath);
+        fs::remove(opath);
     }
 
     /* check symlink and not its target */
-    if (fs::exists_lstat(opath)) {
-        throw error("file already exists: " + opath_str);
+    if (fs::exists(fs::symlink_status(opath))) {
+        throw error("file already exists: " + opath.string());
     }
 
     /* open file for writing */
     if (!save::ofs.open(opath)) {
-        throw error("failed to open file for writing: " + opath_str);
+        throw error("failed to open file for writing: " + opath.string());
     }
 }
 
@@ -340,7 +389,7 @@ void gendlopen::open_ofstream(const fs_path_t &opath)
 /* generate output */
 void gendlopen::generate()
 {
-    fs_path_t ofhdr, ofbody;
+    fs::path ofhdr, ofbody;
     std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
     size_t lines = 0;
@@ -424,8 +473,8 @@ void gendlopen::generate()
 
     if (!use_stdout)
     {
-#ifdef MINGW32_NEED_CONVERT_FILENAME
-        ofbody = ofhdr = fs::convert_filename(m_output);
+#ifdef __MINGW32__
+        ofbody = ofhdr = string_to_wstring(m_output);
 #else
         ofbody = ofhdr = m_output;
 #endif
@@ -469,8 +518,8 @@ void gendlopen::generate()
 
     /* rename file extensions only if we save into separate files */
     if (m_separate) {
-        fs::replace_extension(ofhdr, is_cxx ? "hpp" : "h");
-        fs::replace_extension(ofbody, is_cxx ? "cpp" : "c");
+        ofhdr.replace_extension(is_cxx ? "hpp" : "h");
+        ofbody.replace_extension(is_cxx ? "cpp" : "c");
     }
 
     /* create header filename */
@@ -478,7 +527,7 @@ void gendlopen::generate()
         header_name = m_pfx;
         header_name += is_cxx ? ".hpp" : ".h";
     } else {
-        header_name = fs::filename(ofhdr);
+        header_name = ofhdr.filename().string();
     }
 
     /* define GDO_SEPARATE if saving into separate files */

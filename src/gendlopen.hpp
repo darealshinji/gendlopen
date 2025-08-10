@@ -112,7 +112,7 @@ private:
 
     /* generate.cpp */
     size_t save_data(const template_t *list);
-    void open_ofstream(const fs_path_t &opath);
+    void open_ofstream(const std::filesystem::path &opath);
     void generate();
 
     /* substitute.cpp */

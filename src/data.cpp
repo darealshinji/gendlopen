@@ -26,11 +26,11 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <filesystem>
 #include <ostream>
 #include <string>
 #include <cstdlib>
 #include "cio_ofstream.hpp"
-#include "filesystem_compat.hpp"
 #include "gendlopen.hpp"
 #include "types.hpp"
 
@@ -38,6 +38,9 @@ namespace templates
 {
 #include "template.h"
 }
+
+namespace fs = std::filesystem;
+
 
 
 /* save template data to file */
@@ -100,7 +103,7 @@ void data::dump_templates()
 {
 #define OUTDIR "templates"
 
-    if (fs::exists_lstat(OUTDIR)) {
+    if (fs::exists(fs::symlink_status(OUTDIR))) {
         throw gendlopen::error("`" OUTDIR "' already exists");
     }
 

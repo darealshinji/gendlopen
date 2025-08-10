@@ -71,12 +71,6 @@ typedef struct _template {
 using vproto_t = std::vector<proto_t>;
 using vtemplate_t = std::vector<const template_t *>;
 
-#ifdef __cpp_lib_filesystem
-using fs_path_t = std::filesystem::path;
-#else
-using fs_path_t = std::string;
-#endif
-
 
 /* enum for outout format */
 namespace output

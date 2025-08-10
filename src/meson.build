@@ -2,7 +2,6 @@ gendlopen_src = files(
     'cio_ofstream.cpp',
     'clang-ast.cpp',
     'data.cpp',
-    'filesystem_compat.cpp',
     'gendlopen.cpp',
     'generate.cpp',
     'help.cpp',
