@@ -236,83 +236,63 @@ static bool load_from_list(
 }
 
 
+#define MAKE_LIST(...) \
+    const char *list[] = { __VA_ARGS__, NULL }
+
+#define LOAD_FROM_LIST(NAME, PREFIX) \
+    load_from_list(NAME, list, \
+        PREFIX##load_lib_name, \
+        PREFIX##last_error, \
+        PREFIX##lib_is_loaded, \
+        PREFIX##load_all_symbols, \
+        PREFIX##lib_origin)
+
+
 /* load Gtk+ v3 or v2 */
 static bool load_gtk()
 {
-    const char *list[] = {
+    MAKE_LIST(
         LIBNAME(gtk-3, 0),
-        LIBNAME(gtk-x11-2.0, 0),
-        NULL
-    };
+        LIBNAME(gtk-x11-2.0, 0)
+    );
 
-    return load_from_list("libgtk", list,
-        dl_gtk_load_lib_name,
-        dl_gtk_last_error,
-        dl_gtk_lib_is_loaded,
-        dl_gtk_load_all_symbols,
-        dl_gtk_lib_origin);
+    return LOAD_FROM_LIST("libgtk", dl_gtk_);
 }
 
 
 /* load SDL v3 or v2 */
 static bool load_sdl()
 {
-    const char *list[] = {
+    MAKE_LIST(
         LIBNAME(SDL3, 0),
-        LIBNAME(SDL2-2.0, 0),
-        NULL
-    };
+        LIBNAME(SDL2-2.0, 0)
+    );
 
-    return load_from_list("libSDL", list,
-        dl_sdl_load_lib_name,
-        dl_sdl_last_error,
-        dl_sdl_lib_is_loaded,
-        dl_sdl_load_all_symbols,
-        dl_sdl_lib_origin);
-
-    return true;
+    return LOAD_FROM_LIST("libSDL", dl_sdl_);
 }
 
 
 /* try to load different versions of FLTK */
 static bool load_fltk()
 {
-    const char *list[] = {
+    MAKE_LIST(
         LIBNAME(fltk, 1.5),
         LIBNAME(fltk, 1.4),
         LIBNAME(fltk, 1.3),
         "libfltk" LIBEXT,
-        "fltk" LIBEXT,
-        NULL
-    };
+        "fltk" LIBEXT
+    );
 
-    return load_from_list("libfltk", list,
-        dl_fltk_load_lib_name,
-        dl_fltk_last_error,
-        dl_fltk_lib_is_loaded,
-        dl_fltk_load_all_symbols,
-        dl_fltk_lib_origin);
-
-    return true;
+    return LOAD_FROM_LIST("libfltk", dl_fltk_);
 }
 
 
 /* load libX11 */
 static bool load_x11()
 {
-    if (dl_x11_load_lib_name_and_symbols( LIBNAME(X11, 6) )) {
-        char *orig = dl_x11_lib_origin();
+    MAKE_LIST( LIBNAME(X11, 6) );
 
-        if (orig) {
-            printf("loaded: %s\n", orig);
-            free(orig);
-        }
-        return true;
-    }
-
-    fprintf(stderr, "error: %s\n", dl_x11_last_error());
-
-    return false;
+    return LOAD_FROM_LIST("libX11", dl_x11_);
 }
 
 
