@@ -5,7 +5,6 @@ OBJS = \
 	$(OUT)/cio_ofstream.o \
 	$(OUT)/clang-ast.o \
 	$(OUT)/data.o \
-	$(OUT)/filesystem_compat.o \
 	$(OUT)/gendlopen.o \
 	$(OUT)/generate.o \
 	$(OUT)/help.o \
@@ -59,9 +58,6 @@ $(OUT)/clang-ast.o: $(SRC)/clang-ast.cpp
 
 $(OUT)/data.o: $(SRC)/data.cpp
 	$(COMPILE_CXX) $@ $(SRC)/data.cpp
-
-$(OUT)/filesystem_compat.o: $(SRC)/filesystem_compat.cpp
-	$(COMPILE_CXX) $@ $(SRC)/filesystem_compat.cpp
 
 $(OUT)/gendlopen.o: $(SRC)/gendlopen.cpp
 	$(COMPILE_CXX) $@ $(SRC)/gendlopen.cpp

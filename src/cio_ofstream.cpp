@@ -36,7 +36,6 @@ ofstream::~ofstream()
     close();
 }
 
-#ifdef __cpp_lib_filesystem
 bool ofstream::open(const std::filesystem::path &path)
 {
     close();
@@ -49,7 +48,6 @@ bool ofstream::open(const std::filesystem::path &path)
 
     return false;
 }
-#endif
 
 bool ofstream::open(const std::string &file)
 {

@@ -66,8 +66,8 @@ bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
  * underscores=false will preserve any character not matching [A-Za-z0-9] */
-std::string convert_to_upper(const std::string &s, bool underscores=true);
-std::string convert_to_lower(const std::string &s, bool underscores=true);
+std::string to_upper(const std::string &s, bool underscores=true);
+std::string to_lower(const std::string &s, bool underscores=true);
 
 /* returns true if s begins with a prefix found in list */
 bool is_prefixed(const std::string &s, const vstring_t &list);
@@ -92,76 +92,26 @@ inline char str_front(const std::string &str) {
 }
 
 /* erase all occurences of string "str" from vector "v" */
-size_t find_and_erase(vstring_t &v, const std::string &str);
-
-
-#ifdef __cpp_lib_starts_ends_with
-
-template <typename T>
-bool starts_with(const std::string &str, const T &prefix) {
-    return str.starts_with(prefix);
+inline size_t erase(vstring_t &v, const std::string &str) {
+    return v.empty() ? 0 : std::erase(v, str);
 }
-
-template <typename T>
-bool ends_with(const std::string &str, const T &suffix) {
-    return str.ends_with(suffix);
-}
-
-#else
-
-/* starts_with() */
-template<size_t N>
-bool starts_with(const std::string &str, char const (&prefix)[N]) {
-    constexpr size_t prefix_size = N-1;
-    return (str.size() >= prefix_size &&
-            ::strncmp(str.c_str(), prefix, prefix_size) == 0);
-}
-
-static inline bool starts_with(const std::string &str, const std::string &prefix) {
-    return (str.size() >= prefix.size() &&
-            ::strncmp(str.c_str(), prefix.c_str(), prefix.size()) == 0);
-}
-
-static inline bool starts_with(const std::string &str, const char &prefix) {
-    return (!str.empty() && str.front() == prefix);
-}
-
-/* ends_with() */
-template<size_t N>
-bool ends_with(const std::string &str, char const (&suffix)[N]) {
-    constexpr size_t suffix_size = N-1;
-    return (str.size() >= suffix_size &&
-            ::strcmp(str.c_str() + (str.size() - suffix_size), suffix) == 0);
-}
-
-static inline bool ends_with(const std::string &str, const std::string &suffix) {
-    return (str.size() >= suffix.size() &&
-            ::strcmp(str.c_str() + (str.size() - suffix.size()), suffix.c_str()) == 0);
-}
-
-static inline bool ends_with(const std::string &str, const char &prefix) {
-    return (!str.empty() && str.back() == prefix);
-}
-
-#endif // __cpp_lib_starts_ends_with
-
 
 template <typename T1, typename T2>
-bool starts_ends_with(const std::string &str, const T1 &prefix, const T2 &suffix) {
-    return (starts_with(str, prefix) && ends_with(str, suffix));
+bool front_and_back(const std::string &str, const T1 &prefix, const T2 &suffix) {
+    return (str.starts_with(prefix) && str.ends_with(suffix));
 }
 
 
 /* delete suffix from string */
 
 inline void delete_suffix(std::string &str, const std::string &suffix) {
-    if (ends_with(str, suffix)) {
+    if (str.ends_with(suffix)) {
         str.erase(str.size() - suffix.size());
     }
 }
 
 inline void delete_suffix(std::string &str, const char suffix) {
-    if (ends_with(str, suffix)) {
+    if (str.ends_with(suffix)) {
         str.pop_back();
     }
 }

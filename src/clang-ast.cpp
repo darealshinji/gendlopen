@@ -88,7 +88,7 @@ std::string strip_line(const char *line)
     std::string s = line;
 
     /* remains of Windows line endings */
-    if (utils::ends_with(s, '\r')) {
+    if (s.ends_with('\r')) {
         s.pop_back();
     }
 
@@ -123,7 +123,7 @@ bool get_parameters(std::string &args, std::string &notype_args, int &param_coun
         /* regular parameter */
         args += str;
 
-        if (!utils::ends_with(args, '*')) {
+        if (!args.ends_with('*')) {
             args += ' ';
         }
         args += name + ", ";
@@ -193,7 +193,7 @@ bool gendlopen::get_declarations(int mode)
 
     case M_LIST:
         /* erase from list if found */
-        if (utils::find_and_erase(m_symbol_list, decl.symbol) == 0) {
+        if (utils::erase(m_symbol_list, decl.symbol) == 0) {
             return false; /* not in list */
         }
         break;

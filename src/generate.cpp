@@ -121,10 +121,10 @@ cio::ofstream ofs;
 std::string quote_lib(const std::string &lib, bool wide)
 {
     if (wide) {
-        if (lib.size() >= 3 && utils::starts_ends_with(lib, "L\"", '"')) {
+        if (lib.size() >= 3 && utils::front_and_back(lib, "L\"", '"')) {
             /* already quoted */
             return lib;
-        } else if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
+        } else if (lib.size() >= 2 && utils::front_and_back(lib, '"', '"')) {
             /* prepend 'L' */
             return 'L' + lib;
         }
@@ -132,7 +132,7 @@ std::string quote_lib(const std::string &lib, bool wide)
         return "L\"" + lib + '"';
     }
 
-    if (lib.size() >= 2 && utils::starts_ends_with(lib, '"', '"')) {
+    if (lib.size() >= 2 && utils::front_and_back(lib, '"', '"')) {
         /* already quoted */
         return lib;
     }
@@ -413,7 +413,7 @@ void gendlopen::generate()
 
     auto HEADER_GUARD_BEGIN = [&, this] () {
         if (!m_pragma_once) {
-            header_guard = '_' + m_pfx_upper + '_' + utils::convert_to_upper(header_name) + '_';
+            header_guard = '_' + m_pfx_upper + '_' + utils::to_upper(header_name) + '_';
         }
         lines += save::header_guard_begin(header_guard, is_cxx);
     };

@@ -29,7 +29,8 @@
 
 #pragma once
 
-#include <stdio.h>
+#include <cstdio>
+#include <filesystem>
 #include <string>
 
 
@@ -41,6 +42,7 @@ private:
 
 public:
 
+    open_file(const std::filesystem::path &path);
     open_file(const std::string &path);
     ~open_file();
 

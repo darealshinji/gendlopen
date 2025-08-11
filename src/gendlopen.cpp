@@ -42,8 +42,8 @@ namespace /* anonymous */
         }
 
         if (inc.size() >= 2 &&
-            (utils::starts_ends_with(inc, '<', '>') ||
-             utils::starts_ends_with(inc, '"', '"')))
+            (utils::front_and_back(inc, '<', '>') ||
+             utils::front_and_back(inc, '"', '"')))
         {
             /* already quoted */
             return inc;
@@ -72,7 +72,7 @@ namespace /* anonymous */
             {
             case '\n':
                 /* concatenate lines ending on '@' */
-                if (utils::ends_with(line, '@')) {
+                if (line.ends_with('@')) {
                     line.back() = '\n';
                     entry.line_count++;
                     continue;
@@ -81,7 +81,8 @@ namespace /* anonymous */
                 break;
 
             case EOF:
-                if (utils::ends_with(line, '@')) {
+                /* remove trailing '@' */
+                if (line.ends_with('@')) {
                     line.pop_back();
                 }
                 loop = false;
@@ -122,8 +123,8 @@ void gendlopen::prefix(const std::string &s)
     m_pfx = s;
 
     /* set uppercase/lowercase name */
-    m_pfx_upper = utils::convert_to_upper(m_pfx);
-    m_pfx_lower = utils::convert_to_lower(m_pfx);
+    m_pfx_upper = utils::to_upper(m_pfx);
+    m_pfx_lower = utils::to_lower(m_pfx);
 
     /* set regex format string (used in substitute.cpp) */
     m_fmt_upper = "$1" + m_pfx_upper + '_';
@@ -166,15 +167,15 @@ void gendlopen::add_def(const std::string &def)
 void gendlopen::format(const std::string &in)
 {
     output::format out = output::error;
-    std::string s = utils::convert_to_lower(in, false);
+    std::string s = utils::to_lower(in, false);
 
-    if (utils::starts_with(s, 'c')) {
+    if (s.starts_with('c')) {
         if (s == "c") {
             out = output::c;
         } else if (s == "cxx" || s == "c++" || s == "cpp") {
             out = output::cxx;
         }
-    } else if (utils::starts_with(s, "minimal")) {
+    } else if (s.starts_with("minimal")) {
         s.erase(0, 7);
 
         if (s.empty() || s == "-c") {
@@ -182,7 +183,7 @@ void gendlopen::format(const std::string &in)
         } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
             out = output::minimal_cxx;
         }
-    } else if (utils::starts_with(s, "plugin")) {
+    } else if (s.starts_with("plugin")) {
         s.erase(0, 6);
 
         if (s.empty() || s == "-c") {
@@ -216,7 +217,7 @@ void gendlopen::print_symbols_to_stdout()
 
     auto print_type = [] (const std::string &s)
     {
-        if (utils::ends_with(s, '*')) {
+        if (s.ends_with('*')) {
             std::cout << s;
         } else {
             std::cout << s << ' ';

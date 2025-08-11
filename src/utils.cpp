@@ -22,27 +22,26 @@
  SOFTWARE.
 **/
 
-#include <ctype.h>
-#include <vector>
+#include <cctype>
 #include "utils.hpp"
 
 
 /* convert string to uppercase */
-std::string utils::convert_to_upper(const std::string &str, bool underscores)
+std::string utils::to_upper(const std::string &str, bool underscores)
 {
     std::string out;
 
     if (underscores) {
         for (const char &c : str) {
-            if (isalnum(c)) {
-                out += static_cast<char>(toupper(c));
+            if (::isalnum(c)) {
+                out += static_cast<char>(::toupper(c));
             } else {
                 out += '_';
             }
         }
     } else {
         for (const char &c : str) {
-            out += static_cast<char>(toupper(c));
+            out += static_cast<char>(::toupper(c));
         }
     }
 
@@ -50,21 +49,21 @@ std::string utils::convert_to_upper(const std::string &str, bool underscores)
 }
 
 /* convert string to lowercase */
-std::string utils::convert_to_lower(const std::string &str, bool underscores)
+std::string utils::to_lower(const std::string &str, bool underscores)
 {
     std::string out;
 
     if (underscores) {
         for (const char &c : str) {
-            if (isalnum(c)) {
-                out += static_cast<char>(tolower(c));
+            if (::isalnum(c)) {
+                out += static_cast<char>(::tolower(c));
             } else {
                 out += '_';
             }
         }
     } else {
         for (const char &c : str) {
-            out += static_cast<char>(tolower(c));
+            out += static_cast<char>(::tolower(c));
         }
     }
 
@@ -79,7 +78,7 @@ bool utils::is_prefixed(const std::string &s, const vstring_t &list)
     }
 
     for (const auto &e : list) {
-        if (starts_with(s, e)) {
+        if (s.starts_with(e)) {
             return true;
         }
     }
@@ -90,12 +89,12 @@ bool utils::is_prefixed(const std::string &s, const vstring_t &list)
 void utils::strip_spaces(std::string &s)
 {
     /* remove from back */
-    while (!s.empty() && isspace(s.back())) {
+    while (!s.empty() && ::isspace(s.back())) {
         s.pop_back();
     }
 
     /* remove from front */
-    while (!s.empty() && isspace(s.front())) {
+    while (!s.empty() && ::isspace(s.front())) {
         s.erase(0, 1);
     }
 }
@@ -123,22 +122,5 @@ size_t utils::count_linefeed(const std::string &str)
     }
 
     return n;
-}
-
-/* erase all occurences of string "str" from vector "v" */
-size_t utils::find_and_erase(vstring_t &v, const std::string &str)
-{
-    if (v.empty()) {
-        return 0;
-    }
-
-#ifdef __cpp_lib_erase_if
-    return std::erase(v, str);
-#else
-    const auto it = std::remove(v.begin(), v.end(), str);
-    const auto rv = v.end() - it;
-    v.erase(it, v.end());
-    return rv;
-#endif
 }
 

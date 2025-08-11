@@ -131,7 +131,7 @@ namespace /* anonymous */
 
                 /* end of prototype declaration */
                 case LEX_SEMICOLON:
-                    utils::find_and_erase(tokens, "extern");
+                    utils::erase(tokens, "extern");
 
                     if (!tokens.empty()) {
                         vec.push_back(tokens);
@@ -154,7 +154,7 @@ namespace /* anonymous */
             }
         } /* end of loop body */
 
-        utils::find_and_erase(tokens, "extern");
+        utils::erase(tokens, "extern");
 
         /* push back if last prototype didn't end on semicolon */
         if (!tokens.empty()) {

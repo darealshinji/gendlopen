@@ -32,12 +32,17 @@
 #include "open_file.hpp"
 
 
+open_file::open_file(const std::filesystem::path &path)
+{
+    open_file(path.string());
+}
+
 open_file::open_file(const std::string &path)
 {
     if (path.empty() || path == "-") {
         m_fp = stdin;
     } else {
-        m_fp = fopen(path.c_str(), "rb");
+        m_fp = ::fopen(path.c_str(), "rb");
     }
 }
 
@@ -54,7 +59,7 @@ bool open_file::is_open() const
 void open_file::close()
 {
     if (m_fp && m_fp != stdin) {
-        fclose(m_fp);
+        ::fclose(m_fp);
     }
 
     m_fp = stdin;
