@@ -94,10 +94,11 @@ static void load_lib_and_symbols()
 
 static void print_lib_origin()
 {
-    const gdo_char_t *origin = gdo_lib_origin();
+    gdo_char_t *origin = gdo_lib_origin();
 
     if (origin) {
         printf("library loaded at: %s\n", origin);
+        free(origin);
     } else {
         fprintf(stderr, "%s\n", gdo_last_error());
     }

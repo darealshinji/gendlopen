@@ -32,8 +32,8 @@ int main(int argc, char **argv)
 {
     const char *title = "Gtk 3";
     const char *library = GDO_LIBNAME(gtk-3, 0);
-    const char *msg = "Library loaded:\n";
-    const char *orig = "";
+    const char *msg, *ptr_origin;
+    char *origin;
 
     /* argument parsing */
     if (argc > 1) {
@@ -59,15 +59,22 @@ int main(int argc, char **argv)
     }
 
     /* get origin path of loaded library */
-    if ((orig = gdo_lib_origin()) == NULL) {
+    origin = gdo_lib_origin();
+
+    if (origin) {
+        msg = "Library loaded:\n";
+        ptr_origin = origin;
+    } else {
         msg = "error: gdo_lib_origin()";
+        ptr_origin = "";
     }
 
     /* execute code */
-    show_gtk_message_box(title, msg, orig);
+    show_gtk_message_box(title, msg, ptr_origin);
 
     /* free resources */
     gdo_free_lib();
+    free(origin);
 
     return 0;
 }
