@@ -28,8 +28,21 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+/* define this to load templates from files
+ * rather than embedded data */
+//#define USE_EXTERNAL_RESOURCES 1
+
+#if !defined(USE_EXTERNAL_RESOURCES) && !defined(EMBEDDED_RESOURCES)
+#define EMBEDDED_RESOURCES 1  /* define this before including "types.hpp" */
+#endif
+
 #include "cio_ofstream.hpp"
 #include "types.hpp"
+
+
+/* templates path environment variable */
+#define TEMPLATES_ENV  "TEMPLATES"
 
 
 
@@ -52,6 +65,9 @@ namespace save
 
 namespace data
 {
+    /* load template into memory */
+    void load_template(templates::name file);
+
     /* concatenate templates and create template_t vector lists */
     void create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate);
 
@@ -97,7 +113,7 @@ private:
     /* gendlopen.cpp */
     void print_symbols_to_stdout();
     void process_custom_template();
-    std::string replace_prefixes(const char *data);
+    std::string replace_prefixes(const std::string &input);
 
     /* tokenize.cpp */
     void create_typedefs();
@@ -153,6 +169,7 @@ public:
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }
 
     /* gendlopen.cpp */
+    static bool get_lines(FILE *fp, std::string &line, template_t &entry);
     void process();
     void add_inc(const std::string &s);
     void add_def(const std::string &s);

@@ -37,6 +37,9 @@
 
 namespace utils
 {
+
+/* MSVC compat */
+
 inline int strcasecmp(const char *a, const char *b)
 {
 #ifdef _MSC_VER
@@ -55,12 +58,14 @@ inline int strncasecmp(const char *a, const char *b, size_t n)
 #endif
 }
 
+
 /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
 template<size_t N>
 bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
 {
     return (str.size() > N-1 && utils::strncasecmp(str.c_str(), pfx, N-1) == 0);
 }
+
 
 /* convert a string to uppercase or lowercase
  *
@@ -69,33 +74,39 @@ bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
 std::string to_upper(const std::string &s, bool underscores=true);
 std::string to_lower(const std::string &s, bool underscores=true);
 
+
 /* returns true if s begins with a prefix found in list */
 bool is_prefixed(const std::string &s, const vstring_t &list);
+
 
 /* strip ANSI white-space characters from front and back */
 void strip_spaces(std::string &s);
 
+
 /* replace string "from" with string "to" in string "s" */
 void replace(const std::string &from, const std::string &to, std::string &s);
+
 
 /* count '\n' characters */
 size_t count_linefeed(const std::string &str);
 
-/* return char at position pos or NUL */
+
+/* std::string's .at(), .front() and .back() methods, but NUL
+ * is returned instead of causing undefined behavior */
 inline char str_at(const std::string &str, size_t pos) {
     return (str.size() > pos) ? str.at(pos) : 0;
 }
 
-/* return char at position 0 or NUL */
 inline char str_front(const std::string &str) {
     return str.empty() ? 0 : str.front();
 }
 
-/* erase all occurences of string "str" from vector "v" */
-inline size_t erase(vstring_t &v, const std::string &str) {
-    return v.empty() ? 0 : std::erase(v, str);
+inline char str_back(const std::string &str) {
+    return str.empty() ? 0 : str.back();
 }
 
+
+/* check string for prefix and suffix */
 template <typename T1, typename T2>
 bool front_and_back(const std::string &str, const T1 &prefix, const T2 &suffix) {
     return (str.starts_with(prefix) && str.ends_with(suffix));

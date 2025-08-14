@@ -5,6 +5,7 @@ CXX_SRCS = \
 	..\$(SRC)\cio_ofstream.cpp \
 	..\$(SRC)\clang-ast.cpp \
 	..\$(SRC)\data.cpp \
+	..\$(SRC)\data_embedded.cpp \
 	..\$(SRC)\gendlopen.cpp \
 	..\$(SRC)\generate.cpp \
 	..\$(SRC)\help.cpp \

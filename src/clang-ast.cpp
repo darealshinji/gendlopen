@@ -193,7 +193,7 @@ bool gendlopen::get_declarations(int mode)
 
     case M_LIST:
         /* erase from list if found */
-        if (utils::erase(m_symbol_list, decl.symbol) == 0) {
+        if (std::erase(m_symbol_list, decl.symbol) == 0) {
             return false; /* not in list */
         }
         break;

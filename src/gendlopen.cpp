@@ -52,57 +52,6 @@ namespace /* anonymous */
         /* add quotes */
         return '"' + inc + '"';
     }
-
-
-    /* read input lines */
-    bool get_lines(FILE *fp, std::string &line, template_t &entry)
-    {
-        bool loop = true;
-        int c = EOF;
-
-        line.clear();
-        entry.maybe_keyword = false;
-        entry.line_count = 1;
-
-        while (loop)
-        {
-            c = fgetc(fp);
-
-            switch (c)
-            {
-            case '\n':
-                /* concatenate lines ending on '@' */
-                if (line.ends_with('@')) {
-                    line.back() = '\n';
-                    entry.line_count++;
-                    continue;
-                }
-                loop = false;
-                break;
-
-            case EOF:
-                /* remove trailing '@' */
-                if (line.ends_with('@')) {
-                    line.pop_back();
-                }
-                loop = false;
-                break;
-
-            case '%':
-                entry.maybe_keyword = true;
-                [[fallthrough]];
-
-            default:
-                line.push_back(static_cast<char>(c));
-                continue;
-            }
-        }
-
-        entry.data = line.c_str();
-
-        return (c == EOF);
-    }
-
 } /* end anonymous namespace */
 
 
@@ -239,12 +188,8 @@ void gendlopen::print_symbols_to_stdout()
 
 
 /* replace prefixes in string */
-std::string gendlopen::replace_prefixes(const char *data)
+std::string gendlopen::replace_prefixes(const std::string &input)
 {
-    if (!data) {
-        return "";
-    }
-
 #define NOTALNUM "[^a-zA-Z0-9_]"
 
     const std::regex reg_pfxupper("(" NOTALNUM "?[_]?)(GDO_)");
@@ -253,12 +198,71 @@ std::string gendlopen::replace_prefixes(const char *data)
 
 #undef NOTALNUM
 
-    std::string buf = data;
+    std::string buf = input;
     buf = std::regex_replace(buf, reg_pfxupper, m_fmt_upper);
     buf = std::regex_replace(buf, reg_pfxlower, m_fmt_lower);
     buf = std::regex_replace(buf, reg_standalone, m_fmt_standalone);
 
     return buf;
+}
+
+
+/* read input lines */
+bool gendlopen::get_lines(FILE *fp, std::string &line, template_t &entry)
+{
+    bool loop = true;
+    int c = EOF;
+
+    line.clear();
+    entry.maybe_keyword = false;
+    entry.line_count = 1;
+
+    /* just in case */
+    if (!fp) {
+        loop = false;
+    }
+
+    while (loop)
+    {
+        c = fgetc(fp);
+
+        switch (c)
+        {
+        case '\n':
+            /* concatenate lines ending on '@' */
+            if (line.ends_with('@')) {
+                line.back() = '\n';
+                entry.line_count++;
+                continue;
+            }
+            loop = false;
+            break;
+
+        case EOF:
+            /* remove trailing '@' */
+            if (line.ends_with('@')) {
+                line.pop_back();
+            }
+            loop = false;
+            break;
+
+        case '%':
+            entry.maybe_keyword = true;
+            [[fallthrough]];
+
+        default:
+            line.push_back(static_cast<char>(c));
+            continue;
+        }
+    }
+
+#ifdef EMBEDDED_RESOURCES
+    entry.data = line.c_str();
+#else
+    entry.data = line;
+#endif
+
+    return (c == EOF);
 }
 
 

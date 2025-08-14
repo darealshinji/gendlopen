@@ -22,41 +22,22 @@
  SOFTWARE.
 **/
 
-/* use a separate compilation unit for the template data */
-
-#include <stdio.h>
-#include <string.h>
 #include <filesystem>
-#include <ostream>
 #include <string>
-#include <cstdlib>
-#include "cio_ofstream.hpp"
+#include <vector>
 #include "gendlopen.hpp"
 #include "types.hpp"
 
-namespace templates
-{
-#include "template.h"
-}
 
 namespace fs = std::filesystem;
 
 
-
-/* save template data to file */
-static void save_to_file(const std::string &filename, const template_t *list)
+namespace templates
 {
-    cio::ofstream ofs;
+#define TEMPLATE(x) \
+    extern const template_t *ptr_##x;
 
-    if (!ofs.open(filename)) {
-        throw gendlopen::error("failed to open file for writing: " + filename);
-    }
-
-    std::cout << "saving " << filename << std::endl;
-
-    for ( ; list->data != NULL; list++) {
-        ofs << list->data << '\n';
-    }
+#include "list.h"
 }
 
 
@@ -65,7 +46,8 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
 {
     auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
     {
-        header.push_back(templates::common_header);
+        load_template(templates::file_common_header);
+        header.push_back(templates::ptr_common_header);
         header.push_back(t_header);
 
         if (separate) {
@@ -78,50 +60,35 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
     switch (format)
     {
     case output::c:
-        concat_sources(templates::c_header, templates::c_body);
+        load_template(templates::file_c_header);
+        load_template(templates::file_c_body);
+        concat_sources(templates::ptr_c_header, templates::ptr_c_body);
         break;
+
     case output::cxx:
-        concat_sources(templates::cxx_header, templates::cxx_body);
+        load_template(templates::file_cxx_header);
+        load_template(templates::file_cxx_body);
+        concat_sources(templates::ptr_cxx_header, templates::ptr_cxx_body);
         break;
+
     case output::plugin:
-        concat_sources(templates::plugin_header, templates::plugin_body);
+        load_template(templates::file_plugin_header);
+        load_template(templates::file_plugin_body);
+        concat_sources(templates::ptr_plugin_header, templates::ptr_plugin_body);
         break;
+
     case output::minimal:
-        header.push_back(templates::min_c_header);
+        load_template(templates::file_min_c_header);
+        header.push_back(templates::ptr_min_c_header);
         break;
+
     case output::minimal_cxx:
-        header.push_back(templates::min_cxx_header);
+        load_template(templates::file_min_cxx_header);
+        header.push_back(templates::ptr_min_cxx_header);
         break;
+
     [[unlikely]] case output::error:
         throw gendlopen::error(std::string(__func__) + ": format == output::error");
     }
 }
 
-
-/* dump templates */
-void data::dump_templates()
-{
-#define OUTDIR "templates"
-
-    if (fs::exists(fs::symlink_status(OUTDIR))) {
-        throw gendlopen::error("`" OUTDIR "' already exists");
-    }
-
-    if (!fs::create_directory(OUTDIR)) {
-        throw gendlopen::error("failed to create directory `" OUTDIR "'");
-    }
-
-#define SAVE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::x)
-
-    SAVE(license);
-    SAVE(filename_macros);
-    SAVE(common_header);
-    SAVE(c_header);
-    SAVE(c_body);
-    SAVE(cxx_header);
-    SAVE(cxx_body);
-    SAVE(plugin_header);
-    SAVE(plugin_body);
-    SAVE(min_c_header);
-    SAVE(min_cxx_header);
-}

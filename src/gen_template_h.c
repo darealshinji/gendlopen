@@ -65,7 +65,7 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
     /* write output */
     fprintf(fpOut, "/* %s */\n", in_file);
     fprintf(fpOut, "#define FILENAME_%s \"%s\"\n", varName, in_file);
-    fprintf(fpOut, "const template_t %s[] = {\n", varName);
+    fprintf(fpOut, "static const template_t %s[] = {\n", varName);
 
     if (strcmp("license", varName) != 0) {
         fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", false, 1 },\n", in_file);

@@ -5,6 +5,7 @@ OBJS = \
 	$(OUT)/cio_ofstream.o \
 	$(OUT)/clang-ast.o \
 	$(OUT)/data.o \
+	$(OUT)/data_embedded.o \
 	$(OUT)/gendlopen.o \
 	$(OUT)/generate.o \
 	$(OUT)/help.o \
@@ -48,7 +49,7 @@ $(OUT)/template.h: $(OUT)/gen_template_h
 $(OUT)/gen_template_h: $(OUT)/.gitignore $(SRC)/gen_template_h.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $(SRC)/gen_template_h.c $(LDFLAGS)
 
-$(SRC)/data.cpp: $(OUT)/template.h
+$(SRC)/data_embedded.cpp: $(OUT)/template.h
 
 $(OUT)/cio_ofstream.o: $(SRC)/cio_ofstream.cpp
 	$(COMPILE_CXX) $@ $(SRC)/cio_ofstream.cpp
@@ -58,6 +59,9 @@ $(OUT)/clang-ast.o: $(SRC)/clang-ast.cpp
 
 $(OUT)/data.o: $(SRC)/data.cpp
 	$(COMPILE_CXX) $@ $(SRC)/data.cpp
+
+$(OUT)/data_embedded.o: $(SRC)/data_embedded.cpp
+	$(COMPILE_CXX) $@ $(SRC)/data_embedded.cpp
 
 $(OUT)/gendlopen.o: $(SRC)/gendlopen.cpp
 	$(COMPILE_CXX) $@ $(SRC)/gendlopen.cpp

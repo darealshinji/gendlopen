@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <stddef.h>
 #include <filesystem>
 #include <list>
 #include <string>
@@ -32,6 +31,11 @@
 
 
 /* typedefs */
+
+using vstring_t = std::vector<std::string>;
+using iter_t = vstring_t::iterator;
+using list_t = std::list<const char *>;
+
 
 namespace proto
 {
@@ -43,9 +47,6 @@ namespace proto
     } type;
 }
 
-using vstring_t = std::vector<std::string>;
-using iter_t = vstring_t::iterator;
-using list_t = std::list<const char *>;
 
 typedef struct _proto {
     proto::type prototype;
@@ -56,17 +57,25 @@ typedef struct _proto {
     std::string notype_args;
 } proto_t;
 
+
 typedef struct _decl {
     proto::type prototype;
     std::string symbol;
     std::string type;
 } decl_t;
 
-typedef struct _template {
+
+typedef struct _template
+{
+#ifdef EMBEDDED_RESOURCES
     const char *data;
+#else
+    std::string data;
+#endif
     bool maybe_keyword;
     size_t line_count;
 } template_t;
+
 
 using vproto_t = std::vector<proto_t>;
 using vtemplate_t = std::vector<const template_t *>;
@@ -94,5 +103,18 @@ namespace param
         create,
         skip
     } names;
+}
+
+
+/* enum for template files */
+namespace templates
+{
+#define TEMPLATE(x)  file_##x,
+
+    typedef enum {
+#include "list.h"
+    } name;
+
+#undef TEMPLATE
 }
 

@@ -18,24 +18,32 @@ gendlopen_src = files(
     'utils.cpp'
 )
 
+gendlopen_deps = gendlopen_src
 
-gen_template_h = executable(
-    'gen_template_h',
-    'gen_template_h.c',
-    win_subsystem : 'console',
-    install : false,
-    native : true
-)
+if embedded_res
+    gen_template_h = executable(
+        'gen_template_h',
+        'gen_template_h.c',
+        win_subsystem : 'console',
+        install : false,
+        native : true
+    )
 
-gen_hdr = custom_target(
-    'template.h',
-    depends : gen_template_h,
-    output : 'template.h',
-    command : [gen_template_h, '@CURRENT_SOURCE_DIR@/templates', '@OUTPUT@'])
+    gen_hdr = custom_target(
+        'template.h',
+        depends : gen_template_h,
+        output : 'template.h',
+        command : [gen_template_h, '@CURRENT_SOURCE_DIR@/templates', '@OUTPUT@'])
+
+    gendlopen_deps += gen_hdr
+    gendlopen_deps += files('data_embedded.cpp')
+else
+    gendlopen_deps += files('data_external.cpp')
+endif
 
 gendlopen_bin = executable(
     'gendlopen',
-    [gendlopen_src, gen_hdr],
+    gendlopen_deps,
     cpp_args : cpp_args_extra,
     win_subsystem : 'console'
 )

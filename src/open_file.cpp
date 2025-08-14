@@ -32,23 +32,41 @@
 #include "open_file.hpp"
 
 
+open_file::open_file()
+{
+}
+
 open_file::open_file(const std::filesystem::path &path)
 {
-    open_file(path.string());
+    open(path.string());
 }
 
 open_file::open_file(const std::string &path)
 {
-    if (path.empty() || path == "-") {
-        m_fp = stdin;
-    } else {
-        m_fp = ::fopen(path.c_str(), "rb");
-    }
+    open(path);
 }
 
 open_file::~open_file()
 {
     close();
+}
+
+bool open_file::open(const std::filesystem::path &path)
+{
+    return open(path.string());
+}
+
+bool open_file::open(const std::string &path)
+{
+    close();
+
+    if (path.empty() || path == "-") {
+        m_fp = stdin;
+    } else {
+        m_fp = ::fopen(path.c_str(), "rb");
+    }
+
+    return is_open();
 }
 
 bool open_file::is_open() const

@@ -1,3 +1,4 @@
-option('enable_examples', type: 'boolean', value: false, description: 'Build examples')
-option('enable_tests',    type: 'boolean', value: false, description: 'Build tests')
-option('with_gnu_source', type: 'boolean', value: true,  description: 'Build with -D_GNU_SOURCE on Linux')
+option('enable_examples',         type: 'boolean', value: false, description: 'Build examples')
+option('enable_tests',            type: 'boolean', value: false, description: 'Build tests')
+option('with_gnu_source',         type: 'boolean', value: true,  description: 'Build with -D_GNU_SOURCE on Linux')
+option('with_external_resources', type: 'boolean', value: false, description: 'Don\'t use embedded resources')

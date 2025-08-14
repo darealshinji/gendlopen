@@ -234,7 +234,7 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
         }
 
         /* don't append anything to `...' */
-        if (v.size() == 1 && v.back() == "...") {
+        if (v.size() == 1 && v.front() == "...") {
             proto.args += "... , ";
             proto.notype_args += "... , ";
             continue;

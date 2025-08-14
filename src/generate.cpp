@@ -59,16 +59,10 @@ namespace templates
 }
 
 
-/**
- * convert from string to wstring;
- * this is required because on MinGW std::filesystem will throw an exception
- * if an input string contains non-ASCII characters (this doesn't happend with MSVC)
- */
+namespace /* anonymous */
+{
 #ifdef __MINGW32__
 
-/* anonymous */
-namespace
-{
     wchar_t *char_to_wchar(const char *str)
     {
         size_t len, n;
@@ -90,7 +84,12 @@ namespace
         return buf;
     }
 
-    std::wstring string_to_wstring(const std::string &str)
+    /**
+     * convert from string to wstring;
+     * this is required because on MinGW std::filesystem will throw an exception
+     * if an input string contains non-ASCII characters (this doesn't happend with MSVC)
+     */
+    std::wstring convert_filename(const std::string &str)
     {
         wchar_t *buf = char_to_wchar(str.c_str());
 
@@ -107,8 +106,18 @@ namespace
 
         return ws;
     }
-}
+
+#else
+
+    /* dummy */
+    template<class T>
+    T convert_filename(const T &str) {
+        return str;
+    }
+
 #endif /* __MINGW32__ */
+
+} /* end anonymous namespace */
 
 
 namespace save
@@ -335,13 +344,22 @@ void header_guard_end(const std::string &header_guard, bool is_cxx)
 size_t gendlopen::save_data(const template_t *list)
 {
     size_t total_lines = 0;
+    const char *ptr;
 
-    if (!m_line_directive && strncmp(list->data, "#line", 5) == 0) {
+    if (!m_line_directive) {
+#ifdef EMBEDDED_RESOURCES
+        ptr = list->data;
+#else
+        ptr = list->data.c_str();
+#endif
+
         /* skip initial line directive */
-        list++;
+        if (strncmp(ptr, "#line", 5) == 0) {
+            list++;
+        }
     }
 
-    for ( ; list->data != NULL; list++) {
+    for ( ; list->line_count != 0; list++) {
         std::string buf;
 
         if (m_pfx_upper == "GDO") {
@@ -399,34 +417,36 @@ void gendlopen::generate()
 
     /************* lambda functions *************/
 
-    auto print_lineno = [&, this] () {
+    auto lf_print_lineno = [&, this] () {
         if (m_line_directive) {
             lines++;
             save::ofs << "#line " << (lines + 1) << " \"" << header_name << "\"\n";
         }
     };
 
-    auto NOTE_AND_LICENSE = [&, this] () {
+    auto lf_note_and_license = [&, this] () {
+        data::load_template(templates::file_license);
         lines += save::note(m_print_date);
         lines += save_data(templates::ptr_license);
     };
 
-    auto HEADER_GUARD_BEGIN = [&, this] () {
+    auto lf_header_guard_begin = [&, this] () {
         if (!m_pragma_once) {
             header_guard = '_' + m_pfx_upper + '_' + utils::to_upper(header_name) + '_';
         }
         lines += save::header_guard_begin(header_guard, is_cxx);
     };
 
-    auto HEADER_FILENAME_MACROS = [&] () {
+    auto lf_header_filename_macros = [&] () {
+        data::load_template(templates::file_filename_macros);
         lines += save_data(templates::ptr_filename_macros);
     };
 
-    auto HEADER_GENERATED_DATA = [&, this] () {
+    auto lf_header_generated_data = [&, this] () {
         /* print extra data after filename macros as includes or defines
          * might make use of it */
         if (m_line_directive) {
-            print_lineno();
+            lf_print_lineno();
             save::ofs << '\n'; /* extra padding */
             lines++;
         }
@@ -440,17 +460,17 @@ void gendlopen::generate()
         }
     };
 
-    auto HEADER_TEMPLATE_DATA = [&] () {
+    auto lf_header_template_data = [&] () {
         lines += substitute(header_data);
     };
 
-    auto HEADER_GUARD_END = [&] () {
-        print_lineno();
+    auto lf_header_guard_end = [&] () {
+        lf_print_lineno();
         /* no more line counting needed from here on */
         save::header_guard_end(header_guard, is_cxx);
     };
 
-    auto BODY_GENERATED_DATA = [&, this] () {
+    auto lf_body_generated_data = [&, this] () {
         save::ofs << '\n';
         save::ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
         save::ofs << "#include \"" << header_name << "\"\n";
@@ -461,7 +481,7 @@ void gendlopen::generate()
         }
     };
 
-    auto BODY_TEMPLATE_DATA = [&] () {
+    auto lf_body_template_data = [&] () {
         substitute(body_data);
     };
 
@@ -471,13 +491,8 @@ void gendlopen::generate()
 
     const bool use_stdout = (m_output == "-");
 
-    if (!use_stdout)
-    {
-#ifdef __MINGW32__
-        ofbody = ofhdr = string_to_wstring(m_output);
-#else
-        ofbody = ofhdr = m_output;
-#endif
+    if (!use_stdout) {
+        ofbody = ofhdr = convert_filename(m_output);
     }
 
     switch (m_format)
@@ -543,22 +558,22 @@ void gendlopen::generate()
         m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBW " + lib_w + '\n';
     }
 
-    /* save pointers to template lines in header_data and body_data */
+    /* create template data */
     data::create_template_lists(header_data, body_data, m_format, m_separate);
 
 
     /*************** header data ***************/
     open_ofstream(ofhdr);
 
-    NOTE_AND_LICENSE();
-    HEADER_GUARD_BEGIN();
+    lf_note_and_license();
+    lf_header_guard_begin();
 
-    HEADER_FILENAME_MACROS();
-    HEADER_GENERATED_DATA();
+    lf_header_filename_macros();
+    lf_header_generated_data();
 
-    HEADER_TEMPLATE_DATA();
+    lf_header_template_data();
 
-    HEADER_GUARD_END();
+    lf_header_guard_end();
 
     save::ofs.close();
 
@@ -567,9 +582,9 @@ void gendlopen::generate()
     if (!body_data.empty()) {
         open_ofstream(ofbody);
 
-        NOTE_AND_LICENSE();
-        BODY_GENERATED_DATA();
-        BODY_TEMPLATE_DATA();
+        lf_note_and_license();
+        lf_body_generated_data();
+        lf_body_template_data();
     }
 }
 

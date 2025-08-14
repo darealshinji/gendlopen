@@ -1,0 +1,12 @@
+/* X macros */
+TEMPLATE(license)
+TEMPLATE(filename_macros)
+TEMPLATE(common_header)
+TEMPLATE(c_header)
+TEMPLATE(c_body)
+TEMPLATE(cxx_header)
+TEMPLATE(cxx_body)
+TEMPLATE(min_c_header)
+TEMPLATE(min_cxx_header)
+TEMPLATE(plugin_header)
+TEMPLATE(plugin_body)

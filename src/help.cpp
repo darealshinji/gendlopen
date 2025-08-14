@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <string>
+#include "gendlopen.hpp"
 
 
 /* anonymous */
@@ -37,7 +38,18 @@ namespace
 #ifdef _WIN32
             "`/' or "
 #endif
-            "`--' (except single-letter options)" << std::endl;
+            "`--' (except single-letter options)\n"
+            << std::endl;
+    }
+
+    void environment_variables()
+    {
+#if !defined(EMBEDDED_RESOURCES)
+        std::cout << "\n"
+            "environment variables:\n"
+            "  " TEMPLATES_ENV "         directory containing the template files"
+            << std::endl;
+#endif
     }
 }
 
@@ -48,7 +60,7 @@ namespace help
     {
         usage(prog);
 
-        std::cout << "\n"
+        std::cout <<
             "  <file>            input file, use `-' to read from stdin\n"
             "\n"
             "options:\n"
@@ -83,6 +95,8 @@ namespace help
             "  -dump-templates   dump internal template files in the current working directory and exit\n"
             "\n"
             "  * option may be passed multiple times" << std::endl;
+
+        environment_variables();
     }
 
 
@@ -90,7 +104,7 @@ namespace help
     {
         usage(prog);
 
-        std::cout << "\n"
+        std::cout <<
             "  <file>\n"
             "    Specify an input file. Use `-' to read data from stdin.\n"
             "\n"
@@ -322,6 +336,8 @@ namespace help
             "\n"
 
             << std::endl;
+
+        environment_variables();
     }
 
 } /* namespace help */

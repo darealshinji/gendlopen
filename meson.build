@@ -20,6 +20,7 @@ sdl_dep  = []
 compiler          = meson.get_compiler('cpp')
 host_system       = host_machine.system()
 host_system_win32 = false
+embedded_res      = true
 
 if host_system == 'linux' or host_system == 'gnu'
     if get_option('with_gnu_source')
@@ -31,9 +32,14 @@ elif host_system == 'windows' or host_system == 'cygwin'
 endif
 
 if compiler.has_function('program_invocation_short_name', prefix : '#include <errno.h>')
-    cpp_args_extra = '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
+    cpp_args_extra += '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
 elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
-    cpp_args_extra = '-DHAVE_GETPROGNAME'
+    cpp_args_extra += '-DHAVE_GETPROGNAME'
+endif
+
+if get_option('with_external_resources')
+    cpp_args_extra += '-DUSE_EXTERNAL_RESOURCES'
+    embedded_res = false
 endif
 
 if not host_system_win32

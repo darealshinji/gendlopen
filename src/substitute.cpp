@@ -296,6 +296,7 @@ size_t gendlopen::substitute_line(const template_t &line, size_t &templ_lineno, 
     };
 
     std::string buf;
+    const char *ptr;
     int has_func = 0;
     int has_obj = 0;
     int has_sym = 0;
@@ -321,9 +322,14 @@ size_t gendlopen::substitute_line(const template_t &line, size_t &templ_lineno, 
         return 0;
     };
 
+#ifdef EMBEDDED_RESOURCES
+    ptr = line.data;
+#else
+    ptr = line.data.c_str();
+#endif
 
     /* empty line */
-    if (line.data[0] == 0) {
+    if (ptr[0] == 0) {
         if (!param_skip_code) {
             save::ofs << '\n';
             return 1; /* 1 line */
@@ -333,7 +339,7 @@ size_t gendlopen::substitute_line(const template_t &line, size_t &templ_lineno, 
 
     /* check if we have to comment out lines between
      * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-    if (line.maybe_keyword && check_skip_keyword(line.data, param_skip_code, m_parameter_names)) {
+    if (line.maybe_keyword && check_skip_keyword(ptr, param_skip_code, m_parameter_names)) {
         if (!param_skip_code && m_line_directive) {
             /* +1 to compensate for the removed %PARAM_SKIP_* line */
             save::ofs << "#line " << (templ_lineno + 1) << '\n';
@@ -405,6 +411,7 @@ size_t gendlopen::substitute(const vtemplate_t &data)
 {
     size_t total_lines = 0;
     bool param_skip_code = false;
+    const char *ptr;
 
     if (data.empty()) {
         return 0;
@@ -417,12 +424,20 @@ size_t gendlopen::substitute(const vtemplate_t &data)
     for (const template_t *list : data) {
         size_t templ_lineno = 0; /* input template line count */
 
-        if (!m_line_directive && strncmp(list->data, "#line", 5) == 0) {
+        if (!m_line_directive) {
+#ifdef EMBEDDED_RESOURCES
+            ptr = list->data;
+#else
+            ptr = list->data.c_str();
+#endif
+
             /* skip initial line directive */
-            list++;
+            if (strncmp(ptr, "#line", 5) == 0) {
+                list++;
+            }
         }
 
-        for ( ; list->data != NULL; list++) {
+        for ( ; list->line_count != 0; list++) {
             total_lines += substitute_line(*list, templ_lineno, param_skip_code);
             templ_lineno += list->line_count;
         }
