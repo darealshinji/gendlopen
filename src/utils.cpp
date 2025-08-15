@@ -194,3 +194,27 @@ void utils::append_missing_separator(std::string &path)
         break;
     }
 }
+
+
+#ifdef UTILS_PROGNAME_FALLBACK
+
+/* get program name without full path */
+const char *utils::progname(const char *argv0)
+{
+#ifdef _WIN32
+    int path_separator = '\\';
+#else
+    int path_separator = '/';
+#endif
+
+    const char *p = strrchr(argv0, path_separator);
+
+    if (p && *(p+1) != 0) {
+        return p + 1;
+    }
+
+    return argv0;
+}
+
+#endif /* UTILS_PROGNAME_FALLBACK */
+

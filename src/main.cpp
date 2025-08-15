@@ -22,72 +22,28 @@
  SOFTWARE.
 **/
 
-#include <errno.h>  /* program_invocation_short_name */
-#include <string.h>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
 #include "parse_args.hpp"
-
-#ifdef _WIN32
-# define PATH_SEPARATOR '\\'
-#else
-# define PATH_SEPARATOR '/'
-#endif
-
-
-namespace help
-{
-    extern void print(const char *prog);
-    extern void print_full(const char *prog);
-}
+#include "utils.hpp"
 
 
 int main(int argc, char **argv)
 {
-    /* get program name without full path */
-    auto progname = [&argv] () -> const char*
-    {
-#ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
-        return program_invocation_short_name; /* GNU */
-
-#elif defined(HAVE_GETPROGNAME)
-        return getprogname(); /* BSD */
-
-#else
-        const char *p = strrchr(argv[0], PATH_SEPARATOR);
-
-        if (p && *(p+1) != 0) {
-            return p + 1;
-        }
-
-        return argv[0];
-#endif
-    };
-
     gendlopen gdo;
 
     try {
         gdo.process(argc, argv);
     }
     catch (const parse_args::error &e) {
-        std::cerr << progname() << ": error: " << e.what() << std::endl;
+        std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
         std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
         return 1;
     }
     catch (const gendlopen::error &e) {
-        std::cerr << progname() << ": error: " << e.what() << std::endl;
+        std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
         return 1;
-    }
-    catch (const gendlopen::help &e) {
-        const char *w = e.what();
-
-        if (w && *w) {
-            help::print_full(progname());
-        } else {
-            help::print(progname());
-        }
     }
 
     return 0;

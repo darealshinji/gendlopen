@@ -27,6 +27,7 @@
 #if !defined(_MSC_VER)
 # include <strings.h>
 #endif
+#include <errno.h>  /* program_invocation_short_name */
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -98,6 +99,30 @@ bool get_lines(FILE *fp, std::string &line, template_t &entry);
 
 /* append missing path separator */
 void append_missing_separator(std::string &path);
+
+
+/* get program name without full path */
+#ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
+
+/* GNU */
+inline const char *progname(const char *) {
+    return program_invocation_short_name;
+}
+
+#elif defined(HAVE_GETPROGNAME)
+
+/* BSD */
+inline const char *progname(const char *) {
+    return getprogname();
+}
+
+#else
+
+/* other */
+#define UTILS_PROGNAME_FALLBACK 1
+const char *progname(const char *argv0);
+
+#endif
 
 
 /* std::string's .at(), .front() and .back() methods, but NUL

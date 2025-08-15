@@ -25,6 +25,7 @@
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
+#include "utils.hpp"
 
 
 /* anonymous */
@@ -32,7 +33,7 @@ namespace
 {
     void usage(const char *prog)
     {
-        std::cout << "usage: " << prog << " [OPTIONS..] <file>\n"
+        std::cout << "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n"
             "\n"
             "options may also be prefixed with "
 #ifdef _WIN32

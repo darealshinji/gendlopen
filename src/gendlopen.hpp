@@ -89,12 +89,6 @@ public:
             virtual ~error() {}
     };
 
-    class help : public std::runtime_error {
-        public:
-            help(const std::string &message) : std::runtime_error(message) {}
-            virtual ~help() {}
-    };
-
 private:
 
     vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;

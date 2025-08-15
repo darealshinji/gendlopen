@@ -30,6 +30,12 @@
 #include "types.hpp"
 #include "utils.hpp"
 
+namespace help
+{
+    extern void print(const char *prog);
+    extern void print_full(const char *prog);
+}
+
 
 namespace /* anonymous */
 {
@@ -101,10 +107,9 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
         /* skip prefix */
         const char *p = cur + a.pfxlen();
 
-        /* use uppercase for single-letter arguments only */
         switch(*p)
         {
-        /* single letter */
+        /* single letters (uppercase only!) */
         case 'D':
             if (a.get_arg("D")) {
                 add_def(a.opt());
@@ -128,7 +133,8 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 
         case '?':
             if (a.get_noarg("?")) {
-                throw gendlopen::help("");
+                help::print(argv[0]);
+                std::exit(0);
             }
             break;
 
@@ -158,13 +164,15 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
                 force(true);
                 continue;
             } else if (a.get_noarg("full-help")) {
-                throw gendlopen::help("full");
+                help::print_full(argv[0]);
+                std::exit(0);
             }
             break;
 
         case 'h':
             if (a.get_noarg("help")) {
-                throw gendlopen::help("");
+                help::print(argv[0]);
+                std::exit(0);
             }
             break;
 
