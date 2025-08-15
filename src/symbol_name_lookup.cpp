@@ -40,44 +40,41 @@
  */
 static size_t common_prefix_length(vstring_t &vec)
 {
+    size_t n, shortest_sym_len;
+
     /* need at least 2 symbols */
     if (vec.size() < 2) {
         return 0;
     }
 
-    size_t shortest_sym_len = vec.at(0).size();
-
     /* get shortest symbol length */
-    for (const auto &e : vec) {
+    shortest_sym_len = vec.front().size();
+
+    /* skip first entry */
+    for (auto it = vec.begin() + 1; it != vec.end(); it++) {
         /* prevent `min()' macro expansion from Windows headers */
-        shortest_sym_len = std::min<size_t>(shortest_sym_len, e.size());
+        shortest_sym_len = std::min<size_t>(shortest_sym_len, (*it).size());
     }
 
-    if (shortest_sym_len == 0) {
-        return 0;
-    }
-
-    size_t pfxlen = 0;
-    const char *ptr = vec.front().c_str();
-
-    for (size_t i = 0; i < shortest_sym_len; i++, ptr++) {
-        for (const auto &e : vec) {
-            if (e.empty()) {
+    /* compare each letter of every entry */
+    for (n = 0; n < shortest_sym_len; n++) {
+        /* skip first entry */
+        for (auto it = vec.begin() + 1; it != vec.end(); it++) {
+            if ((*it).empty()) {
                 return 0;
             }
 
-            if (e.at(i) != *ptr) {
+            /* compare against first entry */
+            if ((*it).at(n) != vec.front().at(n)) {
                 /* common prefix found (can be empty) */
-                return pfxlen;
+                return n;
             }
         }
-
-        pfxlen++;
     }
 
-    /* shortest symbol name is prefix, i.e. if a symbol `foo'
+    /* shortest symbol name equals prefix, i.e. if a symbol `foo'
      * and `foobar' exist the prefix is `foo' */
-    return pfxlen;
+    return n;
 }
 
 
