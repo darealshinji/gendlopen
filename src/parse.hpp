@@ -46,9 +46,6 @@ namespace parse
     bool get_parameter_names(proto_t &proto, param::names &parameter_names, std::string &msg);
     bool create_parameter_names(proto_t &proto, std::string &msg);
 
-    /* parse_options.cpp */
-    void options(gendlopen *gdo, const vstring_t &options);
-
     /* parse.cpp */
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);

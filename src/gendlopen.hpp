@@ -29,12 +29,10 @@
 #include <string>
 #include <vector>
 
-/* define this to load templates from files
- * rather than embedded data */
-//#define USE_EXTERNAL_RESOURCES 1
-
+/* define "USE_EXTERNAL_RESOURCES" to load templates from files
+ * rather than embedded data (before including "types.hpp"!) */
 #if !defined(USE_EXTERNAL_RESOURCES) && !defined(EMBEDDED_RESOURCES)
-#define EMBEDDED_RESOURCES 1  /* define this before including "types.hpp" */
+#define EMBEDDED_RESOURCES 1
 #endif
 
 #include "cio_ofstream.hpp"
@@ -46,17 +44,13 @@
 
 
 
-namespace help
-{
-    void print(const char *prog);
-    void print_full(const char *prog);
-}
-
-
 namespace save
 {
     /* global output file stream; defaults to STDOUT */
     extern cio::ofstream ofs;
+
+    /* open output file stream for writing */
+    void open_ofstream(const std::filesystem::path &opath, bool force);
 
     /* creates the GDO_CHECK_SYMBOL_NAME() macro and saves it to save::ofs */
     size_t symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects);
@@ -89,11 +83,16 @@ class gendlopen
 {
 public:
 
-    class error : public std::runtime_error
-    {
+    class error : public std::runtime_error {
         public:
             error(const std::string &message) : std::runtime_error(message) {}
             virtual ~error() {}
+    };
+
+    class help : public std::runtime_error {
+        public:
+            help(const std::string &message) : std::runtime_error(message) {}
+            virtual ~help() {}
     };
 
 private:
@@ -110,8 +109,10 @@ private:
 
     std::string m_defines;
 
+    /* shared variable for line substitution */
+    size_t m_substitute_lineno = 0;
+
     /* gendlopen.cpp */
-    void print_symbols_to_stdout();
     void process_custom_template();
     std::string replace_prefixes(const std::string &input);
 
@@ -126,16 +127,19 @@ private:
     /* parse.cpp */
     void parse(std::vector<vstring_t> &vec_tokens, const std::string &input_name);
 
+    /* parse_options.cpp */
+    void parse_cmdline(const int &argc, char ** const &argv);
+    void parse_options(const vstring_t &options);
+
     /* generate.cpp */
     size_t save_data(const template_t *list);
-    void open_ofstream(const std::filesystem::path &opath);
     void generate();
 
     /* substitute.cpp */
-    size_t replace_function_prototypes(const size_t &templ_lineno, const std::string &entry);
-    size_t replace_object_prototypes(const size_t &templ_lineno, const std::string &entry);
-    size_t replace_symbol_names(const size_t &templ_lineno, const std::string &entry);
-    size_t substitute_line(const template_t &line, size_t &templ_lineno, bool &skip_code);
+    size_t replace_function_prototypes(const std::string &entry);
+    size_t replace_object_prototypes(const std::string &entry);
+    size_t replace_symbol_names(const std::string &entry);
+    size_t substitute_line(const template_t &line, bool &skip_code);
     size_t substitute(const vtemplate_t &data);
 
 public:
@@ -169,12 +173,11 @@ public:
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }
 
     /* gendlopen.cpp */
-    static bool get_lines(FILE *fp, std::string &line, template_t &entry);
-    void process();
     void add_inc(const std::string &s);
     void add_def(const std::string &s);
     void prefix(const std::string &s);
     void format(const std::string &s);
+    void process(const int &argc, char ** const &argv);
 };
 
 #undef SET

@@ -27,6 +27,7 @@
 #if !defined(_MSC_VER)
 # include <strings.h>
 #endif
+#include <stdio.h>
 #include <string.h>
 #include <string>
 #include <vector>

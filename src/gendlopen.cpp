@@ -33,25 +33,100 @@
 
 namespace /* anonymous */
 {
-    /* quote header name if needed */
-    std::string format_inc(const std::string &inc)
-    {
-        if (utils::prefixed_and_longer_case(inc, "nq:")) {
-            /* no quotes */
-            return inc.substr(3);
-        }
 
-        if (inc.size() >= 2 &&
-            (utils::front_and_back(inc, '<', '>') ||
-             utils::front_and_back(inc, '"', '"')))
-        {
-            /* already quoted */
-            return inc;
-        }
+/* read input lines */
+bool get_lines(FILE *fp, std::string &line, template_t &entry)
+{
+    bool loop = true;
+    int c = EOF;
 
-        /* add quotes */
-        return '"' + inc + '"';
+    line.clear();
+    entry.maybe_keyword = false;
+    entry.line_count = 1;
+
+    /* just in case */
+    if (!fp) {
+        loop = false;
     }
+
+    while (loop)
+    {
+        c = fgetc(fp);
+
+        switch (c)
+        {
+        case '\n':
+            /* concatenate lines ending on '@' */
+            if (line.ends_with('@')) {
+                line.back() = '\n';
+                entry.line_count++;
+                continue;
+            }
+            loop = false;
+            break;
+
+        case EOF:
+            /* remove trailing '@' */
+            if (line.ends_with('@')) {
+                line.pop_back();
+            }
+            loop = false;
+            break;
+
+        case '%':
+            entry.maybe_keyword = true;
+            [[fallthrough]];
+
+        default:
+            line.push_back(static_cast<char>(c));
+            continue;
+        }
+    }
+
+    entry.data = string_to_data(line);
+
+    return (c == EOF);
+}
+
+
+/* print all found symbols to stdout */
+void print_symbols_to_stdout(vstring_t vtypedefs, vproto_t vprototypes, vproto_t vobjects)
+{
+    cio::ofstream out; /* defaults to STDOUT */
+
+    if (!vtypedefs.empty()) {
+        std::cout << "/* typedefs */\n";
+
+        for (const auto &e : vtypedefs) {
+            std::cout << "typedef " << e << ";\n";
+        }
+        std::cout << '\n';
+    }
+
+    std::cout << "/* prototypes */\n";
+
+    auto print_type = [] (const std::string &s)
+    {
+        if (s.ends_with('*')) {
+            std::cout << s;
+        } else {
+            std::cout << s << ' ';
+        }
+    };
+
+    for (const auto &e : vobjects) {
+        print_type(e.type);
+        std::cout << e.symbol << ";\n";
+    }
+
+    for (const auto &e : vprototypes) {
+        print_type(e.type);
+        std::cout << e.symbol << '(' << e.args << ");\n";
+    }
+
+    std::cout << "\n/***  " << (vobjects.size() + vprototypes.size()) << " matches  ***/" << std::endl;
+}
+
 } /* end anonymous namespace */
 
 
@@ -85,7 +160,18 @@ void gendlopen::prefix(const std::string &s)
 /* add "#include" line */
 void gendlopen::add_inc(const std::string &inc)
 {
-    m_includes.push_back(format_inc(inc));
+    if (utils::prefixed_and_longer_case(inc, "nq:")) {
+        /* no quotes */
+        m_includes.push_back(inc.substr(3));
+    } else if (inc.size() >= 2 &&
+        (utils::front_and_back(inc, '<', '>') || utils::front_and_back(inc, '"', '"')))
+    {
+        /* already quoted */
+        m_includes.push_back(inc);
+    } else {
+        /* add quotes */
+        m_includes.push_back('"' + inc + '"');
+    }
 }
 
 
@@ -148,45 +234,6 @@ void gendlopen::format(const std::string &in)
 }
 
 
-/* print all found symbols to stdout */
-void gendlopen::print_symbols_to_stdout()
-{
-    cio::ofstream out; /* defaults to STDOUT */
-
-    if (!m_typedefs.empty()) {
-        std::cout << "/* typedefs */\n";
-
-        for (const auto &e : m_typedefs) {
-            std::cout << "typedef " << e << ";\n";
-        }
-        std::cout << '\n';
-    }
-
-    std::cout << "/* prototypes */\n";
-
-    auto print_type = [] (const std::string &s)
-    {
-        if (s.ends_with('*')) {
-            std::cout << s;
-        } else {
-            std::cout << s << ' ';
-        }
-    };
-
-    for (const auto &e : m_objects) {
-        print_type(e.type);
-        std::cout << e.symbol << ";\n";
-    }
-
-    for (const auto &e : m_prototypes) {
-        print_type(e.type);
-        std::cout << e.symbol << '(' << e.args << ");\n";
-    }
-
-    std::cout << "\n/***  " << (m_objects.size() + m_prototypes.size()) << " matches  ***/" << std::endl;
-}
-
-
 /* replace prefixes in string */
 std::string gendlopen::replace_prefixes(const std::string &input)
 {
@@ -207,65 +254,6 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 }
 
 
-/* read input lines */
-bool gendlopen::get_lines(FILE *fp, std::string &line, template_t &entry)
-{
-    bool loop = true;
-    int c = EOF;
-
-    line.clear();
-    entry.maybe_keyword = false;
-    entry.line_count = 1;
-
-    /* just in case */
-    if (!fp) {
-        loop = false;
-    }
-
-    while (loop)
-    {
-        c = fgetc(fp);
-
-        switch (c)
-        {
-        case '\n':
-            /* concatenate lines ending on '@' */
-            if (line.ends_with('@')) {
-                line.back() = '\n';
-                entry.line_count++;
-                continue;
-            }
-            loop = false;
-            break;
-
-        case EOF:
-            /* remove trailing '@' */
-            if (line.ends_with('@')) {
-                line.pop_back();
-            }
-            loop = false;
-            break;
-
-        case '%':
-            entry.maybe_keyword = true;
-            [[fallthrough]];
-
-        default:
-            line.push_back(static_cast<char>(c));
-            continue;
-        }
-    }
-
-#ifdef EMBEDDED_RESOURCES
-    entry.data = line.c_str();
-#else
-    entry.data = line;
-#endif
-
-    return (c == EOF);
-}
-
-
 /* read and process custom template */
 void gendlopen::process_custom_template()
 {
@@ -273,7 +261,6 @@ void gendlopen::process_custom_template()
     template_t entry;
     bool param_skip_code = false;
     bool eof = false;
-    size_t templ_lineno = 1; /* input template line count */
 
     /* open file for reading */
     open_file file(m_custom_template);
@@ -283,7 +270,7 @@ void gendlopen::process_custom_template()
     }
 
     /* create output file */
-    open_ofstream(m_output);
+    save::open_ofstream(m_output, m_force);
     FILE *fp = file.file_pointer();
 
     /* write initial #line directive */
@@ -293,34 +280,36 @@ void gendlopen::process_custom_template()
         } else {
             save::ofs << "#line 1 \"" << m_custom_template << "\"\n";
         }
+
+        /* count the "#line" directive */
+        m_substitute_lineno = 1;
     }
 
     /* parse lines */
     while (!eof) {
         eof = get_lines(fp, buf, entry);
-        substitute_line(entry, templ_lineno, param_skip_code);
-        templ_lineno += entry.line_count;
+        substitute_line(entry, param_skip_code);
+
+        if (m_line_directive) {
+            m_substitute_lineno += entry.line_count;
+        }
     }
 }
 
 
 /* parse input and generate output */
-void gendlopen::process()
+void gendlopen::process(const int &argc, char ** const &argv)
 {
-    /* parse input */
+    parse_cmdline(argc, argv);
     tokenize();
 
     if (print_symbols()) {
-        /* print symbols */
-        print_symbols_to_stdout();
+        print_symbols_to_stdout(m_typedefs, m_prototypes, m_objects);
     } else if (print_lookup()) {
-        /* print symbol lookup macro */
         save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
     } else if (!custom_template().empty()) {
-        /* use a custom template */
         process_custom_template();
     } else {
-        /* default */
-        generate();
+        generate(); /* default */
     }
 }

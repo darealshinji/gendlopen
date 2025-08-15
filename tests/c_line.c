@@ -1,23 +1,23 @@
 #include <stdio.h>
 #include "helloworld.h"
 
-#define GDO_DEFAULT_LIB GDO_LIBNAME(helloworld,0)
-
 /* include generated header file */
 #include "c_line.h"
 
 
 void cb(const char *msg)
 {
-    puts(msg);
+    helloworld_fprintf(stdout, "%s: %s\n", "callback", msg);
 }
 
 int main()
 {
-    /* load library and symbols */
-    if (!gdo_load_lib_and_symbols()) {
-        fprintf(stderr, "%s\n", gdo_last_error());
-        gdo_free_lib();
+    /* quick load and error check */
+    const char *lib = GDO_LIBNAME(helloworld,0);
+    const char *err = gdo_load_library_and_symbols(lib);
+
+    if (err) {
+        fprintf(stderr, "error: %s: %s\n", lib, err);
         return 1;
     }
 
@@ -28,7 +28,7 @@ int main()
     helloworld_release(hw);
 
     /* free resources */
-    gdo_free_lib();
+    gdo_free_library();
 
     return 0;
 }

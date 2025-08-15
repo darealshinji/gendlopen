@@ -28,7 +28,7 @@
 
 
 /* prefix length */
-int parse_args::pfxlen()
+size_t parse_args::pfxlen()
 {
     if (m_pfxlen != -1) {
         /* prefix length was already set */
@@ -83,7 +83,7 @@ std::string parse_args::prefix()
         return {};
     }
 
-    for (int i = 0; i < pfxlen(); i++) {
+    for (size_t i = 0; i < pfxlen(); i++) {
         pfx.push_back(arg[i]);
     }
 
@@ -116,8 +116,13 @@ const char *parse_args::next()
 bool parse_args::get_arg(const char *opt, size_t optlen)
 {
     const char * const msg = "option requires an argument: ";
+    const char *curr_arg = current();
 
     m_opt = NULL;
+
+    if (!curr_arg) {
+        return false;
+    }
 
     /* single letter option: allow "-X" and "/X" but not "--X" */
     if (optlen == 1 && pfxlen() != 1) {
@@ -125,7 +130,7 @@ bool parse_args::get_arg(const char *opt, size_t optlen)
     }
 
     /* skip prefix */
-    const char *cur = m_argv[m_it] + pfxlen();
+    const char *cur = curr_arg + pfxlen();
 
     if (strncmp(cur, opt, optlen) != 0) {
         /* not the argument we're looking for */
@@ -137,9 +142,7 @@ bool parse_args::get_arg(const char *opt, size_t optlen)
         m_opt = next();
 
         if (!m_opt || *m_opt == 0) {
-            std::string s = msg;
-            s += m_argv[m_it];
-            throw error(s);
+            throw error(std::string(msg) + curr_arg);
         }
 
         return true;
@@ -159,9 +162,7 @@ bool parse_args::get_arg(const char *opt, size_t optlen)
         }
 
         if (!m_opt || *m_opt == 0) {
-            std::string s = msg;
-            s += m_argv[m_it];
-            throw error(s);
+            throw error(std::string(msg) + curr_arg);
         }
 
         return true;
@@ -173,7 +174,13 @@ bool parse_args::get_arg(const char *opt, size_t optlen)
 /* option without argument */
 bool parse_args::get_noarg(const char *opt, size_t optlen)
 {
+    const char *curr_arg = current();
+
     m_opt = NULL;
+
+    if (!curr_arg) {
+        return false;
+    }
 
     /* single letter option: allow "-X" and "/X" but not "--X" */
     if (optlen == 1 && pfxlen() != 1) {
@@ -181,7 +188,7 @@ bool parse_args::get_noarg(const char *opt, size_t optlen)
     }
 
     /* skip prefix */
-    const char *cur = m_argv[m_it] + pfxlen();
+    const char *cur = curr_arg + pfxlen();
 
     /* -foo */
     if (strcmp(cur, opt) == 0) {
@@ -190,10 +197,7 @@ bool parse_args::get_noarg(const char *opt, size_t optlen)
 
     /* -foo=bar */
     if (strncmp(cur, opt, optlen) == 0 && cur[optlen] == '=') {
-        std::string s = "option does not take an argument: ";
-        s += prefix();
-        s += opt;
-        throw error(s);
+        throw error(std::string("option does not take an argument: ") + prefix() + opt);
     }
 
     return false;

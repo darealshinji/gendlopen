@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #include "gendlopen.hpp"
-#include "parse.hpp"
+#include "parse_args.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 
@@ -36,9 +36,9 @@ namespace /* anonymous */
     /* get argument from an option string */
     const char *get_arg_len(const std::string &str, const char *opt, const size_t optlen)
     {
-        if (strncmp(str.c_str(), opt, optlen) != 0) {
-            /* not the argument we're looking for */
-            return NULL;
+        /* strncmp(str.c_str(), opt, optlen) */
+        if (str.compare(0, optlen, opt) != 0) {
+            return NULL;  /* not the argument we're looking for */
         }
 
         if (str.size() > optlen) {
@@ -49,29 +49,211 @@ namespace /* anonymous */
         return NULL;
     }
 
+
     template<size_t N>
     constexpr bool get_arg(const std::string &str, const char *&ptr, char const (&opt)[N])
     {
         return ((ptr = get_arg_len(str, opt, N-1)) != NULL);
     }
-}
 
-/* parse `%option' strings */
-void parse::options(gendlopen *gdo, const vstring_t &options)
-{
-    auto set_parameter_names = [&] (const char *opt)
+
+    /* get param enum from string */
+    param::names param_value(const char *opt, std::string prefix)
     {
         if (utils::strcasecmp(opt, "skip") == 0) {
-            gdo->parameter_names(param::skip);
+            return param::skip;
         } else if (utils::strcasecmp(opt, "create") == 0) {
-            gdo->parameter_names(param::create);
+            return param::create;
         } else if (utils::strcasecmp(opt, "read") == 0) {
-            gdo->parameter_names(param::read);
-        } else {
-            throw gendlopen::error("unknown argument for option 'param': " + std::string(opt));
+            return param::read;
         }
-    };
 
+        std::string msg = "unknown argument for option '";
+        msg += prefix;
+        msg += "param': ";
+        msg += opt;
+
+        throw parse_args::error(msg);
+    }
+}
+
+
+/* parse command line arguments */
+void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
+{
+    const char *input_file = NULL;
+    const char *cur = NULL;
+
+    parse_args a(argc, argv);
+
+    /* parse arguments */
+    for (cur = a.begin(); cur != NULL; cur = a.next()) {
+        /* use first non-option argument as input_file file */
+        if (a.pfxlen() == 0) {
+            if (!input_file) {
+                input_file = cur;
+            } else {
+                std::cerr << "warning: non-option argument ignored: " << cur << std::endl;
+            }
+            continue;
+        }
+
+        /* skip prefix */
+        const char *p = cur + a.pfxlen();
+
+        /* use uppercase for single-letter arguments only */
+        switch(*p)
+        {
+        /* single letter */
+        case 'D':
+            if (a.get_arg("D")) {
+                add_def(a.opt());
+                continue;
+            }
+            break;
+
+        case 'P':
+            if (a.get_arg("P")) {
+                add_pfx(a.opt());
+                continue;
+            }
+            break;
+
+        case 'S':
+            if (a.get_arg("S")) {
+                add_sym(a.opt());
+                continue;
+            }
+            break;
+
+        case '?':
+            if (a.get_noarg("?")) {
+                throw gendlopen::help("");
+            }
+            break;
+
+        /* multiple letters */
+        case 'a':
+            if (a.get_noarg("ast-all-symbols")) {
+                ast_all_symbols(true);
+                continue;
+            }
+            break;
+
+        case 'd':
+            if (a.get_arg("define")) {
+                add_def(a.opt());
+                continue;
+            } else if (a.get_noarg("dump-templates")) {
+                data::dump_templates();
+                std::exit(0);
+            }
+            break;
+
+        case 'f':
+            if (a.get_arg("format")) {
+                format(a.opt());
+                continue;
+            } else if (a.get_noarg("force")) {
+                force(true);
+                continue;
+            } else if (a.get_noarg("full-help")) {
+                throw gendlopen::help("full");
+            }
+            break;
+
+        case 'h':
+            if (a.get_noarg("help")) {
+                throw gendlopen::help("");
+            }
+            break;
+
+        case 'i':
+            if (a.get_arg("include")) {
+                add_inc(a.opt());
+                continue;
+            } else if (a.get_noarg("ignore-options")) {
+                read_options(false);
+                continue;
+            }
+            break;
+
+        case 'l':
+            if (a.get_arg("library")) {
+                default_lib(a.opt());
+                continue;
+            } else if (a.get_noarg("line")) {
+                line_directive(true);
+                continue;
+            }
+            break;
+
+        case 'n':
+            if (a.get_noarg("no-date")) {
+                print_date(false);
+                continue;
+            } else if (a.get_noarg("no-pragma-once")) {
+                pragma_once(false);
+                continue;
+            }
+            break;
+
+        case 'o':
+            if (a.get_arg("out")) {
+                output(a.opt());
+                continue;
+            }
+            break;
+
+        case 'p':
+            if (a.get_arg("prefix")) {
+                prefix(a.opt());
+                continue;
+            } else if (a.get_arg("param")) {
+                parameter_names( param_value(a.opt(), a.prefix()) );
+                continue;
+            } else if (a.get_noarg("print-symbols")) {
+                print_symbols(true);
+                continue;
+            } else if (a.get_noarg("print-lookup")) {
+                print_lookup(true);
+                continue;
+            }
+            break;
+
+        case 's':
+            if (a.get_noarg("separate")) {
+                separate(true);
+                continue;
+            }
+            break;
+
+        case 't':
+            if (a.get_arg("template")) {
+                custom_template(a.opt());
+                continue;
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        throw parse_args::error(std::string("unknown option: ") + cur);
+    }
+
+    /* input_file is required */
+    if (!input_file) {
+        throw parse_args::error("input file required");
+    }
+
+    input(input_file);
+}
+
+
+/* parse `%option' strings */
+void gendlopen::parse_options(const vstring_t &options)
+{
     const char *p = NULL;
 
     for (const auto &token : options)
@@ -80,51 +262,51 @@ void parse::options(gendlopen *gdo, const vstring_t &options)
         {
         case 'f':
             if (get_arg(token, p, "format=")) {
-                gdo->format(p);
+                format(p);
                 continue;
             }
             break;
 
         case 'n':
             if (token == "no-date") {
-                gdo->print_date(false);
+                print_date(false);
                 continue;
             } else if (token == "no-pragma-once") {
-                gdo->pragma_once(false);
+                pragma_once(false);
                 continue;
             }
             break;
 
         case 'l':
             if (get_arg(token, p, "library=")) {
-                gdo->default_lib(p);
+                default_lib(p);
                 continue;
             } else if (token == "line") {
-                gdo->line_directive(true);
+                line_directive(true);
                 continue;
             }
             break;
 
         case 'i':
             if (get_arg(token, p, "include=")) {
-                gdo->add_inc(p);
+                add_inc(p);
                 continue;
             }
             break;
 
         case 'd':
             if (get_arg(token, p, "define=")) {
-                gdo->add_def(p);
+                add_def(p);
                 continue;
             }
             break;
 
         case 'p':
             if (get_arg(token, p, "prefix=")) {
-                gdo->prefix(p);
+                prefix(p);
                 continue;
             } else if (get_arg(token, p, "param=")) {
-                set_parameter_names(p);
+                parameter_names( param_value(p, "") );
                 continue;
             }
             break;
@@ -136,3 +318,4 @@ void parse::options(gendlopen *gdo, const vstring_t &options)
         throw gendlopen::error("unknown %option string: " + token);
     }
 }
+

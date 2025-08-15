@@ -62,7 +62,12 @@ public:
         return m_opt;
     }
 
-    int pfxlen();
+    /* get current argument */
+    const char *current() const {
+        return (m_it < m_argc) ? m_argv[m_it] : NULL;
+    }
+
+    size_t pfxlen();
     std::string prefix();
 
     const char *begin();

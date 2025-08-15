@@ -281,9 +281,9 @@ void gendlopen::tokenize()
         return;
     }
 
+    /* parse `%options' strings */
     if (m_read_options) {
-        /* parse `%options' strings */
-        parse::options(this, options);
+        parse_options(options);
     }
 
     parse(vec_tokens, input_name);

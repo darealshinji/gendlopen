@@ -337,24 +337,42 @@ void header_guard_end(const std::string &header_guard, bool is_cxx)
     }
 }
 
+/* open output file stream for writing */
+void open_ofstream(const fs::path &opath, bool force)
+{
+    if (opath.empty() || opath == "-") {
+        /* default to STDOUT */
+        ofs.close();
+        return;
+    }
+
+    /* delete file to prevent writing data into symlink target */
+    if (force) {
+        fs::remove(opath);
+    }
+
+    /* check symlink and not its target */
+    if (fs::exists(fs::symlink_status(opath))) {
+        throw gendlopen::error("file already exists: " + opath.string());
+    }
+
+    /* open file for writing */
+    if (!ofs.open(opath)) {
+        throw gendlopen::error("failed to open file for writing: " + opath.string());
+    }
+}
+
 } /* end namespace save */
 
 
-/* save data, replace prefixes */
+/* save data, replace prefixes, return line count */
 size_t gendlopen::save_data(const template_t *list)
 {
     size_t total_lines = 0;
-    const char *ptr;
 
     if (!m_line_directive) {
-#ifdef EMBEDDED_RESOURCES
-        ptr = list->data;
-#else
-        ptr = list->data.c_str();
-#endif
-
         /* skip initial line directive */
-        if (strncmp(ptr, "#line", 5) == 0) {
+        if (strncmp(data_to_c_str(list->data), "#line", 5) == 0) {
             list++;
         }
     }
@@ -369,38 +387,16 @@ size_t gendlopen::save_data(const template_t *list)
             buf = replace_prefixes(list->data);
         }
 
-        save::ofs << buf << '\n';
-
+        /* save data, count newlines */
+        save::ofs << buf;
         total_lines += utils::count_linefeed(buf);
+
+        /* save and count extra newline */
+        save::ofs << '\n';
+        total_lines++;
     }
 
     return total_lines;
-}
-
-
-/* open output file for writing */
-void gendlopen::open_ofstream(const fs::path &opath)
-{
-    if (opath.empty() || opath == "-") {
-        /* default to STDOUT */
-        save::ofs.close();
-        return;
-    }
-
-    /* delete file to prevent writing data into symlink target */
-    if (m_force) {
-        fs::remove(opath);
-    }
-
-    /* check symlink and not its target */
-    if (fs::exists(fs::symlink_status(opath))) {
-        throw error("file already exists: " + opath.string());
-    }
-
-    /* open file for writing */
-    if (!save::ofs.open(opath)) {
-        throw error("failed to open file for writing: " + opath.string());
-    }
 }
 
 
@@ -410,16 +406,27 @@ void gendlopen::generate()
     fs::path ofhdr, ofbody;
     std::string header_name, header_guard;
     vtemplate_t header_data, body_data;
-    size_t lines = 0;
     bool is_cxx = false;
-    bool gen_macro_header = false;
-    bool gen_macro_body = false;
+    size_t lines = 0;
+
+    /* whether to generate a symbol lookup macro and
+     * where to save it */
+    enum {
+        GEN_MACRO_NONE,
+        GEN_MACRO_HEADER,
+        GEN_MACRO_BODY
+    };
+
+    int gen_macro = GEN_MACRO_NONE;
 
     /************* lambda functions *************/
 
     auto lf_print_lineno = [&, this] () {
         if (m_line_directive) {
+            /* increment to count the "#line" directive */
             lines++;
+
+            /* print number of next line */
             save::ofs << "#line " << (lines + 1) << " \"" << header_name << "\"\n";
         }
     };
@@ -447,7 +454,9 @@ void gendlopen::generate()
          * might make use of it */
         if (m_line_directive) {
             lf_print_lineno();
-            save::ofs << '\n'; /* extra padding */
+
+            /* extra padding */
+            save::ofs << '\n';
             lines++;
         }
 
@@ -455,7 +464,8 @@ void gendlopen::generate()
         lines += save::includes(m_includes, is_cxx);
         lines += save::typedefs(m_typedefs);
 
-        if (gen_macro_header) {
+        /* save macro in header */
+        if (gen_macro == GEN_MACRO_HEADER) {
             lines += save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
         }
     };
@@ -471,12 +481,14 @@ void gendlopen::generate()
     };
 
     auto lf_body_generated_data = [&, this] () {
+        /* define "GDO_INCLUDED_IN_BODY" before including the header */
         save::ofs << '\n';
         save::ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
         save::ofs << "#include \"" << header_name << "\"\n";
         save::ofs << '\n';
 
-        if (gen_macro_body) {
+        /* save macro in body */
+        if (gen_macro == GEN_MACRO_BODY) {
             save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
         }
     };
@@ -487,26 +499,26 @@ void gendlopen::generate()
 
     /********************************************/
 
-    /* output filename */
-
     const bool use_stdout = (m_output == "-");
 
+    /* save output filename */
     if (!use_stdout) {
         ofbody = ofhdr = convert_filename(m_output);
+    }
+
+    /* disable separate files on stdout */
+    if (use_stdout) {
+        m_separate = false;
     }
 
     switch (m_format)
     {
     case output::c:
-        if (m_separate) {
-            gen_macro_body = true;
-        } else {
-            gen_macro_header = true;
-        }
+        gen_macro = m_separate ? GEN_MACRO_BODY : GEN_MACRO_HEADER;
         break;
 
     case output::cxx:
-        gen_macro_header = true;
+        gen_macro = GEN_MACRO_HEADER;
         is_cxx = true;
         break;
 
@@ -524,11 +536,6 @@ void gendlopen::generate()
 
     [[unlikely]] case output::error:
         throw error(std::string(__func__) + ": m_format == output::error");
-    }
-
-    /* disable separate files on stdout */
-    if (use_stdout) {
-        m_separate = false;
     }
 
     /* rename file extensions only if we save into separate files */
@@ -563,7 +570,7 @@ void gendlopen::generate()
 
 
     /*************** header data ***************/
-    open_ofstream(ofhdr);
+    save::open_ofstream(ofhdr, m_force);
 
     lf_note_and_license();
     lf_header_guard_begin();
@@ -580,7 +587,7 @@ void gendlopen::generate()
 
     /**************** body data ****************/
     if (!body_data.empty()) {
-        open_ofstream(ofbody);
+        save::open_ofstream(ofbody, m_force);
 
         lf_note_and_license();
         lf_body_generated_data();
