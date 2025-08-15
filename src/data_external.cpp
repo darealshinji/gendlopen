@@ -35,13 +35,6 @@
 #include "utils.hpp"
 
 
-/* example: "/usr/local/share/gendlopen/templates/" */
-#ifndef DEFAULT_TEMPLATES_PATH
-#define DEFAULT_TEMPLATES_PATH  "templates/"
-#endif
-
-
-
 namespace templates
 {
 #define TEMPLATE(x) \
@@ -54,64 +47,16 @@ namespace templates
 
 namespace /* anonymous */
 {
-#ifdef _MSC_VER
-void get_templates_path_msvc(std::string &path)
-{
-    char *buf;
-    size_t len;
-
-    if (_dupenv_s(&buf, &len, TEMPLATES_ENV) == 0) {
-        if (buf && *buf) {
-            path = buf;
-        }
-
-        free(buf);
-    }
-}
-#endif
-
-
-/* return path to template files */
-std::string get_templates_path()
-{
-    std::string path = DEFAULT_TEMPLATES_PATH;
-
-#ifdef _MSC_VER
-    get_templates_path_msvc(path);
-#else
-    char *env = getenv(TEMPLATES_ENV);
-
-    if (env && *env) {
-        path = env;
-    }
-#endif
-
-    /* append missing path separator */
-    switch (utils::str_back(path))
-    {
-#ifdef _WIN32
-    case '\\':
-#endif
-    case '/':
-        break;
-    default:
-        path.push_back('/');
-        break;
-    }
-
-    return path;
-}
-
 
 /* find template and load it into memory */
-template_t *load_from_file(std::vector<template_t> &data, const char *filename)
+template_t *load_from_file(std::vector<template_t> &data, const std::string &templates_path, const char *filename)
 {
     std::string path, buf;
     template_t entry;
     bool eof = false;
 
     /* lookup path */
-    path = get_templates_path() + filename;
+    path = templates_path + filename;
 
     /* open file for reading */
     open_file file(path);
@@ -134,7 +79,7 @@ template_t *load_from_file(std::vector<template_t> &data, const char *filename)
 
     /* read lines */
     while (!eof) {
-        eof = gendlopen::get_lines(fp, buf, entry);
+        eof = utils::get_lines(fp, buf, entry);
         data.push_back(entry);
     }
 
@@ -147,13 +92,39 @@ template_t *load_from_file(std::vector<template_t> &data, const char *filename)
 } /* end anonymous namespace */
 
 
+
+void gendlopen::get_templates_path_env()
+{
+#ifdef _MSC_VER
+    char *buf;
+    size_t len;
+
+    if (_dupenv_s(&buf, &len, TEMPLATES_ENV) == 0) {
+        if (buf && *buf) {
+            m_templates_path = buf;
+        }
+
+        free(buf);
+    }
+#else
+    char *env = getenv(TEMPLATES_ENV);
+
+    if (env && *env) {
+        m_templates_path = env;
+    }
+#endif /* !_MSC_VER */
+
+    utils::append_missing_separator(m_templates_path);
+}
+
+
 /* load template into memory */
-void data::load_template(templates::name file)
+void gendlopen::load_template(templates::name file)
 {
 #define CASE_X(x, NAME) \
     case templates::file_##x: \
         if (!templates::ptr_##x) { \
-            templates::ptr_##x = load_from_file(templates::data_##x, NAME); \
+            templates::ptr_##x = load_from_file(templates::data_##x, m_templates_path, NAME); \
         } \
         break
 
@@ -175,7 +146,7 @@ void data::load_template(templates::name file)
 
 
 /* stub */
-void data::dump_templates()
+void gendlopen::dump_templates()
 {
     std::cerr << "gendlopen was build without embedded resources!" << std::endl;
 }

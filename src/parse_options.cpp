@@ -145,7 +145,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
                 add_def(a.opt());
                 continue;
             } else if (a.get_noarg("dump-templates")) {
-                data::dump_templates();
+                dump_templates();
                 std::exit(0);
             }
             break;
@@ -233,6 +233,13 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
                 custom_template(a.opt());
                 continue;
             }
+#if !defined(EMBEDDED_RESOURCES)
+            else if (a.get_arg("templates-path")) {
+                templates_path(a.opt());
+                utils::append_missing_separator(m_templates_path);
+                continue;
+            }
+#endif
             break;
 
         default:

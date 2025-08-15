@@ -124,3 +124,73 @@ size_t utils::count_linefeed(const std::string &str)
     return n;
 }
 
+/* read input lines */
+bool utils::get_lines(FILE *fp, std::string &line, template_t &entry)
+{
+    bool loop = true;
+    int c = EOF;
+
+    line.clear();
+    entry.maybe_keyword = false;
+    entry.line_count = 1;
+
+    /* just in case */
+    if (!fp) {
+        loop = false;
+    }
+
+    while (loop)
+    {
+        c = fgetc(fp);
+
+        switch (c)
+        {
+        case '\n':
+            /* concatenate lines ending on '@' */
+            if (line.ends_with('@')) {
+                line.back() = '\n';
+                entry.line_count++;
+                continue;
+            }
+            loop = false;
+            break;
+
+        case EOF:
+            /* remove trailing '@' */
+            if (line.ends_with('@')) {
+                line.pop_back();
+            }
+            loop = false;
+            break;
+
+        case '%':
+            entry.maybe_keyword = true;
+            [[fallthrough]];
+
+        default:
+            line.push_back(static_cast<char>(c));
+            continue;
+        }
+    }
+
+    entry.data = string_to_data(line);
+
+    return (c == EOF);
+}
+
+
+/* append missing path separator */
+void utils::append_missing_separator(std::string &path)
+{
+    switch (utils::str_back(path))
+    {
+#ifdef _WIN32
+    case '\\':
+#endif
+    case '/':
+        break;
+    default:
+        path.push_back('/');
+        break;
+    }
+}

@@ -22,7 +22,8 @@
  SOFTWARE.
 **/
 
-#include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <regex>
 #include "gendlopen.hpp"
@@ -33,61 +34,6 @@
 
 namespace /* anonymous */
 {
-
-/* read input lines */
-bool get_lines(FILE *fp, std::string &line, template_t &entry)
-{
-    bool loop = true;
-    int c = EOF;
-
-    line.clear();
-    entry.maybe_keyword = false;
-    entry.line_count = 1;
-
-    /* just in case */
-    if (!fp) {
-        loop = false;
-    }
-
-    while (loop)
-    {
-        c = fgetc(fp);
-
-        switch (c)
-        {
-        case '\n':
-            /* concatenate lines ending on '@' */
-            if (line.ends_with('@')) {
-                line.back() = '\n';
-                entry.line_count++;
-                continue;
-            }
-            loop = false;
-            break;
-
-        case EOF:
-            /* remove trailing '@' */
-            if (line.ends_with('@')) {
-                line.pop_back();
-            }
-            loop = false;
-            break;
-
-        case '%':
-            entry.maybe_keyword = true;
-            [[fallthrough]];
-
-        default:
-            line.push_back(static_cast<char>(c));
-            continue;
-        }
-    }
-
-    entry.data = string_to_data(line);
-
-    return (c == EOF);
-}
-
 
 /* print all found symbols to stdout */
 void print_symbols_to_stdout(vstring_t vtypedefs, vproto_t vprototypes, vproto_t vobjects)
@@ -287,7 +233,7 @@ void gendlopen::process_custom_template()
 
     /* parse lines */
     while (!eof) {
-        eof = get_lines(fp, buf, entry);
+        eof = utils::get_lines(fp, buf, entry);
         substitute_line(entry, param_skip_code);
 
         if (m_line_directive) {
@@ -300,6 +246,8 @@ void gendlopen::process_custom_template()
 /* parse input and generate output */
 void gendlopen::process(const int &argc, char ** const &argv)
 {
+    get_templates_path_env();
+
     parse_cmdline(argc, argv);
     tokenize();
 

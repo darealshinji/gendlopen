@@ -99,6 +99,7 @@ private:
 
     vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;
     vproto_t m_prototypes, m_objects;
+    std::string m_defines;
 
     std::string m_pfx = "gdo"; /* can be mixed case, used to create header name on STDOUT */
     std::string m_pfx_upper = "GDO";
@@ -106,8 +107,6 @@ private:
 
     /* used by std::regex_replace() */
     std::string m_fmt_upper, m_fmt_lower, m_fmt_standalone;
-
-    std::string m_defines;
 
     /* shared variable for line substitution */
     size_t m_substitute_lineno = 0;
@@ -131,6 +130,12 @@ private:
     void parse_cmdline(const int &argc, char ** const &argv);
     void parse_options(const vstring_t &options);
 
+    /* data*.cpp */
+    void get_templates_path_env();
+    void load_template(templates::name file);
+    void create_template_lists(vtemplate_t &header, vtemplate_t &body);
+    void dump_templates();
+
     /* generate.cpp */
     size_t save_data(const template_t *list);
     void generate();
@@ -153,21 +158,24 @@ public:
     /* get() / set() an option */
 
     /*   type            method name      default value */
-    OPT( std::string,    input,           {}          )
-    OPT( std::string,    output,          "-"         )
-    OPT( output::format, format,          output::c   )
-    OPT( param::names,   parameter_names, param::read )
-    OPT( std::string,    custom_template, {}          )
-    OPT( std::string,    default_lib,     {}          )
-    OPT( bool,           force,           false       )
-    OPT( bool,           separate,        false       )
-    OPT( bool,           ast_all_symbols, false       )
-    OPT( bool,           print_symbols,   false       )
-    OPT( bool,           print_lookup,    false       )
-    OPT( bool,           read_options,    true        )
-    OPT( bool,           print_date,      true        )
-    OPT( bool,           line_directive,  false       )
-    OPT( bool,           pragma_once,     true        )
+    OPT( std::string,    input,           {}           )
+    OPT( std::string,    output,          "-"          )
+    OPT( output::format, format,          output::c    )
+    OPT( param::names,   parameter_names, param::read  )
+    OPT( std::string,    custom_template, {}           )
+#if !defined(EMBEDDED_RESOURCES)
+    OPT( std::string,    templates_path,  "templates/" )
+#endif
+    OPT( std::string,    default_lib,     {}           )
+    OPT( bool,           force,           false        )
+    OPT( bool,           separate,        false        )
+    OPT( bool,           ast_all_symbols, false        )
+    OPT( bool,           print_symbols,   false        )
+    OPT( bool,           print_lookup,    false        )
+    OPT( bool,           read_options,    true         )
+    OPT( bool,           print_date,      true         )
+    OPT( bool,           line_directive,  false        )
+    OPT( bool,           pragma_once,     true         )
 
     void add_pfx(const std::string &s) { m_prefix_list.push_back(s); }
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }

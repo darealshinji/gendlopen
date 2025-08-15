@@ -432,7 +432,7 @@ void gendlopen::generate()
     };
 
     auto lf_note_and_license = [&, this] () {
-        data::load_template(templates::file_license);
+        load_template(templates::file_license);
         lines += save::note(m_print_date);
         lines += save_data(templates::ptr_license);
     };
@@ -445,7 +445,7 @@ void gendlopen::generate()
     };
 
     auto lf_header_filename_macros = [&] () {
-        data::load_template(templates::file_filename_macros);
+        load_template(templates::file_filename_macros);
         lines += save_data(templates::ptr_filename_macros);
     };
 
@@ -566,7 +566,7 @@ void gendlopen::generate()
     }
 
     /* create template data */
-    data::create_template_lists(header_data, body_data, m_format, m_separate);
+    create_template_lists(header_data, body_data);
 
 
     /*************** header data ***************/

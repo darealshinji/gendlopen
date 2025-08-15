@@ -29,9 +29,6 @@
 #include "types.hpp"
 
 
-namespace fs = std::filesystem;
-
-
 namespace templates
 {
 #define TEMPLATE(x) \
@@ -42,7 +39,7 @@ namespace templates
 
 
 /* create template data */
-void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate)
+void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
 {
     auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
     {
@@ -50,14 +47,14 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
         header.push_back(templates::ptr_common_header);
         header.push_back(t_header);
 
-        if (separate) {
+        if (m_separate) {
             body.push_back(t_body);
         } else {
             header.push_back(t_body);
         }
     };
 
-    switch (format)
+    switch (m_format)
     {
     case output::c:
         load_template(templates::file_c_header);
@@ -88,7 +85,7 @@ void data::create_template_lists(vtemplate_t &header, vtemplate_t &body, output:
         break;
 
     [[unlikely]] case output::error:
-        throw gendlopen::error(std::string(__func__) + ": format == output::error");
+        throw error(std::string(__func__) + ": format == output::error");
     }
 }
 

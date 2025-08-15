@@ -64,20 +64,26 @@ namespace /* anonymous */
 
 
 /* dummy */
-void data::load_template(templates::name)
+void gendlopen::get_templates_path_env()
+{
+}
+
+
+/* dummy */
+void gendlopen::load_template(templates::name)
 {
 }
 
 
 /* dump templates */
-void data::dump_templates()
+void gendlopen::dump_templates()
 {
     if (fs::exists(fs::symlink_status(OUTDIR))) {
-        throw gendlopen::error("`" OUTDIR "' already exists");
+        throw error("`" OUTDIR "' already exists");
     }
 
     if (!fs::create_directory(OUTDIR)) {
-        throw gendlopen::error("failed to create directory `" OUTDIR "'");
+        throw error("failed to create directory `" OUTDIR "'");
     }
 
 #define SAVE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::ptr_##x)

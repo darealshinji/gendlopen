@@ -93,6 +93,11 @@ namespace help
             "  -no-pragma-once   use `#ifndef' header guard instead of `#pragma once'\n"
             "  -line             add `#line' directives to output\n"
             "  -dump-templates   dump internal template files in the current working directory and exit\n"
+#if !defined(EMBEDDED_RESOURCES)
+            "  -templates-path=<path>\n"
+            "                    directory containing the template files (overrides environment variable\n"
+            "                    " TEMPLATES_ENV ")\n"
+#endif
             "\n"
             "  * option may be passed multiple times" << std::endl;
 
@@ -334,6 +339,14 @@ namespace help
             "  -dump-templates\n"
             "    Dump internal template files in the current working directory and exit.\n"
             "\n"
+
+
+#if !defined(EMBEDDED_RESOURCES)
+            "  -templates-path=<path>\n"
+            "    Specifiy the directory containing the template files. This will override the\n"
+            "    environment variable " TEMPLATES_ENV ".\n"
+            "\n"
+#endif
 
             << std::endl;
 

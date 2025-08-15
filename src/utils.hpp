@@ -92,6 +92,14 @@ void replace(const std::string &from, const std::string &to, std::string &s);
 size_t count_linefeed(const std::string &str);
 
 
+/* read input lines */
+bool get_lines(FILE *fp, std::string &line, template_t &entry);
+
+
+/* append missing path separator */
+void append_missing_separator(std::string &path);
+
+
 /* std::string's .at(), .front() and .back() methods, but NUL
  * is returned instead of causing undefined behavior */
 inline char str_at(const std::string &str, size_t pos) {
