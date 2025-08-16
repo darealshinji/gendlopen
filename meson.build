@@ -20,19 +20,17 @@ sdl_dep  = []
 
 # options
 
-compiler          = meson.get_compiler('cpp')
-host_system       = host_machine.system()
-host_system_win32 = false
-external_res      = get_option('enable_external')
-templates_path    = get_option('templates_path')
+compiler       = meson.get_compiler('cpp')
+host_system    = host_machine.system()
+host_is_win32  = (host_system == 'windows' or host_system == 'cygwin')
+host_is_gnu    = (host_system == 'linux' or host_system == 'gnu')
+external_files = get_option('enable_external')
+templates_path = get_option('templates_path')
 
-if host_system == 'linux' or host_system == 'gnu'
-    if get_option('with_gnu_source')
-        add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
-    endif
-elif host_system == 'windows' or host_system == 'cygwin'
+if host_is_gnu and not get_option('without_gnu_source')
+    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+elif host_is_win32
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
-    host_system_win32 = true
 endif
 
 if compiler.has_function('program_invocation_short_name', prefix : '#include <errno.h>')
@@ -41,8 +39,8 @@ elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
     cpp_args_extra += '-DHAVE_GETPROGNAME'
 endif
 
-if external_res
-    cpp_args_extra += '-DUSE_EXTERNAL_RESOURCES'
+if external_files
+    cpp_args_extra += '-DUSE_external_filesOURCES'
 endif
 
 if templates_path != ''
@@ -54,11 +52,11 @@ endif
 
 # dependencies
 
-if not host_system_win32
+if not host_is_win32
     dl_dep = dependency('dl', required: false)
 endif
 
-if not host_system_win32 and get_option('enable_examples')
+if not host_is_win32 and get_option('enable_examples')
     if (compiler.has_argument('-Wno-deprecated-declarations'))
         wno_deprecated_declarations = '-Wno-deprecated-declarations'
     endif

@@ -22,7 +22,7 @@ gendlopen_src = files(
 
 gendlopen_deps = gendlopen_src
 
-if not external_res
+if not external_files
     gen_template_h = executable(
         'gen_template_h',
         'gen_template_h.c',

@@ -10,14 +10,14 @@ else
     test_overrides = {'cpp_std' : 'c++11'}
 endif
 
-if host_system_win32
+if host_is_win32
     test_flags = ['-DBUILDING_STATIC']  # avoid dllimport/dllexport issues
 elif host_system == 'darwin'
     test_rpath = '@executable_path'
 endif
 
 # set library path additionally to the rpath as backup
-if host_system_win32 == false
+if host_is_win32 == false
     ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'
 endif
 
@@ -208,7 +208,7 @@ test('C generated from STDIN', e, env : ld_library_path)
 
 ### win32 wide characters API ###
 
-if host_system_win32
+if host_is_win32
     c_args = ['-DUNICODE', '-D_UNICODE']
     cpp_args = ['-DUNICODE', '-D_UNICODE']
     link_args = []
@@ -251,7 +251,7 @@ subdir('plugins')
 
 
 ### win32 dlopen() API ###
-if host_system_win32
+if host_is_win32
     subdir('dlfcn-win32')
 
     incdir = include_directories('dlfcn-win32')

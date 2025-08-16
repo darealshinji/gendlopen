@@ -1,4 +1,4 @@
-if host_system_win32
+if host_is_win32
     # UUID
     example_uuid_win_h = custom_target('example_uuid_win.h',
         output : 'example_uuid_win.h',
