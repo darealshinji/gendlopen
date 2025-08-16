@@ -28,19 +28,17 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-/* define "USE_EXTERNAL_RESOURCES" to load templates from files
- * rather than embedded data (before including "types.hpp"!) */
-#if !defined(USE_EXTERNAL_RESOURCES) && !defined(EMBEDDED_RESOURCES)
-#define EMBEDDED_RESOURCES 1
-#endif
-
 #include "cio_ofstream.hpp"
 #include "types.hpp"
 
 
 /* templates path environment variable */
 #define TEMPLATES_ENV  "TEMPLATES"
+
+/* default search path for external resources */
+#ifndef DEFAULT_TEMPLATES_PATH
+#define DEFAULT_TEMPLATES_PATH  "templates/"
+#endif
 
 
 
@@ -157,9 +155,7 @@ public:
     OPT( output::format, format,          output::c    )
     OPT( param::names,   parameter_names, param::read  )
     OPT( std::string,    custom_template, {}           )
-#if !defined(EMBEDDED_RESOURCES)
-    OPT( std::string,    templates_path,  "templates/" )
-#endif
+    OPT( std::string,    templates_path,  DEFAULT_TEMPLATES_PATH )
     OPT( std::string,    default_lib,     {}           )
     OPT( bool,           force,           false        )
     OPT( bool,           separate,        false        )
@@ -182,5 +178,5 @@ public:
     void process(const int &argc, char ** const &argv);
 };
 
-#undef SET
+#undef OPT
 

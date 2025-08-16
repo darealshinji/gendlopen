@@ -22,6 +22,8 @@
  SOFTWARE.
 **/
 
+#ifdef USE_EXTERNAL_RESOURCES
+
 #include <filesystem>
 #include <iostream>
 #include <ostream>
@@ -145,8 +147,9 @@ void gendlopen::load_template(templates::name file)
 }
 
 
-/* stub */
+/* dummy */
 void gendlopen::dump_templates()
 {
-    std::cerr << "gendlopen was build without embedded resources!" << std::endl;
 }
+
+#endif /* USE_EXTERNAL_RESOURCES */

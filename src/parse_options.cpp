@@ -150,10 +150,13 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             if (a.get_arg("define")) {
                 add_def(a.opt());
                 continue;
-            } else if (a.get_noarg("dump-templates")) {
+            }
+#ifdef USE_EXTERNAL_RESOURCES
+            else if (a.get_noarg("dump-templates")) {
                 dump_templates();
                 std::exit(0);
             }
+#endif
             break;
 
         case 'f':
@@ -241,7 +244,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
                 custom_template(a.opt());
                 continue;
             }
-#if !defined(EMBEDDED_RESOURCES)
+#ifdef USE_EXTERNAL_RESOURCES
             else if (a.get_arg("templates-path")) {
                 templates_path(a.opt());
                 utils::append_missing_separator(m_templates_path);

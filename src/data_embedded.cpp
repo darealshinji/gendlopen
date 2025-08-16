@@ -22,6 +22,8 @@
  SOFTWARE.
 **/
 
+#if !defined(USE_EXTERNAL_RESOURCES)
+
 #include <filesystem>
 #include <iostream>
 #include <ostream>
@@ -31,6 +33,8 @@
 #include "gendlopen.hpp"
 #include "types.hpp"
 
+
+/* used by dump_templates() */
 #define OUTDIR "templates"
 
 
@@ -100,3 +104,5 @@ void gendlopen::dump_templates()
     SAVE(min_c_header);
     SAVE(min_cxx_header);
 }
+
+#endif /* !USE_EXTERNAL_RESOURCES */

@@ -67,10 +67,10 @@ typedef struct _decl {
 
 typedef struct _template
 {
-#ifdef EMBEDDED_RESOURCES
-    const char *data;
-#else
+#ifdef USE_EXTERNAL_RESOURCES
     std::string data;
+#else
+    const char *data;
 #endif
     bool maybe_keyword;
     size_t line_count;
@@ -78,12 +78,12 @@ typedef struct _template
 
 
 /* cast between string types and .data type */
-#ifdef EMBEDDED_RESOURCES
-inline const char *data_to_c_str(const char *d) { return d; }
-inline const char *string_to_data(std::string &s) { return s.c_str(); }
-#else
+#ifdef USE_EXTERNAL_RESOURCES
 inline const char *data_to_c_str(const std::string &d) { return d.c_str(); }
 inline std::string string_to_data(std::string &s) { return s; }
+#else
+inline const char *data_to_c_str(const char *d) { return d; }
+inline const char *string_to_data(std::string &s) { return s.c_str(); }
 #endif
 
 

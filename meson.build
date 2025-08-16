@@ -17,10 +17,14 @@ glib_dep = []
 x11_dep  = []
 sdl_dep  = []
 
+
+# options
+
 compiler          = meson.get_compiler('cpp')
 host_system       = host_machine.system()
 host_system_win32 = false
-embedded_res      = true
+external_res      = get_option('enable_external')
+templates_path    = get_option('templates_path')
 
 if host_system == 'linux' or host_system == 'gnu'
     if get_option('with_gnu_source')
@@ -37,10 +41,18 @@ elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
     cpp_args_extra += '-DHAVE_GETPROGNAME'
 endif
 
-if get_option('with_external_resources')
+if external_res
     cpp_args_extra += '-DUSE_EXTERNAL_RESOURCES'
-    embedded_res = false
 endif
+
+if templates_path != ''
+    cpp_args_extra += '-DDEFAULT_TEMPLATES_PATH="' + templates_path + '"'
+endif
+
+
+
+
+# dependencies
 
 if not host_system_win32
     dl_dep = dependency('dl', required: false)
@@ -60,6 +72,9 @@ if not host_system_win32 and get_option('enable_examples')
     glib_dep = dependency('glib-2.0', required: false).partial_dependency(compile_args: true)
     x11_dep = dependency('x11', required: false).partial_dependency(compile_args: true)
 endif
+
+
+# sub-directories
 
 subdir('src')
 

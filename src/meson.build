@@ -2,6 +2,8 @@ gendlopen_src = files(
     'cio_ofstream.cpp',
     'clang-ast.cpp',
     'data.cpp',
+    'data_embedded.cpp',
+    'data_external.cpp',
     'gendlopen.cpp',
     'generate.cpp',
     'help.cpp',
@@ -20,7 +22,7 @@ gendlopen_src = files(
 
 gendlopen_deps = gendlopen_src
 
-if embedded_res
+if not external_res
     gen_template_h = executable(
         'gen_template_h',
         'gen_template_h.c',
@@ -36,9 +38,6 @@ if embedded_res
         command : [gen_template_h, '@CURRENT_SOURCE_DIR@/templates', '@OUTPUT@'])
 
     gendlopen_deps += gen_hdr
-    gendlopen_deps += files('data_embedded.cpp')
-else
-    gendlopen_deps += files('data_external.cpp')
 endif
 
 gendlopen_bin = executable(
