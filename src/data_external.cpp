@@ -51,33 +51,35 @@ namespace /* anonymous */
 {
 
 /* find template and load it into memory */
-template_t *load_from_file(std::vector<template_t> &data, const std::string &templates_path, const char *filename)
+void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
 {
     std::string path, buf;
     template_t entry;
     bool eof = false;
 
     /* lookup path */
-    path = templates_path + filename;
+    path = dir + file;
 
     /* open file for reading */
-    open_file file(path);
+    open_file ofs(path);
 
-    if (!file.is_open()) {
+    if (!ofs.is_open()) {
         throw gendlopen::error("failed to open file for reading: " + path);
     }
 
-    FILE *fp = file.file_pointer();
+    FILE *fp = ofs.file_pointer();
 
     /* add initial #line directive */
-    if (fp == stdin) {
-        buf = "#line 1 \"<STDIN>\"";
-    } else {
-        buf = "#line 1 \"" + std::string(filename) + "\"\n";
-    }
+    if (line_directive) {
+        if (fp == stdin) {
+            buf = "#line 1 \"<STDIN>\"";
+        } else {
+            buf = "#line 1 \"" + std::string(file) + "\"\n";
+        }
 
-    entry = { buf, false, 1 };
-    data.push_back(entry);
+        entry = { buf, false, 1 };
+        data.push_back(entry);
+    }
 
     /* read lines */
     while (!eof) {
@@ -87,8 +89,6 @@ template_t *load_from_file(std::vector<template_t> &data, const std::string &tem
 
     entry = { "", 0, 0 };
     data.push_back(entry);
-
-    return data.data();
 }
 
 } /* end anonymous namespace */
@@ -123,26 +123,30 @@ void gendlopen::get_templates_path_env()
 /* load template into memory */
 void gendlopen::load_template(templates::name file)
 {
-#define CASE_X(x, NAME) \
+#define CASE_X(x, NAME, LINE_DIRECTIVE) \
     case templates::file_##x: \
         if (!templates::ptr_##x) { \
-            templates::ptr_##x = load_from_file(templates::data_##x, m_templates_path, NAME); \
+            load_from_file(templates::data_##x, m_templates_path, NAME, LINE_DIRECTIVE); \
+            templates::ptr_##x = templates::data_##x.data(); \
         } \
         break
 
+    const bool b = m_line_directive;
+
     switch (file)
     {
-    CASE_X(license, "license.h");
-    CASE_X(filename_macros, "filename_macros.h");
-    CASE_X(common_header, "common.h");
-    CASE_X(c_header, "c.h");
-    CASE_X(c_body, "c.c");
-    CASE_X(cxx_header, "cxx.hpp");
-    CASE_X(cxx_body, "cxx.cpp");
-    CASE_X(min_c_header, "minimal.h");
-    CASE_X(min_cxx_header, "minimal_cxxeh.hpp");
-    CASE_X(plugin_header, "plugin.h");
-    CASE_X(plugin_body, "plugin.c");
+        /* never add line directive to license part */
+        CASE_X(license,         "license.h", false);
+        CASE_X(filename_macros, "filename_macros.h", b);
+        CASE_X(common_header,   "common.h", b);
+        CASE_X(c_header,        "c.h", b);
+        CASE_X(c_body,          "c.c", b);
+        CASE_X(cxx_header,      "cxx.hpp", b);
+        CASE_X(cxx_body,        "cxx.cpp", b);
+        CASE_X(min_c_header,    "minimal.h", b);
+        CASE_X(min_cxx_header,  "minimal_cxxeh.hpp", b);
+        CASE_X(plugin_header,   "plugin.h", b);
+        CASE_X(plugin_body,     "plugin.c", b);
     }
 }
 

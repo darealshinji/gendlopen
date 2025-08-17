@@ -438,6 +438,8 @@ void gendlopen::generate()
     };
 
     auto lf_header_guard_begin = [&, this] () {
+        lf_print_lineno();
+
         if (!m_pragma_once) {
             header_guard = '_' + m_pfx_upper + '_' + utils::to_upper(header_name) + '_';
         }
