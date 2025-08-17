@@ -151,15 +151,18 @@ bool utils::get_lines(FILE *fp, std::string &line, template_t &entry)
                 line.back() = '\n';
                 entry.line_count++;
                 continue;
+            } else if (line.ends_with("@\r")) {
+                /* Windows line ending */
+                line.replace(line.size() - 2, 2, "\r\n");
+                entry.line_count++;
+                continue;
             }
             loop = false;
             break;
 
         case EOF:
             /* remove trailing '@' */
-            if (line.ends_with('@')) {
-                line.pop_back();
-            }
+            delete_suffix(line, '@');
             loop = false;
             break;
 

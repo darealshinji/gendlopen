@@ -40,7 +40,7 @@ elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
 endif
 
 if external_files
-    cpp_args_extra += '-DUSE_external_filesOURCES'
+    cpp_args_extra += '-DUSE_EXTERNAL_RESOURCES'
 endif
 
 if templates_path != ''
