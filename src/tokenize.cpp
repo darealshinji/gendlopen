@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <algorithm>
 #include <vector>
 #include "gendlopen.hpp"
 #include "lex.h"
@@ -36,6 +37,12 @@
 #include "parse.hpp"
 #include "types.hpp"
 #include "utils.hpp"
+
+
+typedef struct _paren_entry {
+    std::string str;
+    int num;
+} paren_entry_t;
 
 
 namespace /* anonymous */
@@ -200,6 +207,121 @@ namespace /* anonymous */
 
         return s.insert(pos, name);
     }
+
+
+    /* cosmetics on the output */
+    void format_prototype(std::string &s)
+    {
+        utils::strip_spaces(s);
+
+        utils::replace("( ", "(", s);
+        utils::replace(") ", ")", s);
+        utils::replace(" )", ")", s);
+
+        utils::replace(" [", "[", s);
+        utils::replace(" ]", "]", s);
+        utils::replace("[ ", "[", s);
+        utils::replace("] ", "]", s);
+
+        utils::replace(" ,", ",", s);
+        utils::replace("* ", "*", s);
+    }
+
+
+    void recount_parentheses(std::vector<paren_entry_t> &v, std::vector<paren_entry_t>::iterator &start)
+    {
+        std::vector<int> stack;
+        int n = 0;
+
+        for (auto it = start; it != v.end(); it++) {
+            if ((*it).str == "(") {
+                n++;
+                (*it).num = n;
+                stack.push_back(n);
+            } else if ((*it).str == ")") {
+                (*it).num = stack.back();
+                stack.pop_back();
+            } else {
+                (*it).num = 0;
+            }
+        }
+    }
+
+
+    bool find_closing_parentheses(std::vector<paren_entry_t> &v, std::vector<paren_entry_t>::iterator &it_inner)
+    {
+        for (auto it2_inner = it_inner + 1; it2_inner != v.end(); it2_inner++) {
+            auto next = it2_inner + 1;
+
+            if ((*it2_inner).str == ")" && next != v.end() && (*next).str == ")" &&  /* ")" && ")" */
+                (*it2_inner).num == (*it_inner).num && /* numbers of inner closing paren and
+                                                        * inner opening paren are the same */
+                (*it2_inner).num == ((*next).num + 1)) /* consecutive lowering numbers i.e. ")<3>" && ")<2>" */
+            {
+                v.erase(it2_inner);
+                v.erase(it_inner);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    bool find_opening_parentheses(std::vector<paren_entry_t> &v, std::vector<paren_entry_t>::iterator &it)
+    {
+        for ( ; it != v.end(); it++) {
+            auto it_inner = it + 1;
+
+            /* find matching superfluous parentheses and remove the inner ones */
+            if ((*it).str == "(" && it_inner != v.end() && (*it_inner).str == "(" &&  /* "(" && "(" */
+                ((*it).num + 1) == (*it_inner).num) /* consecutive rising numbers i.e. "(<2>" && "(<3>" */
+            {
+                if (find_closing_parentheses(v, it_inner)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    void remove_superfluous_parentheses(vstring_t &v_in)
+    {
+        std::vector<paren_entry_t> v;
+
+        /* minimum size is 4 -> "(())"" */
+        if (v_in.size() < 4) {
+            return;
+        }
+
+        /* check if an opening parentheses exists */
+        if (std::find(v_in.begin(), v_in.end(), "(") == v_in.end()) {
+            return;
+        }
+
+        /* copy from input vector into temporary vector */
+        for (const auto &e : v_in) {
+            paren_entry_t tmp = { e, 0 };
+            v.push_back(tmp);
+        }
+
+        auto it = v.begin();
+        recount_parentheses(v, it);
+
+        /* find and remove superfluous parentheses */
+        while (find_opening_parentheses(v, it)) {
+            recount_parentheses(v, it);
+        }
+
+        /* copy from temporary vector back to input vector */
+        v_in.clear();
+
+        for (const auto &e : v) {
+            v_in.push_back(e.str);
+        }
+    }
 } /* end anonymous namespace */
 
 
@@ -286,6 +408,28 @@ void gendlopen::tokenize()
         parse_options(options);
     }
 
+    /* remove superfluous parentheses on each entry */
+    for (auto &v : vec_tokens) {
+        remove_superfluous_parentheses(v);
+    }
+
+    /* parse tokens */
     parse(vec_tokens, input_name);
     create_typedefs();
+
+    /* cosmetics */
+
+    for (auto &e : m_prototypes) {
+        format_prototype(e.type);
+        format_prototype(e.args);
+    }
+
+    for (auto &e : m_objects) {
+        format_prototype(e.type);
+        format_prototype(e.args);
+    }
+
+    for (auto &e : m_typedefs) {
+        format_prototype(e);
+    }
 }

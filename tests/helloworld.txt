@@ -73,8 +73,8 @@ helloworld (
   *helloworld_init_argv(int argc, char *argv[])
 );
 
-/* non-typedef'd function pointer */
-void (*helloworld_callback) (const char*);
+/* non-typedef'd function pointer, extra parentheses */
+void (*helloworld_callback) (((const char*)));
 
 /* array type, 'extern' keyword */
 extern char helloworld_buffer[64];

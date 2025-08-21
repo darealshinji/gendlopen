@@ -132,25 +132,6 @@ namespace /* anonymous */
     }
 
 
-    /* cosmetics on the output */
-    void format_prototype(std::string &s)
-    {
-        utils::strip_spaces(s);
-
-        utils::replace("( ", "(", s);
-        utils::replace(") ", ")", s);
-        utils::replace(" )", ")", s);
-
-        utils::replace(" [", "[", s);
-        utils::replace(" ]", "]", s);
-        utils::replace("[ ", "[", s);
-        utils::replace("] ", "]", s);
-
-        utils::replace(" ,", ",", s);
-        utils::replace("* ", "*", s);
-    }
-
-
     /* check for multiple definitions of a symbol */
     bool multiple_definitions(const vproto_t &vproto, std::string &buf)
     {
@@ -521,21 +502,5 @@ void gendlopen::parse(std::vector<vstring_t> &vec_tokens, const std::string &inp
     /* nothing found? */
     if (m_prototypes.empty() && m_objects.empty()) {
         throw error("no function or object prototypes found in " + input_name);
-    }
-
-    /* cosmetics */
-
-    for (auto &e : m_prototypes) {
-        format_prototype(e.type);
-        format_prototype(e.args);
-    }
-
-    for (auto &e : m_objects) {
-        format_prototype(e.type);
-        format_prototype(e.args);
-    }
-
-    for (auto &e : m_typedefs) {
-        format_prototype(e);
     }
 }
