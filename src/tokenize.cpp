@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string>
 #include <algorithm>
+#include <utility>
 #include <vector>
 #include "gendlopen.hpp"
 #include "lex.h"
@@ -39,10 +40,13 @@
 #include "utils.hpp"
 
 
-typedef struct _paren_entry {
+typedef struct _entry {
     std::string str;
     int num;
-} paren_entry_t;
+} entry_t;
+
+using ventry_t = std::vector<entry_t>;
+
 
 
 namespace /* anonymous */
@@ -228,38 +232,23 @@ namespace /* anonymous */
     }
 
 
-    void recount_parentheses(std::vector<paren_entry_t> &v, std::vector<paren_entry_t>::iterator &start)
+    bool remove_right_paren(ventry_t &v, ventry_t::iterator &lp_in, int &num_in, int &num_out)
     {
-        std::vector<int> stack;
-        int n = 0;
+        /* inner right parentheses */
+        auto rp_in = lp_in + 1;
 
-        for (auto it = start; it != v.end(); it++) {
-            if ((*it).str == "(") {
-                n++;
-                (*it).num = n;
-                stack.push_back(n);
-            } else if ((*it).str == ")") {
-                (*it).num = stack.back();
-                stack.pop_back();
-            } else {
-                (*it).num = 0;
-            }
-        }
-    }
+        for ( ; rp_in != v.end(); rp_in++) {
+            auto &prp_in = *rp_in;
 
+            /* outer right parentheses */
+            auto rp_out = rp_in + 1;
+            auto &prp_out = *rp_out;
 
-    bool find_closing_parentheses(std::vector<paren_entry_t> &v, std::vector<paren_entry_t>::iterator &it_inner)
-    {
-        for (auto it2_inner = it_inner + 1; it2_inner != v.end(); it2_inner++) {
-            auto next = it2_inner + 1;
-
-            if ((*it2_inner).str == ")" && next != v.end() && (*next).str == ")" &&  /* ")" && ")" */
-                (*it2_inner).num == (*it_inner).num && /* numbers of inner closing paren and
-                                                        * inner opening paren are the same */
-                (*it2_inner).num == ((*next).num + 1)) /* consecutive lowering numbers i.e. ")<3>" && ")<2>" */
+            /* check for two consecutive closing parentheses with matching numbers */
+            if (prp_in.str == ")" && rp_out != v.end() && prp_out.str == ")" &&
+                prp_in.num == num_in && prp_out.num == num_out)
             {
-                v.erase(it2_inner);
-                v.erase(it_inner);
+                v.erase(rp_out);  /* delete outer right parentheses */
                 return true;
             }
         }
@@ -268,28 +257,33 @@ namespace /* anonymous */
     }
 
 
-    bool find_opening_parentheses(std::vector<paren_entry_t> &v, std::vector<paren_entry_t>::iterator &it)
+    void remove_matching_parentheses(ventry_t &v)
     {
-        for ( ; it != v.end(); it++) {
-            auto it_inner = it + 1;
+        /* outer left parentheses */
+        auto lp_out = v.begin();
 
-            /* find matching superfluous parentheses and remove the inner ones */
-            if ((*it).str == "(" && it_inner != v.end() && (*it_inner).str == "(" &&  /* "(" && "(" */
-                ((*it).num + 1) == (*it_inner).num) /* consecutive rising numbers i.e. "(<2>" && "(<3>" */
-            {
-                if (find_closing_parentheses(v, it_inner)) {
-                    return true;
+        for ( ; lp_out != v.end(); lp_out++) {
+            auto &plp_out = *lp_out;
+
+            /* inner left parentheses */
+            auto lp_in = lp_out + 1;
+            auto &plp_in = *lp_in;
+
+            /* find matching superfluous parentheses and remove the outer ones */
+            if (plp_out.str == "(" && lp_in != v.end() && plp_in.str == "(") {
+                if (remove_right_paren(v, lp_in, plp_in.num, plp_out.num)) {
+                    v.erase(lp_out);     /* delete outer left parentheses */
+                    lp_out = v.begin();  /* restart loop */
                 }
             }
         }
-
-        return false;
     }
 
 
     void remove_superfluous_parentheses(vstring_t &v_in)
     {
-        std::vector<paren_entry_t> v;
+        ventry_t v;
+        int n = 0;
 
         /* minimum size is 4 -> "(())"" */
         if (v_in.size() < 4) {
@@ -302,24 +296,30 @@ namespace /* anonymous */
         }
 
         /* copy from input vector into temporary vector */
-        for (const auto &e : v_in) {
-            paren_entry_t tmp = { e, 0 };
-            v.push_back(tmp);
+        for (auto &e : v_in) {
+            entry_t tmp;
+
+            if (e == "(") {
+                n++;
+                tmp.num = n;
+            } else if (e == ")") {
+                tmp.num = n;
+                n--;
+            } else {
+                tmp.num = 0;
+            }
+
+            tmp.str = std::move(e);
+            v.push_back(std::move(tmp));
         }
 
-        auto it = v.begin();
-        recount_parentheses(v, it);
+        remove_matching_parentheses(v);
 
-        /* find and remove superfluous parentheses */
-        while (find_opening_parentheses(v, it)) {
-            recount_parentheses(v, it);
-        }
-
-        /* copy from temporary vector back to input vector */
+        /* put back to input vector */
         v_in.clear();
 
-        for (const auto &e : v) {
-            v_in.push_back(e.str);
+        for (auto &e : v) {
+            v_in.push_back(std::move(e.str));
         }
     }
 } /* end anonymous namespace */
