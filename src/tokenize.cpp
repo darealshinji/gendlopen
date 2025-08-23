@@ -142,8 +142,6 @@ namespace /* anonymous */
 
                 /* end of prototype declaration */
                 case LEX_SEMICOLON:
-                    std::erase(tokens, "extern");
-
                     if (!tokens.empty()) {
                         vec.push_back(tokens);
                         tokens.clear();
@@ -164,8 +162,6 @@ namespace /* anonymous */
                 }
             }
         } /* end of loop body */
-
-        std::erase(tokens, "extern");
 
         /* push back if last prototype didn't end on semicolon */
         if (!tokens.empty()) {

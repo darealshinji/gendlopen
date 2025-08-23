@@ -109,6 +109,7 @@ other               [*,()\[\]]
 {bom}                       { /* UTF-8 byte order mark */ }
 [[:space:]]                 { }
 
+"extern"                    { /* ignore "extern" keyword */ }
 "struct"                    { return LEX_STRUCT; }
 "union"                     { return LEX_UNION; }
 "enum"                      { return LEX_ENUM; }
