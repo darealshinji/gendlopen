@@ -24,11 +24,11 @@
 
 #include <errno.h>
 #include <string.h>
-#include "parse_args.hpp"
+#include "get_args.hpp"
 
 
 /* prefix length */
-size_t parse_args::pfxlen()
+size_t get_args::pfxlen()
 {
     if (m_pfxlen != -1) {
         /* prefix length was already set */
@@ -74,7 +74,7 @@ size_t parse_args::pfxlen()
 }
 
 /* return prefix */
-std::string parse_args::prefix()
+std::string get_args::prefix()
 {
     std::string pfx;
     const char *arg = m_argv[m_it];
@@ -91,7 +91,7 @@ std::string parse_args::prefix()
 }
 
 /* get first argument (argv[1]) */
-const char *parse_args::begin()
+const char *get_args::begin()
 {
     /* reset */
     m_pfxlen = -1;
@@ -101,7 +101,7 @@ const char *parse_args::begin()
 }
 
 /* iterate to next item and return pointer to it */
-const char *parse_args::next()
+const char *get_args::next()
 {
     m_pfxlen = -1; /* reset */
 
@@ -113,7 +113,7 @@ const char *parse_args::next()
 }
 
 /* get argument from an option string */
-bool parse_args::get_arg(const char *opt, size_t optlen)
+bool get_args::get_arg(const char *opt, size_t optlen)
 {
     const char * const msg = "option requires an argument: ";
     const char *curr_arg = current();
@@ -172,7 +172,7 @@ bool parse_args::get_arg(const char *opt, size_t optlen)
 }
 
 /* option without argument */
-bool parse_args::get_noarg(const char *opt, size_t optlen)
+bool get_args::get_noarg(const char *opt, size_t optlen)
 {
     const char *curr_arg = current();
 

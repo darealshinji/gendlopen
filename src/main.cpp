@@ -25,7 +25,7 @@
 #include <iostream>
 #include <string>
 #include "gendlopen.hpp"
-#include "parse_args.hpp"
+#include "get_args.hpp"
 #include "utils.hpp"
 
 
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     try {
         gdo.process(argc, argv);
     }
-    catch (const parse_args::error &e) {
+    catch (const get_args::error &e) {
         std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
         std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
         return 1;

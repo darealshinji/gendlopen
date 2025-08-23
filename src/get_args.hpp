@@ -29,7 +29,7 @@
 #include <string>
 
 
-class parse_args
+class get_args
 {
 public:
 
@@ -50,11 +50,11 @@ private:
 
 public:
 
-    parse_args(const int &argc, char ** const &argv)
+    get_args(const int &argc, char ** const &argv)
     : m_argc(argc), m_argv(argv)
     {}
 
-    ~parse_args()
+    ~get_args()
     {}
 
     /* return option string (may be NULL) */

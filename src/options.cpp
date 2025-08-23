@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #include "gendlopen.hpp"
-#include "parse_args.hpp"
+#include "get_args.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 
@@ -79,7 +79,7 @@ namespace /* anonymous */
         msg += "param': ";
         msg += opt;
 
-        throw parse_args::error(msg);
+        throw get_args::error(msg);
     }
 }
 
@@ -90,7 +90,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
     const char *input_file = NULL;
     const char *cur = NULL;
 
-    parse_args a(argc, argv);
+    get_args a(argc, argv);
 
     /* parse arguments */
     for (cur = a.begin(); cur != NULL; cur = a.next()) {
@@ -257,12 +257,12 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             break;
         }
 
-        throw parse_args::error(std::string("unknown option: ") + cur);
+        throw get_args::error(std::string("unknown option: ") + cur);
     }
 
     /* input_file is required */
     if (!input_file) {
-        throw parse_args::error("input file required");
+        throw get_args::error("input file required");
     }
 
     input(input_file);

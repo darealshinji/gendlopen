@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <ctype.h>
 #include <iterator>
 #include <string>
 #include "types.hpp"
@@ -40,6 +41,10 @@ namespace parse
             buf += *it;
             buf += ' ';
         }
+    }
+
+    inline bool is_ident(char c) {
+        return (::isalnum(c) || c == '_');
     }
 
     /* parse_parameters.cpp */

@@ -12,10 +12,11 @@ OBJS = \
 	$(OUT)/lex.yy.o \
 	$(OUT)/main.o \
 	$(OUT)/open_file.o \
+	$(OUT)/parameter_names.o \
 	$(OUT)/parse.o \
-	$(OUT)/parse_args.o \
-	$(OUT)/parse_options.o \
-	$(OUT)/parse_parameters.o \
+	$(OUT)/parser.o \
+	$(OUT)/get_args.o \
+	$(OUT)/options.o \
 	$(OUT)/substitute.o \
 	$(OUT)/symbol_name_lookup.o \
 	$(OUT)/tokenize.o \
@@ -69,6 +70,9 @@ $(OUT)/gendlopen.o: $(SRC)/gendlopen.cpp
 $(OUT)/generate.o: $(SRC)/generate.cpp
 	$(COMPILE_CXX) $@ $(SRC)/generate.cpp
 
+$(OUT)/get_args.o: $(SRC)/get_args.cpp
+	$(COMPILE_CXX) $@ $(SRC)/get_args.cpp
+
 $(OUT)/help.o: $(SRC)/help.cpp
 	$(COMPILE_CXX) $@ $(SRC)/help.cpp
 
@@ -81,17 +85,17 @@ $(OUT)/main.o: $(SRC)/main.cpp
 $(OUT)/open_file.o: $(SRC)/open_file.cpp
 	$(COMPILE_CXX) $@ $(SRC)/open_file.cpp
 
-$(OUT)/parse_args.o: $(SRC)/parse_args.cpp
-	$(COMPILE_CXX) $@ $(SRC)/parse_args.cpp
+$(OUT)/options.o: $(SRC)/options.cpp
+	$(COMPILE_CXX) $@ $(SRC)/options.cpp
+
+$(OUT)/parameter_names.o: $(SRC)/parameter_names.cpp
+	$(COMPILE_CXX) $@ $(SRC)/parameter_names.cpp
 
 $(OUT)/parse.o: $(SRC)/parse.cpp
 	$(COMPILE_CXX) $@ $(SRC)/parse.cpp
 
-$(OUT)/parse_options.o: $(SRC)/parse_options.cpp
-	$(COMPILE_CXX) $@ $(SRC)/parse_options.cpp
-
-$(OUT)/parse_parameters.o: $(SRC)/parse_parameters.cpp
-	$(COMPILE_CXX) $@ $(SRC)/parse_parameters.cpp
+$(OUT)/parser.o: $(SRC)/parser.cpp
+	$(COMPILE_CXX) $@ $(SRC)/parser.cpp
 
 $(OUT)/substitute.o: $(SRC)/substitute.cpp
 	$(COMPILE_CXX) $@ $(SRC)/substitute.cpp

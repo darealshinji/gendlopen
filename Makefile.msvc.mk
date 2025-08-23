@@ -6,15 +6,17 @@ CXX_SRCS = \
 	..\$(SRC)\clang-ast.cpp \
 	..\$(SRC)\data.cpp \
 	..\$(SRC)\data_embedded.cpp \
+	..\$(SRC)\data_external.cpp \
 	..\$(SRC)\gendlopen.cpp \
 	..\$(SRC)\generate.cpp \
+	..\$(SRC)\get_args.cpp \
 	..\$(SRC)\help.cpp \
 	..\$(SRC)\main.cpp \
 	..\$(SRC)\open_file.cpp \
+	..\$(SRC)\options.cpp \
+	..\$(SRC)\parameter_names.cpp \
 	..\$(SRC)\parse.cpp \
-	..\$(SRC)\parse_args.cpp \
-	..\$(SRC)\parse_options.cpp \
-	..\$(SRC)\parse_parameters.cpp \
+	..\$(SRC)\parser.cpp \
 	..\$(SRC)\substitute.cpp \
 	..\$(SRC)\symbol_name_lookup.cpp \
 	..\$(SRC)\tokenize.cpp \
