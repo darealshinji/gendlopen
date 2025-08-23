@@ -3,7 +3,8 @@ SRC = src
 
 CXX_SRCS = \
 	..\$(SRC)\cio_ofstream.cpp \
-	..\$(SRC)\clang-ast.cpp \
+	..\$(SRC)\check_pattern.cpp \
+	..\$(SRC)\clang_ast.cpp \
 	..\$(SRC)\data.cpp \
 	..\$(SRC)\data_embedded.cpp \
 	..\$(SRC)\data_external.cpp \
@@ -16,7 +17,6 @@ CXX_SRCS = \
 	..\$(SRC)\options.cpp \
 	..\$(SRC)\parameter_names.cpp \
 	..\$(SRC)\parse.cpp \
-	..\$(SRC)\parser.cpp \
 	..\$(SRC)\substitute.cpp \
 	..\$(SRC)\symbol_name_lookup.cpp \
 	..\$(SRC)\tokenize.cpp \

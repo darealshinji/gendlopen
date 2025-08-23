@@ -3,7 +3,8 @@ SRC = src
 
 OBJS = \
 	$(OUT)/cio_ofstream.o \
-	$(OUT)/clang-ast.o \
+	$(OUT)/check_pattern.o \
+	$(OUT)/clang_ast.o \
 	$(OUT)/data.o \
 	$(OUT)/data_embedded.o \
 	$(OUT)/gendlopen.o \
@@ -14,7 +15,6 @@ OBJS = \
 	$(OUT)/open_file.o \
 	$(OUT)/parameter_names.o \
 	$(OUT)/parse.o \
-	$(OUT)/parser.o \
 	$(OUT)/get_args.o \
 	$(OUT)/options.o \
 	$(OUT)/substitute.o \
@@ -55,8 +55,11 @@ $(SRC)/data_embedded.cpp: $(OUT)/template.h
 $(OUT)/cio_ofstream.o: $(SRC)/cio_ofstream.cpp
 	$(COMPILE_CXX) $@ $(SRC)/cio_ofstream.cpp
 
-$(OUT)/clang-ast.o: $(SRC)/clang-ast.cpp
-	$(COMPILE_CXX) $@ $(SRC)/clang-ast.cpp
+$(OUT)/check_pattern.o: $(SRC)/check_pattern.cpp
+	$(COMPILE_CXX) $@ $(SRC)/check_pattern.cpp
+
+$(OUT)/clang_ast.o: $(SRC)/clang_ast.cpp
+	$(COMPILE_CXX) $@ $(SRC)/clang_ast.cpp
 
 $(OUT)/data.o: $(SRC)/data.cpp
 	$(COMPILE_CXX) $@ $(SRC)/data.cpp
@@ -93,9 +96,6 @@ $(OUT)/parameter_names.o: $(SRC)/parameter_names.cpp
 
 $(OUT)/parse.o: $(SRC)/parse.cpp
 	$(COMPILE_CXX) $@ $(SRC)/parse.cpp
-
-$(OUT)/parser.o: $(SRC)/parser.cpp
-	$(COMPILE_CXX) $@ $(SRC)/parser.cpp
 
 $(OUT)/substitute.o: $(SRC)/substitute.cpp
 	$(COMPILE_CXX) $@ $(SRC)/substitute.cpp

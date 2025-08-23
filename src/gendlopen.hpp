@@ -111,14 +111,14 @@ private:
     void create_typedefs();
     void tokenize();
 
-    /* clang-ast.cpp */
+    /* clang_ast.cpp */
     bool get_declarations(int mode);
     void parse_clang_ast();
 
     /* parse.cpp */
     void parse(std::vector<vstring_t> &vec_tokens, const std::string &input_name);
 
-    /* parse_options.cpp */
+    /* options.cpp */
     void parse_cmdline(const int &argc, char ** const &argv);
     void parse_options(const vstring_t &options);
 

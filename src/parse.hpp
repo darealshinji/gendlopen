@@ -47,11 +47,11 @@ namespace parse
         return (::isalnum(c) || c == '_');
     }
 
-    /* parse_parameters.cpp */
+    /* parameter_names.cpp */
     bool get_parameter_names(proto_t &proto, param::names &parameter_names, std::string &msg);
     bool create_parameter_names(proto_t &proto, std::string &msg);
 
-    /* parse.cpp */
+    /* check_pattern.cpp */
     bool is_function_pointer(vstring_t &v, const iter_t &i);
     bool is_function_pointer_no_name(vstring_t &v, const iter_t &i);
     bool is_function_parentheses(vstring_t &v, const iter_t &i);

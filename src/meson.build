@@ -1,6 +1,7 @@
 gendlopen_src = files(
     'cio_ofstream.cpp',
-    'clang-ast.cpp',
+    'check_pattern.cpp',
+    'clang_ast.cpp',
     'data.cpp',
     'data_embedded.cpp',
     'data_external.cpp',
@@ -14,7 +15,6 @@ gendlopen_src = files(
     'options.cpp',
     'parameter_names.cpp',
     'parse.cpp',
-    'parser.cpp',
     'substitute.cpp',
     'symbol_name_lookup.cpp',
     'tokenize.cpp',
