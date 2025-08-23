@@ -69,16 +69,11 @@ namespace /* anonymous */
     void copy_parameters(const iter_t &it_beg, const iter_t &it_end, proto_t &proto)
     {
         int scope = 0;
-        std::string buf;
         vstring_t tokens;
 
         for (auto it = it_beg; it != it_end; it++)
         {
-            if ((*it).empty()) {
-                continue;
-            }
-
-            switch ((*it).front())
+            switch (utils::str_front(*it))
             {
             case '(':
                 scope++;
@@ -89,7 +84,6 @@ namespace /* anonymous */
             case ',':
                 if (scope == 0) {
                     proto.args_vec.push_back(tokens);
-                    buf.clear();
                     tokens.clear();
                     continue;
                 }
@@ -99,19 +93,18 @@ namespace /* anonymous */
             }
 
             tokens.push_back(*it);
-            buf += *it + ' ';
         }
 
-        if (!buf.empty()) {
+        if (!tokens.empty()) {
             proto.args_vec.push_back(tokens);
         }
     }
 
 
     /* TYPE SYMBOL */
-    bool check_object_prototype(vstring_t &v, proto_t &p, iter_t &it)
+    bool check_object(vstring_t &v, proto_t &p)
     {
-        if (!parse::is_object(v, it)) {
+        if (!parse::is_object(v, v.end())) {
             return false;
         }
 
@@ -124,7 +117,7 @@ namespace /* anonymous */
 
 
     /* TYPE SYMBOL [ ] */
-    bool check_array_prototype(vstring_t &v, proto_t &p, iter_t &it)
+    bool check_array(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_array(v, it)) {
             return false;
@@ -140,7 +133,7 @@ namespace /* anonymous */
 
 
     /* TYPE ( * SYMBOL ) ( ) */
-    bool check_function_pointer_prototype(vstring_t &v, proto_t &p, iter_t &it)
+    bool check_function_pointer(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_function_pointer(v, it)) {
             return false;
@@ -161,7 +154,7 @@ namespace /* anonymous */
 
 
     /* TYPE ( SYMBOL ) ( )  <- this may be the result of a macro expansion */
-    bool check_function_prototype_with_parentheses(vstring_t &v, proto_t &p, iter_t &it)
+    bool check_function_paren(vstring_t &v, proto_t &p, iter_t &it)
     {
         if (!parse::is_function_parentheses(v, it)) {
             return false;
@@ -180,14 +173,14 @@ namespace /* anonymous */
 
 
     /* TYPE ( ** SYMBOL ( ) )  <- these can be found in the output of "gcc -aux-info" */
-    bool check_function_prototype_paren_pointer(vstring_t &v, proto_t &p, iter_t &it)
+    bool check_function_paren_pointer(vstring_t &v, proto_t &p, iter_t &it)
     {
         int n;
 
         if (parse::is_function_paren_pointer1(v, it)) {
-            n = 1;
+            n = 1; /* 1 pointer */
         } else if (parse::is_function_paren_pointer2(v, it)) {
-            n = 2;
+            n = 2; /* 2 pointers */
         } else {
             return false;
         }
@@ -206,14 +199,8 @@ namespace /* anonymous */
 
 
     /* TYPE SYMBOL ( ) */
-    bool check_function_prototype(vstring_t &v, proto_t &p, iter_t &it)
+    bool check_function(vstring_t &v, proto_t &p, iter_t &it)
     {
-        if (check_function_prototype_with_parentheses(v, p, it) || /* TYPE ( SYMBOL ) ( ) */
-            check_function_prototype_paren_pointer(v, p, it))      /* TYPE ( * SYMBOL ( ) ) */
-        {
-            return true;
-        }
-
         if (!parse::is_function(v, it)) {
             return false;
         }
@@ -235,29 +222,30 @@ namespace /* anonymous */
             return false;
         }
 
-        iter_t it = v.begin();
-        char c = utils::str_front(*it);
-
         /* first element must be an identifier */
-        if (!parse::is_ident(c)) {
+        if (!parse::is_ident(utils::str_front(v.front()))) {
             return false;
         }
 
-        it = parse::find_first_not_pointer_or_ident(v);
+        iter_t it = parse::find_first_not_pointer_or_ident(v);
 
         if (it == v.end()) {
-            return check_object_prototype(v, p, it);
-        } else if (it == v.begin()) {
-            return false;
+            return check_object(v, p);
         }
 
-        c = utils::str_front(*it);
+        switch (utils::str_front(*it))
+        {
+        case '(':
+            return (check_function_paren(v, p, it)         || /* TYPE ( SYMBOL ) ( ) */
+                    check_function_paren_pointer(v, p, it) || /* TYPE ( * SYMBOL ( ) ) */
+                    check_function(v, p, it)               || /* TYPE SYMBOL ( ) */
+                    check_function_pointer(v, p, it));        /* TYPE ( * SYMBOL ) ( ) */
 
-        if (c == '(') {
-            return (check_function_prototype(v, p, it) ||
-                    check_function_pointer_prototype(v, p, it));
-        } else if (c == '[') {
-            return check_array_prototype(v, p, it);
+        case '[':
+            return check_array(v, p, it);
+
+        default:
+            break;
         }
 
         return false;

@@ -299,14 +299,19 @@ namespace /* anonymous */
         for (auto &e : v_in) {
             entry_t tmp;
 
-            if (e == "(") {
+            switch (utils::str_front(e))
+            {
+            case '(':
                 n++;
                 tmp.num = n;
-            } else if (e == ")") {
+                break;
+            case ')':
                 tmp.num = n;
                 n--;
-            } else {
+                break;
+            default:
                 tmp.num = 0;
+                break;
             }
 
             tmp.str = std::move(e);

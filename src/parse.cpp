@@ -75,7 +75,7 @@ namespace /* anonymous */
         }
 
         /* front */
-        if (sq.front[1] == *SYMBOL && /* front part must hold identificator */
+        if (sq.front[1] == *SYMBOL && /* front part should hold identificator */
             !parse::is_ident(utils::str_front(*(it-1))))
         {
             return false;
