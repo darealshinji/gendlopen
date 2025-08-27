@@ -42,6 +42,7 @@
 
 typedef struct _entry {
     std::string str;
+    char ch;
     int num;
 } entry_t;
 
@@ -228,23 +229,36 @@ namespace /* anonymous */
     }
 
 
-    bool remove_right_paren(ventry_t &v, ventry_t::iterator &lp_in, int &num_in, int &num_out)
+    inline bool consec_match(const ventry_t &v, const ventry_t::iterator &it, const char &ch)
     {
-        /* inner right parentheses */
-        auto rp_in = lp_in + 1;
+        auto next = it + 1;
 
-        for ( ; rp_in != v.end(); rp_in++) {
-            auto &prp_in = *rp_in;
+        return (next != v.end() && (*it).ch == ch && (*next).ch == ch);
+    }
 
-            /* outer right parentheses */
-            auto rp_out = rp_in + 1;
-            auto &prp_out = *rp_out;
 
-            /* check for two consecutive closing parentheses with matching numbers */
-            if (prp_in.str == ")" && rp_out != v.end() && prp_out.str == ")" &&
-                prp_in.num == num_in && prp_out.num == num_out)
+    /* inner loop */
+    bool erase_Rparen(ventry_t &v,
+                      ventry_t::iterator &inner_Lparen,
+                      ventry_t::iterator &outer_Lparen)
+    {
+        for (auto it = inner_Lparen + 1; it != v.end(); it++) {
+            /* check for two consecutive closing parentheses */
+            if (!consec_match(v, it, ')')) {
+                continue;
+            }
+
+            /* next iterator is not v.end() */
+            auto inner_Rparen = it;     /* -->)) */
+            auto outer_Rparen = it + 1; /*    ))<-- */
+
+            /* check for matching numbers */
+            if ((*inner_Lparen).num == (*inner_Rparen).num &&
+                (*outer_Lparen).num == (*outer_Rparen).num)
             {
-                v.erase(rp_out);  /* delete outer right parentheses */
+                /* delete inner parentheses */
+                v.erase(inner_Rparen);
+                v.erase(inner_Lparen);
                 return true;
             }
         }
@@ -255,23 +269,20 @@ namespace /* anonymous */
 
     void remove_matching_parentheses(ventry_t &v)
     {
-        /* outer left parentheses */
-        auto lp_out = v.begin();
+        for (auto it = v.begin(); it != v.end(); ) {
+            /* check for two consecutive opening parentheses */
+            if (consec_match(v, it, '(')) {
+                /* next iterator is not v.end() */
+                auto outer_Lparen = it;     /* -->(( */
+                auto inner_Lparen = it + 1; /*    ((<-- */
 
-        for ( ; lp_out != v.end(); lp_out++) {
-            auto &plp_out = *lp_out;
-
-            /* inner left parentheses */
-            auto lp_in = lp_out + 1;
-            auto &plp_in = *lp_in;
-
-            /* find matching superfluous parentheses and remove the outer ones */
-            if (plp_out.str == "(" && lp_in != v.end() && plp_in.str == "(") {
-                if (remove_right_paren(v, lp_in, plp_in.num, plp_out.num)) {
-                    v.erase(lp_out);     /* delete outer left parentheses */
-                    lp_out = v.begin();  /* restart loop */
+                if (erase_Rparen(v, inner_Lparen, outer_Lparen)) {
+                    /* don't increment iterator */
+                    continue;
                 }
             }
+
+            it++;
         }
     }
 
@@ -299,13 +310,16 @@ namespace /* anonymous */
             {
             case '(':
                 n++;
+                tmp.ch = '(';
                 tmp.num = n;
                 break;
             case ')':
+                tmp.ch = ')';
                 tmp.num = n;
                 n--;
                 break;
             default:
+                tmp.ch = 0;
                 tmp.num = 0;
                 break;
             }
@@ -316,7 +330,7 @@ namespace /* anonymous */
 
         remove_matching_parentheses(v);
 
-        /* put back to input vector */
+        /* put strings back to input vector */
         v_in.clear();
 
         for (auto &e : v) {
