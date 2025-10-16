@@ -90,19 +90,9 @@ void gendlopen::dump_templates()
         throw error("failed to create directory `" OUTDIR "'");
     }
 
-#define SAVE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::ptr_##x)
+#define TEMPLATE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::ptr_##x);
 
-    SAVE(license);
-    SAVE(filename_macros);
-    SAVE(common_header);
-    SAVE(c_header);
-    SAVE(c_body);
-    SAVE(cxx_header);
-    SAVE(cxx_body);
-    SAVE(plugin_header);
-    SAVE(plugin_body);
-    SAVE(min_c_header);
-    SAVE(min_cxx_header);
+#include "list.h"
 }
 
 #endif /* !USE_EXTERNAL_RESOURCES */
