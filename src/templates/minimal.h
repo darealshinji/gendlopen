@@ -60,7 +60,7 @@ GDO_LINKAGE void gdo_free_library(void)
  *   Library filename or path to load. Must not be empty or NULL.
  *
  * Returns NULL on success and an error message if loading has failed.
- * Library handle is always freed on an error.
+ * Do NOT free the returned pointer. Library handle is always freed on an error.
  */
 GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 {
