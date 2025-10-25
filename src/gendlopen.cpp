@@ -183,13 +183,9 @@ void gendlopen::format(const std::string &in)
 /* replace prefixes in string */
 std::string gendlopen::replace_prefixes(const std::string &input)
 {
-#define NOTALNUM "[^a-zA-Z0-9_]"
-
-    const std::regex reg_pfxupper("(" NOTALNUM "?[_]?)(GDO_)");
-    const std::regex reg_pfxlower("(" NOTALNUM "?[_]?)(gdo_)");
-    const std::regex reg_standalone("(" NOTALNUM "?)(gdo)(" NOTALNUM "?)");
-
-#undef NOTALNUM
+    const std::regex reg_pfxupper("(([^a-zA-Z0-9_]|^)[_]?)(GDO_)");
+    const std::regex reg_pfxlower("(([^a-zA-Z0-9_]|^)[_]?)(gdo_)");
+    const std::regex reg_standalone("([^a-zA-Z0-9_]|^)(gdo)([^a-zA-Z0-9_]|$)");
 
     std::string buf = input;
     buf = std::regex_replace(buf, reg_pfxupper, m_fmt_upper);
