@@ -49,9 +49,6 @@ namespace save
 
     /* open output file stream for writing */
     void open_ofstream(const std::filesystem::path &opath, bool force);
-
-    /* creates the GDO_CHECK_SYMBOL_NAME() macro and saves it to save::ofs */
-    size_t symbol_name_lookup(const std::string &pfx_upper, const vproto_t &v_prototypes, const vproto_t &v_objects);
 }
 
 
@@ -150,22 +147,21 @@ public:
     /* get() / set() an option */
 
     /*   type            method name      default value */
-    OPT( std::string,    input,           {}           )
-    OPT( std::string,    output,          "-"          )
-    OPT( output::format, format,          output::c    )
-    OPT( param::names,   parameter_names, param::read  )
-    OPT( std::string,    custom_template, {}           )
+    OPT( std::string,    input,           {}          )
+    OPT( std::string,    output,          "-"         )
+    OPT( output::format, format,          output::c   )
+    OPT( param::names,   parameter_names, param::read )
+    OPT( std::string,    custom_template, {}          )
     OPT( std::string,    templates_path,  DEFAULT_TEMPLATES_PATH )
-    OPT( std::string,    default_lib,     {}           )
-    OPT( bool,           force,           false        )
-    OPT( bool,           separate,        false        )
-    OPT( bool,           ast_all_symbols, false        )
-    OPT( bool,           print_symbols,   false        )
-    OPT( bool,           print_lookup,    false        )
-    OPT( bool,           read_options,    true         )
-    OPT( bool,           print_date,      true         )
-    OPT( bool,           line_directive,  false        )
-    OPT( bool,           pragma_once,     true         )
+    OPT( std::string,    default_lib,     {}          )
+    OPT( bool,           force,           false       )
+    OPT( bool,           separate,        false       )
+    OPT( bool,           ast_all_symbols, false       )
+    OPT( bool,           print_symbols,   false       )
+    OPT( bool,           read_options,    true        )
+    OPT( bool,           print_date,      true        )
+    OPT( bool,           line_directive,  false       )
+    OPT( bool,           pragma_once,     true        )
 
     void add_pfx(const std::string &s) { m_prefix_list.push_back(s); }
     void add_sym(const std::string &s) { m_symbol_list.push_back(s); }

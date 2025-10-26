@@ -16,7 +16,6 @@ gendlopen_src = files(
     'parameter_names.cpp',
     'parse.cpp',
     'substitute.cpp',
-    'symbol_name_lookup.cpp',
     'tokenize.cpp',
     'utils.cpp'
 )

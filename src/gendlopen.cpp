@@ -249,8 +249,6 @@ void gendlopen::process(const int &argc, char ** const &argv)
 
     if (print_symbols()) {
         print_symbols_to_stdout(m_typedefs, m_prototypes, m_objects);
-    } else if (print_lookup()) {
-        save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
     } else if (!custom_template().empty()) {
         process_custom_template();
     } else {

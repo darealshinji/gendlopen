@@ -226,9 +226,6 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             } else if (a.get_noarg("print-symbols")) {
                 print_symbols(true);
                 continue;
-            } else if (a.get_noarg("print-lookup")) {
-                print_lookup(true);
-                continue;
             }
             break;
 

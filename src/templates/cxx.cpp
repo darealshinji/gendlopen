@@ -572,6 +572,15 @@ bool gdo::dl::load_symbol(int symbol_num)
 /* load a specific symbol by name */
 bool gdo::dl::load_symbol(const char *symbol)
 {
+    auto error_unknown_symbol = [&] ()
+    {
+#ifdef GDO_WINAPI
+        m_last_error = ERROR_NOT_FOUND;
+#endif
+        m_errmsg = "unknown symbol: ";
+        m_errmsg += symbol;
+    };
+
     clear_error();
 
     if (!lib_loaded()) {
@@ -584,29 +593,34 @@ bool gdo::dl::load_symbol(const char *symbol)
         m_last_error = ERROR_INVALID_PARAMETER;
 #endif
         m_errmsg = "empty symbol name";
-    } else {
-        /* jumps to `GDO_JUMP_<..>' label if symbol was found */
-        GDO_CHECK_SYMBOL_NAME(symbol);
-
-#ifdef GDO_WINAPI
-        m_last_error = ERROR_NOT_FOUND;
-#endif
-        m_errmsg = "unknown symbol: ";
-        m_errmsg += symbol;
+        return false;
     }
 
-    return false;
+    /* check symbol prefix */
+    const size_t n = sizeof(GDO_COMMON_PREFIX) - 1;
 
-    /* jump labels */
-@
-    /* %%symbol%% */@
-GDO_JUMP_%%symbol%%:@
-    if (!ptr::%%symbol%%) {@
-        ptr::%%symbol%% =@
-            sym_load<%%sym_type%%>@
-                ("%%symbol%%");@
+    if (n > 0 && ::strncmp(symbol, GDO_COMMON_PREFIX, n) != 0) {
+        error_unknown_symbol();
+        return false;
+    }
+
+    /* symbols */
+    const char *ptr;
+
+    ptr = "%%symbol%%";@
+    @
+    if (::strcmp(symbol + n, ptr + n) == 0) {@
+        if (!ptr::%%symbol%%) {@
+            ptr::%%symbol%% =@
+                sym_load<%%sym_type%%>@
+                    ("%%symbol%%");@
+        }@
+        return (ptr::%%symbol%% != nullptr);@
     }@
-    return (ptr::%%symbol%% != nullptr);
+
+    error_unknown_symbol();
+
+    return false;
 }
 
 

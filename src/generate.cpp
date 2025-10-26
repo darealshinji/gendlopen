@@ -117,6 +117,62 @@ namespace /* anonymous */
 
 #endif /* __MINGW32__ */
 
+
+    /**
+    * Look for a common symbol prefix.
+    * Many APIs share a common prefix among their symbols.
+    * If you want to load a specific symbol we can use this
+    * later for a faster lookup.
+    */
+    std::string get_common_prefix(vproto_t &v_prototypes, vproto_t &v_objects)
+    {
+        vstring_t vec;
+        size_t n;
+
+        /* copy symbol names */
+        for (const auto &e : v_prototypes) {
+            vec.push_back(e.symbol);
+        }
+
+        for (const auto &e : v_objects) {
+            vec.push_back(e.symbol);
+        }
+
+        /* need at least 2 symbols */
+        if (vec.size() < 2) {
+            return {};
+        }
+
+        /* get shortest symbol length */
+        size_t shortest_sym_len = vec.front().size();
+
+        /* skip first entry */
+        for (auto it = vec.begin() + 1; it != vec.end(); it++) {
+            /* prevent `min()' macro expansion from Windows headers */
+            shortest_sym_len = std::min<size_t>(shortest_sym_len, (*it).size());
+        }
+
+        /* compare each letter of every entry */
+        for (n = 0; n < shortest_sym_len; n++) {
+            /* skip first entry */
+            for (auto it = vec.begin() + 1; it != vec.end(); it++) {
+                if ((*it).empty()) {
+                    return {};
+                }
+
+                /* compare against first entry */
+                if ((*it).at(n) != vec.front().at(n)) {
+                    /* common prefix found (can be empty) */
+                    return vec.at(0).substr(0, n);
+                }
+            }
+        }
+
+        /* shortest symbol name equals prefix, i.e. if a symbol `foo'
+         * and `foobar' exist the prefix is `foo' */
+        return vec.at(0).substr(0, n);
+    }
+
 } /* end anonymous namespace */
 
 
@@ -409,16 +465,6 @@ void gendlopen::generate()
     bool is_cxx = false;
     size_t lines = 0;
 
-    /* whether to generate a symbol lookup macro and
-     * where to save it */
-    enum {
-        GEN_MACRO_NONE,
-        GEN_MACRO_HEADER,
-        GEN_MACRO_BODY
-    };
-
-    int gen_macro = GEN_MACRO_NONE;
-
     /************* lambda functions *************/
 
     auto lf_print_lineno = [&, this] () {
@@ -465,11 +511,6 @@ void gendlopen::generate()
         lines += save::extra_defines(m_defines);
         lines += save::includes(m_includes, is_cxx);
         lines += save::typedefs(m_typedefs);
-
-        /* save macro in header */
-        if (gen_macro == GEN_MACRO_HEADER) {
-            lines += save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
-        }
     };
 
     auto lf_header_template_data = [&] () {
@@ -488,11 +529,6 @@ void gendlopen::generate()
         save::ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
         save::ofs << "#include \"" << header_name << "\"\n";
         save::ofs << '\n';
-
-        /* save macro in body */
-        if (gen_macro == GEN_MACRO_BODY) {
-            save::symbol_name_lookup(m_pfx_upper, m_prototypes, m_objects);
-        }
     };
 
     auto lf_body_template_data = [&] () {
@@ -516,11 +552,10 @@ void gendlopen::generate()
     switch (m_format)
     {
     case output::c:
-        gen_macro = m_separate ? GEN_MACRO_BODY : GEN_MACRO_HEADER;
+    case output::plugin:
         break;
 
     case output::cxx:
-        gen_macro = GEN_MACRO_HEADER;
         is_cxx = true;
         break;
 
@@ -531,9 +566,6 @@ void gendlopen::generate()
     case output::minimal_cxx:
         m_separate = false;
         is_cxx = true;
-        break;
-
-    case output::plugin:
         break;
 
     [[unlikely]] case output::error:
@@ -566,6 +598,10 @@ void gendlopen::generate()
         m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBA " + lib_a + '\n';
         m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBW " + lib_w + '\n';
     }
+
+    /* common symbol prefix (can be empty) */
+    m_defines += "#define " + m_pfx_upper + "_COMMON_PREFIX "
+        "\"" + get_common_prefix(m_prototypes, m_objects) + "\"\n";
 
     /* create template data */
     create_template_lists(header_data, body_data);

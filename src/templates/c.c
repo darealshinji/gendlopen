@@ -579,26 +579,36 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
     if (!symbol || *symbol == 0) {
         GDO_SET_LAST_ERRNO(ERROR_INVALID_PARAMETER);
         _gdo_save_to_errbuf(GDO_T("empty symbol name"));
-    } else {
-        /* jumps to `GDO_JUMP_<..>' label if symbol was found */
-        GDO_CHECK_SYMBOL_NAME(symbol);
-
-        GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
-        GDO_SNPRINTF(gdo_hndl.buf, GDO_T("unknown symbol: ") GDO_XHS, symbol);
+        return false;
     }
 
-    return false;
+    /* check symbol prefix */
+    const size_t n = sizeof(GDO_COMMON_PREFIX) - 1;
 
-    /* jump labels */
-@
-    /* %%symbol%% */@
-GDO_JUMP_%%symbol%%:@
-    if (!gdo_hndl.ptr.%%symbol%%) {@
-        gdo_hndl.ptr.%%symbol%% =@
-            (%%sym_type%%)@
-                _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"));@
+    if (n > 0 && strncmp(symbol, GDO_COMMON_PREFIX, n) != 0) {
+        GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
+        GDO_SNPRINTF(gdo_hndl.buf, GDO_T("unknown symbol: ") GDO_XHS, symbol);
+        return false;
+    }
+
+    /* symbols */
+    const char *ptr;
+
+    ptr = "%%symbol%%";@
+    @
+    if (strcmp(symbol + n, ptr + n) == 0) {@
+        if (!gdo_hndl.ptr.%%symbol%%) {@
+            gdo_hndl.ptr.%%symbol%% =@
+                (%%sym_type%%)@
+                    _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"));@
+        }@
+        return (gdo_hndl.ptr.%%symbol%% != NULL);@
     }@
-    return (gdo_hndl.ptr.%%symbol%% != NULL);
+
+    GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
+    GDO_SNPRINTF(gdo_hndl.buf, GDO_T("unknown symbol: ") GDO_XHS, symbol);
+
+    return false;
 }
 /*****************************************************************************/
 

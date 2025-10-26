@@ -136,17 +136,17 @@ void gendlopen::load_template(templates::name file)
     switch (file)
     {
         /* never add line directive to license part */
-        CASE_X(license,         "license.h", false);
+        CASE_X(license,         "license.h",         false);
         CASE_X(filename_macros, "filename_macros.h", b);
-        CASE_X(common_header,   "common.h", b);
-        CASE_X(c_header,        "c.h", b);
-        CASE_X(c_body,          "c.c", b);
-        CASE_X(cxx_header,      "cxx.hpp", b);
-        CASE_X(cxx_body,        "cxx.cpp", b);
-        CASE_X(min_c_header,    "minimal.h", b);
+        CASE_X(common_header,   "common.h",          b);
+        CASE_X(c_header,        "c.h",               b);
+        CASE_X(c_body,          "c.c",               b);
+        CASE_X(cxx_header,      "cxx.hpp",           b);
+        CASE_X(cxx_body,        "cxx.cpp",           b);
+        CASE_X(min_c_header,    "minimal.h",         b);
         CASE_X(min_cxx_header,  "minimal_cxxeh.hpp", b);
-        CASE_X(plugin_header,   "plugin.h", b);
-        CASE_X(plugin_body,     "plugin.c", b);
+        CASE_X(plugin_header,   "plugin.h",          b);
+        CASE_X(plugin_body,     "plugin.c",          b);
     }
 }
 
