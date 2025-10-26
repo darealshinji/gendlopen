@@ -605,11 +605,14 @@ bool gdo::dl::load_symbol(const char *symbol)
     }
 
     /* symbols */
+    const size_t len = ::strlen(symbol);
     const char *ptr;
 
     ptr = "%%symbol%%";@
     @
-    if (::strcmp(symbol + n, ptr + n) == 0) {@
+    if (len == sizeof("%%symbol%%") - 1 &&@
+        ::strcmp(symbol + n, ptr + n) == 0)@
+    {@
         if (!ptr::%%symbol%%) {@
             ptr::%%symbol%% =@
                 sym_load<%%sym_type%%>@

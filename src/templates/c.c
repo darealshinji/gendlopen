@@ -592,11 +592,14 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
     }
 
     /* symbols */
+    const size_t len = strlen(symbol);
     const char *ptr;
 
     ptr = "%%symbol%%";@
     @
-    if (strcmp(symbol + n, ptr + n) == 0) {@
+    if (len == sizeof("%%symbol%%") - 1 &&@
+        strcmp(symbol + n, ptr + n) == 0)@
+    {@
         if (!gdo_hndl.ptr.%%symbol%%) {@
             gdo_hndl.ptr.%%symbol%% =@
                 (%%sym_type%%)@
