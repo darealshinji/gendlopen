@@ -68,12 +68,6 @@ namespace /* anonymous */
 
 
 /* dummy */
-void gendlopen::get_templates_path_env()
-{
-}
-
-
-/* dummy */
 void gendlopen::load_template(templates::name)
 {
 }

@@ -101,12 +101,10 @@ private:
     size_t m_substitute_lineno = 0;
 
     /* gendlopen.cpp */
-    void process_custom_template();
     std::string replace_prefixes(const std::string &input);
 
     /* tokenize.cpp */
     void create_typedefs();
-    void tokenize();
 
     /* clang_ast.cpp */
     bool get_declarations(int mode);
@@ -116,18 +114,15 @@ private:
     void parse(std::vector<vstring_t> &vec_tokens, const std::string &input_name);
 
     /* options.cpp */
-    void parse_cmdline(const int &argc, char ** const &argv);
     void parse_options(const vstring_t &options);
 
     /* data*.cpp */
-    void get_templates_path_env();
     void load_template(templates::name file);
     void create_template_lists(vtemplate_t &header, vtemplate_t &body);
     void dump_templates();
 
     /* generate.cpp */
     size_t save_data(const template_t *list);
-    void generate();
 
     /* substitute.cpp */
     size_t replace_function_prototypes(const std::string &entry);
@@ -171,7 +166,17 @@ public:
     void add_def(const std::string &s);
     void prefix(const std::string &s);
     void format(const std::string &s);
-    void process(const int &argc, char ** const &argv);
+    void print_symbols_to_stdout();
+    void process_custom_template();
+
+    /* generate.cpp */
+    void generate();
+
+    /* options.cpp */
+    void parse_cmdline(const int &argc, char ** const &argv);
+
+    /* tokenize.cpp */
+    void tokenize();
 };
 
 #undef OPT

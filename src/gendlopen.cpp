@@ -32,50 +32,6 @@
 #include "utils.hpp"
 
 
-namespace /* anonymous */
-{
-
-/* print all found symbols to stdout */
-void print_symbols_to_stdout(vstring_t vtypedefs, vproto_t vprototypes, vproto_t vobjects)
-{
-    cio::ofstream out; /* defaults to STDOUT */
-
-    if (!vtypedefs.empty()) {
-        std::cout << "/* typedefs */\n";
-
-        for (const auto &e : vtypedefs) {
-            std::cout << "typedef " << e << ";\n";
-        }
-        std::cout << '\n';
-    }
-
-    std::cout << "/* prototypes */\n";
-
-    auto print_type = [] (const std::string &s)
-    {
-        if (s.ends_with('*')) {
-            std::cout << s;
-        } else {
-            std::cout << s << ' ';
-        }
-    };
-
-    for (const auto &e : vobjects) {
-        print_type(e.type);
-        std::cout << e.symbol << ";\n";
-    }
-
-    for (const auto &e : vprototypes) {
-        print_type(e.type);
-        std::cout << e.symbol << '(' << e.args << ");\n";
-    }
-
-    std::cout << "\n/***  " << (vobjects.size() + vprototypes.size()) << " matches  ***/" << std::endl;
-}
-
-} /* end anonymous namespace */
-
-
 /* c'tor */
 gendlopen::gendlopen()
 {}
@@ -239,19 +195,41 @@ void gendlopen::process_custom_template()
 }
 
 
-/* parse input and generate output */
-void gendlopen::process(const int &argc, char ** const &argv)
+/* print all found symbols to stdout */
+void gendlopen::print_symbols_to_stdout()
 {
-    get_templates_path_env();
+    cio::ofstream out; /* defaults to STDOUT */
 
-    parse_cmdline(argc, argv);
-    tokenize();
+    if (!m_typedefs.empty()) {
+        std::cout << "/* typedefs */\n";
 
-    if (print_symbols()) {
-        print_symbols_to_stdout(m_typedefs, m_prototypes, m_objects);
-    } else if (!custom_template().empty()) {
-        process_custom_template();
-    } else {
-        generate(); /* default */
+        for (const auto &e : m_typedefs) {
+            std::cout << "typedef " << e << ";\n";
+        }
+        std::cout << '\n';
     }
+
+    std::cout << "/* prototypes */\n";
+
+    auto print_type = [] (const std::string &s)
+    {
+        if (s.ends_with('*')) {
+            std::cout << s;
+        } else {
+            std::cout << s << ' ';
+        }
+    };
+
+    for (const auto &e : m_objects) {
+        print_type(e.type);
+        std::cout << e.symbol << ";\n";
+    }
+
+    for (const auto &e : m_prototypes) {
+        print_type(e.type);
+        std::cout << e.symbol << '(' << e.args << ");\n";
+    }
+
+    std::cout << "\n/***  " << (m_objects.size() + m_prototypes.size()) << " matches  ***/" << std::endl;
 }
+

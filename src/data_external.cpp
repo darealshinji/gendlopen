@@ -94,32 +94,6 @@ void load_from_file(std::vector<template_t> &data, const std::string &dir, const
 } /* end anonymous namespace */
 
 
-
-void gendlopen::get_templates_path_env()
-{
-#ifdef _MSC_VER
-    char *buf;
-    size_t len;
-
-    if (_dupenv_s(&buf, &len, TEMPLATES_ENV) == 0) {
-        if (buf && *buf) {
-            m_templates_path = buf;
-        }
-
-        free(buf);
-    }
-#else
-    char *env = getenv(TEMPLATES_ENV);
-
-    if (env && *env) {
-        m_templates_path = env;
-    }
-#endif /* !_MSC_VER */
-
-    utils::append_missing_separator(m_templates_path);
-}
-
-
 /* load template into memory */
 void gendlopen::load_template(templates::name file)
 {
