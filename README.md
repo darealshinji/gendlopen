@@ -13,7 +13,7 @@ Features:
 
 Limitations:
  * auto-loading only works on functions
- * auto-loading does not work on functions with variable arguments
+ * auto-loading functions with variable arguments require GNU builtins (C only) and inlining
  * any type declaration more complicated than a function pointer will not be recognized
 
 

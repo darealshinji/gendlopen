@@ -200,20 +200,130 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
  */
 #define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.ptr.%%func_symbol%%
 #define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.ptr.%%obj_symbol%%
+%PARAM_SKIP_REMOVE_BEGIN%
+
+
+/*****************************************************************************/
+/*                                wrap code                                  */
+/*****************************************************************************/
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+
+/* #define empty hooks by default */
+#ifndef GDO_HOOK_%%func_symbol%%@
+#define GDO_HOOK_%%func_symbol%%(...) /**/@
+#endif
+
+
+/* set visibility of wrapped functions */
+#ifdef GDO_WRAP_IS_VISIBLE
+/* visible as regular functions */
+# define GDO_WRAP_DECL  /**/
+# define GDO_WRAP(x)    x
+# else
+/* declare as prefixed inline functions by default */
+# define GDO_WRAP_DECL  static inline
+# define GDO_WRAP(x)    GDO_WRAP_##x
+#endif
+
+
+#ifdef GDO_ENABLE_AUTOLOAD
+/* autoload function */
+GDO_DECL void _gdo_quick_load(int symbol_num, const gdo_char_t *sym);
+# define GDO_WRAP_CHECK(x)  _gdo_quick_load(GDO_LOAD_##x, GDO_T(#x))
+#else
+/* check if function was loaded */
+GDO_DECL void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym);
+# define GDO_WRAP_CHECK(x)  _gdo_wrap_check_if_loaded((gdo_hndl.ptr.x != NULL), GDO_T(#x))
+#endif
+
+
+/* create a wrapper function */
+#define GDO_MAKE_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
+    GDO_WRAP_DECL \
+    TYPE GDO_WRAP(SYMBOL) ARGS { \
+        GDO_WRAP_CHECK(SYMBOL); \
+        GDO_HOOK_##SYMBOL(__VA_ARGS__); \
+        RETURN gdo_hndl.ptr.SYMBOL(__VA_ARGS__); \
+    }
+
+/**
+ * create a GNU inline wrapper function for use with variable arguments
+ * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html
+ */
+#define GDO_MAKE_VA_ARG_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
+    extern inline __attribute__((__gnu_inline__)) \
+    TYPE GDO_WRAP(SYMBOL) ARGS { \
+        GDO_WRAP_CHECK(SYMBOL); \
+        GDO_HOOK_##SYMBOL(__VA_ARGS__, __builtin_va_arg_pack()); \
+        RETURN gdo_hndl.ptr.SYMBOL(__VA_ARGS__, __builtin_va_arg_pack()); \
+    }
+
+
+/* diagnostic warnings on variable arguments functions */
+#if !defined(GDO_DISABLE_WARNINGS)
+
+#ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
+# ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
+#  ifdef GDO_WRAP_IS_VISIBLE@
+#   warning "%%func_symbol%%: GDO_WRAP_IS_VISIBLE defined but function can only be used inlined"@
+#  endif@
+# else@
+#  warning "%%func_symbol%%: __builtin_va_arg_pack() required to use variable arguments wrapper"@
+# endif@
+#endif
+
+#endif //!GDO_DISABLE_WARNINGS
+
+@
+/* %%func_symbol%%() */@
+#ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
+# ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
+    GDO_MAKE_VA_ARG_FUNCTION(%%return%%, %%type%%,@
+        %%func_symbol%%, (%%args%%),@
+        %%notype_args%%)@
+# endif@
+#else@
+    GDO_MAKE_FUNCTION(%%return%%, %%type%%,@
+        %%func_symbol%%, (%%args%%),@
+        %%notype_args%%)@
+#endif //!GDO_HAS_VA_ARGS_%%func_symbol%%@
+
+
+#undef GDO_WRAP_DECL
+#undef GDO_WRAP
+#undef GDO_WRAP_CHECK
+#undef GDO_MAKE_FUNCTION
+#undef GDO_MAKE_VA_ARG_FUNCTION
+
+#endif //GDO_WRAP_FUNCTIONS ...
+/***************************** end of wrap code ******************************/
+%PARAM_SKIP_END%
+
+
+/**
+ * Set function name alias prefix.
+ */
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+# define GDO_FUNC_ALIAS(x) GDO_WRAP_##x
+#else
+# define GDO_FUNC_ALIAS(x) GDO_ALIAS_##x
+#endif
 
 
 /**
  * Disable aliasing if we saved into separate files and the
  * header file was included from the body file.
  */
-#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY) && !defined(GDO_DISABLE_ALIASING)
+#if  defined(GDO_SEPARATE) && \
+    !defined(GDO_INCLUDED_IN_BODY) && \
+    !defined(GDO_DISABLE_ALIASING)
 
-/**
- * Aliases to raw pointers
- */
-#if !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%
+/* aliases to raw function pointers */
+#if !defined(GDO_WRAP_IS_VISIBLE)
+# define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
+
+/* aliases to raw object pointers */
 #define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
 
 #endif //GDO_SEPARATE ...

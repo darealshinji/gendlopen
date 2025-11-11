@@ -121,13 +121,6 @@ size_t gendlopen::replace_function_prototypes(const std::string &entry)
     }
 
     for (auto &e : m_prototypes) {
-        if (e.args.ends_with("...") && /* VA_ARGS */
-            entry.find("%%return%%") != std::string::npos) /* wrapper function */
-        {
-            /* we can't handle variable argument lists in wrapper functions */
-            continue;
-        }
-
         std::string copy = entry;
 
         /* don't "return" on "void" functions */

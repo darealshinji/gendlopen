@@ -160,7 +160,9 @@ gen_srcs = custom_target('libhelloworld_generated.c',
     command : [
         gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT0@',
         '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
-        '-DGDO_ENABLE_AUTOLOAD'
+        '-DGDO_ENABLE_AUTOLOAD',
+        '-DGDO_WRAP_IS_VISIBLE',
+        '-DGDO_DISABLE_WARNINGS' # helloworld_fprintf isn't used
     ]
 )
 

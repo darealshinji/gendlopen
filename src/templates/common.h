@@ -15,7 +15,10 @@ GDO_STATIC
     If defined `static inline' linkage is used for all functions.
 
 GDO_WRAP_FUNCTIONS
-    Use actual wrapped functions instead of a name alias.
+    Use actual function wrappers instead of a name alias.
+
+GDO_WRAP_IS_VISIBLE
+    Declare function wrappers as regular visible functions instead of inlining them.
 
 GDO_ENABLE_AUTOLOAD
     Define this macro if you want to use auto-loading wrapper functions.
@@ -31,6 +34,9 @@ GDO_USE_MESSAGE_BOX
 
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names.
+
+GDO_DISABLE_WARNINGS
+    Mute diagnostic warnings.
 
 
 *** settings ***
@@ -140,6 +146,14 @@ typedef Dl_info _GDO_Dl_info;
 /* symbol visibility for wrapped functions */
 #ifndef GDO_VISIBILITY
 # define GDO_VISIBILITY /**/
+#endif
+
+
+/* check for __builtin_va_arg_pack() */
+#if !defined(GDO_HAS_BUILTIN_VA_ARG_PACK) && defined(__has_builtin)
+# if __has_builtin(__builtin_va_arg_pack)
+#  define GDO_HAS_BUILTIN_VA_ARG_PACK
+# endif
 #endif
 
 

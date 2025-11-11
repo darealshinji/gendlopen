@@ -739,35 +739,24 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 /*                                wrap code                                  */
 /*****************************************************************************/
 
-/* #define empty hooks by default */
-#ifndef GDO_HOOK_%%func_symbol%%@
-#define GDO_HOOK_%%func_symbol%%(...) /**/@
-#endif
-
-
-#if (defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)) && \
-    defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-
-GDO_INLINE void _gdo_show_MessageBox(const gdo_char_t *fmt, const gdo_char_t *sym, const gdo_char_t *msg)
-{
-    gdo_char_t buf[GDO_BUFLEN];
-    GDO_SNPRINTF(buf, fmt, sym, msg);
-    MessageBox(NULL, buf, GDO_T("Error"), MB_OK | MB_ICONERROR);
-}
-
-# define GDO_PRINT_ERROR(...)  _gdo_show_MessageBox(__VA_ARGS__)
-
+#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
+# define GDO_PRINT_ERROR(...) \
+    do { \
+        gdo_char_t errbuf[GDO_BUFLEN]; \
+        GDO_SNPRINTF(errbuf, __VA_ARGS__); \
+        MessageBox(NULL, errbuf, GDO_T("Error"), MB_OK | MB_ICONERROR); \
+    } while (0)
 #else
-
-# define GDO_PRINT_ERROR(...)  _gdo_ftprintf(stderr, __VA_ARGS__)
-
+# define GDO_PRINT_ERROR(...) \
+    do { \
+        _gdo_ftprintf(stderr, __VA_ARGS__); \
+    } while (0)
 #endif
 
 
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
 
-
-GDO_INLINE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym)
+GDO_LINKAGE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym)
 {
     const gdo_char_t *msg;
 
@@ -785,23 +774,11 @@ GDO_INLINE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym
     abort();
 }
 
-
-/* function wrappers (functions with `...' arguments are omitted) */
-
-GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    const bool sym_loaded = (gdo_hndl.ptr.%%func_symbol%% != NULL);@
-    _gdo_wrap_check_if_loaded(sym_loaded, GDO_T("%%func_symbol%%"));@
-    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
-    %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
-}@
-
-
 #elif defined(GDO_ENABLE_AUTOLOAD)
-
 
 /* This function is used by the autoload functions to perform the loading
  * and to handle errors. */
-GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
+GDO_LINKAGE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
 {
     const gdo_char_t *fmt, *msg;
 
@@ -848,31 +825,21 @@ GDO_INLINE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
     exit(1);
 }
 
-
-/* autoload function wrappers (functions with `...' arguments are omitted) */
-
-GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    _gdo_quick_load(GDO_LOAD_%%func_symbol%%, GDO_T("%%func_symbol%%"));@
-    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
-    %%return%% gdo_hndl.ptr.%%func_symbol%%(%%notype_args%%);@
-}@
-
 #endif //GDO_ENABLE_AUTOLOAD
 /***************************** end of wrap code ******************************/
 %PARAM_SKIP_END%
 
 
-#if !defined(GDO_SEPARATE) /* single header file */
+#if !defined(GDO_SEPARATE) && \
+    !defined(GDO_DISABLE_ALIASING)
 
 /* aliases to raw function pointers */
-#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol%%
+#if !defined(GDO_WRAP_IS_VISIBLE)
+# define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
 
 /* aliases to raw object pointers */
-#if !defined(GDO_DISABLE_ALIASING)
 #define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
-#endif
 
 #endif //!GDO_SEPARATE
 
@@ -883,15 +850,13 @@ GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
     _gdo_clear_error \
     _gdo_dladdr_get_fname \
     _gdo_load_library \
-    _gdo_show_MessageBox \
-    _gdo_quick_load \
     _gdo_save_error \
     _gdo_save_to_errbuf \
     _gdo_set_error_no_library_loaded \
-    _gdo_sym \
-    _gdo_wrap_check_if_loaded
+    _gdo_sym
 #endif //__GNUC__
 
+#undef GDO_PRINT_ERROR
 #undef GDO_SET_LAST_ERRNO
 #undef GDO_SNPRINTF
 

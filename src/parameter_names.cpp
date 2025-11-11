@@ -155,7 +155,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         } else if (v.size() == 1) {
             /* check for `...' */
             if (v.front() == "...") {
-                proto.notype_args += "... , ";
+                /* don't append to proto.notype_args */
                 continue;
             }
 

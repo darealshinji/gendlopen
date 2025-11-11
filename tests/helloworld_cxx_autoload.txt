@@ -9,7 +9,5 @@ void helloworld_hello2(helloworld *hw, helloworld_cb_t cb);
 
 void helloworld_release(helloworld * hw);
 
-/* treat variable length arguments funtion as one with a fixed number of arguments
- * so that we can create wrapper function for it */
-//int helloworld_fprintf(FILE *stream, const char *format, ...);
-int helloworld_fprintf(FILE *stream, const char *format, const char *arg1, const char *arg2);
+/* variable length arguments */
+int helloworld_fprintf(FILE *stream, const char *format, ...);

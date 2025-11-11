@@ -898,19 +898,13 @@ namespace gdo
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
 
-/* #define empty hooks by default */
-#ifndef GDO_HOOK_%%func_symbol%%@
-#define GDO_HOOK_%%func_symbol%%(...) /**/@
-#endif
-
 #if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-
 
 namespace gdo
 {
     namespace wrap
     {
-        static void check_if_loaded(bool sym_loaded, const char *sym)
+        void check_if_loaded(bool sym_loaded, const char *sym)
         {
             if (dl::lib_loaded() && sym_loaded) {
                 return;
@@ -933,19 +927,7 @@ namespace gdo
     }
 }
 
-
-/* function wrappers (functions with `...' arguments are omitted) */
-@
-GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    const bool sym_loaded = (gdo::ptr::%%func_symbol%% != nullptr);@
-    gdo::wrap::check_if_loaded(sym_loaded, "%%func_symbol%%");@
-    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
-    %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
-}
-
-
 #elif defined(GDO_ENABLE_AUTOLOAD)
-
 
 namespace gdo
 {
@@ -994,29 +976,19 @@ namespace gdo
     }
 }
 
-
-/* autoload function wrappers (functions with `...' arguments are omitted) */
-@
-GDO_VISIBILITY %%type%% %%func_symbol%%(%%args%%) {@
-    gdo::autoload::quick_load(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
-    GDO_HOOK_%%func_symbol%%(%%notype_args%%);@
-    %%return%% gdo::ptr::%%func_symbol%%(%%notype_args%%);@
-}
-
 #endif //GDO_ENABLE_AUTOLOAD
 %PARAM_SKIP_END%
 
 
-#if !defined(GDO_SEPARATE) /* single header file */
+#if !defined(GDO_SEPARATE) && \
+    !defined(GDO_DISABLE_ALIASING)
 
 /* aliases to raw function pointers */
-#if !defined(GDO_DISABLE_ALIASING) && !defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-#define %%func_symbol_pad%% GDO_ALIAS_%%func_symbol_pad%%
+#if !defined(GDO_WRAP_IS_VISIBLE)
+# define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
 
 /* aliases to raw object pointers */
-#if !defined(GDO_DISABLE_ALIASING)
-#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol_pad%%
-#endif
+#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
 
-#endif //GDO_SEPARATE && !GDO_INCLUDED_IN_BODY
+#endif //!GDO_SEPARATE
