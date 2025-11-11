@@ -603,6 +603,13 @@ void gendlopen::generate()
     m_defines += "#define " + m_pfx_upper + "_COMMON_PREFIX "
         "\"" + get_common_prefix(m_prototypes, m_objects) + "\"\n";
 
+    /* define if a prototype has variable arguments */
+    for (const auto &e : m_prototypes) {
+        if (e.args.ends_with("...")) {
+            m_defines += "#define " + m_pfx_upper + "_HAS_VA_ARGS_" + e.symbol + " \n";
+        }
+    }
+
     /* create template data */
     create_template_lists(header_data, body_data);
 
