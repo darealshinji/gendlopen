@@ -212,9 +212,13 @@ std::string quote_lib(const std::string &lib, bool wide)
  * nq:foo     ==>  foo
  * ext:foo    ==>  "foo" GDO_LIBEXTA
  * api:2:foo  ==>  GDO_LIBNAMEA(foo,2)
+ *
+ * return macros
  */
-void format_libname(const std::string &str, std::string &lib_a, std::string &lib_w, const std::string &pfx)
+std::string format_libname(const std::string &str, const std::string &pfx)
 {
+    std::string lib_a, lib_w, out;
+
     switch(str.front())
     {
     case 'N':
@@ -222,9 +226,9 @@ void format_libname(const std::string &str, std::string &lib_a, std::string &lib
         /* no quotes */
         if (utils::prefixed_and_longer_case(str, "nq:")) {
             lib_a = lib_w = str.substr(3);
-            return;
+            break;
         }
-        break;
+        return {};
 
     case 'E':
     case 'e':
@@ -233,9 +237,9 @@ void format_libname(const std::string &str, std::string &lib_a, std::string &lib
             auto sub = str.substr(4);
             lib_a = quote_lib(sub, false) + ' ' + pfx + "_LIBEXTA";
             lib_w = quote_lib(sub, true)  + ' ' + pfx + "_LIBEXTW";
-            return;
+            break;
         }
-        break;
+        return {};
 
     case 'A':
     case 'a':
@@ -249,18 +253,22 @@ void format_libname(const std::string &str, std::string &lib_a, std::string &lib
                 /* GDO_LIBNAMEA(xxx,0) */
                 lib_a = pfx + "_LIBNAMEA(" + m[2].str() + ',' + m[1].str() + ')';
                 lib_w = pfx + "_LIBNAMEW(" + m[2].str() + ',' + m[1].str() + ')';
-                return;
+                break;
             }
         }
-        break;
+        return {};
 
     default:
+        /* quote string */
+        lib_a = quote_lib(str, false);
+        lib_w = quote_lib(str, true);
         break;
     }
 
-    /* quote string */
-    lib_a = quote_lib(str, false);
-    lib_w = quote_lib(str, true);
+    out = "#define " + pfx + "_HARDCODED_DEFAULT_LIBA " + lib_a + '\n' +
+          "#define " + pfx + "_HARDCODED_DEFAULT_LIBW " + lib_w + '\n';
+
+    return out;
 }
 
 /* print note */
@@ -593,10 +601,7 @@ void gendlopen::generate()
 
     /* default library name */
     if (!m_default_lib.empty()) {
-        std::string lib_a, lib_w;
-        save::format_libname(m_default_lib, lib_a, lib_w, m_pfx_upper);
-        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBA " + lib_a + '\n';
-        m_defines += "#define " + m_pfx_upper + "_HARDCODED_DEFAULT_LIBW " + lib_w + '\n';
+        m_defines += save::format_libname(m_default_lib, m_pfx_upper);
     }
 
     /* common symbol prefix (can be empty) */
@@ -606,7 +611,7 @@ void gendlopen::generate()
     /* define if a prototype has variable arguments */
     for (const auto &e : m_prototypes) {
         if (e.args.ends_with("...")) {
-            m_defines += "#define " + m_pfx_upper + "_HAS_VA_ARGS_" + e.symbol + " \n";
+            m_defines += "#define " + m_pfx_upper + "_HAS_VA_ARGS_" + e.symbol + '\n';
         }
     }
 
