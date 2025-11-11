@@ -9,6 +9,22 @@
 # include <stdbool.h>
 #endif
 
+#ifdef GDO_WINAPI
+# include <tchar.h>
+# define GDO_T(x) _T(x)
+#else
+# define GDO_T(x)    x
+#endif
+
+
+#ifdef _WIN32
+/* FormatMessage: maximum message length according to MSDN */
+# define GDO_BUFLEN (64*1024)
+#else
+/* Linux MAX_PATH*2 */
+# define GDO_BUFLEN (8*1024)
+#endif
+
 
 /* static/extern declarations */
 #ifdef GDO_STATIC
@@ -40,7 +56,6 @@ enum {
 };
 
 
-#if defined(GDO_SEPARATE) && !defined(GDO_INCLUDED_IN_BODY)
 /**
  * Library and symbols handle
  */
@@ -53,11 +68,22 @@ typedef struct _gdo_handle
     } ptr;
 
     /* private */
+#ifdef GDO_WINAPI
+    HMODULE handle;
+    DWORD last_errno;
+    gdo_char_t buf_formatted[GDO_BUFLEN];
+#else
+    void *handle;
+#endif
+
+    gdo_char_t buf[GDO_BUFLEN];
+
+    int flags;
+    bool free_lib_registered;
 
 } gdo_handle_t;
 
 GDO_OBJ_DECL gdo_handle_t gdo_hndl;
-#endif
 
 
 /**

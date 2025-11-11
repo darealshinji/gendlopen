@@ -11,19 +11,16 @@
 #include <string.h>
 
 #ifdef GDO_WINAPI
-# include <tchar.h>
 # define _gdo_ftprintf     _ftprintf
 # define _gdo_sntprintf    _sntprintf
 # define _gdo_sntprintf_s  _sntprintf_s
 # define _gdo_tcsstr       _tcsstr
-# define GDO_T(x)          _T(x)
 #else
 /* dlfcn: use `char' API */
 # define _gdo_ftprintf     fprintf
 # define _gdo_sntprintf    snprintf
 # define _gdo_sntprintf_s  _snprintf_s
 # define _gdo_tcsstr       strstr
-# define GDO_T(x)          x
 #endif
 
 #ifdef _MSC_VER
@@ -51,14 +48,6 @@
 #define GDO_INLINE  static inline
 
 
-#ifdef _WIN32
-/* FormatMessage: maximum message length according to MSDN */
-# define GDO_BUFLEN (64*1024)
-#else
-/* Linux MAX_PATH*2 */
-# define GDO_BUFLEN (8*1024)
-#endif
-
 /* see GetLastError() */
 #ifdef GDO_WINAPI
 # define GDO_SET_LAST_ERRNO(x)  do { gdo_hndl.last_errno = x; } while(0)
@@ -75,30 +64,6 @@ typedef void GDO_UNUSED_REF;
 
 
 /* library handle */
-typedef struct _gdo_handle
-{
-    /* symbol pointers */
-    struct _gdo_ptr {
-        %%type%% (*%%func_symbol%%)(%%args%%);
-        %%obj_type%% *%%obj_symbol%%;
-    } ptr;
-
-    /* private */
-#ifdef GDO_WINAPI
-    HMODULE handle;
-    DWORD last_errno;
-    gdo_char_t buf_formatted[GDO_BUFLEN];
-#else
-    void *handle;
-#endif
-
-    gdo_char_t buf[GDO_BUFLEN];
-
-    int flags;
-    bool free_lib_registered;
-
-} gdo_handle_t;
-
 GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 
 
