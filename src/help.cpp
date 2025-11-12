@@ -185,7 +185,7 @@ namespace help
             "    %%func_symbol%%: function symbol name\n"
             "    %%func_symbol_pad%%: function symbol name with padding spaces\n"
             "    %%args%%: function arguments\n"
-            "    %%notype_args%%: function argument names without type\n"
+            "    %%param_names%%: function argument names without type\n"
             "    %%return%%: empty if function doesn't return anything (void), else `return'\n"
             "\n"
             "    %%obj_type%%: object type\n"

@@ -54,7 +54,7 @@ typedef struct _proto {
     std::string symbol;
     std::string args;
     std::vector<vstring_t> args_vec;
-    std::string notype_args;
+    std::string param_names;
 } proto_t;
 
 

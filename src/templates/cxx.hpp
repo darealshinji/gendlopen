@@ -439,7 +439,7 @@ namespace gdo {
 #else@
     GDO_MAKE_FUNCTION(%%return%%, %%type%%,@
         %%func_symbol%%, (%%args%%),@
-        %%notype_args%%)@
+        %%param_names%%)@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%@
 
 

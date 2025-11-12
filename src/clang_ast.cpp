@@ -96,7 +96,7 @@ std::string strip_line(const char *line)
 }
 
 /* get function parameter declaration */
-bool get_parameters(std::string &args, std::string &notype_args, int &param_count)
+bool get_parameters(std::string &args, std::string &param_names, int &param_count)
 {
     std::smatch m;
 
@@ -113,7 +113,7 @@ bool get_parameters(std::string &args, std::string &notype_args, int &param_coun
 
     const std::string name = "a" + std::to_string(param_count);
 
-    notype_args += name + ", ";
+    param_names += name + ", ";
 
     /* search for function pointer */
     std::string str = m[1].str();
@@ -204,7 +204,7 @@ bool gendlopen::get_declarations(int mode)
 
     if (is_function) {
         /* function declaration */
-        std::string args, notype_args;
+        std::string args, param_names;
         int rv, param_count = 1;
 
         size_t pos = m.str(2).find('(');
@@ -219,19 +219,19 @@ bool gendlopen::get_declarations(int mode)
 
         /* read next lines for parameters */
         while ((rv = yylex()) == LEX_AST_PARMVAR) {
-            if (!get_parameters(args, notype_args, param_count)) {
+            if (!get_parameters(args, param_names, param_count)) {
                 break;
             }
         }
 
         utils::delete_suffix(args, ", ");
-        utils::delete_suffix(notype_args, ", ");
+        utils::delete_suffix(param_names, ", ");
 
         proto.prototype   = proto::function;
         proto.type        = decl.type;
         proto.symbol      = decl.symbol,
         proto.args        = args;
-        proto.notype_args = notype_args;
+        proto.param_names = param_names;
 
         m_prototypes.push_back(proto);
 

@@ -280,12 +280,12 @@ GDO_DECL void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym);
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
     GDO_MAKE_VA_ARG_FUNCTION(%%return%%, %%type%%,@
         %%func_symbol%%, (%%args%%),@
-        %%notype_args%%)@
+        %%param_names%%)@
 # endif@
 #else@
     GDO_MAKE_FUNCTION(%%return%%, %%type%%,@
         %%func_symbol%%, (%%args%%),@
-        %%notype_args%%)@
+        %%param_names%%)@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%@
 
 

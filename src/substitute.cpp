@@ -139,7 +139,7 @@ size_t gendlopen::replace_function_prototypes(const std::string &entry)
         utils::replace("%%type%%", e.type, copy);
         utils::replace("%%func_symbol%%", e.symbol, copy);
         utils::replace("%%args%%", e.args, copy);
-        utils::replace("%%notype_args%%", e.notype_args, copy);
+        utils::replace("%%param_names%%", e.param_names, copy);
 
         /* symbol name with padding */
         if (longest > 0) {
@@ -274,7 +274,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         "%%func_symbol%%",
         "%%func_symbol_pad%%",
         "%%args%%",
-        "%%notype_args%%"
+        "%%param_names%%"
     };
 
     const list_t object_keywords = {

@@ -70,7 +70,7 @@ namespace /* anonymous */
     {
         const std::string name = "a" + std::to_string(param_count);
         proto.args += name + separator;
-        proto.notype_args += name + ", ";
+        proto.param_names += name + ", ";
 
         /* iterate counter */
         param_count++;
@@ -155,7 +155,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         } else if (v.size() == 1) {
             /* check for `...' */
             if (v.front() == "...") {
-                /* don't append to proto.notype_args */
+                /* don't append to proto.param_names */
                 continue;
             }
 
@@ -180,17 +180,17 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         iter_t it = find_first_not_pointer_or_ident(v);
 
         if (is_object(v, it)) {
-            proto.notype_args += v.back() + ", ";
+            proto.param_names += v.back() + ", ";
             continue;
         } else if (is_function_pointer(v, it)) {
             /* type (     * symbol ) ( ) */
             /*      ^it + 1 2            */
-            proto.notype_args += *(it + 2) + ", ";
+            proto.param_names += *(it + 2) + ", ";
             continue;
         } else if (is_array(v, it)) {
             /* type symbol [   ] */
             /*      -1     ^it   */
-            proto.notype_args += *(it - 1) + ", ";
+            proto.param_names += *(it - 1) + ", ";
             continue;
         }
 
@@ -200,7 +200,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         return false;
     }
 
-    utils::delete_suffix(proto.notype_args, ", ");
+    utils::delete_suffix(proto.param_names, ", ");
 
     return true;
 }
@@ -236,7 +236,7 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
         /* don't append anything to `...' */
         if (v.size() == 1 && v.front() == "...") {
             proto.args += "... , ";
-            proto.notype_args += "... , ";
+            proto.param_names += "... , ";
             continue;
         }
 
@@ -261,7 +261,7 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
     }
 
     utils::delete_suffix(proto.args, ", ");
-    utils::delete_suffix(proto.notype_args, ", ");
+    utils::delete_suffix(proto.param_names, ", ");
 
     return true;
 }
