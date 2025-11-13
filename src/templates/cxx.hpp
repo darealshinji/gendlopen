@@ -424,10 +424,10 @@ namespace gdo {
 
 
 /* diagnostic warnings on variable arguments functions */
-#if !defined(GDO_DISABLE_WARNINGS)
+#if !defined(GDO_DISABLE_WARNINGS) && defined(GDO_WRAP_IS_VISIBLE)
 
-#if defined(GDO_HAS_VA_ARGS_%%func_symbol%%) && defined(GDO_WRAP_IS_VISIBLE)@
-# warning "%%func_symbol%%: GDO_WRAP_IS_VISIBLE defined but function can only be used inlined"@
+#ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
+GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symbol%%() can only be used inlined")@
 #endif
 
 #endif //!GDO_DISABLE_WARNINGS
