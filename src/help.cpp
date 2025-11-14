@@ -46,10 +46,21 @@ namespace
     void environment_variables()
     {
 #if !defined(EMBEDDED_RESOURCES)
-        std::cout << "\n"
-            "environment variables:\n"
-            "  " TEMPLATES_ENV "         directory containing the template files"
-            << std::endl;
+        const char pad[] = "                  "; /* 18 spaces */
+        const size_t len = sizeof(TEMPLATES_ENV) - 1;
+
+        if (len < sizeof(pad) - 1) {
+            std::cout << "\n"
+                "environment variables:\n"
+                "  " TEMPLATES_ENV << (pad + len) << "directory containing the template files"
+                << std::endl;
+        } else {
+            std::cout << "\n"
+                "environment variables:\n"
+                "  " TEMPLATES_ENV "\n"
+                "                    directory containing the template files"
+                << std::endl;
+        }
 #endif
     }
 }
@@ -268,6 +279,11 @@ namespace help
             "    The filename extensions will be set to .c/.h or .cpp/.hpp accordingly.\n"
             "    This flag is ignored if the output is printed to stdout or if the\n"
             "    output format is \"minimal-C\" or \"minimal-C++\".\n"
+            "\n"
+            "    Be sure to use the same settings for the generated body file and all other\n"
+            "    compilation units that included the header file. Otherwise you will likely\n"
+            "    get linking errors. Set options with i.e. `-D' or `-include' during code\n"
+            "    generation.\n"
             "\n"
 
 
