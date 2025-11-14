@@ -736,8 +736,9 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 
 
 /*****************************************************************************/
-/*                                wrap code                                  */
+/*                     helper used by wrapper functions                      */
 /*****************************************************************************/
+#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 #if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
 # define GDO_PRINT_ERROR(...) \
@@ -753,33 +754,13 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
     } while (0)
 #endif
 
-
-#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-
-GDO_LINKAGE void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym)
+/* used by wrapper functions */
+GDO_LINKAGE void _gdo_wrap_check(int load, const gdo_char_t *sym)
 {
-    const gdo_char_t *msg;
+#ifdef GDO_ENABLE_AUTOLOAD
 
-    if (!gdo_lib_is_loaded()) {
-        msg = GDO_T("library not loaded");
-    } else if (!sym_loaded) {
-        msg = GDO_T("symbol not loaded");
-    } else {
-        return; /* library and symbol loaded */
-    }
+    /* load library and function(s) if needed */
 
-    GDO_PRINT_ERROR(GDO_T("fatal error: %s: %s\n"), sym, msg);
-
-    //gdo_force_free_lib();
-    abort();
-}
-
-#elif defined(GDO_ENABLE_AUTOLOAD)
-
-/* This function is used by the autoload functions to perform the loading
- * and to handle errors. */
-GDO_LINKAGE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
-{
     const gdo_char_t *fmt, *msg;
 
     /* set auto-release, ignore errors */
@@ -790,19 +771,19 @@ GDO_LINKAGE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
         gdo_load_lib();
     }
 
-#ifdef GDO_ENABLE_AUTOLOAD_LAZY
+# ifdef GDO_ENABLE_AUTOLOAD_LAZY
     /* load a specific symbol */
-    if (gdo_load_symbol(symbol_num)) {
+    if (gdo_load_symbol(load)) {
         return;
     }
-#else
+# else
     /* load all symbols */
-    (GDO_UNUSED_REF) symbol_num;
+    (GDO_UNUSED_REF) load;
 
     if (gdo_load_all_symbols()) {
         return;
     }
-#endif
+# endif
 
     /* error */
     msg = gdo_last_error();
@@ -823,10 +804,31 @@ GDO_LINKAGE void _gdo_quick_load(int symbol_num, const gdo_char_t *sym)
 
     gdo_force_free_lib();
     exit(1);
+
+#else //!GDO_ENABLE_AUTOLOAD
+
+    /* check if library and symbol were loaded */
+
+    const gdo_char_t *msg;
+
+    if (!gdo_lib_is_loaded()) {
+        msg = GDO_T("library not loaded");
+    } else if (!load) {
+        msg = GDO_T("symbol not loaded");
+    } else {
+        return; /* library and symbol loaded */
+    }
+
+    GDO_PRINT_ERROR(GDO_T("fatal error: %s: %s\n"), sym, msg);
+
+    //gdo_force_free_lib();
+    abort();
+
+#endif //!GDO_ENABLE_AUTOLOAD
 }
 
-#endif //GDO_ENABLE_AUTOLOAD
-/***************************** end of wrap code ******************************/
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
+/*****************************************************************************/
 %PARAM_SKIP_END%
 
 

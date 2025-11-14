@@ -226,14 +226,12 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 #endif
 
 
+GDO_DECL void _gdo_wrap_check(int load, const gdo_char_t *sym);
+
 #ifdef GDO_ENABLE_AUTOLOAD
-/* autoload function */
-GDO_DECL void _gdo_quick_load(int symbol_num, const gdo_char_t *sym);
-# define GDO_WRAP_CHECK(x)  _gdo_quick_load(GDO_LOAD_##x, GDO_T(#x))
+# define GDO_WRAP_LOAD(x)  GDO_LOAD_##x
 #else
-/* check if function was loaded */
-GDO_DECL void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym);
-# define GDO_WRAP_CHECK(x)  _gdo_wrap_check_if_loaded((gdo_hndl.ptr.x != NULL), GDO_T(#x))
+# define GDO_WRAP_LOAD(x)  (gdo_hndl.ptr.x != NULL)
 #endif
 
 
@@ -241,7 +239,8 @@ GDO_DECL void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym);
 #define GDO_MAKE_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
     GDO_WRAP_DECL \
     TYPE GDO_WRAP(SYMBOL) ARGS { \
-        GDO_WRAP_CHECK(SYMBOL); \
+        /* puts("DEBUG: wrapper function called"); */ \
+        _gdo_wrap_check(GDO_WRAP_LOAD(SYMBOL), GDO_T(#SYMBOL)); \
         GDO_HOOK_##SYMBOL(__VA_ARGS__); \
         RETURN gdo_hndl.ptr.SYMBOL(__VA_ARGS__); \
     }
@@ -253,7 +252,8 @@ GDO_DECL void _gdo_wrap_check_if_loaded(bool sym_loaded, const gdo_char_t *sym);
 #define GDO_MAKE_VA_ARG_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
     extern inline __attribute__((__gnu_inline__)) \
     TYPE GDO_WRAP(SYMBOL) ARGS { \
-        GDO_WRAP_CHECK(SYMBOL); \
+        /* puts("DEBUG: GNU inline wrapper function called"); */ \
+        _gdo_wrap_check(GDO_WRAP_LOAD(SYMBOL), GDO_T(#SYMBOL)); \
         GDO_HOOK_##SYMBOL(__VA_ARGS__, __builtin_va_arg_pack()); \
         RETURN gdo_hndl.ptr.SYMBOL(__VA_ARGS__, __builtin_va_arg_pack()); \
     }
@@ -291,7 +291,7 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
 
 #undef GDO_WRAP_DECL
 #undef GDO_WRAP
-#undef GDO_WRAP_CHECK
+#undef GDO_WRAP_LOAD
 #undef GDO_MAKE_FUNCTION
 #undef GDO_MAKE_VA_ARG_FUNCTION
 

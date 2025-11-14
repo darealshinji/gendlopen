@@ -60,7 +60,7 @@ components = [
     ['',    'c_static_linkage',       'C static inline linkage',              hw,                             []],
     ['',    'c_wrapped_functions',    'C wrapped functions',                  hw,                             []],
     ['pp',  'cxx_test',               'C++',                                  hw,                             ['-format=c++']],
-    ['pp',  'cxx_autoload',           'C++ automatic loading',                'helloworld_cxx_autoload.txt',  ['-format=c++']],
+    ['pp',  'cxx_autoload',           'C++ automatic loading',                hw,                             ['-format=c++']],
     ['pp',  'cxx_minimal',            'C++ minimal header',                   hw,                             ['-format', 'minimal-c++']],
     ['pp',  'cxx_prefix',             'C++ custom symbol prefix',             hw,                             ['-format=C++', '-prefix=MyPrefix']],
     ['pp',  'cxx_wrapped_functions',  'C++ wrapped functions',                hw,                             ['-format=c++']]
@@ -147,6 +147,30 @@ foreach p : components
     )
 
     test(p[2]+' multiple source files', e, env : ld_library_path)
+endforeach
+
+foreach p : components
+    gen_srcs = custom_target(p[0]+'va_args_inline_generated.c'+p[1],
+        depends : helloworld_lib,
+        output : [p[0]+'va_args_inline_generated.c'+p[1], p[0]+'va_args_inline_generated.h'+p[1]],
+        input : hw,
+        command : [
+            gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT1@', '-format', p[2],
+            '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
+            '-DGDO_ENABLE_AUTOLOAD'
+        ]
+    )
+
+    e = executable(p[0]+'va_args_inline', [p[0]+'va_args_inline.c'+p[1], gen_srcs],
+        dependencies : dl_dep,
+        override_options : test_overrides,
+        c_args : test_flags,
+        cpp_args : test_flags,
+        build_rpath : test_rpath,
+        install : false
+    )
+
+    test(p[2]+' VA_ARGS inline, multiple source files', e, env : ld_library_path)
 endforeach
 
 

@@ -21,10 +21,10 @@
     GDO_ALIAS_helloworld_hello2(__VA_ARGS__); \
     return;
 
+#include <iostream>
+
 /* include generated header file */
 #include "cxx_autoload.hpp"
-
-#include <iostream>
 
 
 void print_error(const char *msg)

@@ -390,25 +390,24 @@ public:
 
 
 namespace gdo {
+    namespace wrap {
+        void _check(int load, const char *sym);
+    }
+}
+
 #ifdef GDO_ENABLE_AUTOLOAD
-    namespace autoload { /* autoload function */
-        void quick_load(int symbol_num, const char *sym);
-    }
-# define GDO_WRAP_CHECK(x)  gdo::autoload::quick_load(GDO_LOAD_##x, #x)
+# define GDO_WRAP_LOAD(x)  GDO_LOAD_##x
 #else
-    namespace wrap { /* check if function was loaded */
-        void check_if_loaded(bool sym_loaded, const char *sym);
-    }
-# define GDO_WRAP_CHECK(x)  gdo::wrap::check_if_loaded((gdo::ptr::x != nullptr), #x)
+# define GDO_WRAP_LOAD(x)  (gdo::ptr::x != nullptr)
 #endif
-} /* end namespace gdo */
 
 
 /* create a wrapper function */
 #define GDO_MAKE_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
     GDO_WRAP_DECL \
     TYPE GDO_WRAP(SYMBOL) ARGS { \
-        GDO_WRAP_CHECK(SYMBOL); \
+        /* std::cout << "DEBUG: wrapper function called" << std::endl; */ \
+        gdo::wrap::_check(GDO_WRAP_LOAD(SYMBOL), #SYMBOL); \
         GDO_HOOK_##SYMBOL(__VA_ARGS__); \
         RETURN gdo::ptr::SYMBOL(__VA_ARGS__); \
     }
@@ -417,7 +416,8 @@ namespace gdo {
 #define GDO_MAKE_TEMPLATE_FUNCTION(RETURN, TYPE, SYMBOL) \
     template<typename... Types> \
     TYPE GDO_WRAP(SYMBOL) (Types... args) { \
-        GDO_WRAP_CHECK(SYMBOL); \
+        /* std::cout << "DEBUG: template function called" << std::endl; */ \
+        gdo::wrap::_check(GDO_WRAP_LOAD(SYMBOL), #SYMBOL); \
         GDO_HOOK_##SYMBOL(args...); \
         RETURN gdo::ptr::SYMBOL(args...); \
     }
@@ -445,7 +445,7 @@ GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symb
 
 #undef GDO_WRAP_DECL
 #undef GDO_WRAP
-#undef GDO_WRAP_CHECK
+#undef GDO_WRAP_LOAD
 #undef GDO_MAKE_FUNCTION
 #undef GDO_MAKE_TEMPLATE_FUNCTION
 

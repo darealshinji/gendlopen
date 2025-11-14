@@ -880,81 +880,50 @@ std::string gdo::dl::filename() const
 
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-
-namespace gdo
-{
-    static inline void print_error_msg(const std::string &msg)
-    {
-        auto cb = dl::message_callback();
-
-        if (cb) {
-            cb(msg.c_str());
-        } else {
-            std::cerr << msg << std::endl;
-        }
-    }
-}
-
-#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
-
-
-#if defined(GDO_WRAP_FUNCTIONS) && !defined(GDO_ENABLE_AUTOLOAD)
-
 namespace gdo
 {
     namespace wrap
     {
-        void check_if_loaded(bool sym_loaded, const char *sym)
-        {
-            if (dl::lib_loaded() && sym_loaded) {
-                return;
-            }
-
-            /* error */
-
-            std::string msg = "fatal error: ";
-            msg += sym;
-
-            if (!dl::lib_loaded()) {
-                msg += ": library not loaded";
-            } else {
-                msg += ": symbol not loaded";
-            }
-
-            print_error_msg(msg);
-            std::abort();
-        }
-    }
-}
-
-#elif defined(GDO_ENABLE_AUTOLOAD)
-
-namespace gdo
-{
-    namespace autoload
-    {
+#ifdef GDO_ENABLE_AUTOLOAD
         auto loader = dl(GDO_DEFAULT_LIBA);
+#endif
 
-        /* used internally by wrapper functions */
-        void quick_load(int symbol_num, const char *sym)
+        /* used by wrapper functions */
+        void _check(int load, const char *sym)
         {
+            /* error message lambda function */
+            auto print_error = [] (const std::string &msg)
+            {
+                auto cb = dl::message_callback();
+
+                if (cb) {
+                    cb(msg.c_str());
+                } else {
+                    std::cerr << msg << std::endl;
+                }
+            };
+
+#ifdef GDO_ENABLE_AUTOLOAD
+
+            /* load library and function(s) if needed */
+
             if (!loader.lib_loaded()) {
                 loader.load();
             }
 
-#ifdef GDO_ENABLE_AUTOLOAD_LAZY
+# ifdef GDO_ENABLE_AUTOLOAD_LAZY
             /* load a specific symbol */
-            if (loader.load_symbol(symbol_num)) {
+            if (loader.load_symbol(load)) {
                 return;
             }
-#else
+# else
             /* load all symbols */
-            UNUSED_REF(symbol_num);
+            UNUSED_REF(load);
 
             if (loader.load_all_symbols()) {
                 return;
             }
-#endif
+# endif
 
             /* error */
 
@@ -970,13 +939,37 @@ namespace gdo
             s += ": ";
             s += msg;
 
-            print_error_msg(s);
+            print_error(s);
             std::exit(1);
-        }
-    }
-}
 
-#endif //GDO_ENABLE_AUTOLOAD
+#else //!GDO_ENABLE_AUTOLOAD
+
+            /* check if library and symbol were loaded */
+
+            if (dl::lib_loaded() && load) {
+                return;
+            }
+
+            /* error */
+
+            std::string msg = "fatal error: ";
+            msg += sym;
+
+            if (!dl::lib_loaded()) {
+                msg += ": library not loaded";
+            } else {
+                msg += ": symbol not loaded";
+            }
+
+            print_error(msg);
+            std::abort();
+
+#endif //!GDO_ENABLE_AUTOLOAD
+        }
+    } /* namespace wrap */
+} /* namespace gdo */
+
+#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 %PARAM_SKIP_END%
 
 
