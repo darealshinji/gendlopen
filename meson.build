@@ -21,6 +21,7 @@ sdl_dep  = []
 # options
 
 compiler       = meson.get_compiler('cpp')
+arg_syntax     = compiler.get_argument_syntax()
 host_system    = host_machine.system()
 host_is_win32  = (host_system == 'windows' or host_system == 'cygwin')
 host_is_gnu    = (host_system == 'linux' or host_system == 'gnu')
@@ -57,7 +58,7 @@ if not host_is_win32
 endif
 
 if not host_is_win32 and get_option('enable_examples')
-    if (compiler.has_argument('-Wno-deprecated-declarations'))
+    if compiler.has_argument('-Wno-deprecated-declarations')
         wno_deprecated_declarations = '-Wno-deprecated-declarations'
     endif
 

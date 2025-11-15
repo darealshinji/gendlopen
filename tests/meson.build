@@ -1,7 +1,6 @@
 test_flags      = []
 ld_library_path = []
 test_rpath      = '$ORIGIN'
-arg_syntax      = compiler.get_argument_syntax()
 
 
 if arg_syntax == 'msvc'

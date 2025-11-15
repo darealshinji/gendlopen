@@ -248,6 +248,7 @@ GDO_DECL void _gdo_wrap_check(int load, const gdo_char_t *sym);
 /**
  * create a GNU inline wrapper function for use with variable arguments
  * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html
+ * https://gcc.gnu.org/onlinedocs/gcc/Inline.html
  */
 #define GDO_MAKE_VA_ARG_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
     extern inline __attribute__((__gnu_inline__)) \
@@ -262,15 +263,18 @@ GDO_DECL void _gdo_wrap_check(int load, const gdo_char_t *sym);
 /* diagnostic warnings on variable arguments functions */
 #if !defined(GDO_DISABLE_WARNINGS)
 
+/* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
 #  ifdef GDO_WRAP_IS_VISIBLE@
 GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symbol%%() can only be used inlined")@
+#  elif defined(__NO_INLINE__)@
+GDO_PRAGMA_WARNING("inlining is required to use variable arguments wrapper for %%func_symbol%%()")@
 #  endif@
-# else@
+# else //!GDO_HAS_BUILTIN_VA_ARG_PACK@
 GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments wrapper for %%func_symbol%%()")@
-# endif //!GDO_HAS_BUILTIN_VA_ARG_PACK@
-#endif //GDO_HAS_VA_ARGS_%%func_symbol%%
+# endif@
+#endif@
 
 #endif //!GDO_DISABLE_WARNINGS
 
