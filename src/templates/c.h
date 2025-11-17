@@ -249,6 +249,11 @@ GDO_DECL void _gdo_wrap_check(int load, const gdo_char_t *sym);
  * create a GNU inline wrapper function for use with variable arguments
  * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html
  * https://gcc.gnu.org/onlinedocs/gcc/Inline.html
+ *
+ * __VA_ARGS__ will be resolved to the named parameters provided by the
+ * variadic macro's `...' argument.
+ * __builtin_va_arg_pack() is a GNU extension and will be resolved to the
+ * additional parameters provided by the `...' argument from `ARGS'.
  */
 #define GDO_MAKE_VA_ARG_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
     extern inline __attribute__((__gnu_inline__)) \
