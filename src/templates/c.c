@@ -755,11 +755,13 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #endif
 
 /* used by wrapper functions */
-GDO_LINKAGE void _gdo_wrap_check(int load, const gdo_char_t *sym)
+GDO_LINKAGE void _gdo_wrap_check(int load, void *sym_ptr, const gdo_char_t *sym)
 {
 #ifdef GDO_ENABLE_AUTOLOAD
 
     /* load library and function(s) if needed */
+
+    (GDO_UNUSED_REF) sym_ptr;
 
     const gdo_char_t *fmt, *msg;
 
@@ -778,7 +780,6 @@ GDO_LINKAGE void _gdo_wrap_check(int load, const gdo_char_t *sym)
     }
 # else
     /* load all symbols */
-    (GDO_UNUSED_REF) load;
 
     if (gdo_load_all_symbols()) {
         return;
@@ -809,11 +810,13 @@ GDO_LINKAGE void _gdo_wrap_check(int load, const gdo_char_t *sym)
 
     /* check if library and symbol were loaded */
 
+    (GDO_UNUSED_REF) load;
+
     const gdo_char_t *msg;
 
     if (!gdo_lib_is_loaded()) {
         msg = GDO_T("library not loaded");
-    } else if (!load) {
+    } else if (!sym_ptr) {
         msg = GDO_T("symbol not loaded");
     } else {
         return; /* library and symbol loaded */

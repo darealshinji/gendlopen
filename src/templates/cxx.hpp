@@ -391,36 +391,14 @@ public:
 
 namespace gdo {
     namespace wrap {
-        void _check(int load, const char *sym);
+        void _check(int load, bool sym_loaded, const char *sym);
+
+        template<typename T>
+        void check(int load, T sym_ptr, const char *sym) {
+            _check(load, (sym_ptr != nullptr), sym);
+        }
     }
 }
-
-#ifdef GDO_ENABLE_AUTOLOAD
-# define GDO_WRAP_LOAD(x)  GDO_LOAD_##x
-#else
-# define GDO_WRAP_LOAD(x)  (gdo::ptr::x != nullptr)
-#endif
-
-
-/* create a wrapper function */
-#define GDO_MAKE_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
-    GDO_WRAP_DECL \
-    TYPE GDO_WRAP(SYMBOL) ARGS { \
-        /* std::cout << "DEBUG: wrapper function called" << std::endl; */ \
-        gdo::wrap::_check(GDO_WRAP_LOAD(SYMBOL), #SYMBOL); \
-        GDO_HOOK_##SYMBOL(__VA_ARGS__); \
-        RETURN gdo::ptr::SYMBOL(__VA_ARGS__); \
-    }
-
-/* create a function template for use with variable arguments */
-#define GDO_MAKE_TEMPLATE_FUNCTION(RETURN, TYPE, SYMBOL) \
-    template<typename... Types> \
-    TYPE GDO_WRAP(SYMBOL) (Types... args) { \
-        /* std::cout << "DEBUG: template function called" << std::endl; */ \
-        gdo::wrap::_check(GDO_WRAP_LOAD(SYMBOL), #SYMBOL); \
-        GDO_HOOK_##SYMBOL(args...); \
-        RETURN gdo::ptr::SYMBOL(args...); \
-    }
 
 
 /* diagnostic warnings on variable arguments functions */
@@ -435,19 +413,26 @@ GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symb
 @
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-    GDO_MAKE_TEMPLATE_FUNCTION(%%return%%, %%type%%, %%func_symbol%%)@
+    template<typename... Types>@
+    %%type%% GDO_WRAP(%%func_symbol%%) (Types... args) {@
+        /* std::cout << "DEBUG: %%func_symbol%%: template function called" << std::endl; */@
+        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, gdo::ptr::%%func_symbol%%, "%%func_symbol%%" );@
+        GDO_HOOK_%%func_symbol%%(args...);@
+        %%return%% gdo::ptr::%%func_symbol%%(args...);@
+    }@
 #else@
-    GDO_MAKE_FUNCTION(%%return%%, %%type%%,@
-        %%func_symbol%%, (%%args%%),@
-        %%param_names%%)@
-#endif //!GDO_HAS_VA_ARGS_%%func_symbol%%@
+    GDO_WRAP_DECL@
+    %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
+        /* std::cout << "DEBUG: %%func_symbol%%: wrapped function called" << std::endl; */@
+        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, gdo::ptr::%%func_symbol%%, "%%func_symbol%%" );@
+        GDO_HOOK_%%func_symbol%%(%%param_names%%);@
+        %%return%% gdo::ptr::%%func_symbol%%(%%param_names%%);@
+    }@
+#endif //!GDO_HAS_VA_ARGS_%%func_symbol%%
 
 
 #undef GDO_WRAP_DECL
 #undef GDO_WRAP
-#undef GDO_WRAP_LOAD
-#undef GDO_MAKE_FUNCTION
-#undef GDO_MAKE_TEMPLATE_FUNCTION
 
 #endif //GDO_WRAP_FUNCTIONS ...
 /***************************** end of wrap code ******************************/

@@ -889,7 +889,7 @@ namespace gdo
 #endif
 
         /* used by wrapper functions */
-        void _check(int load, const char *sym)
+        void _check(int load, bool sym_loaded, const char *sym)
         {
             /* error message lambda function */
             auto print_error = [] (const std::string &msg)
@@ -906,6 +906,8 @@ namespace gdo
 #ifdef GDO_ENABLE_AUTOLOAD
 
             /* load library and function(s) if needed */
+
+            UNUSED_REF(sym_loaded);
 
             if (!loader.lib_loaded()) {
                 loader.load();
@@ -946,7 +948,9 @@ namespace gdo
 
             /* check if library and symbol were loaded */
 
-            if (dl::lib_loaded() && load) {
+            UNUSED_REF(load);
+
+            if (dl::lib_loaded() && sym_loaded) {
                 return;
             }
 

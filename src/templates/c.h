@@ -225,44 +225,7 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 # define GDO_WRAP(x)    GDO_WRAP_##x
 #endif
 
-
-GDO_DECL void _gdo_wrap_check(int load, const gdo_char_t *sym);
-
-#ifdef GDO_ENABLE_AUTOLOAD
-# define GDO_WRAP_LOAD(x)  GDO_LOAD_##x
-#else
-# define GDO_WRAP_LOAD(x)  (gdo_hndl.ptr.x != NULL)
-#endif
-
-
-/* create a wrapper function */
-#define GDO_MAKE_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
-    GDO_WRAP_DECL \
-    TYPE GDO_WRAP(SYMBOL) ARGS { \
-        /* puts("DEBUG: wrapper function called"); */ \
-        _gdo_wrap_check(GDO_WRAP_LOAD(SYMBOL), GDO_T(#SYMBOL)); \
-        GDO_HOOK_##SYMBOL(__VA_ARGS__); \
-        RETURN gdo_hndl.ptr.SYMBOL(__VA_ARGS__); \
-    }
-
-/**
- * create a GNU inline wrapper function for use with variable arguments
- * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html
- * https://gcc.gnu.org/onlinedocs/gcc/Inline.html
- *
- * __VA_ARGS__ will be resolved to the named parameters provided by the
- * variadic macro's `...' argument.
- * __builtin_va_arg_pack() is a GNU extension and will be resolved to the
- * additional parameters provided by the `...' argument from `ARGS'.
- */
-#define GDO_MAKE_VA_ARG_FUNCTION(RETURN, TYPE, SYMBOL, ARGS, ...) \
-    extern inline __attribute__((__gnu_inline__)) \
-    TYPE GDO_WRAP(SYMBOL) ARGS { \
-        /* puts("DEBUG: GNU inline wrapper function called"); */ \
-        _gdo_wrap_check(GDO_WRAP_LOAD(SYMBOL), GDO_T(#SYMBOL)); \
-        GDO_HOOK_##SYMBOL(__VA_ARGS__, __builtin_va_arg_pack()); \
-        RETURN gdo_hndl.ptr.SYMBOL(__VA_ARGS__, __builtin_va_arg_pack()); \
-    }
+GDO_DECL void _gdo_wrap_check(int load, void *sym_ptr, const gdo_char_t *sym);
 
 
 /* diagnostic warnings on variable arguments functions */
@@ -283,26 +246,40 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
 
 #endif //!GDO_DISABLE_WARNINGS
 
+
+/**
+ * GNU inline wrapper function for use with variable arguments
+ * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html
+ * https://gcc.gnu.org/onlinedocs/gcc/Inline.html
+ *
+ * __builtin_va_arg_pack() is a GNU extension and will be resolved to the
+ * additional parameters provided by the `...' argument.
+ */
 @
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
-    GDO_MAKE_VA_ARG_FUNCTION(%%return%%, %%type%%,@
-        %%func_symbol%%, (%%args%%),@
-        %%param_names%%)@
+    extern inline __attribute__ ((__gnu_inline__))@
+    %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
+        /* puts("DEBUG: %%func_symbol%%: GNU inline wrapper function called"); */@
+        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, (void *)gdo_hndl.ptr.%%func_symbol%%, GDO_T("%%func_symbol%%") );@
+        GDO_HOOK_%%func_symbol%%(%%param_names%%, __builtin_va_arg_pack());@
+        %%return%% gdo_hndl.ptr.%%func_symbol%%(%%param_names%%, __builtin_va_arg_pack());@
+    }@
 # endif@
 #else@
-    GDO_MAKE_FUNCTION(%%return%%, %%type%%,@
-        %%func_symbol%%, (%%args%%),@
-        %%param_names%%)@
-#endif //!GDO_HAS_VA_ARGS_%%func_symbol%%@
+    GDO_WRAP_DECL@
+    %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
+        /* puts("DEBUG: %%func_symbol%%: wrapper function called"); */@
+        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, (void *)gdo_hndl.ptr.%%func_symbol%%, GDO_T("%%func_symbol%%") );@
+        GDO_HOOK_%%func_symbol%%(%%param_names%%);@
+        %%return%% gdo_hndl.ptr.%%func_symbol%%(%%param_names%%);@
+    }@
+#endif //!GDO_HAS_VA_ARGS_%%func_symbol%%
 
 
 #undef GDO_WRAP_DECL
 #undef GDO_WRAP
-#undef GDO_WRAP_LOAD
-#undef GDO_MAKE_FUNCTION
-#undef GDO_MAKE_VA_ARG_FUNCTION
 
 #endif //GDO_WRAP_FUNCTIONS ...
 /***************************** end of wrap code ******************************/
