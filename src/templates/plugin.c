@@ -19,10 +19,12 @@
 # define GDO_LOAD_LIB(filename)       LoadLibraryEx(filename, NULL, GDO_DEFAULT_FLAGS)
 # define GDO_FREE_LIB(handle)         FreeLibrary(handle)
 # define GDO_GET_SYM(handle, symbol)  GetProcAddress(handle, symbol)
+# define GDO_STRDUP(str)              _tcsdup(str)
 #else
 # define GDO_LOAD_LIB(filename)       dlopen(filename, GDO_DEFAULT_FLAGS)
 # define GDO_FREE_LIB(handle)         dlclose(handle)
 # define GDO_GET_SYM(handle, symbol)  dlsym(handle, symbol)
+# define GDO_STRDUP(str)              strdup(str)
 #endif
 
 
@@ -45,11 +47,7 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
         }
 
         /* copy filename */
-#ifdef GDO_WINAPI
-        plug->list[i].filename = _tcsdup(files[i]);
-#else
-        plug->list[i].filename = strdup(files[i]);
-#endif
+        plug->list[i].filename = GDO_STRDUP(files[i]);
 
         /* load plugin */
         if ((plug->list[i].handle = GDO_LOAD_LIB(files[i])) == NULL) {

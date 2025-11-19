@@ -61,13 +61,6 @@ enum {
  */
 typedef struct _gdo_handle
 {
-    /* symbol pointers */
-    struct _gdo_ptr {
-        %%type%% (*%%func_symbol%%)(%%args%%);
-        %%obj_type%% *%%obj_symbol%%;
-    } ptr;
-
-    /* private */
 #ifdef GDO_WINAPI
     HMODULE handle;
     DWORD last_errno;
@@ -80,6 +73,10 @@ typedef struct _gdo_handle
 
     int flags;
     bool free_lib_registered;
+
+    /* symbol pointers; symbol names must be prefixed to avoid macro expansion */
+    %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%);
+    %%obj_type%% *GDO_PTR_%%obj_symbol%%;
 
 } gdo_handle_t;
 
@@ -198,8 +195,8 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 /**
  * Prefixed aliases, useful if GDO_DISABLE_ALIASING was defined.
  */
-#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.ptr.%%func_symbol%%
-#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.ptr.%%obj_symbol%%
+#define GDO_ALIAS_%%func_symbol_pad%% gdo_hndl.GDO_PTR_%%func_symbol%%
+#define GDO_ALIAS_%%obj_symbol_pad%% *gdo_hndl.GDO_PTR_%%obj_symbol%%
 %PARAM_SKIP_REMOVE_BEGIN%
 
 
@@ -225,7 +222,7 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 # define GDO_WRAP(x)    GDO_WRAP_##x
 #endif
 
-GDO_DECL void _gdo_wrap_check(int load, void *sym_ptr, const gdo_char_t *sym);
+GDO_DECL void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym);
 
 
 /* diagnostic warnings on variable arguments functions */
@@ -262,18 +259,20 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
     extern inline __attribute__ ((__gnu_inline__))@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         /* puts("DEBUG: %%func_symbol%%: GNU inline wrapper function called"); */@
-        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, (void *)gdo_hndl.ptr.%%func_symbol%%, GDO_T("%%func_symbol%%") );@
+        const bool sym_loaded = (gdo_hndl.GDO_PTR_%%func_symbol%% != NULL);@
+        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, sym_loaded, GDO_T("%%func_symbol%%") );@
         GDO_HOOK_%%func_symbol%%(%%param_names%%, __builtin_va_arg_pack());@
-        %%return%% gdo_hndl.ptr.%%func_symbol%%(%%param_names%%, __builtin_va_arg_pack());@
+        %%return%% gdo_hndl.GDO_PTR_%%func_symbol%%(%%param_names%%, __builtin_va_arg_pack());@
     }@
 # endif@
 #else@
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         /* puts("DEBUG: %%func_symbol%%: wrapper function called"); */@
-        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, (void *)gdo_hndl.ptr.%%func_symbol%%, GDO_T("%%func_symbol%%") );@
+        const bool sym_loaded = (gdo_hndl.GDO_PTR_%%func_symbol%% != NULL);@
+        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, sym_loaded, GDO_T("%%func_symbol%%") );@
         GDO_HOOK_%%func_symbol%%(%%param_names%%);@
-        %%return%% gdo_hndl.ptr.%%func_symbol%%(%%param_names%%);@
+        %%return%% gdo_hndl.GDO_PTR_%%func_symbol%%(%%param_names%%);@
     }@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%
 

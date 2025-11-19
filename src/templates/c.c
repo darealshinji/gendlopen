@@ -328,7 +328,7 @@ GDO_LINKAGE bool gdo_free_lib(void)
 
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
-    gdo_hndl.ptr.%%symbol%% = NULL;
+    gdo_hndl.GDO_PTR_%%symbol%% = NULL;
 
     return true;
 }
@@ -353,7 +353,7 @@ GDO_LINKAGE void gdo_force_free_lib(void)
 
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
-    gdo_hndl.ptr.%%symbol%% = NULL;
+    gdo_hndl.GDO_PTR_%%symbol%% = NULL;
 }
 /*****************************************************************************/
 
@@ -386,7 +386,7 @@ GDO_LINKAGE bool gdo_enable_autorelease(void)
 GDO_LINKAGE bool gdo_all_symbols_loaded(void)
 {
     if (true
-        && gdo_hndl.ptr.%%symbol%% != NULL
+        && gdo_hndl.GDO_PTR_%%symbol%% != NULL
     ) {
         return true;
     }
@@ -403,7 +403,7 @@ GDO_LINKAGE bool gdo_all_symbols_loaded(void)
 GDO_LINKAGE bool gdo_no_symbols_loaded(void)
 {
     if (true
-        && gdo_hndl.ptr.%%symbol%% == NULL
+        && gdo_hndl.GDO_PTR_%%symbol%% == NULL
     ) {
         return true;
     }
@@ -420,7 +420,7 @@ GDO_LINKAGE bool gdo_no_symbols_loaded(void)
 GDO_LINKAGE bool gdo_any_symbol_loaded(void)
 {
     if (false
-        || gdo_hndl.ptr.%%symbol%% != NULL
+        || gdo_hndl.GDO_PTR_%%symbol%% != NULL
     ) {
         return true;
     }
@@ -452,7 +452,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(void)
     /* get symbol addresses */
 
     /* %%symbol%% */@
-    if ((gdo_hndl.ptr.%%symbol%% =@
+    if ((gdo_hndl.GDO_PTR_%%symbol%% =@
             (%%sym_type%%)@
                 _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"))) == NULL) {@
         return false;@
@@ -504,12 +504,12 @@ GDO_LINKAGE bool gdo_load_symbol(int symbol_num)
     {
     /* %%symbol%% */@
     case GDO_LOAD_%%symbol%%:@
-        if (!gdo_hndl.ptr.%%symbol%%) {@
-            gdo_hndl.ptr.%%symbol%% =@
+        if (!gdo_hndl.GDO_PTR_%%symbol%%) {@
+            gdo_hndl.GDO_PTR_%%symbol%% =@
                 (%%sym_type%%)@
                     _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"));@
         }@
-        return (gdo_hndl.ptr.%%symbol%% != NULL);@
+        return (gdo_hndl.GDO_PTR_%%symbol%% != NULL);@
 
     default:
         break;
@@ -565,12 +565,12 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
     if (len == sizeof("%%symbol%%") - 1 &&@
         strcmp(symbol + n, ptr + n) == 0)@
     {@
-        if (!gdo_hndl.ptr.%%symbol%%) {@
-            gdo_hndl.ptr.%%symbol%% =@
+        if (!gdo_hndl.GDO_PTR_%%symbol%%) {@
+            gdo_hndl.GDO_PTR_%%symbol%% =@
                 (%%sym_type%%)@
                     _gdo_sym("%%symbol%%", GDO_T("%%symbol%%"));@
         }@
-        return (gdo_hndl.ptr.%%symbol%% != NULL);@
+        return (gdo_hndl.GDO_PTR_%%symbol%% != NULL);@
     }@
 
     GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
@@ -708,7 +708,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    fname = _gdo_dladdr_get_fname((void *)gdo_hndl.ptr.%%symbol%%);@
+    fname = _gdo_dladdr_get_fname((void *)gdo_hndl.GDO_PTR_%%symbol%%);@
     if (fname) return fname;
 
     _gdo_save_to_errbuf("dladdr() failed to get library path");
@@ -755,13 +755,13 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #endif
 
 /* used by wrapper functions */
-GDO_LINKAGE void _gdo_wrap_check(int load, void *sym_ptr, const gdo_char_t *sym)
+GDO_LINKAGE void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym)
 {
 #ifdef GDO_ENABLE_AUTOLOAD
 
     /* load library and function(s) if needed */
 
-    (GDO_UNUSED_REF) sym_ptr;
+    (GDO_UNUSED_REF) sym_loaded;
 
     const gdo_char_t *fmt, *msg;
 
@@ -816,7 +816,7 @@ GDO_LINKAGE void _gdo_wrap_check(int load, void *sym_ptr, const gdo_char_t *sym)
 
     if (!gdo_lib_is_loaded()) {
         msg = GDO_T("library not loaded");
-    } else if (!sym_ptr) {
+    } else if (!sym_loaded) {
         msg = GDO_T("symbol not loaded");
     } else {
         return; /* library and symbol loaded */

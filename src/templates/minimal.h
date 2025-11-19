@@ -17,17 +17,15 @@
  */
 typedef struct gdo_handle
 {
-    /* symbol pointers */
-    struct _gdo_ptr {
-        %%type%% (*%%func_symbol%%)(%%args%%);
-        %%obj_type%% *%%obj_symbol%%;
-    } ptr;
-
 #ifdef GDO_WINAPI
     HMODULE handle;
 #else
     void *handle;
 #endif
+
+    /* symbol pointers; symbol names must be prefixed to avoid macro expansion */
+    %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%);
+    %%obj_type%% *GDO_PTR_%%obj_symbol%%;
 
 } gdo_handle_t;
 
@@ -49,7 +47,7 @@ GDO_LINKAGE void gdo_free_library(void)
     }
 
     gdo_hndl.handle = NULL;
-    gdo_hndl.ptr.%%symbol%% = NULL;
+    gdo_hndl.GDO_PTR_%%symbol%% = NULL;
 }
 
 
@@ -91,10 +89,10 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 #endif
 @
     /* %%symbol%% */@
-    gdo_hndl.ptr.%%symbol%% =@
+    gdo_hndl.GDO_PTR_%%symbol%% =@
         (%%sym_type%%)@
             _GDO_LOAD_SYM("%%symbol%%");@
-    if (!gdo_hndl.ptr.%%symbol%%) {@
+    if (!gdo_hndl.GDO_PTR_%%symbol%%) {@
         gdo_free_library();@
         return "failed to load symbol: %%symbol%%";@
     }
@@ -110,8 +108,8 @@ GDO_LINKAGE const char *gdo_load_library_and_symbols(const char *filename)
 /**
  * Aliases to raw symbol pointers
  */
-#define %%func_symbol_pad%%  gdo_hndl.ptr.%%func_symbol%%
-#define %%obj_symbol_pad%%  *gdo_hndl.ptr.%%obj_symbol%%
+#define %%func_symbol_pad%%  gdo_hndl.GDO_PTR_%%func_symbol%%
+#define %%obj_symbol_pad%%  *gdo_hndl.GDO_PTR_%%obj_symbol%%
 
 #endif // !GDO_DISABLE_ALIASING
 

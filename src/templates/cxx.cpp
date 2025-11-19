@@ -33,9 +33,9 @@ gdo::dl::message_callback_t gdo::dl::m_message_callback = gdo::dl::default_messa
 gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
-/* symbol pointers */
-%%type%% (*gdo::ptr::%%func_symbol%%)(%%args%%) = nullptr;
-%%obj_type%% *gdo::ptr::%%obj_symbol%% = nullptr;
+/* symbol pointers; symbol names must be prefixed to avoid macro expansion */
+%%type%% (*gdo::GDO_PTR_%%func_symbol%%)(%%args%%) = nullptr;
+%%obj_type%% *gdo::GDO_PTR_%%obj_symbol%% = nullptr;
 
 
 /* silence `unused reference' compiler warnings */
@@ -523,7 +523,7 @@ bool gdo::dl::load_all_symbols()
     /* get symbol addresses */
 
     /* %%symbol%% */@
-    if ((ptr::%%symbol%% =@
+    if ((GDO_PTR_%%symbol%% =@
         sym_load<%%sym_type%%>@
             ("%%symbol%%")) == nullptr) {@
         return false;@
@@ -549,12 +549,12 @@ bool gdo::dl::load_symbol(int symbol_num)
     {
     /* %%symbol%% */@
     case GDO_LOAD_%%symbol%%:@
-        if (!ptr::%%symbol%%) {@
-            ptr::%%symbol%% =@
+        if (!GDO_PTR_%%symbol%%) {@
+            GDO_PTR_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
         }@
-        return (ptr::%%symbol%% != nullptr);@
+        return (GDO_PTR_%%symbol%% != nullptr);@
 
     default:
         break;
@@ -613,12 +613,12 @@ bool gdo::dl::load_symbol(const char *symbol)
     if (len == sizeof("%%symbol%%") - 1 &&@
         ::strcmp(symbol + n, ptr + n) == 0)@
     {@
-        if (!ptr::%%symbol%%) {@
-            ptr::%%symbol%% =@
+        if (!GDO_PTR_%%symbol%%) {@
+            GDO_PTR_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
         }@
-        return (ptr::%%symbol%% != nullptr);@
+        return (GDO_PTR_%%symbol%% != nullptr);@
     }@
 
     error_unknown_symbol();
@@ -631,7 +631,7 @@ bool gdo::dl::load_symbol(const char *symbol)
 bool gdo::dl::all_symbols_loaded() const
 {
     if (true
-        && ptr::%%symbol%% != nullptr
+        && GDO_PTR_%%symbol%% != nullptr
     ) {
         return true;
     }
@@ -644,7 +644,7 @@ bool gdo::dl::all_symbols_loaded() const
 bool gdo::dl::no_symbols_loaded() const
 {
     if (true
-        && ptr::%%symbol%% == nullptr
+        && GDO_PTR_%%symbol%% == nullptr
     ) {
         return true;
     }
@@ -657,7 +657,7 @@ bool gdo::dl::no_symbols_loaded() const
 bool gdo::dl::any_symbol_loaded() const
 {
     if (false
-        || ptr::%%symbol%% != nullptr
+        || GDO_PTR_%%symbol%% != nullptr
     ) {
         return true;
     }
@@ -691,7 +691,7 @@ bool gdo::dl::free(bool force)
     clear_error();
 
     m_handle = nullptr;
-    ptr::%%symbol%% = nullptr;
+    GDO_PTR_%%symbol%% = nullptr;
 
     return true;
 }
@@ -851,7 +851,7 @@ std::string gdo::dl::origin()
         }
     };
 
-    get_fname(reinterpret_cast<void *>(ptr::%%symbol%%));@
+    get_fname(reinterpret_cast<void *>(GDO_PTR_%%symbol%%));@
     if (!fname.empty()) return fname;
 
     m_errmsg = "dladdr() failed to get library path";
