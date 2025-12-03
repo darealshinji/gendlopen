@@ -290,13 +290,21 @@ inline void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char
     ::FormatMessageA(flags, NULL, msgId, langId, buf, 0, NULL);
 }
 
+inline void gdo::dl::append_last_error(std::string &buf) {
+    buf += std::to_string(m_last_error);
+}
+
+inline void gdo::dl::append_last_error(std::wstring &buf) {
+    buf += std::to_wstring(m_last_error);
+}
+
 
 /* return a formatted error message */
-template<typename T>
-std::basic_string<T> gdo::dl::format_last_error_message()
+template<typename T1, typename T2>
+std::basic_string<T1> gdo::dl::format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2, const T1 *default_msg, const T1 *colon)
 {
-    std::basic_string<T> str;
-    T *buf = nullptr;
+    std::basic_string<T1> str;
+    T1 *buf = nullptr;
 
     format_message(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -305,11 +313,24 @@ std::basic_string<T> gdo::dl::format_last_error_message()
         FORMAT_MESSAGE_MAX_WIDTH_MASK,
         m_last_error,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<T*>(&buf));
+        reinterpret_cast<T1*>(&buf));
 
     if (buf) {
         str = buf;
         ::LocalFree(buf);
+    }
+
+    if (str.empty()) {
+        str = default_msg;
+        append_last_error(str);
+    }
+
+    if (!buf1.empty()) {
+        str.insert(0, colon);
+        str.insert(0, buf1);
+    } else if (!buf2.empty()) {
+        str.insert(0, colon);
+        str.insert(0, convert_string<T1, T2>(buf2));
     }
 
     return str;
@@ -739,40 +760,12 @@ std::wstring gdo::dl::origin_w()
 /* retrieve the last error */
 std::string gdo::dl::error()
 {
-    std::string buf = format_last_error_message<char>();
-
-    if (buf.empty()) {
-        buf = "Last saved error code: " + std::to_string(m_last_error);
-    }
-
-    if (!m_errmsg.empty()) {
-        buf.insert(0, ": ");
-        buf.insert(0, m_errmsg);
-    } else if (!m_werrmsg.empty()) {
-        buf.insert(0, ": ");
-        buf.insert(0, convert_string<char, wchar_t>(m_werrmsg));
-    }
-
-    return buf;
+    return format_error_message<char, wchar_t>(m_errmsg, m_werrmsg, "Last saved error code: ", ": ");
 }
 
 std::wstring gdo::dl::error_w()
 {
-    std::wstring buf = format_last_error_message<wchar_t>();
-
-    if (buf.empty()) {
-        buf = L"Last saved error code: " + std::to_wstring(m_last_error);
-    }
-
-    if (!m_werrmsg.empty()) {
-        buf.insert(0, L": ");
-        buf.insert(0, m_werrmsg);
-    } else if (!m_errmsg.empty()) {
-        buf.insert(0, L": ");
-        buf.insert(0, convert_string<wchar_t, char>(m_errmsg));
-    }
-
-    return buf;
+    return format_error_message<wchar_t, char>(m_werrmsg, m_errmsg, L"Last saved error code: ", L": ");
 }
 
 

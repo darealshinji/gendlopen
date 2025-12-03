@@ -124,8 +124,11 @@ private:
     inline void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
     inline void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
-    template<typename T>
-      std::basic_string<T> format_last_error_message();
+    inline void append_last_error(std::string &buf);
+    inline void append_last_error(std::wstring &buf);
+
+    template<typename T1, typename T2>
+      std::basic_string<T1> format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2, const T1 *default_msg, const T1 *colon);
 
 #else // !GDO_WINAPI
 
