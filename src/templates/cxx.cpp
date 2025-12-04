@@ -38,15 +38,6 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 %%obj_type%% *gdo::GDO_PTR_%%obj_symbol%% = nullptr;
 
 
-/* silence `unused reference' compiler warnings */
-namespace gdo {
-    template<typename T>
-    void UNUSED_REF(T x) {
-        static_cast<void>(x);
-    }
-}
-
-
 /* Create versioned library names for DLLs, dylibs and DSOs.
  * make_libname("z",1) for example will return "libz.1.dylib" on macOS */
 std::string gdo::make_libname(const std::string &name, const size_t api)
@@ -290,18 +281,12 @@ inline void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char
     ::FormatMessageA(flags, NULL, msgId, langId, buf, 0, NULL);
 }
 
-inline void gdo::dl::append_last_error(std::string &buf) {
-    buf += std::to_string(m_last_error);
-}
-
-inline void gdo::dl::append_last_error(std::wstring &buf) {
-    buf += std::to_wstring(m_last_error);
-}
+#define GDO_T1(x) return_string<T1>(x, L##x)
 
 
 /* return a formatted error message */
 template<typename T1, typename T2>
-std::basic_string<T1> gdo::dl::format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2, const T1 *default_msg, const T1 *colon)
+std::basic_string<T1> gdo::dl::format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2)
 {
     std::basic_string<T1> str;
     T1 *buf = nullptr;
@@ -321,20 +306,23 @@ std::basic_string<T1> gdo::dl::format_error_message(std::basic_string<T1> &buf1,
     }
 
     if (str.empty()) {
-        str = default_msg;
-        append_last_error(str);
+        str = GDO_T1("Last saved error code: ");
+        str += to_string<T1>(m_last_error);
     }
 
     if (!buf1.empty()) {
-        str.insert(0, colon);
+        str.insert(0, GDO_T1(": "));
         str.insert(0, buf1);
     } else if (!buf2.empty()) {
-        str.insert(0, colon);
+        str.insert(0, GDO_T1(": "));
         str.insert(0, convert_string<T1, T2>(buf2));
     }
 
     return str;
 }
+
+
+#undef GDO_T1
 
 
 #else
@@ -760,12 +748,12 @@ std::wstring gdo::dl::origin_w()
 /* retrieve the last error */
 std::string gdo::dl::error()
 {
-    return format_error_message<char, wchar_t>(m_errmsg, m_werrmsg, "Last saved error code: ", ": ");
+    return format_error_message<char, wchar_t>(m_errmsg, m_werrmsg);
 }
 
 std::wstring gdo::dl::error_w()
 {
-    return format_error_message<wchar_t, char>(m_werrmsg, m_errmsg, L"Last saved error code: ", L": ");
+    return format_error_message<wchar_t, char>(m_werrmsg, m_errmsg);
 }
 
 

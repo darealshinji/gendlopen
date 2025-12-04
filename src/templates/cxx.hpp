@@ -53,6 +53,15 @@ constexpr const wchar_t * const libext_w = GDO_LIBEXTW;
 #endif
 
 
+/**
+ * Silence `unused reference' compiler warnings.
+ */
+template<typename T>
+void UNUSED_REF(T x) {
+    static_cast<void>(x);
+}
+
+
 /*****************************************************************************/
 /*                          library loader class                             */
 /*****************************************************************************/
@@ -124,11 +133,36 @@ private:
     inline void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
     inline void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
-    inline void append_last_error(std::string &buf);
-    inline void append_last_error(std::wstring &buf);
+    template<typename T,
+      typename std::enable_if<std::is_same<T, std::string::value_type>::value, bool>::type = true>
+    std::string to_string(DWORD val) {
+        return std::to_string(val);
+    }
+
+    template<typename T,
+      typename std::enable_if<std::is_same<T, std::wstring::value_type>::value, bool>::type = true>
+    std::wstring to_string(DWORD val) {
+        return std::to_wstring(val);
+    }
+
+    template<typename T,
+      typename std::enable_if<std::is_same<T, char>::value, bool>::type = true>
+    const char *return_string(const char *str, const wchar_t *wstr)
+    {
+        UNUSED_REF(wstr);
+        return str;
+    }
+
+    template<typename T,
+      typename std::enable_if<std::is_same<T, wchar_t>::value, bool>::type = true>
+    const wchar_t *return_string(const char *str, const wchar_t *wstr)
+    {
+        UNUSED_REF(str);
+        return wstr;
+    }
 
     template<typename T1, typename T2>
-      std::basic_string<T1> format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2, const T1 *default_msg, const T1 *colon);
+      std::basic_string<T1> format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2);
 
 #else // !GDO_WINAPI
 
