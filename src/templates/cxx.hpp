@@ -57,7 +57,8 @@ constexpr const wchar_t * const libext_w = GDO_LIBEXTW;
  * Silence `unused reference' compiler warnings.
  */
 template<typename T>
-void UNUSED_REF(T x) {
+void UNUSED_REF(T x)
+{
     static_cast<void>(x);
 }
 
@@ -102,7 +103,7 @@ private:
     inline errno_t mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count);
 
     template<typename T_out, typename T_in>
-      std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
+    std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
 
     void clear_error();
 
@@ -116,53 +117,54 @@ private:
     inline HMODULE load_library_ex(const char *path);
 
     template<typename T>
-      void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
+    void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
 
     void load_lib(const std::string &filename, int flags, bool new_namespace);
     void load_lib(const std::wstring &filename, int flags, bool new_namespace);
 
     template<typename T>
-      T sym_load(const char *symbol);
+    T sym_load(const char *symbol);
 
     inline DWORD get_module_filename(wchar_t *buf, DWORD len);
     inline DWORD get_module_filename(char *buf, DWORD len);
 
     template<typename T>
-      std::basic_string<T> get_origin_from_module_handle();
+    std::basic_string<T> get_origin_from_module_handle();
 
     inline void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
     inline void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
-    template<typename T,
-      typename std::enable_if<std::is_same<T, std::string::value_type>::value, bool>::type = true>
+    /* std::enable_if and std::is_same combined */
+    template<typename T, typename U>
+    using enable_if_same_bool = typename std::enable_if<std::is_same<T, U>::value, bool>::type;
+
+    /* template wrapper around std::to_(w)string */
+    template<typename T, enable_if_same_bool<T, std::string::value_type> = true>
     std::string to_string(DWORD val) {
         return std::to_string(val);
     }
 
-    template<typename T,
-      typename std::enable_if<std::is_same<T, std::wstring::value_type>::value, bool>::type = true>
+    template<typename T, enable_if_same_bool<T, std::wstring::value_type> = true>
     std::wstring to_string(DWORD val) {
         return std::to_wstring(val);
     }
 
-    template<typename T,
-      typename std::enable_if<std::is_same<T, char>::value, bool>::type = true>
-    const char *return_string(const char *str, const wchar_t *wstr)
-    {
+    /* return char or wchar_t string */
+    template<typename T, enable_if_same_bool<T, char> = true>
+    const char *get_string(const char *str, const wchar_t *wstr) {
         UNUSED_REF(wstr);
         return str;
     }
 
-    template<typename T,
-      typename std::enable_if<std::is_same<T, wchar_t>::value, bool>::type = true>
-    const wchar_t *return_string(const char *str, const wchar_t *wstr)
-    {
+    template<typename T, enable_if_same_bool<T, wchar_t> = true>
+    const wchar_t *get_string(const char *str, const wchar_t *wstr) {
         UNUSED_REF(str);
         return wstr;
     }
 
-    template<typename T1, typename T2>
-      std::basic_string<T1> format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2);
+    /* format_error_message */
+    template<typename T, typename U>
+    std::basic_string<T> format_error_message(std::basic_string<T> &buf1, std::basic_string<U> &buf2);
 
 #else // !GDO_WINAPI
 
@@ -181,12 +183,12 @@ private:
     void load_lib(const std::string &filename, int flags, bool new_namespace);
 
     template<typename T>
-      T sym_load(const char *symbol);
+    T sym_load(const char *symbol);
 
 #endif // !GDO_WINAPI
 
     template<typename T>
-      bool load_filename(const T &filename, int flags, bool new_namespace);
+    bool load_filename(const T &filename, int flags, bool new_namespace);
 
 
 public:

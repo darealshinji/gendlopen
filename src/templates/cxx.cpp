@@ -231,7 +231,7 @@ T gdo::dl::sym_load(const char *symbol)
     clear_error();
 
     /* cast to void* to supress compiler warnings */
-    void *ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
+    auto ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
 
     if (!ptr) {
         save_error(symbol);
@@ -281,15 +281,13 @@ inline void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char
     ::FormatMessageA(flags, NULL, msgId, langId, buf, 0, NULL);
 }
 
-#define GDO_T1(x) return_string<T1>(x, L##x)
-
 
 /* return a formatted error message */
-template<typename T1, typename T2>
-std::basic_string<T1> gdo::dl::format_error_message(std::basic_string<T1> &buf1, std::basic_string<T2> &buf2)
+template<typename T, typename U>
+std::basic_string<T> gdo::dl::format_error_message(std::basic_string<T> &buf1, std::basic_string<U> &buf2)
 {
-    std::basic_string<T1> str;
-    T1 *buf = nullptr;
+    std::basic_string<T> str;
+    T *buf = nullptr;
 
     format_message(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -298,31 +296,32 @@ std::basic_string<T1> gdo::dl::format_error_message(std::basic_string<T1> &buf1,
         FORMAT_MESSAGE_MAX_WIDTH_MASK,
         m_last_error,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<T1*>(&buf));
+        reinterpret_cast<T*>(&buf));
 
     if (buf) {
         str = buf;
         ::LocalFree(buf);
     }
 
+#define GDO_STR(x)  x, L##x
+
     if (str.empty()) {
-        str = GDO_T1("Last saved error code: ");
-        str += to_string<T1>(m_last_error);
+        str = get_string<T>( GDO_STR("Last saved error code: ") );
+        str += to_string<T>(m_last_error);
     }
 
     if (!buf1.empty()) {
-        str.insert(0, GDO_T1(": "));
+        str.insert(0, get_string<T>( GDO_STR(": ") ));
         str.insert(0, buf1);
     } else if (!buf2.empty()) {
-        str.insert(0, GDO_T1(": "));
-        str.insert(0, convert_string<T1, T2>(buf2));
+        str.insert(0, get_string<T>( GDO_STR(": ") ));
+        str.insert(0, convert_string<T, U>(buf2));
     }
+
+#undef GDO_STR
 
     return str;
 }
-
-
-#undef GDO_T1
 
 
 #else
