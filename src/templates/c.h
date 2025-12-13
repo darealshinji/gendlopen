@@ -236,7 +236,7 @@ GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symb
 #  elif defined(__NO_INLINE__)@
 GDO_PRAGMA_WARNING("inlining is required to use variable arguments wrapper for %%func_symbol%%()")@
 #  endif@
-# else //!GDO_HAS_BUILTIN_VA_ARG_PACK@
+# else@
 GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments wrapper for %%func_symbol%%()")@
 # endif@
 #endif@
@@ -256,7 +256,7 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
-    extern inline __attribute__ ((__gnu_inline__))@
+    extern inline GDO_ATTR(gnu_inline)@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         /* puts("DEBUG: %%func_symbol%%: GNU inline wrapper function called"); */@
         const bool sym_loaded = (gdo_hndl.GDO_PTR_%%func_symbol%% != NULL);@
