@@ -343,7 +343,8 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
     /* check for "%def" line */
     if (line.maybe_keyword && line.line_count == 1 &&
-        strncmp(ptr, "%def ", 5) == 0 && ptr[5] != 0)
+        strncmp(ptr, "%def", 4) == 0 &&
+        (ptr[4] == ' ' || ptr[4] == '\t') && ptr[5] != 0)
     {
         ptr += 5;
 
