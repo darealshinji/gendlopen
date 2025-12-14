@@ -75,10 +75,10 @@ GDO_HOOK_<function>(...)
 
 #ifdef _WIN32
 # include <windows.h>
+#elif defined(HAVE_FEATURES_H)
+# include <features.h> /* __GLIBC__ */
 #else
-/* __GLIBC__ is defined in <features.h> which isn't present on all
- * systems, so we include it indirectly */
-# include <limits.h>
+# include <limits.h> /* includes <features.h> indirectly if present */
 #endif
 
 #ifndef GDO_WINAPI
