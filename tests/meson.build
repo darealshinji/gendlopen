@@ -50,7 +50,7 @@ components = [
     ['',    'c_clang_ast',            'C generated from clang AST',           'ast.txt',                      symbol_list],
     ['',    'c_load_symbol',          'C load individual symbols',            hw,                             []],
     ['',    'c_minimal',              'C minimal header',                     hw,                             ['-format', 'minimal']],
-    ['',    'c_line',                 'C minimal with #line directives',      hw,                             ['-format', 'minimal', '-line']],
+    ['',    'c_line',                 'C with #line directives',              hw,                             ['-line']],
     ['',    'c_no_date',              'C generated without date in header',   hw,                             ['-no-date']],
     ['',    'c_option',               'C generated with %option lines',       'helloworld_option.txt',        []],
     ['',    'c_param_create',         'C parameter names created',            'helloworld_param_create.txt',  ['-param=create']],

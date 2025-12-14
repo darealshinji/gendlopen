@@ -50,13 +50,11 @@ namespace
         const size_t len = sizeof(TEMPLATES_ENV) - 1;
 
         if (len < sizeof(pad) - 1) {
-            std::cout << "\n"
-                "environment variables:\n"
+            std::cout << "environment variables:\n"
                 "  " TEMPLATES_ENV << (pad + len) << "directory containing the template files"
                 << std::endl;
         } else {
-            std::cout << "\n"
-                "environment variables:\n"
+            std::cout << "environment variables:\n"
                 "  " TEMPLATES_ENV "\n"
                 "                    directory containing the template files"
                 << std::endl;
@@ -214,6 +212,13 @@ namespace help
             "    It's the other way around if `-param=skip' was not passed.\n"
             "    A line `%PARAM_SKIP_END%' will reset everything to default. This is used to\n"
             "    skip code that would otherwise require parameter names.\n"
+            "\n"
+            "    If a line begins with `%def ' the rest of that line will be treated as a macro\n"
+            "    name and substituted with preprocessor code that will define it as `0' if it\n"
+            "    was previously undefined. The line `%def FOO' for example will be replaced\n"
+            "    with `#ifndef FOO\\n#define FOO 0\\n#endif'. No other substitutions will be made.\n"
+            "    The intended use is to define lists of flags for use with `dlopen()' and\n"
+            "    `LoadLibrary()' for compatibility reasons.\n"
             "\n"
 
 

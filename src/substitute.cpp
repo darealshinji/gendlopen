@@ -341,6 +341,28 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return 0;
     }
 
+    /* check for "%def" line */
+    if (line.maybe_keyword && line.line_count == 1 &&
+        strncmp(ptr, "%def ", 5) == 0 && ptr[5] != 0)
+    {
+        ptr += 5;
+
+        if (m_line_directive) {
+            save::ofs << "#line " << m_substitute_lineno << '\n';
+            save::ofs << "#ifndef " << ptr << '\n';
+            save::ofs << "#line " << m_substitute_lineno << '\n';
+            save::ofs << "#define " << ptr << " 0\n";
+            save::ofs << "#line " << m_substitute_lineno << '\n';
+            save::ofs << "#endif\n";
+            return 6;
+        } else {
+            save::ofs << "#ifndef " << ptr << '\n';
+            save::ofs << "#define " << ptr << " 0\n";
+            save::ofs << "#endif\n";
+            return 3;
+        }
+    }
+
     /* replace prefixes */
     if (m_pfx_upper == "GDO") {
         buf = line.data;

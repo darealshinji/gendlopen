@@ -209,58 +209,24 @@ typedef Dl_info _GDO_Dl_info;
 
 /* dlopen(3) flags for compatibility with LoadLibrary() */
 /* taken from different implementations of dlfcn.h */
-#ifndef RTLD_LAZY
-#define RTLD_LAZY 0
-#endif
-#ifndef RTLD_NOW
-#define RTLD_NOW 0
-#endif
-#ifndef RTLD_GLOBAL
-#define RTLD_GLOBAL 0
-#endif
-#ifndef RTLD_LOCAL
-#define RTLD_LOCAL 0
-#endif
+%def RTLD_LAZY
+%def RTLD_NOW
+%def RTLD_GLOBAL
+%def RTLD_LOCAL
 
-#ifndef RTLD_BINDING_MASK
-#define RTLD_BINDING_MASK 0
-#endif
-#ifndef RTLD_CONFGEN
-#define RTLD_CONFGEN 0
-#endif
-#ifndef RTLD_DEEPBIND
-#define RTLD_DEEPBIND 0
-#endif
-#ifndef RTLD_FIRST
-#define RTLD_FIRST 0
-#endif
-#ifndef RTLD_GROUP
-#define RTLD_GROUP 0
-#endif
-#ifndef RTLD_MEMBER
-#define RTLD_MEMBER 0
-#endif
-#ifndef RTLD_MODEMASK
-#define RTLD_MODEMASK 0
-#endif
-#ifndef RTLD_NOAUTODEFER
-#define RTLD_NOAUTODEFER 0
-#endif
-#ifndef RTLD_NODELETE
-#define RTLD_NODELETE 0
-#endif
-#ifndef RTLD_NOLOAD
-#define RTLD_NOLOAD 0
-#endif
-#ifndef RTLD_PARENT
-#define RTLD_PARENT 0
-#endif
-#ifndef RTLD_TRACE
-#define RTLD_TRACE 0
-#endif
-#ifndef RTLD_WORLD
-#define RTLD_WORLD 0
-#endif
+%def RTLD_BINDING_MASK
+%def RTLD_CONFGEN
+%def RTLD_DEEPBIND
+%def RTLD_FIRST
+%def RTLD_GROUP
+%def RTLD_MEMBER
+%def RTLD_MODEMASK
+%def RTLD_NOAUTODEFER
+%def RTLD_NODELETE
+%def RTLD_NOLOAD
+%def RTLD_PARENT
+%def RTLD_TRACE
+%def RTLD_WORLD
 
 #ifndef DL_LAZY
 #define DL_LAZY RTLD_LAZY  /* compat */
@@ -269,45 +235,19 @@ typedef Dl_info _GDO_Dl_info;
 
 /* LoadLibrary() flags for compatibility with dlopen() */
 /* https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */
-#ifndef DONT_RESOLVE_DLL_REFERENCES
-#define DONT_RESOLVE_DLL_REFERENCES 0
-#endif
-#ifndef LOAD_IGNORE_CODE_AUTHZ_LEVEL
-#define LOAD_IGNORE_CODE_AUTHZ_LEVEL 0
-#endif
-#ifndef LOAD_LIBRARY_AS_DATAFILE
-#define LOAD_LIBRARY_AS_DATAFILE 0
-#endif
-#ifndef LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE
-#define LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE 0
-#endif
-#ifndef LOAD_LIBRARY_AS_IMAGE_RESOURCE
-#define LOAD_LIBRARY_AS_IMAGE_RESOURCE 0
-#endif
-#ifndef LOAD_LIBRARY_SEARCH_APPLICATION_DIR
-#define LOAD_LIBRARY_SEARCH_APPLICATION_DIR 0
-#endif
-#ifndef LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
-#define LOAD_LIBRARY_SEARCH_DEFAULT_DIRS 0
-#endif
-#ifndef LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
-#define LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR 0
-#endif
-#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
-#define LOAD_LIBRARY_SEARCH_SYSTEM32 0
-#endif
-#ifndef LOAD_LIBRARY_SEARCH_USER_DIRS
-#define LOAD_LIBRARY_SEARCH_USER_DIRS 0
-#endif
-#ifndef LOAD_WITH_ALTERED_SEARCH_PATH
-#define LOAD_WITH_ALTERED_SEARCH_PATH 0
-#endif
-#ifndef LOAD_LIBRARY_REQUIRE_SIGNED_TARGET
-#define LOAD_LIBRARY_REQUIRE_SIGNED_TARGET 0
-#endif
-#ifndef LOAD_LIBRARY_SAFE_CURRENT_DIRS
-#define LOAD_LIBRARY_SAFE_CURRENT_DIRS 0
-#endif
+%def DONT_RESOLVE_DLL_REFERENCES
+%def LOAD_IGNORE_CODE_AUTHZ_LEVEL
+%def LOAD_LIBRARY_AS_DATAFILE
+%def LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE
+%def LOAD_LIBRARY_AS_IMAGE_RESOURCE
+%def LOAD_LIBRARY_SEARCH_APPLICATION_DIR
+%def LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
+%def LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+%def LOAD_LIBRARY_SEARCH_SYSTEM32
+%def LOAD_LIBRARY_SEARCH_USER_DIRS
+%def LOAD_WITH_ALTERED_SEARCH_PATH
+%def LOAD_LIBRARY_REQUIRE_SIGNED_TARGET
+%def LOAD_LIBRARY_SAFE_CURRENT_DIRS
 
 
 /* default flags */
