@@ -58,6 +58,8 @@ else
     endif
 
     if glib_dep.found()
+        glib_dep2 = glib_dep.partial_dependency(compile_args : true)
+
         # GLib hook
         gen_hdr = custom_target('example_hook.h',
             output : 'example_hook.h',
@@ -65,8 +67,20 @@ else
             command : [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@']
         )
 
-        executable('hook', ['hook.c', gen_hdr],
-            dependencies : [dl_dep, glib_dep],
+        executable('hook', ['hook.c', 'hook.h', gen_hdr],
+            dependencies : [dl_dep, glib_dep2],
+            install : false
+        )
+
+        # preload
+        shared_module('preload', ['preload.c', 'hook.h', gen_hdr],
+            name_prefix : '',
+            dependencies : [dl_dep, glib_dep2],
+            install : false
+        )
+
+        executable('preload_main', ['preload_main.c', 'hook.h'],
+            dependencies : [glib_dep],
             install : false
         )
 
@@ -86,7 +100,7 @@ else
         endforeach
 
         executable('notify', ['notify.c', gen_hdrs],
-            dependencies : [dl_dep, glib_dep],
+            dependencies : [dl_dep, glib_dep2],
             include_directories : include_directories('thirdparty'),
             install : false
         )

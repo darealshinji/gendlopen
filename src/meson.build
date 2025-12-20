@@ -40,12 +40,9 @@ if not external_files
     gendlopen_deps += gen_hdr
 endif
 
-gendlopen_bin = executable(
-    'gendlopen',
+gendlopen_bin = executable('gendlopen',
     gendlopen_deps,
     cpp_args : cpp_args_extra,
     win_subsystem : 'console'
 )
-
-gendlopen_aux_bin = gendlopen_bin
 
