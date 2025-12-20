@@ -69,9 +69,12 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 
 /* forward declarations */
 GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
-GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg) GDO_ATTR (nonnull);
+GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg)
+    GDO_GCC_ATTRIBUTE (nonnull);
+
 #if !defined(GDO_WINAPI) && !defined(GDO_HAVE_DLINFO)
-GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr) GDO_ATTR (warn_unused_result);
+GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
+    GDO_GCC_ATTRIBUTE (warn_unused_result);
 #endif
 
 

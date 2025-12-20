@@ -414,18 +414,6 @@ public:
 #endif
 
 
-/* set visibility of wrapped functions */
-#ifdef GDO_WRAP_IS_VISIBLE
-/* visible as regular functions */
-# define GDO_WRAP_DECL  /**/
-# define GDO_WRAP(x)    x
-# else
-/* declare as prefixed inline functions by default */
-# define GDO_WRAP_DECL  static inline
-# define GDO_WRAP(x)    GDO_WRAP_##x
-#endif
-
-
 namespace gdo {
     namespace wrap {
         void _check(int load, bool sym_loaded, const char *sym);
@@ -439,13 +427,13 @@ namespace gdo {
 
 
 /* diagnostic warnings on variable arguments functions */
-#if !defined(GDO_DISABLE_WARNINGS) && defined(GDO_WRAP_IS_VISIBLE)
+#if !defined(GDO_DISABLE_WARNINGS) && defined(GDO_WRAP_VISIBILITY)
 
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symbol%%() can only be used inlined")@
+GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined")@
 #endif
 
-#endif //!GDO_DISABLE_WARNINGS
+#endif //!GDO_DISABLE_WARNINGS && GDO_WRAP_VISIBILITY
 
 @
 /* %%func_symbol%%() */@
@@ -467,9 +455,6 @@ GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symb
     }@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%
 
-
-#undef GDO_WRAP_DECL
-#undef GDO_WRAP
 
 #endif //GDO_WRAP_FUNCTIONS ...
 /***************************** end of wrap code ******************************/

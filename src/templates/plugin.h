@@ -77,7 +77,7 @@ typedef struct _gdo_plugin
  * If `files' is NULL or `num' is 0 a NULL pointer is returned.
  */
 GDO_DECL gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
-    GDO_ATTR (warn_unused_result);
+    GDO_GCC_ATTRIBUTE (warn_unused_result);
 
 
 /**

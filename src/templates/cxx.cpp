@@ -961,7 +961,7 @@ namespace gdo
     !defined(GDO_DISABLE_ALIASING)
 
 /* aliases to raw function pointers */
-#if !defined(GDO_WRAP_IS_VISIBLE)
+#if !defined(GDO_WRAP_VISIBILITY)
 # define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
 

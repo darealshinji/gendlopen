@@ -177,7 +177,7 @@ GDO_DECL bool gdo_any_symbol_loaded(void);
  * Do not free the returned pointer!
  */
 GDO_DECL const gdo_char_t *gdo_last_error(void)
-    GDO_ATTR (returns_nonnull);
+    GDO_GCC_ATTRIBUTE (returns_nonnull);
 
 
 /**
@@ -189,7 +189,7 @@ GDO_DECL const gdo_char_t *gdo_last_error(void)
  * using this function.
  */
 GDO_DECL gdo_char_t *gdo_lib_origin(void)
-    GDO_ATTR (warn_unused_result);
+    GDO_GCC_ATTRIBUTE (warn_unused_result);
 
 
 /**
@@ -211,17 +211,6 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 #endif
 
 
-/* set visibility of wrapped functions */
-#ifdef GDO_WRAP_IS_VISIBLE
-/* visible as regular functions */
-# define GDO_WRAP_DECL  /**/
-# define GDO_WRAP(x)    x
-# else
-/* declare as prefixed inline functions by default */
-# define GDO_WRAP_DECL  static inline
-# define GDO_WRAP(x)    GDO_WRAP_##x
-#endif
-
 GDO_DECL void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym);
 
 
@@ -231,8 +220,8 @@ GDO_DECL void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym);
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
-#  ifdef GDO_WRAP_IS_VISIBLE@
-GDO_PRAGMA_WARNING("GDO_WRAP_IS_VISIBLE defined but wrapper function %%func_symbol%%() can only be used inlined")@
+#  ifdef GDO_WRAP_VISIBILITY@
+GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined")@
 #  elif defined(__NO_INLINE__)@
 GDO_PRAGMA_WARNING("inlining is required to use variable arguments wrapper for %%func_symbol%%()")@
 #  endif@
@@ -256,7 +245,7 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
-    extern inline GDO_ATTR(gnu_inline)@
+    extern inline GDO_GCC_ATTRIBUTE(gnu_inline)@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         /* puts("DEBUG: %%func_symbol%%: GNU inline wrapper function called"); */@
         const bool sym_loaded = (gdo_hndl.GDO_PTR_%%func_symbol%% != NULL);@
@@ -275,10 +264,6 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
         %%return%% gdo_hndl.GDO_PTR_%%func_symbol%%(%%param_names%%);@
     }@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%
-
-
-#undef GDO_WRAP_DECL
-#undef GDO_WRAP
 
 #endif //GDO_WRAP_FUNCTIONS ...
 /***************************** end of wrap code ******************************/
@@ -304,7 +289,7 @@ GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments w
     !defined(GDO_DISABLE_ALIASING)
 
 /* aliases to raw function pointers */
-#if !defined(GDO_WRAP_IS_VISIBLE)
+#if !defined(GDO_WRAP_VISIBILITY)
 # define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
 

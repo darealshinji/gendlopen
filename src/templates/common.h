@@ -17,9 +17,6 @@ GDO_STATIC
 GDO_WRAP_FUNCTIONS
     Use actual function wrappers instead of a name alias.
 
-GDO_WRAP_IS_VISIBLE
-    Declare function wrappers as regular visible functions instead of inlining them.
-
 GDO_ENABLE_AUTOLOAD
     Define this macro if you want to use auto-loading wrapper functions.
     It requires GDO_DEFAULT_LIB to be defined.
@@ -47,8 +44,9 @@ GDO_DEFAULT_FLAGS
 GDO_DEFAULT_LIB
     Set a default library name through this macro.
 
-GDO_VISIBILITY
-    Set the symbol visibility of wrapped functions.
+GDO_WRAP_VISIBILITY
+    Set the symbol visibility of wrapped functions. By default wrapped functions
+    are not visible and inlined.
 
 
 *** hooks ***
@@ -135,17 +133,23 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-/* attributes */
+/* GCC specific attributes */
 #ifdef __GNUC__
-# define GDO_ATTR(x)  __attribute__ ((x))
+# define GDO_GCC_ATTRIBUTE(x)  __attribute__ ((x))
 #else
-# define GDO_ATTR(x)  /**/
+# define GDO_GCC_ATTRIBUTE(x)  /**/
 #endif
 
 
-/* symbol visibility for wrapped functions */
-#ifndef GDO_VISIBILITY
-# define GDO_VISIBILITY /**/
+/* set visibility of wrapped functions */
+#ifdef GDO_WRAP_VISIBILITY
+/* visible as regular functions */
+# define GDO_WRAP_DECL  GDO_WRAP_VISIBILITY
+# define GDO_WRAP(x)    x
+# else
+/* declare as prefixed inline functions by default */
+# define GDO_WRAP_DECL  static inline
+# define GDO_WRAP(x)    GDO_WRAP_##x
 #endif
 
 
