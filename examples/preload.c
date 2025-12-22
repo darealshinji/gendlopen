@@ -1,5 +1,5 @@
-/* create a shim library to use with LD_PRELOAD (as an alternative to the RTLD_NEXT method);
- * use with "LD_PRELOAD=./preload.so ./preload_main" to test the hooks */
+/* Create a shim library to use with LD_PRELOAD as a safer alternative to the RTLD_NEXT method.
+ * Use with "LD_PRELOAD=./preload.so ./preload_main" to test the hooks. */
 
 /* enable auto-loading */
 #define GDO_DEFAULT_LIB  GDO_LIBNAME(glib-2.0,0)

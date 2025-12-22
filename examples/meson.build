@@ -84,6 +84,18 @@ else
             install : false
         )
 
+        # shim
+        shared_library('glib-2.0', ['shim.c', 'hook.h', gen_hdr],
+            dependencies : [dl_dep, glib_dep2],
+            soversion : '0',
+            install : false
+        )
+
+        executable('shim_main', ['shim_main.c', 'hook.h'],
+            dependencies : [glib_dep],
+            install : false
+        )
+
         # libnotify
         gen_hdrs = []
 
