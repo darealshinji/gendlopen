@@ -29,7 +29,7 @@
 /* hook: manually call the function and return early */
 #define GDO_HOOK_helloworld_hello2(...) \
     puts("helloworld_hello2() function hooked!"); \
-    GDO_ALIAS_helloworld_hello2(__VA_ARGS__); \
+    GDO_RAWPTR_helloworld_hello2(__VA_ARGS__); \
     return;
 
 

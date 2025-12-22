@@ -18,8 +18,8 @@ namespace gdo
  * Symbol pointers.
  * Symbol names must be prefixed to avoid macro expansion.
  */
-extern %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%);
-extern %%obj_type%% *GDO_PTR_%%obj_symbol%%;
+extern %%type%% (*_GDO_PTR_%%func_symbol%%)(%%args%%);
+extern %%obj_type%% *_GDO_PTR_%%obj_symbol%%;
 
 
 /**
@@ -398,8 +398,8 @@ public:
 /**
  * Prefixed aliases, useful if GDO_DISABLE_ALIASING was defined.
  */
-#define GDO_ALIAS_%%func_symbol_pad%% gdo::GDO_PTR_%%func_symbol%%
-#define GDO_ALIAS_%%obj_symbol_pad%% *gdo::GDO_PTR_%%obj_symbol%%
+#define GDO_RAWPTR_%%func_symbol_pad%% gdo::_GDO_PTR_%%func_symbol%%
+#define GDO_RAWPTR_%%obj_symbol_pad%% gdo::_GDO_PTR_%%obj_symbol%%
 %PARAM_SKIP_REMOVE_BEGIN%
 
 
@@ -441,17 +441,17 @@ GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symb
     template<typename... Types>@
     %%type%% GDO_WRAP(%%func_symbol%%) (Types... args) {@
         /* std::cout << "DEBUG: %%func_symbol%%: template function called" << std::endl; */@
-        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, gdo::GDO_PTR_%%func_symbol%%, "%%func_symbol%%" );@
+        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, GDO_RAWPTR_%%func_symbol%%, "%%func_symbol%%" );@
         GDO_HOOK_%%func_symbol%%(args...);@
-        %%return%% gdo::GDO_PTR_%%func_symbol%%(args...);@
+        %%return%% GDO_RAWPTR_%%func_symbol%%(args...);@
     }@
 #else@
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         /* std::cout << "DEBUG: %%func_symbol%%: wrapped function called" << std::endl; */@
-        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, gdo::GDO_PTR_%%func_symbol%%, "%%func_symbol%%" );@
+        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, GDO_RAWPTR_%%func_symbol%%, "%%func_symbol%%" );@
         GDO_HOOK_%%func_symbol%%(%%param_names%%);@
-        %%return%% gdo::GDO_PTR_%%func_symbol%%(%%param_names%%);@
+        %%return%% GDO_RAWPTR_%%func_symbol%%(%%param_names%%);@
     }@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%
 
@@ -467,7 +467,7 @@ GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symb
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 # define GDO_FUNC_ALIAS(x) GDO_WRAP_##x
 #else
-# define GDO_FUNC_ALIAS(x) GDO_ALIAS_##x
+# define GDO_FUNC_ALIAS(x) GDO_RAWPTR_##x
 #endif
 
 
@@ -485,7 +485,7 @@ GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symb
 #endif
 
 /* aliases to raw object pointers */
-#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
+#define %%obj_symbol_pad%% *GDO_RAWPTR_%%obj_symbol%%
 
 #endif //GDO_SEPARATE ...
 

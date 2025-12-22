@@ -34,8 +34,8 @@ gdo::dl::handle_t gdo::dl::m_handle = nullptr;
 
 
 /* symbol pointers; symbol names must be prefixed to avoid macro expansion */
-%%type%% (*gdo::GDO_PTR_%%func_symbol%%)(%%args%%) = nullptr;
-%%obj_type%% *gdo::GDO_PTR_%%obj_symbol%% = nullptr;
+%%type%% (*GDO_RAWPTR_%%func_symbol%%)(%%args%%) = nullptr;
+%%obj_type%% *GDO_RAWPTR_%%obj_symbol%% = nullptr;
 
 
 /* Create versioned library names for DLLs, dylibs and DSOs.
@@ -531,7 +531,7 @@ bool gdo::dl::load_all_symbols()
     /* get symbol addresses */
 
     /* %%symbol%% */@
-    if ((GDO_PTR_%%symbol%% =@
+    if ((_GDO_PTR_%%symbol%% =@
         sym_load<%%sym_type%%>@
             ("%%symbol%%")) == nullptr) {@
         return false;@
@@ -557,12 +557,12 @@ bool gdo::dl::load_symbol(int symbol_num)
     {
     /* %%symbol%% */@
     case GDO_LOAD_%%symbol%%:@
-        if (!GDO_PTR_%%symbol%%) {@
-            GDO_PTR_%%symbol%% =@
+        if (!_GDO_PTR_%%symbol%%) {@
+            _GDO_PTR_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
         }@
-        return (GDO_PTR_%%symbol%% != nullptr);@
+        return (_GDO_PTR_%%symbol%% != nullptr);@
 
     default:
         break;
@@ -621,12 +621,12 @@ bool gdo::dl::load_symbol(const char *symbol)
     if (len == sizeof("%%symbol%%") - 1 &&@
         ::strcmp(symbol + n, ptr + n) == 0)@
     {@
-        if (!GDO_PTR_%%symbol%%) {@
-            GDO_PTR_%%symbol%% =@
+        if (!_GDO_PTR_%%symbol%%) {@
+            _GDO_PTR_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
         }@
-        return (GDO_PTR_%%symbol%% != nullptr);@
+        return (_GDO_PTR_%%symbol%% != nullptr);@
     }@
 
     error_unknown_symbol();
@@ -639,7 +639,7 @@ bool gdo::dl::load_symbol(const char *symbol)
 bool gdo::dl::all_symbols_loaded() const
 {
     if (true
-        && GDO_PTR_%%symbol%% != nullptr
+        && _GDO_PTR_%%symbol%% != nullptr
     ) {
         return true;
     }
@@ -652,7 +652,7 @@ bool gdo::dl::all_symbols_loaded() const
 bool gdo::dl::no_symbols_loaded() const
 {
     if (true
-        && GDO_PTR_%%symbol%% == nullptr
+        && _GDO_PTR_%%symbol%% == nullptr
     ) {
         return true;
     }
@@ -665,7 +665,7 @@ bool gdo::dl::no_symbols_loaded() const
 bool gdo::dl::any_symbol_loaded() const
 {
     if (false
-        || GDO_PTR_%%symbol%% != nullptr
+        || _GDO_PTR_%%symbol%% != nullptr
     ) {
         return true;
     }
@@ -699,7 +699,7 @@ bool gdo::dl::free(bool force)
     clear_error();
 
     m_handle = nullptr;
-    GDO_PTR_%%symbol%% = nullptr;
+    _GDO_PTR_%%symbol%% = nullptr;
 
     return true;
 }
@@ -831,7 +831,7 @@ std::string gdo::dl::origin()
         }
     };
 
-    get_fname(reinterpret_cast<void *>(GDO_PTR_%%symbol%%));@
+    get_fname(reinterpret_cast<void *>(_GDO_PTR_%%symbol%%));@
     if (!fname.empty()) return fname;
 
     m_errmsg = "dladdr() failed to get library path";
@@ -966,6 +966,6 @@ namespace gdo
 #endif
 
 /* aliases to raw object pointers */
-#define %%obj_symbol_pad%% GDO_ALIAS_%%obj_symbol%%
+#define %%obj_symbol_pad%% *GDO_RAWPTR_%%obj_symbol%%
 
 #endif //!GDO_SEPARATE

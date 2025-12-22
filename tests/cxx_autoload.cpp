@@ -18,7 +18,7 @@
 /* manually call the function and return early */
 #define GDO_HOOK_helloworld_hello2(...) \
     std::cout << "helloworld_hello2() function hooked!" << std::endl; \
-    GDO_ALIAS_helloworld_hello2(__VA_ARGS__); \
+    GDO_RAWPTR_helloworld_hello2(__VA_ARGS__); \
     return;
 
 #include <iostream>
