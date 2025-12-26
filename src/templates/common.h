@@ -12,7 +12,7 @@ GDO_USE_DLOPEN
     On other targets `dlopen()' is always used.
 
 GDO_STATIC
-    If defined `static inline' linkage is used for all functions.
+    If defined `static inline' linkage is used for all functions (C only).
 
 GDO_WRAP_FUNCTIONS
     Use actual function wrappers instead of a name alias.
