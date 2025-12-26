@@ -284,7 +284,7 @@ inline void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char
 
 /* return a formatted error message */
 template<typename T, typename U>
-std::basic_string<T> gdo::dl::format_error_message(std::basic_string<T> &buf1, std::basic_string<U> &buf2)
+std::basic_string<T> gdo::dl::format_error_message(std::basic_string<T> &bufT, std::basic_string<U> &bufU)
 {
     std::basic_string<T> str;
     T *buf = nullptr;
@@ -310,12 +310,12 @@ std::basic_string<T> gdo::dl::format_error_message(std::basic_string<T> &buf1, s
         str += to_string<T>(m_last_error);
     }
 
-    if (!buf1.empty()) {
+    if (!bufT.empty()) {
         str.insert(0, get_string<T>( GDO_STR(": ") ));
-        str.insert(0, buf1);
-    } else if (!buf2.empty()) {
+        str.insert(0, bufT);
+    } else if (!bufU.empty()) {
         str.insert(0, get_string<T>( GDO_STR(": ") ));
-        str.insert(0, convert_string<T, U>(buf2));
+        str.insert(0, convert_string<T, U>(bufU));
     }
 
 #undef GDO_STR
@@ -539,7 +539,7 @@ bool gdo::dl::load_all_symbols()
 
     clear_error();
 
-    return all_symbols_loaded();
+    return true;
 }
 
 
@@ -865,7 +865,7 @@ namespace gdo
     namespace wrap
     {
 #ifdef GDO_ENABLE_AUTOLOAD
-        auto loader = dl(GDO_DEFAULT_LIBA);
+        auto _loader = dl(GDO_DEFAULT_LIBA);
 #endif
 
         /* used by wrapper functions */
@@ -889,20 +889,20 @@ namespace gdo
 
             UNUSED_REF(sym_loaded);
 
-            if (!loader.lib_loaded()) {
-                loader.load();
+            if (!_loader.lib_loaded()) {
+                _loader.load();
             }
 
 # ifdef GDO_ENABLE_AUTOLOAD_LAZY
             /* load a specific symbol */
-            if (loader.load_symbol(load)) {
+            if (_loader.load_symbol(load)) {
                 return;
             }
 # else
             /* load all symbols */
             UNUSED_REF(load);
 
-            if (loader.load_all_symbols()) {
+            if (_loader.load_all_symbols()) {
                 return;
             }
 # endif
@@ -910,7 +910,7 @@ namespace gdo
             /* error */
 
             std::string s = "error: ";
-            std::string msg = loader.error();
+            std::string msg = _loader.error();
 
             if (msg.find(GDO_DEFAULT_LIBA) == std::string::npos) {
                 /* library name is not part of error message */

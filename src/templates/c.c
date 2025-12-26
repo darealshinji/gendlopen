@@ -461,7 +461,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(void)
         return false;@
     }@
 
-    return gdo_all_symbols_loaded();
+    return true;
 }
 
 GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg)

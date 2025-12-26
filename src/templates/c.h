@@ -221,12 +221,12 @@ GDO_DECL void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym);
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
 # ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
 #  ifdef GDO_WRAP_VISIBILITY@
-GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined")@
+GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined; use GDO_DISABLE_WARNINGS to silence this warning")@
 #  elif defined(__NO_INLINE__)@
-GDO_PRAGMA_WARNING("inlining is required to use variable arguments wrapper for %%func_symbol%%()")@
+GDO_WARNING("inlining is required to use variable arguments wrapper for %%func_symbol%%(); use GDO_DISABLE_WARNINGS to silence this warning")@
 #  endif@
 # else@
-GDO_PRAGMA_WARNING("__builtin_va_arg_pack() required to use variable arguments wrapper for %%func_symbol%%()")@
+GDO_WARNING("__builtin_va_arg_pack() required to use variable arguments wrapper for %%func_symbol%%(); use GDO_DISABLE_WARNINGS to silence this warning")@
 # endif@
 #endif@
 

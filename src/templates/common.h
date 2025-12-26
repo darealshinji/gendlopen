@@ -162,14 +162,13 @@ typedef Dl_info _GDO_Dl_info;
 
 
 /* diagnostic #pragma warnings */
-#define _GDO_XSTR(x)              #x
-#define _GDO_STR(x)               _GDO_XSTR(x)
 #ifdef __GNUC__
-# define GDO_PRAGMA_WARNING(MSG)  _Pragma( _GDO_XSTR(GCC warning MSG) )
+# define _GDO_PRAGMA(x)    _Pragma(#x)
+# define GDO_WARNING(MSG)  _GDO_PRAGMA(GCC warning MSG)
 #elif defined(_MSC_VER)
-# define GDO_PRAGMA_WARNING(MSG)  __pragma( message(__FILE__ ": " MSG) )
+# define GDO_WARNING(MSG)  __pragma( message(__FILE__ ": " MSG) )
 #else
-# define GDO_PRAGMA_WARNING(...)  /**/
+# define GDO_WARNING(...)  /**/
 #endif
 
 

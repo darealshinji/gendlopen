@@ -430,8 +430,8 @@ namespace gdo {
 #if !defined(GDO_DISABLE_WARNINGS) && defined(GDO_WRAP_VISIBILITY)
 
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined")@
-#endif
+GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined; use GDO_DISABLE_WARNINGS to silence this warning")@
+# endif@
 
 #endif //!GDO_DISABLE_WARNINGS && GDO_WRAP_VISIBILITY
 
@@ -480,7 +480,7 @@ GDO_PRAGMA_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symb
     !defined(GDO_DISABLE_ALIASING)
 
 /* aliases to raw function pointers */
-#if !defined(GDO_WRAP_IS_VISIBLE)
+#if !defined(GDO_WRAP_VISIBILITY)
 # define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
 
