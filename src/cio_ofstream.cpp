@@ -42,7 +42,7 @@ bool ofstream::open(const std::filesystem::path &path)
     m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
 
     if (m_ofs.is_open()) {
-        m_optr = &m_ofs;
+        m_optr = dynamic_cast<std::ostream *>(&m_ofs);
         return true;
     }
 
@@ -61,7 +61,7 @@ bool ofstream::open(const std::string &file)
     m_ofs.open(file, std::ios_base::out | std::ios_base::binary);
 
     if (m_ofs.is_open()) {
-        m_optr = &m_ofs;
+        m_optr = dynamic_cast<std::ostream *>(&m_ofs);
         return true;
     }
 
@@ -75,7 +75,6 @@ void ofstream::close()
     }
 
     m_optr = &std::cout;
-    //std::cout.flush();
 }
 
 } /* namespace cio */
