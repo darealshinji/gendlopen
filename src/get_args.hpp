@@ -50,22 +50,14 @@ private:
 
 public:
 
-    get_args(const int &argc, char ** const &argv)
-    : m_argc(argc), m_argv(argv)
-    {}
-
-    ~get_args()
-    {}
+    get_args(const int &argc, char ** const &argv);
+    ~get_args();
 
     /* return option string (may be NULL) */
-    const char *opt() const {
-        return m_opt;
-    }
+    const char *opt() const;
 
     /* get current argument */
-    const char *current() const {
-        return (m_it < m_argc) ? m_argv[m_it] : NULL;
-    }
+    const char *current() const;
 
     size_t pfxlen();
     std::string prefix();

@@ -27,6 +27,27 @@
 #include "get_args.hpp"
 
 
+get_args::get_args(const int &argc, char ** const &argv)
+: m_argc(argc), m_argv(argv)
+{
+}
+
+get_args::~get_args()
+{
+}
+
+/* return option string (may be NULL) */
+const char *get_args::opt() const
+{
+    return m_opt;
+}
+
+/* get current argument */
+const char *get_args::current() const
+{
+    return (m_it < m_argc) ? m_argv[m_it] : NULL;
+}
+
 /* prefix length */
 size_t get_args::pfxlen()
 {
