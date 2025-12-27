@@ -18,7 +18,6 @@ CXX_SRCS = \
 	..\$(SRC)\parameter_names.cpp \
 	..\$(SRC)\parse.cpp \
 	..\$(SRC)\substitute.cpp \
-	..\$(SRC)\symbol_name_lookup.cpp \
 	..\$(SRC)\tokenize.cpp \
 	..\$(SRC)\utils.cpp
 

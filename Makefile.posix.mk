@@ -7,18 +7,18 @@ OBJS = \
 	$(OUT)/clang_ast.o \
 	$(OUT)/data.o \
 	$(OUT)/data_embedded.o \
+	$(OUT)/data_external.o \
 	$(OUT)/gendlopen.o \
 	$(OUT)/generate.o \
+	$(OUT)/get_args.o \
 	$(OUT)/help.o \
 	$(OUT)/lex.yy.o \
 	$(OUT)/main.o \
 	$(OUT)/open_file.o \
+	$(OUT)/options.o \
 	$(OUT)/parameter_names.o \
 	$(OUT)/parse.o \
-	$(OUT)/get_args.o \
-	$(OUT)/options.o \
 	$(OUT)/substitute.o \
-	$(OUT)/symbol_name_lookup.o \
 	$(OUT)/tokenize.o \
 	$(OUT)/utils.o
 
@@ -67,6 +67,9 @@ $(OUT)/data.o: $(SRC)/data.cpp
 $(OUT)/data_embedded.o: $(SRC)/data_embedded.cpp
 	$(COMPILE_CXX) $@ $(SRC)/data_embedded.cpp
 
+$(OUT)/data_external.o: $(SRC)/data_external.cpp
+	$(COMPILE_CXX) $@ $(SRC)/data_external.cpp
+
 $(OUT)/gendlopen.o: $(SRC)/gendlopen.cpp
 	$(COMPILE_CXX) $@ $(SRC)/gendlopen.cpp
 
@@ -99,9 +102,6 @@ $(OUT)/parse.o: $(SRC)/parse.cpp
 
 $(OUT)/substitute.o: $(SRC)/substitute.cpp
 	$(COMPILE_CXX) $@ $(SRC)/substitute.cpp
-
-$(OUT)/symbol_name_lookup.o: $(SRC)/symbol_name_lookup.cpp
-	$(COMPILE_CXX) $@ $(SRC)/symbol_name_lookup.cpp
 
 $(OUT)/tokenize.o: $(SRC)/tokenize.cpp
 	$(COMPILE_CXX) $@ $(SRC)/tokenize.cpp
