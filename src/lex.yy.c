@@ -652,7 +652,7 @@ char *yytext;
 /**
  Licensed under the MIT License <http://opensource.org/licenses/MIT>.
  SPDX-License-Identifier: MIT
- Copyright (c) 2024-2025 Carsten Janssen
+ Copyright (c) 2024-2026 Carsten Janssen
 
  Permission is hereby  granted, free of charge, to any  person obtaining a copy
  of this software and associated  documentation files (the "Software"), to deal
