@@ -11,5 +11,3 @@ gboolean        notify_is_initted (void);
 NotifyNotification *notify_notification_new(const char *, const char *, const char *);
 gboolean            notify_notification_show(NotifyNotification *, GError **);
 
-/* uncomment to test if gendlopen will find duplicate symbol names */
-//int notify_uninit;

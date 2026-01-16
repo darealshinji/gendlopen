@@ -7,7 +7,6 @@ gendlopen_src = files(
     'data_external.cpp',
     'gendlopen.cpp',
     'generate.cpp',
-    'get_args.cpp',
     'help.cpp',
     'lex.yy.c',
     'main.cpp',

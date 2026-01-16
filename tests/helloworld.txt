@@ -67,6 +67,9 @@ enum {
 /* no parameters */
 helloworld *(helloworld_init) (  );
 
+/* uncomment to test if gendlopen will find duplicate symbol names */
+//int helloworld_init;
+
 /* parentheses around pointer, name and parameters */
 helloworld (
   /* array in parameters */

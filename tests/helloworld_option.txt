@@ -10,7 +10,7 @@ void helloworld_release(
 %option prefix=mydl
 %option include=helloworld.h
 %option library=api:0:helloworld
-%option define=HELLOWORLD_TEST
+%option D=HELLOWORLD_TEST
 %option param=skip \
         no-date \
         no-pragma-once \

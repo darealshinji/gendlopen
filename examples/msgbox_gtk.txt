@@ -1,15 +1,5 @@
 %option prefix=dl_gtk
 
-/* preprocessor tokens are ignored */
-#define IGNORE_ME \
-    ignored
-
-/* testing no common prefix */
-//int NOT_a_gtk_function();
-
-/* testing symbol equals common prefix */
-//int gtk_();
-
 void
 gtk_init (int *argc,
           char ***argv);

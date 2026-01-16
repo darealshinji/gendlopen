@@ -31,16 +31,8 @@
 /* anonymous */
 namespace
 {
-    void usage(const char *prog)
-    {
-        std::cout << "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n"
-            "\n"
-            "options may also be prefixed with "
-#ifdef _WIN32
-            "`/' or "
-#endif
-            "`--' (except single-letter options)\n"
-            << std::endl;
+    void usage(const char *prog) {
+        std::cout << "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n" << std::endl;
     }
 
     void environment_variables()
@@ -129,7 +121,7 @@ namespace help
             "\n"
             "    Some options can be set on a line beginning with `%option':\n"
             "    %option format=<string> prefix=<string> library=[<mode>:]<lib>\n"
-            "    %option include=[nq:]<file> define=<string> param=[skip|create|read]\n"
+            "    %option include=[nq:]<file> D=<string> param=[skip|create|read]\n"
             "    %option no-date no-pragma-once line\n"
             "\n"
             "    See the corresponding command line options for details.\n"
@@ -252,7 +244,6 @@ namespace help
             "\n"
 
 
-            "  -define=<string>\n"
             "  -D<string>\n"
             "    Set a preprocessor definition macro to be added at the top of the output code.\n"
             "    This macro may include a value in the form of `FOO=1'.\n"

@@ -26,7 +26,6 @@
 #include <string>
 #include <cstdlib>
 #include "gendlopen.hpp"
-#include "get_args.hpp"
 #include "utils.hpp"
 
 
@@ -97,14 +96,7 @@ int main(int argc, char **argv)
             gdo.generate();
         }
     }
-    catch (const get_args::error &e) {
-        /* command line error */
-        std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
-        std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
-        return 1;
-    }
     catch (const gendlopen::error &e) {
-        /* other error */
         std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
         return 1;
     }

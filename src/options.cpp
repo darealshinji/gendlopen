@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 #include "gendlopen.hpp"
-#include "get_args.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 
@@ -39,32 +38,40 @@ namespace help
 
 namespace /* anonymous */
 {
-    /* get argument from an option string */
-    const char *get_arg_len(const std::string &str, const char *opt, const size_t optlen)
+    template<size_t N>
+    bool get_option(const std::string &str, const char *&ptr, char const (&opt)[N])
     {
-        /* strncmp(str.c_str(), opt, optlen) */
-        if (str.compare(0, optlen, opt) != 0) {
-            return NULL;  /* not the argument we're looking for */
+        if (str.compare(0, N-1, opt) == 0 && str.size() > N-1) {
+            ptr = str.c_str() + (N-1);
+            return true;
         }
 
-        if (str.size() > optlen) {
-            return str.c_str() + optlen;
+        return false;
+    }
+
+
+    const char *get_argument(const char *arg, const int &argc, char ** const &argv, int &i, const char *opt, size_t optlen)
+    {
+        if (strncmp(arg, opt, optlen) == 0) {
+            if (arg[optlen] == 0) {
+                if (++i < argc) {
+                    return argv[i]; /* next argv[] entry */
+                }
+
+                throw gendlopen::error(std::string("option '-") + std::string(opt) + "' requires an argument");
+            } else if (optlen == 1) {
+                return arg + optlen; /* -Xabc */
+            } else if (arg[optlen] == '=') {
+                return arg + optlen + 1; /* -abc=X */
+            }
         }
 
-        /* no argument */
         return NULL;
     }
 
 
-    template<size_t N>
-    constexpr bool get_arg(const std::string &str, const char *&ptr, char const (&opt)[N])
-    {
-        return ((ptr = get_arg_len(str, opt, N-1)) != NULL);
-    }
-
-
     /* get param enum from string */
-    param::names param_value(const char *opt, std::string prefix)
+    param::names param_value(const char *opt)
     {
         if (utils::strcasecmp(opt, "skip") == 0) {
             return param::skip;
@@ -74,12 +81,7 @@ namespace /* anonymous */
             return param::read;
         }
 
-        std::string msg = "unknown argument for option '";
-        msg += prefix;
-        msg += "param': ";
-        msg += opt;
-
-        throw get_args::error(msg);
+        throw gendlopen::error(std::string("unknown argument for option '-param': ") + opt);
     }
 }
 
@@ -88,162 +90,175 @@ namespace /* anonymous */
 void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 {
     const char *input_file = NULL;
-    const char *cur = NULL;
+    const char *p = NULL;
+    const char *arg = NULL;
+    int i = 1; /* skip argv[0] */
 
-    get_args a(argc, argv);
+    auto arg_eq = [&] (const char *opt) -> bool {
+        return (strcmp(arg, opt) == 0);
+    };
 
-    /* parse arguments */
-    for (cur = a.begin(); cur != NULL; cur = a.next()) {
-        /* use first non-option argument as input_file file */
-        if (a.pfxlen() == 0) {
+    auto get_arg_len = [&] (const char *opt, size_t len) -> bool {
+        return ((p = get_argument(arg, argc, argv, i, opt, len)) != NULL);
+    };
+
+    /**
+    parse arguments:
+     - options begin with single dash (-foo)
+     - "-" is a valid non-option argument
+     - single-letter options are uppercase, no argument separator (-Xfoo)
+     - multi-letter options are lowercase, argument separator is "=" (-foo=bar)
+     - arguments can be next entry in argv list (-foo bar -X foo)
+    **/
+    for ( ; i < argc; i++) {
+        arg = argv[i];
+
+        /* use first non-option argument as input file */
+        if (*arg != '-' || arg_eq("-")) {
             if (!input_file) {
-                input_file = cur;
+                input_file = arg;
             } else {
-                std::cerr << "warning: non-option argument ignored: " << cur << std::endl;
+                std::cerr << "warning: non-option argument ignored: " << arg << std::endl;
             }
             continue;
         }
 
-        /* skip prefix */
-        const char *p = cur + a.pfxlen();
+        arg++;
 
-        switch(*p)
+#define XSTRLEN(x) (sizeof(x)-1)
+#define get_arg(x) get_arg_len(x, XSTRLEN(x))
+
+        switch(*arg)
         {
-        /* single letters (uppercase only!) */
-        case 'D':
-            if (a.get_arg("D")) {
-                add_def(a.opt());
-                continue;
-            }
-            break;
-
-        case 'P':
-            if (a.get_arg("P")) {
-                add_pfx(a.opt());
-                continue;
-            }
-            break;
-
-        case 'S':
-            if (a.get_arg("S")) {
-                add_sym(a.opt());
-                continue;
-            }
-            break;
-
         case '?':
-            if (a.get_noarg("?")) {
+            if (arg_eq("?")) {
                 help::print(argv[0]);
                 std::exit(0);
             }
             break;
 
-        /* multiple letters */
         case 'a':
-            if (a.get_noarg("ast-all-symbols")) {
+            if (arg_eq("ast-all-symbols")) {
                 ast_all_symbols(true);
                 continue;
             }
             break;
 
-        case 'd':
-            if (a.get_arg("define")) {
-                add_def(a.opt());
+        case 'D':
+            if (get_arg("D")) {
+                add_def(p);
                 continue;
             }
+            break;
+
 #ifdef USE_EXTERNAL_RESOURCES
-            else if (a.get_noarg("dump-templates")) {
+        case 'd':
+            if (arg_eq("dump-templates")) {
                 dump_templates();
                 std::exit(0);
             }
-#endif
             break;
+#endif
 
         case 'f':
-            if (a.get_arg("format")) {
-                format(a.opt());
+            if (get_arg("format")) {
+                format(p);
                 continue;
-            } else if (a.get_noarg("force")) {
+            } else if (arg_eq("force")) {
                 force(true);
                 continue;
-            } else if (a.get_noarg("full-help")) {
+            } else if (arg_eq("full-help")) {
                 help::print_full(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'h':
-            if (a.get_noarg("help")) {
+            if (arg_eq("help")) {
                 help::print(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'i':
-            if (a.get_arg("include")) {
-                add_inc(a.opt());
+            if (get_arg("include")) {
+                add_inc(p);
                 continue;
-            } else if (a.get_noarg("ignore-options")) {
+            } else if (arg_eq("ignore-options")) {
                 read_options(false);
                 continue;
             }
             break;
 
         case 'l':
-            if (a.get_arg("library")) {
-                default_lib(a.opt());
+            if (get_arg("library")) {
+                default_lib(p);
                 continue;
-            } else if (a.get_noarg("line")) {
+            } else if (arg_eq("line")) {
                 line_directive(true);
                 continue;
             }
             break;
 
         case 'n':
-            if (a.get_noarg("no-date")) {
+            if (arg_eq("no-date")) {
                 print_date(false);
                 continue;
-            } else if (a.get_noarg("no-pragma-once")) {
+            } else if (arg_eq("no-pragma-once")) {
                 pragma_once(false);
                 continue;
             }
             break;
 
         case 'o':
-            if (a.get_arg("out")) {
-                output(a.opt());
+            if (get_arg("out")) {
+                output(p);
+                continue;
+            }
+            break;
+
+        case 'P':
+            if (get_arg("P")) {
+                add_pfx(p);
                 continue;
             }
             break;
 
         case 'p':
-            if (a.get_arg("prefix")) {
-                prefix(a.opt());
+            if (get_arg("prefix")) {
+                prefix(p);
                 continue;
-            } else if (a.get_arg("param")) {
-                parameter_names( param_value(a.opt(), a.prefix()) );
+            } else if (get_arg("param")) {
+                parameter_names( param_value(p) );
                 continue;
-            } else if (a.get_noarg("print-symbols")) {
+            } else if (arg_eq("print-symbols")) {
                 print_symbols(true);
                 continue;
             }
             break;
 
+        case 'S':
+            if (get_arg("S")) {
+                add_sym(p);
+                continue;
+            }
+            break;
+
         case 's':
-            if (a.get_noarg("separate")) {
+            if (arg_eq("separate")) {
                 separate(true);
                 continue;
             }
             break;
 
         case 't':
-            if (a.get_arg("template")) {
-                custom_template(a.opt());
+            if (get_arg("template")) {
+                custom_template(p);
                 continue;
             }
 #ifdef USE_EXTERNAL_RESOURCES
-            else if (a.get_arg("templates-path")) {
-                templates_path(a.opt());
+            else if (get_arg("templates-path")) {
+                templates_path(p);
                 utils::append_missing_separator(m_templates_path);
                 continue;
             }
@@ -254,12 +269,12 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             break;
         }
 
-        throw get_args::error(std::string("unknown option: ") + cur);
+        throw gendlopen::error(std::string("unknown option: -") + arg);
     }
 
     /* input_file is required */
-    if (!input_file) {
-        throw get_args::error("input file required");
+    if (!input_file || *input_file == 0) {
+        throw gendlopen::error("input file required");
     }
 
     input(input_file);
@@ -275,9 +290,33 @@ void gendlopen::parse_options(const vstring_t &options)
     {
         switch (token[0])
         {
+        case 'D':
+            if (get_option(token, p, "D=")) {
+                add_def(p);
+                continue;
+            }
+            break;
+
         case 'f':
-            if (get_arg(token, p, "format=")) {
+            if (get_option(token, p, "format=")) {
                 format(p);
+                continue;
+            }
+            break;
+
+        case 'i':
+            if (get_option(token, p, "include=")) {
+                add_inc(p);
+                continue;
+            }
+            break;
+
+        case 'l':
+            if (get_option(token, p, "library=")) {
+                default_lib(p);
+                continue;
+            } else if (token == "line") {
+                line_directive(true);
                 continue;
             }
             break;
@@ -292,36 +331,12 @@ void gendlopen::parse_options(const vstring_t &options)
             }
             break;
 
-        case 'l':
-            if (get_arg(token, p, "library=")) {
-                default_lib(p);
-                continue;
-            } else if (token == "line") {
-                line_directive(true);
-                continue;
-            }
-            break;
-
-        case 'i':
-            if (get_arg(token, p, "include=")) {
-                add_inc(p);
-                continue;
-            }
-            break;
-
-        case 'd':
-            if (get_arg(token, p, "define=")) {
-                add_def(p);
-                continue;
-            }
-            break;
-
         case 'p':
-            if (get_arg(token, p, "prefix=")) {
+            if (get_option(token, p, "prefix=")) {
                 prefix(p);
                 continue;
-            } else if (get_arg(token, p, "param=")) {
-                parameter_names( param_value(p, "") );
+            } else if (get_option(token, p, "param=")) {
+                parameter_names( param_value(p) );
                 continue;
             }
             break;
