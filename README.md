@@ -163,7 +163,7 @@ format=<string>
 prefix=<string>
 library=[<mode>:]<lib>
 include=[nq:]<file>
-define=<string>
+D=<string>
 param=[skip|create|read]
 no-date
 no-pragma-once
