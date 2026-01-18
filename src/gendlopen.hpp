@@ -168,6 +168,7 @@ public:
     void format(const std::string &s);
     void print_symbols_to_stdout();
     void process_custom_template();
+    void parameter_names(const char *str); /* set from string */
 
     /* generate.cpp */
     void generate();

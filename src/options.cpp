@@ -74,7 +74,7 @@ namespace /* anonymous */
 
                 throw gendlopen::error(std::string("option '-") + std::string(opt) + "' requires an argument");
             } else if (optlen == 1) {
-                ptr = arg + optlen; /* -Xabc */
+                ptr = arg + 1; /* -Xabc */
                 return true;
             } else if (arg[optlen] == '=') {
                 ptr = arg + optlen + 1; /* -abc=X */
@@ -83,21 +83,6 @@ namespace /* anonymous */
         }
 
         return false;
-    }
-
-
-    /* get param enum from string */
-    param::names param_value(const char *opt)
-    {
-        if (utils::strcasecmp(opt, "skip") == 0) {
-            return param::skip;
-        } else if (utils::strcasecmp(opt, "create") == 0) {
-            return param::create;
-        } else if (utils::strcasecmp(opt, "read") == 0) {
-            return param::read;
-        }
-
-        throw gendlopen::error(std::string("unknown argument for option '-param': ") + opt);
     }
 }
 
@@ -235,7 +220,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
                 prefix(p);
                 continue;
             } else if (get_argument(a, p, "param")) {
-                parameter_names( param_value(p) );
+                parameter_names(p);
                 continue;
             } else if (strcmp(arg, "print-symbols") == 0) {
                 print_symbols(true);
@@ -342,7 +327,7 @@ void gendlopen::parse_options(const vstring_t &options)
                 prefix(p);
                 continue;
             } else if (get_option(token, p, "param=")) {
-                parameter_names( param_value(p) );
+                parameter_names(p);
                 continue;
             }
             break;

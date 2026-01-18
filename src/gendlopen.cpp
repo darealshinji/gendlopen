@@ -136,6 +136,24 @@ void gendlopen::format(const std::string &in)
 }
 
 
+/* set param enum from string */
+void gendlopen::parameter_names(const char *str)
+{
+    if (utils::strcasecmp(str, "skip") == 0) {
+        parameter_names(param::skip);
+        return;
+    } else if (utils::strcasecmp(str, "create") == 0) {
+        parameter_names(param::create);
+        return;
+    } else if (utils::strcasecmp(str, "read") == 0) {
+        parameter_names(param::read);
+        return;
+    }
+
+    throw error(std::string("unknown mode for parameter names: ") + str);
+}
+
+
 /* replace prefixes in string */
 std::string gendlopen::replace_prefixes(const std::string &input)
 {
