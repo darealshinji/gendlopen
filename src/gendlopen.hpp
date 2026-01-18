@@ -31,10 +31,6 @@
 #include "cio_ofstream.hpp"
 #include "types.hpp"
 
-
-/* templates path environment variable */
-#define TEMPLATES_ENV  "TEMPLATES"
-
 /* default search path for external resources */
 #ifndef DEFAULT_TEMPLATES_PATH
 #define DEFAULT_TEMPLATES_PATH  "templates/"

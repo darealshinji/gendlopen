@@ -133,7 +133,7 @@ void gendlopen::parameter_names(const char *str)
         return;
     }
 
-    throw error(std::string("unknown mode for parameter names: ") + str);
+    throw error(std::string(__func__) + std::string(": unknown mode: ") + str);
 }
 
 

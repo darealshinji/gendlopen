@@ -24,45 +24,21 @@
 
 #include <iostream>
 #include <string>
-#include "gendlopen.hpp"
 #include "utils.hpp"
 
 
-/* anonymous */
-namespace
-{
-    void usage(const char *prog) {
-        std::cout << "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n" << std::endl;
-    }
-
-    void environment_variables()
-    {
-#if !defined(EMBEDDED_RESOURCES)
-        const char pad[] = "                  "; /* 18 spaces */
-        const size_t len = sizeof(TEMPLATES_ENV) - 1;
-
-        if (len < sizeof(pad) - 1) {
-            std::cout << "environment variables:\n"
-                "  " TEMPLATES_ENV << (pad + len) << "directory containing the template files"
-                << std::endl;
-        } else {
-            std::cout << "environment variables:\n"
-                "  " TEMPLATES_ENV "\n"
-                "                    directory containing the template files"
-                << std::endl;
-        }
-#endif
-    }
-}
-
+/**
+ * Make sure the command line options in clang_ast.cpp, help.cpp
+ * and options.cpp are the same.
+ */
 
 namespace help
 {
     void print(const char *prog)
     {
-        usage(prog);
-
         std::cout <<
+            "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n"
+            "\n"
             "  <file>            input file, use `-' to read from stdin\n"
             "\n"
             "options:\n"
@@ -97,20 +73,24 @@ namespace help
             "  -dump-templates   dump internal template files in the current working directory and exit\n"
             "  -templates-path=<path>\n"
             "                    directory containing the template files (overrides environment variable\n"
-            "                    " TEMPLATES_ENV ")\n"
+            "                    TEMPLATES)\n"
 #endif
             "\n"
-            "  * option may be passed multiple times" << std::endl;
-
-        environment_variables();
+            "  * option may be passed multiple times\n"
+#ifdef USE_EXTERNAL_RESOURCES
+            "\n"
+            "environment variables:\n"
+            "  TEMPLATES         directory containing the template files\n"
+#endif
+            << std::endl;
     }
 
 
     void print_full(const char *prog)
     {
-        usage(prog);
-
         std::cout <<
+            "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n"
+            "\n"
             "  <file>\n"
             "    Specify an input file. Use `-' to read data from stdin.\n"
             "\n"
@@ -351,13 +331,16 @@ namespace help
 
             "  -templates-path=<path>\n"
             "    Specifiy the directory containing the template files. This will override the\n"
-            "    environment variable " TEMPLATES_ENV ".\n"
+            "    environment variable TEMPLATES.\n"
             "\n"
+
+            "\n"
+            "Environment variables:\n"
+            "  TEMPLATES\n"
+            "    This will set the directory containing the template files.\n"
 #endif
 
             << std::endl;
-
-        environment_variables();
     }
 
 } /* namespace help */

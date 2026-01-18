@@ -63,10 +63,10 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 #include "types.hpp"
 #include "utils.hpp"
 
-/* command line option strings used in error messages */
-#define OPT_SYMBOL_NAME     "-S"
-#define OPT_SYMBOL_PREFIX   "-P"
-#define OPT_AST_ALL_SYMBOLS "-ast-all-symbols"
+/* make sure these match the ones in help.cpp and options.cpp */
+#define MSG_AST_NO_SYMBOLS \
+    "Clang AST: no symbols provided to look for\n" \
+    "use `-S', `-P' or `-ast-all-symbols'"
 
 
 namespace /* anonymous */
@@ -269,8 +269,7 @@ void gendlopen::parse_clang_ast()
     /* ignore symbol lists if m_ast_all_symbols was set */
     if (!m_ast_all_symbols) {
         if (m_symbol_list.empty() && m_prefix_list.empty()) {
-            throw error("Clang AST: no symbols provided to look for\n"
-                        "use `" OPT_SYMBOL_NAME "', `" OPT_SYMBOL_PREFIX "' or `" OPT_AST_ALL_SYMBOLS "'");
+            throw error(MSG_AST_NO_SYMBOLS);
         }
 
         if (m_symbol_list.size() > 0 && m_prefix_list.size() > 0) {

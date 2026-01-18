@@ -29,18 +29,17 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-namespace help
-{
-    extern void print(const char *prog);
-    extern void print_full(const char *prog);
-}
-
-
 struct args {
     int argc;
     char ** const argv;
     int it;
 };
+
+namespace help
+{
+    extern void print(const char *prog);
+    extern void print_full(const char *prog);
+}
 
 
 namespace /* anonymous */

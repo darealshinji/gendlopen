@@ -42,7 +42,7 @@ namespace /* anonymous */
         size_t len;
 
         /* MSVC doesn't like getenv() */
-        if (_dupenv_s(&buf, &len, TEMPLATES_ENV) == 0) {
+        if (_dupenv_s(&buf, &len, "TEMPLATES") == 0) {
             if (buf && *buf) {
                 path = buf;
             }
@@ -50,7 +50,7 @@ namespace /* anonymous */
             free(buf);
         }
 #else
-        char *env = getenv(TEMPLATES_ENV);
+        char *env = getenv("TEMPLATES");
 
         if (env && *env) {
             path = env;
