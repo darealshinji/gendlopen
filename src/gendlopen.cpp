@@ -42,23 +42,6 @@ gendlopen::~gendlopen()
 {}
 
 
-/* set symbol prefix name */
-void gendlopen::prefix(const std::string &s)
-{
-    /* set name */
-    m_pfx = s;
-
-    /* set uppercase/lowercase name */
-    m_pfx_upper = utils::to_upper(m_pfx);
-    m_pfx_lower = utils::to_lower(m_pfx);
-
-    /* set regex format string (used in substitute.cpp) */
-    m_fmt_upper = "$1" + m_pfx_upper + '_';
-    m_fmt_lower = "$1" + m_pfx_lower + '_';
-    m_fmt_standalone = "$1" + m_pfx_lower + "$3";
-}
-
-
 /* add "#include" line */
 void gendlopen::add_inc(const std::string &inc)
 {
@@ -154,12 +137,43 @@ void gendlopen::parameter_names(const char *str)
 }
 
 
+/* set symbol prefix name */
+void gendlopen::prefix(const std::string &s)
+{
+    /* set name */
+    m_pfx = s;
+
+    /* set uppercase/lowercase name */
+    m_pfx_upper = utils::to_upper(m_pfx);
+    m_pfx_lower = utils::to_lower(m_pfx);
+
+    /* set regex format string (used in substitute.cpp) */
+    m_fmt_upper = "$1" + m_pfx_upper + '_';
+    m_fmt_lower = "$1" + m_pfx_lower + '_';
+    m_fmt_standalone = "$1" + m_pfx_lower + "$3";
+}
+
+
 /* replace prefixes in string */
 std::string gendlopen::replace_prefixes(const std::string &input)
 {
-    const std::regex reg_pfxupper("(([^a-zA-Z0-9_]|^)[_]?)(GDO_)");
-    const std::regex reg_pfxlower("(([^a-zA-Z0-9_]|^)[_]?)(gdo_)");
-    const std::regex reg_standalone("([^a-zA-Z0-9_]|^)(gdo)([^a-zA-Z0-9_]|$)");
+    const std::regex reg_pfxupper(
+        "(([^a-zA-Z0-9_]|^)" /* no identifier or begin of line */
+        "[_]?)"              /* optional underscore */
+        "(GDO_)"             /* uppercase prefix */
+    );
+
+    const std::regex reg_pfxlower(
+        "(([^a-zA-Z0-9_]|^)" /* no identifier or begin of line */
+        "[_]?)"              /* optional underscore */
+        "(gdo_)"             /* lowercase prefix */
+    );
+
+    const std::regex reg_standalone(
+        "([^a-zA-Z0-9_]|^)"  /* no identifier or begin of line */
+        "(gdo)"              /* standalone lowercase word */
+        "([^a-zA-Z0-9_]|$)"  /* no identifier or end of line */
+    );
 
     std::string buf = input;
     buf = std::regex_replace(buf, reg_pfxupper, m_fmt_upper);
