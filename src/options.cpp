@@ -36,6 +36,13 @@ namespace help
 }
 
 
+struct args {
+    int argc;
+    char ** const argv;
+    int it;
+};
+
+
 namespace /* anonymous */
 {
     template<size_t N>
@@ -49,24 +56,33 @@ namespace /* anonymous */
         return false;
     }
 
-
-    const char *get_argument(const char *arg, const int &argc, char ** const &argv, int &i, const char *opt, size_t optlen)
+    template<size_t N>
+    bool get_argument(struct args &a, const char *&ptr, char const (&opt)[N])
     {
+        const char *arg = a.argv[a.it] + 1;
+        const size_t optlen = N-1;
+
         if (strncmp(arg, opt, optlen) == 0) {
             if (arg[optlen] == 0) {
-                if (++i < argc) {
-                    return argv[i]; /* next argv[] entry */
+                a.it++;
+
+                if (a.it < a.argc) {
+                    /* next argv[] entry */
+                    ptr = a.argv[a.it];
+                    return true;
                 }
 
                 throw gendlopen::error(std::string("option '-") + std::string(opt) + "' requires an argument");
             } else if (optlen == 1) {
-                return arg + optlen; /* -Xabc */
+                ptr = arg + optlen; /* -Xabc */
+                return true;
             } else if (arg[optlen] == '=') {
-                return arg + optlen + 1; /* -abc=X */
+                ptr = arg + optlen + 1; /* -abc=X */
+                return true;
             }
         }
 
-        return NULL;
+        return false;
     }
 
 
@@ -92,15 +108,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
     const char *input_file = NULL;
     const char *p = NULL;
     const char *arg = NULL;
-    int i = 1; /* skip argv[0] */
-
-    auto arg_eq = [&] (const char *opt) -> bool {
-        return (strcmp(arg, opt) == 0);
-    };
-
-    auto get_arg_len = [&] (const char *opt, size_t len) -> bool {
-        return ((p = get_argument(arg, argc, argv, i, opt, len)) != NULL);
-    };
+    struct args a = { .argc = argc, .argv = argv };
 
     /**
     parse arguments:
@@ -110,11 +118,11 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
      - multi-letter options are lowercase, argument separator is "=" (-foo=bar)
      - arguments can be next entry in argv list (-foo bar -X foo)
     **/
-    for ( ; i < argc; i++) {
-        arg = argv[i];
+    for (a.it = 1; a.it < argc; a.it++) {
+        arg = argv[a.it];
 
         /* use first non-option argument as input file */
-        if (*arg != '-' || arg_eq("-")) {
+        if (*arg != '-' || strcmp(arg, "-") == 0) {
             if (!input_file) {
                 input_file = arg;
             } else {
@@ -123,29 +131,27 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             continue;
         }
 
+        /* skip "-" */
         arg++;
-
-#define XSTRLEN(x) (sizeof(x)-1)
-#define get_arg(x) get_arg_len(x, XSTRLEN(x))
 
         switch(*arg)
         {
         case '?':
-            if (arg_eq("?")) {
+            if (strcmp(arg, "?") == 0) {
                 help::print(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'a':
-            if (arg_eq("ast-all-symbols")) {
+            if (strcmp(arg, "ast-all-symbols") == 0) {
                 ast_all_symbols(true);
                 continue;
             }
             break;
 
         case 'D':
-            if (get_arg("D")) {
+            if (get_argument(a, p, "D")) {
                 add_def(p);
                 continue;
             }
@@ -153,7 +159,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 
 #ifdef USE_EXTERNAL_RESOURCES
         case 'd':
-            if (arg_eq("dump-templates")) {
+            if (strcmp(arg, "dump-templates") == 0) {
                 dump_templates();
                 std::exit(0);
             }
@@ -161,103 +167,103 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 #endif
 
         case 'f':
-            if (get_arg("format")) {
+            if (get_argument(a, p, "format")) {
                 format(p);
                 continue;
-            } else if (arg_eq("force")) {
+            } else if (strcmp(arg, "force") == 0) {
                 force(true);
                 continue;
-            } else if (arg_eq("full-help")) {
+            } else if (strcmp(arg, "full-help") == 0) {
                 help::print_full(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'h':
-            if (arg_eq("help")) {
+            if (strcmp(arg, "help") == 0) {
                 help::print(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'i':
-            if (get_arg("include")) {
+            if (get_argument(a, p, "include")) {
                 add_inc(p);
                 continue;
-            } else if (arg_eq("ignore-options")) {
+            } else if (strcmp(arg, "ignore-options") == 0) {
                 read_options(false);
                 continue;
             }
             break;
 
         case 'l':
-            if (get_arg("library")) {
+            if (get_argument(a, p, "library")) {
                 default_lib(p);
                 continue;
-            } else if (arg_eq("line")) {
+            } else if (strcmp(arg, "line") == 0) {
                 line_directive(true);
                 continue;
             }
             break;
 
         case 'n':
-            if (arg_eq("no-date")) {
+            if (strcmp(arg, "no-date") == 0) {
                 print_date(false);
                 continue;
-            } else if (arg_eq("no-pragma-once")) {
+            } else if (strcmp(arg, "no-pragma-once") == 0) {
                 pragma_once(false);
                 continue;
             }
             break;
 
         case 'o':
-            if (get_arg("out")) {
+            if (get_argument(a, p, "out")) {
                 output(p);
                 continue;
             }
             break;
 
         case 'P':
-            if (get_arg("P")) {
+            if (get_argument(a, p, "P")) {
                 add_pfx(p);
                 continue;
             }
             break;
 
         case 'p':
-            if (get_arg("prefix")) {
+            if (get_argument(a, p, "prefix")) {
                 prefix(p);
                 continue;
-            } else if (get_arg("param")) {
+            } else if (get_argument(a, p, "param")) {
                 parameter_names( param_value(p) );
                 continue;
-            } else if (arg_eq("print-symbols")) {
+            } else if (strcmp(arg, "print-symbols") == 0) {
                 print_symbols(true);
                 continue;
             }
             break;
 
         case 'S':
-            if (get_arg("S")) {
+            if (get_argument(a, p, "S")) {
                 add_sym(p);
                 continue;
             }
             break;
 
         case 's':
-            if (arg_eq("separate")) {
+            if (strcmp(arg, "separate") == 0) {
                 separate(true);
                 continue;
             }
             break;
 
         case 't':
-            if (get_arg("template")) {
+            if (get_argument(a, p, "template")) {
                 custom_template(p);
                 continue;
             }
 #ifdef USE_EXTERNAL_RESOURCES
-            else if (get_arg("templates-path")) {
+            else if (get_argument(a, p, "templates-path")) {
                 templates_path(p);
                 utils::append_missing_separator(m_templates_path);
                 continue;
@@ -269,7 +275,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             break;
         }
 
-        throw gendlopen::error(std::string("unknown option: -") + arg);
+        throw gendlopen::error(std::string("unknown option: ") + argv[a.it]);
     }
 
     /* input_file is required */
