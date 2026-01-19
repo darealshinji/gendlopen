@@ -96,6 +96,11 @@ int main(int argc, char **argv)
             gdo.generate();
         }
     }
+    catch (const gendlopen::error_cmd &e) {
+        std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
+        std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
+        return 1;
+    }
     catch (const gendlopen::error &e) {
         std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
         return 1;

@@ -32,11 +32,7 @@
 #include "cio_ofstream.hpp"
 #include "gendlopen.hpp"
 #include "types.hpp"
-
-
-/* used by dump_templates() */
-#define OUTDIR "templates"
-
+#include "utils.hpp"
 
 namespace fs = std::filesystem;
 
@@ -50,15 +46,18 @@ namespace templates
 namespace /* anonymous */
 {
     /* save template data to file */
-    void save_to_file(const std::string &filename, const template_t *list)
+    void save_to_file(std::string path, const char *filename, const template_t *list)
     {
         cio::ofstream ofs;
 
-        if (!ofs.open(filename)) {
-            throw gendlopen::error("failed to open file for writing: " + filename);
+        utils::append_missing_separator(path);
+        path += filename;
+
+        if (!ofs.open(path)) {
+            throw gendlopen::error(std::string("failed to open file for writing: ") + path);
         }
 
-        std::cout << "saving " << filename << std::endl;
+        std::cout << "saving " << path << std::endl;
 
         for ( ; list->line_count != 0; list++) {
             ofs << list->data << '\n';
@@ -74,17 +73,13 @@ void gendlopen::load_template(templates::name)
 
 
 /* dump templates */
-void gendlopen::dump_templates()
+void gendlopen::dump_templates(const char *dir)
 {
-    if (fs::exists(fs::symlink_status(OUTDIR))) {
-        throw error("`" OUTDIR "' already exists");
+    if (!fs::exists(fs::symlink_status(dir)) && !fs::create_directories(dir)) {
+        throw error(std::string("failed to create directory: ") + dir);
     }
 
-    if (!fs::create_directory(OUTDIR)) {
-        throw error("failed to create directory `" OUTDIR "'");
-    }
-
-#define TEMPLATE(x) save_to_file(OUTDIR "/" FILENAME_##x, templates::ptr_##x);
+#define TEMPLATE(x) save_to_file(dir, FILENAME_##x, templates::ptr_##x);
 
 #include "list.h"
 }

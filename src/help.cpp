@@ -69,19 +69,25 @@ namespace help
             "  -no-date          don't show current date in output\n"
             "  -no-pragma-once   use `#ifndef' header guard instead of `#pragma once'\n"
             "  -line             add `#line' directives to output\n"
+
 #ifdef USE_EXTERNAL_RESOURCES
-            "  -dump-templates   dump internal template files in the current working directory and exit\n"
             "  -templates-path=<path>\n"
             "                    directory containing the template files (overrides environment variable\n"
             "                    TEMPLATES)\n"
+#else
+            "  -dump-templates=<path>\n"
+            "                    dump internal template files into directory and exit\n"
 #endif
+
             "\n"
             "  * option may be passed multiple times\n"
+
 #ifdef USE_EXTERNAL_RESOURCES
             "\n"
             "environment variables:\n"
             "  TEMPLATES         directory containing the template files\n"
 #endif
+
             << std::endl;
     }
 
@@ -324,11 +330,6 @@ namespace help
 
 
 #ifdef USE_EXTERNAL_RESOURCES
-            "  -dump-templates\n"
-            "    Dump internal template files in the current working directory and exit.\n"
-            "\n"
-
-
             "  -templates-path=<path>\n"
             "    Specifiy the directory containing the template files. This will override the\n"
             "    environment variable TEMPLATES.\n"
@@ -338,6 +339,10 @@ namespace help
             "Environment variables:\n"
             "  TEMPLATES\n"
             "    This will set the directory containing the template files.\n"
+#else
+            "  -dump-templates=<path>\n"
+            "    Dump internal template files into directory and exit.\n"
+            "\n"
 #endif
 
             << std::endl;

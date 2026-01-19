@@ -47,41 +47,60 @@ namespace /* anonymous */
     template<size_t N>
     bool get_option(const std::string &str, const char *&ptr, char const (&opt)[N])
     {
-        if (str.compare(0, N-1, opt) == 0 && str.size() > N-1) {
-            ptr = str.c_str() + (N-1);
-            return true;
+        const size_t optlen = N - 1;
+
+        if (str.compare(0, optlen, opt) == 0 && str.size() > optlen) {
+            ptr = str.c_str() + optlen;
+
+            /* ignore empty argument */
+            return (*ptr != 0);
         }
 
         return false;
     }
 
+
+    bool get_argument_len(struct args &a, const char *&ptr, const char *opt, const size_t optlen)
+    {
+        const char *arg = a.argv[a.it] + 1;
+
+        if (strncmp(arg, opt, optlen) != 0) {
+            return false;
+        }
+
+        if (arg[optlen] == 0) {
+            /* get next argv[] entry */
+            a.it++;
+
+            if (a.it >= a.argc) {
+                throw gendlopen::error_cmd(std::string("option '-") + std::string(opt)
+                    + "' requires an argument");
+            }
+
+            ptr = a.argv[a.it];
+        } else if (optlen == 1) {
+            /* -Xabc */
+            ptr = arg + 1;
+        } else if (arg[optlen] == '=') {
+            /* -abc=X */
+            ptr = arg + optlen + 1;
+        } else {
+            return false;
+        }
+
+        if (*ptr == 0) {
+            throw gendlopen::error_cmd(std::string("option '-") + std::string(opt)
+                + "' requires a non-empty argument");
+        }
+
+        return true;
+    }
+
+
     template<size_t N>
     bool get_argument(struct args &a, const char *&ptr, char const (&opt)[N])
     {
-        const char *arg = a.argv[a.it] + 1;
-        const size_t optlen = N-1;
-
-        if (strncmp(arg, opt, optlen) == 0) {
-            if (arg[optlen] == 0) {
-                a.it++;
-
-                if (a.it < a.argc) {
-                    /* next argv[] entry */
-                    ptr = a.argv[a.it];
-                    return true;
-                }
-
-                throw gendlopen::error(std::string("option '-") + std::string(opt) + "' requires an argument");
-            } else if (optlen == 1) {
-                ptr = arg + 1; /* -Xabc */
-                return true;
-            } else if (arg[optlen] == '=') {
-                ptr = arg + optlen + 1; /* -abc=X */
-                return true;
-            }
-        }
-
-        return false;
+        return get_argument_len(a, ptr, opt, N-1);
     }
 }
 
@@ -141,10 +160,10 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             }
             break;
 
-#ifdef USE_EXTERNAL_RESOURCES
+#if !defined(USE_EXTERNAL_RESOURCES)
         case 'd':
-            if (strcmp(arg, "dump-templates") == 0) {
-                dump_templates();
+            if (get_argument(a, p, "dump-templates")) {
+                dump_templates(p);
                 std::exit(0);
             }
             break;
@@ -259,12 +278,11 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             break;
         }
 
-        throw gendlopen::error(std::string("unknown option: ") + argv[a.it]);
+        throw gendlopen::error_cmd(std::string("unknown option: ") + argv[a.it]);
     }
 
-    /* input_file is required */
     if (!input_file || *input_file == 0) {
-        throw gendlopen::error("input file required");
+        throw gendlopen::error_cmd("input file is required");
     }
 
     input(input_file);

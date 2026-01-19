@@ -48,19 +48,6 @@ namespace save
 }
 
 
-namespace data
-{
-    /* load template into memory */
-    void load_template(templates::name file);
-
-    /* concatenate templates and create template_t vector lists */
-    void create_template_lists(vtemplate_t &header, vtemplate_t &body, output::format format, bool separate);
-
-    /* save all templates into current working directory */
-    void dump_templates();
-}
-
-
 /* create option plus setter and getter methods */
 #define OPT(TYPE, NAME, DEFVAL) \
     private: \
@@ -78,6 +65,12 @@ public:
         public:
             error(const std::string &message) : std::runtime_error(message) {}
             virtual ~error() {}
+    };
+
+    class error_cmd : public std::runtime_error {
+        public:
+            error_cmd(const std::string &message) : std::runtime_error(message) {}
+            virtual ~error_cmd() {}
     };
 
 private:
@@ -115,7 +108,7 @@ private:
     /* data*.cpp */
     void load_template(templates::name file);
     void create_template_lists(vtemplate_t &header, vtemplate_t &body);
-    void dump_templates();
+    void dump_templates(const char *dir);
 
     /* generate.cpp */
     size_t save_data(const template_t *list);
