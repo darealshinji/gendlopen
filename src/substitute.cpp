@@ -76,6 +76,34 @@ namespace /* anonymous */
         return false;
     }
 
+    /* check for "%def" line */
+    size_t check_def_keyword(const char *ptr, const template_t &line, bool &line_directive, size_t &substitute_lineno)
+    {
+        if (line.maybe_keyword && line.line_count == 1 &&
+            strncmp(ptr, "%def", 4) == 0 &&
+            (ptr[4] == ' ' || ptr[4] == '\t') && ptr[5] != 0)
+        {
+            ptr += 5;
+
+            if (line_directive) {
+                save::ofs << "#line " << substitute_lineno << '\n';
+                save::ofs << "#ifndef " << ptr << '\n';
+                save::ofs << "#line " << substitute_lineno << '\n';
+                save::ofs << "#define " << ptr << " 0\n";
+                save::ofs << "#line " << substitute_lineno << '\n';
+                save::ofs << "#endif\n";
+                return 6;
+            } else {
+                save::ofs << "#ifndef " << ptr << '\n';
+                save::ofs << "#define " << ptr << " 0\n";
+                save::ofs << "#endif\n";
+                return 3;
+            }
+        }
+
+        return 0;
+    }
+
     /* get the length of the longest symbol */
     size_t get_longest_symbol_size(const vproto_t &v)
     {
@@ -289,9 +317,6 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
     };
 
     std::string buf;
-    int has_func = 0;
-    int has_obj = 0;
-    int has_sym = 0;
 
     /* print #line directive to make sure the line count is on par */
     auto print_lineno = [&, this] () -> size_t
@@ -305,7 +330,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return entry_lines;
     };
 
-    auto find_keyword = [&buf] (const list_t &list) -> int {
+    auto find_keyword = [&buf] (const list_t &list) -> char {
         for (const auto &e : list) {
             if (buf.find(e) != std::string::npos) {
                 return 1;
@@ -341,27 +366,11 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return 0;
     }
 
-    /* check for "%def" line */
-    if (line.maybe_keyword && line.line_count == 1 &&
-        strncmp(ptr, "%def", 4) == 0 &&
-        (ptr[4] == ' ' || ptr[4] == '\t') && ptr[5] != 0)
-    {
-        ptr += 5;
+    /* check for "%def" line (used in "common.h") */
+    size_t line_count = check_def_keyword(ptr, line, m_line_directive, m_substitute_lineno);
 
-        if (m_line_directive) {
-            save::ofs << "#line " << m_substitute_lineno << '\n';
-            save::ofs << "#ifndef " << ptr << '\n';
-            save::ofs << "#line " << m_substitute_lineno << '\n';
-            save::ofs << "#define " << ptr << " 0\n";
-            save::ofs << "#line " << m_substitute_lineno << '\n';
-            save::ofs << "#endif\n";
-            return 6;
-        } else {
-            save::ofs << "#ifndef " << ptr << '\n';
-            save::ofs << "#define " << ptr << " 0\n";
-            save::ofs << "#endif\n";
-            return 3;
-        }
+    if (line_count > 0) {
+        return line_count;
     }
 
     /* replace prefixes */
@@ -371,43 +380,43 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         buf = replace_prefixes(line.data);
     }
 
-    /* nothing to loop, just append */
-    if (!line.maybe_keyword) {
-        save::ofs << buf << '\n';
-        return utils::count_linefeed(buf) + 1;
-    }
-
     /* check if the line needs to be processed in a loop */
-    if (buf.find("%%") != std::string::npos) {
-        has_func = find_keyword(function_keywords);
-        has_obj = find_keyword(object_keywords);
-        has_sym = find_keyword(symbol_keywords);
-    }
+    if (line.maybe_keyword && buf.find("%%") != std::string::npos) {
+        char kw = 0;
 
-    if ((has_func + has_obj + has_sym) > 1) {
-        /* error */
-        throw error("cannot mix function, object and regular symbol"
-                    " placeholders:\n" + std::string{line.data});
-    } else if (has_func == 1) {
-        /* function prototypes */
-        if (m_prototypes.empty()) {
-            return print_lineno();
-        } else {
+        kw |= find_keyword(function_keywords) << 1;
+        kw |= find_keyword(object_keywords)   << 2;
+        kw |= find_keyword(symbol_keywords)   << 3;
+
+        switch (kw)
+        {
+        case 0:
+            break;
+
+        case 1 << 1:
+            /* function prototypes */
+            if (m_prototypes.empty()) {
+                return print_lineno();
+            }
             return replace_function_prototypes(buf);
-        }
-    } else if (has_obj == 1) {
-        /* object prototypes */
-        if (m_objects.empty()) {
-            return print_lineno();
-        } else {
+
+        case 1 << 2:
+            /* object prototypes */
+            if (m_objects.empty()) {
+                return print_lineno();
+            }
             return replace_object_prototypes(buf);
-        }
-    } else if (has_sym == 1) {
-        /* any symbol */
-        if (m_prototypes.empty() && m_objects.empty()) {
-            return print_lineno();
-        } else {
+
+        case 1 << 3:
+            /* any symbol */
+            if (m_prototypes.empty() && m_objects.empty()) {
+                return print_lineno();
+            }
             return replace_symbol_names(buf);
+
+        default:
+            throw error("cannot mix function, object and regular symbol"
+                        " placeholders:\n" + std::string{line.data});
         }
     }
 
