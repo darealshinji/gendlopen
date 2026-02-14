@@ -42,6 +42,13 @@ namespace help
             "  <file>            input file, use `-' to read from stdin\n"
             "\n"
             "options:\n"
+#ifdef _WIN32
+            "  all options may be prefixed with `-' or `/', multi-letter options may also use `--';\n"
+            "  argument separator may be `=' or `:'\n"
+#else
+            "  multi-letter options may also be prefixed with `--'\n"
+#endif
+            "\n"
             "  -help             display this information\n"
             "  -full-help        show more detailed information\n"
             "  -out=<file>       save to file instead of stdout\n"
@@ -116,9 +123,18 @@ namespace help
             "    To dump the AST created from `foo.h' you can run the following command:\n"
             "    clang -Xclang -ast-dump foo.h > ast.txt\n"
             "\n"
+            "\n"
 
 
             "Options:\n"
+            "\n"
+
+#ifdef _WIN32
+            "  All options may be prefixed with `-' or `/', multi-letter options may also use `--'.\n"
+            "  Argument separator may be `=' or `:'.\n"
+#else
+            "  Multi-letter options may also be prefixed with `--'.\n"
+#endif
             "\n"
 
             "  -help\n"

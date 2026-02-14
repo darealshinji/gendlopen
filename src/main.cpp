@@ -75,7 +75,8 @@ int main(int argc, char **argv)
         gendlopen gdo;
 
 #ifdef USE_EXTERNAL_RESOURCES
-        /* read templates path from environment variable */
+        /* read templates path from environment variable;
+         * default path is set in "gendlopen.hpp" */
         std::string env = get_templates_path_env();
 
         if (!env.empty()) {

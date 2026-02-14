@@ -33,6 +33,7 @@ struct args {
     int argc;
     char ** const argv;
     int it;
+    bool longpfx;
 };
 
 namespace help
@@ -62,8 +63,26 @@ namespace /* anonymous */
 
     bool get_argument_len(struct args &a, const char *&ptr, const char *opt, const size_t optlen)
     {
-        const char *arg = a.argv[a.it] + 1;
+        char pfx[3] = { 0, 0, 0 };
 
+        /* only short prefix for single-letter options */
+        if (optlen == 1 && a.longpfx) {
+            return false;
+        }
+
+        const char *arg = a.argv[a.it];
+
+        /* save prefix letters and skip prefix */
+        if (a.longpfx) {
+            pfx[0] = arg[0];
+            pfx[1] = arg[1];
+            arg += 2;
+        } else {
+            pfx[0] = arg[0];
+            arg++;
+        }
+
+        /* compare option string */
         if (strncmp(arg, opt, optlen) != 0) {
             return false;
         }
@@ -73,24 +92,35 @@ namespace /* anonymous */
             a.it++;
 
             if (a.it >= a.argc) {
-                throw gendlopen::error_cmd(std::string("option '-") + std::string(opt)
-                    + "' requires an argument");
+                throw gendlopen::error_cmd(std::string("option '") + std::string(pfx)
+                    + std::string(opt) + "' requires an argument");
             }
 
             ptr = a.argv[a.it];
-        } else if (optlen == 1) {
+        }
+        else if (optlen == 1) {
             /* -Xabc */
-            ptr = arg + 1;
-        } else if (arg[optlen] == '=') {
-            /* -abc=X */
+            ptr = arg + optlen;
+        }
+        else if (arg[optlen] == '=') {
+            /* -foo=abc */
             ptr = arg + optlen + 1;
-        } else {
+        }
+#ifdef _WIN32
+        else if (arg[optlen] == ':') {
+            /* /foo:abc */
+            ptr = arg + optlen + 1;
+        }
+#endif
+        else {
+            /* no match */
             return false;
         }
 
+        /* empty argument? */
         if (*ptr == 0) {
-            throw gendlopen::error_cmd(std::string("option '-") + std::string(opt)
-                + "' requires a non-empty argument");
+            throw gendlopen::error_cmd(std::string("option '")  + std::string(pfx)
+                + std::string(opt) + "' requires a non-empty argument");
         }
 
         return true;
@@ -113,19 +143,43 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
     const char *arg = NULL;
     struct args a = { .argc = argc, .argv = argv };
 
+    auto arg_eq = [&] (const char *str) -> bool {
+        return (strcmp(arg, str) == 0);
+    };
+
     /**
     parse arguments:
-     - options begin with single dash (-foo)
-     - "-" is a valid non-option argument
+     - options begin with "-" or "--" (or "/" on Windows)
+     - single-letter options begin with "-" (or "/" on Windows)
+     - "-", "--" and "/" are valid non-option arguments
      - single-letter options are uppercase, no argument separator (-Xfoo)
-     - multi-letter options are lowercase, argument separator is "=" (-foo=bar)
+     - multi-letter options are lowercase, argument separator is "=" (or ":" on Windows) (-foo=bar)
      - arguments can be next entry in argv list (-foo bar -X foo)
     **/
     for (a.it = 1; a.it < argc; a.it++) {
         arg = argv[a.it];
 
-        /* use first non-option argument as input file */
-        if (*arg != '-' || strcmp(arg, "-") == 0) {
+        /* prefixed with dash(es) */
+        if (*arg == '-' && !arg_eq("-") && !arg_eq("--")) {
+            if (arg[1] == '-') {
+                /* long prefix */
+                arg += 2;
+                a.longpfx = true;
+            } else {
+                /* short prefix */
+                arg++;
+                a.longpfx = false;
+            }
+        }
+#ifdef _WIN32
+        /* prefixed with forward slash */
+        else if (*arg == '/' && arg[1] != 0) {
+            arg++;
+            a.longpfx = false;
+        }
+#endif
+        else {
+            /* use first non-option argument as input file, otherwise warn */
             if (!input_file) {
                 input_file = arg;
             } else {
@@ -134,20 +188,17 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             continue;
         }
 
-        /* skip "-" */
-        arg++;
-
         switch(*arg)
         {
         case '?':
-            if (strcmp(arg, "?") == 0) {
+            if (!a.longpfx && arg_eq("?")) {
                 help::print(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'a':
-            if (strcmp(arg, "ast-all-symbols") == 0) {
+            if (arg_eq("ast-all-symbols")) {
                 ast_all_symbols(true);
                 continue;
             }
@@ -173,17 +224,17 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             if (get_argument(a, p, "format")) {
                 format(p);
                 continue;
-            } else if (strcmp(arg, "force") == 0) {
+            } else if (arg_eq("force")) {
                 force(true);
                 continue;
-            } else if (strcmp(arg, "full-help") == 0) {
+            } else if (arg_eq("full-help")) {
                 help::print_full(argv[0]);
                 std::exit(0);
             }
             break;
 
         case 'h':
-            if (strcmp(arg, "help") == 0) {
+            if (arg_eq("help")) {
                 help::print(argv[0]);
                 std::exit(0);
             }
@@ -193,7 +244,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             if (get_argument(a, p, "include")) {
                 add_inc(p);
                 continue;
-            } else if (strcmp(arg, "ignore-options") == 0) {
+            } else if (arg_eq("ignore-options")) {
                 read_options(false);
                 continue;
             }
@@ -203,17 +254,17 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             if (get_argument(a, p, "library")) {
                 default_lib(p);
                 continue;
-            } else if (strcmp(arg, "line") == 0) {
+            } else if (arg_eq("line")) {
                 line_directive(true);
                 continue;
             }
             break;
 
         case 'n':
-            if (strcmp(arg, "no-date") == 0) {
+            if (arg_eq("no-date")) {
                 print_date(false);
                 continue;
-            } else if (strcmp(arg, "no-pragma-once") == 0) {
+            } else if (arg_eq("no-pragma-once")) {
                 pragma_once(false);
                 continue;
             }
@@ -240,7 +291,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             } else if (get_argument(a, p, "param")) {
                 parameter_names(p);
                 continue;
-            } else if (strcmp(arg, "print-symbols") == 0) {
+            } else if (arg_eq("print-symbols")) {
                 print_symbols(true);
                 continue;
             }
@@ -254,7 +305,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             break;
 
         case 's':
-            if (strcmp(arg, "separate") == 0) {
+            if (arg_eq("separate")) {
                 separate(true);
                 continue;
             }
