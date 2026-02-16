@@ -11,7 +11,7 @@
 
 int main()
 {
-#ifdef GDO_HAS_BUILTIN_VA_ARG_PACK
+#ifdef GDO_VA_ARG_PACK_INLINE
     helloworld_fprintf(stdout, "%s is a %s%c\n", "This", "test", '!');
 #else
     puts("cannot use inline VA_ARGS functions");

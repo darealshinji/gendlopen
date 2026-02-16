@@ -153,10 +153,15 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-/* check for __builtin_va_arg_pack() */
-#if !defined(GDO_HAS_BUILTIN_VA_ARG_PACK) && defined(__has_builtin)
+/* check for "gnu_inline" attribute and __builtin_va_arg_pack()
+ * https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-gnu_005finline-function-attribute
+ * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html */
+#if !defined(GDO_VA_ARG_PACK_INLINE) && \
+    !defined(__NO_INLINE__) && \
+    (defined(__GNUC_GNU_INLINE__) || defined(__GNUC_STDC_INLINE__)) && \
+     defined(__has_builtin)
 # if __has_builtin(__builtin_va_arg_pack)
-#  define GDO_HAS_BUILTIN_VA_ARG_PACK
+#  define GDO_VA_ARG_PACK_INLINE
 # endif
 #endif
 
@@ -210,8 +215,8 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-/* dlopen(3) flags for compatibility with LoadLibrary() */
-/* taken from different implementations of dlfcn.h */
+/* dlopen(3) flags for compatibility with LoadLibrary()
+ * taken from different implementations of dlfcn.h */
 %def RTLD_LAZY
 %def RTLD_NOW
 %def RTLD_GLOBAL
@@ -236,8 +241,8 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-/* LoadLibrary() flags for compatibility with dlopen() */
-/* https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */
+/* LoadLibrary() flags for compatibility with dlopen()
+ * https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw */
 %def DONT_RESOLVE_DLL_REFERENCES
 %def LOAD_IGNORE_CODE_AUTHZ_LEVEL
 %def LOAD_LIBRARY_AS_DATAFILE

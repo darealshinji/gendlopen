@@ -219,14 +219,12 @@ GDO_DECL void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym);
 
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-# ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
+# ifdef GDO_VA_ARG_PACK_INLINE@
 #  ifdef GDO_WRAP_VISIBILITY@
 GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined; use GDO_DISABLE_WARNINGS to silence this warning")@
-#  elif defined(__NO_INLINE__)@
-GDO_WARNING("inlining is required to use variable arguments wrapper for %%func_symbol%%(); use GDO_DISABLE_WARNINGS to silence this warning")@
 #  endif@
 # else@
-GDO_WARNING("__builtin_va_arg_pack() required to use variable arguments wrapper for %%func_symbol%%(); use GDO_DISABLE_WARNINGS to silence this warning")@
+GDO_WARNING("__builtin_va_arg_pack() and GNU function inling are required to use variable arguments wrapper for %%func_symbol%%(); use GDO_DISABLE_WARNINGS to silence this warning")@
 # endif@
 #endif@
 
@@ -240,12 +238,13 @@ GDO_WARNING("__builtin_va_arg_pack() required to use variable arguments wrapper 
  *
  * __builtin_va_arg_pack() is a GNU extension and will be resolved to the
  * additional parameters provided by the `...' argument.
+ * This requires function inlining optimizations to be enabled.
  */
 @
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-# ifdef GDO_HAS_BUILTIN_VA_ARG_PACK@
-    extern inline GDO_GCC_ATTRIBUTE(gnu_inline)@
+# ifdef GDO_VA_ARG_PACK_INLINE@
+    extern inline __attribute__((gnu_inline))@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         /* puts("DEBUG: %%func_symbol%%: GNU inline wrapper function called"); */@
         const bool sym_loaded = (GDO_RAWPTR_%%func_symbol%% != NULL);@
