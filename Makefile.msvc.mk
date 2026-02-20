@@ -10,7 +10,6 @@ CXX_SRCS = \
 	..\$(SRC)\data_external.cpp \
 	..\$(SRC)\gendlopen.cpp \
 	..\$(SRC)\generate.cpp \
-	..\$(SRC)\get_args.cpp \
 	..\$(SRC)\help.cpp \
 	..\$(SRC)\main.cpp \
 	..\$(SRC)\open_file.cpp \

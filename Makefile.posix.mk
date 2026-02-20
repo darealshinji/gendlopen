@@ -10,7 +10,6 @@ OBJS = \
 	$(OUT)/data_external.o \
 	$(OUT)/gendlopen.o \
 	$(OUT)/generate.o \
-	$(OUT)/get_args.o \
 	$(OUT)/help.o \
 	$(OUT)/lex.yy.o \
 	$(OUT)/main.o \
