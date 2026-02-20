@@ -26,14 +26,12 @@
  * Generate the output data (STDOUT or save to file).
  */
 
-#ifdef __MINGW32__
-# include <stdlib.h>
-# include <wchar.h>
-#endif
 #include <stdio.h>
+#include <time.h>
 #include <algorithm>
 #include <ctime>
 #include <filesystem>
+#include <locale>
 #include <iomanip>
 #include <iostream>
 #include <regex>
@@ -61,69 +59,12 @@ namespace templates
 
 namespace /* anonymous */
 {
-#ifdef __MINGW32__
-
-    wchar_t *char_to_wchar(const char *str)
-    {
-        size_t len, n;
-        wchar_t *buf;
-
-        if (!str || ::mbstowcs_s(&len, NULL, 0, str, 0) != 0 || len == 0) {
-            return nullptr;
-        }
-
-        buf = new wchar_t[(len + 1) * sizeof(wchar_t)];
-        if (!buf) return nullptr;
-
-        if (::mbstowcs_s(&n, buf, len+1, str, len) != 0 || n == 0) {
-            delete[] buf;
-            return nullptr;
-        }
-
-        buf[len] = L'\0';
-        return buf;
-    }
-
     /**
-     * convert from string to wstring;
-     * this is required because on MinGW std::filesystem will throw an exception
-     * if an input string contains non-ASCII characters (this doesn't happend with MSVC)
+     * Look for a common symbol prefix.
+     * Many APIs share a common prefix among their symbols.
+     * If you want to load a specific symbol we can use this
+     * later for a faster lookup.
      */
-    std::wstring convert_filename(const std::string &str)
-    {
-        wchar_t *buf = char_to_wchar(str.c_str());
-
-        if (!buf) {
-            std::string msg = __FILE__;
-            msg += ": char_to_wchar() failed to convert string to wide characters: ";
-            msg += str;
-
-            throw gendlopen::error(msg);
-        }
-
-        std::wstring ws = buf;
-        delete[] buf;
-
-        return ws;
-    }
-
-#else
-
-    /* dummy */
-    template<class T>
-    T convert_filename(const T &str) {
-        return str;
-    }
-
-#endif /* __MINGW32__ */
-
-
-    /**
-    * Look for a common symbol prefix.
-    * Many APIs share a common prefix among their symbols.
-    * If you want to load a specific symbol we can use this
-    * later for a faster lookup.
-    */
     std::string get_common_prefix(vproto_t &v_prototypes, vproto_t &v_objects)
     {
         vstring_t vec;
@@ -271,6 +212,7 @@ std::string format_libname(const std::string &str, const std::string &pfx)
     return out;
 }
 
+
 /* print note */
 size_t note(bool print_date)
 {
@@ -281,7 +223,7 @@ size_t note(bool print_date)
 
     if (print_date) {
         struct tm tm = {};
-        time_t t = std::time(nullptr);
+        time_t t = ::time(nullptr);
         bool tm_ok;
 
 #ifdef _WIN32
@@ -291,7 +233,7 @@ size_t note(bool print_date)
 #endif
 
         if (tm_ok) {
-            strm << " on " << std::put_time(&tm, "%F %T %z");
+            strm << " on " << std::put_time(&tm, "%a %Y-%m-%d %H:%M:%S %z");
         }
     }
 
@@ -547,14 +489,16 @@ void gendlopen::generate()
 
     const bool use_stdout = (m_output == "-");
 
-    /* save output filename */
-    if (!use_stdout) {
-        ofbody = ofhdr = convert_filename(m_output);
-    }
-
-    /* disable separate files on stdout */
     if (use_stdout) {
+        /* disable separate files on stdout */
         m_separate = false;
+    } else {
+        /* save output filename */
+#ifdef __MINGW32__
+        ofbody = ofhdr = fs::path(m_output, std::locale());
+#else
+        ofbody = ofhdr = m_output;
+#endif
     }
 
     switch (m_format)
