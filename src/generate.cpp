@@ -59,59 +59,64 @@ namespace templates
 
 namespace /* anonymous */
 {
+    bool compare_chars_at(vproto_t::iterator beg, vproto_t::iterator end, const char *front, size_t pos)
+    {
+        for (auto it = beg; it != end; it++) {
+            if ((*it).symbol.empty()) {
+                /* ignore empty entry */
+                continue;
+            }
+
+            char c = (*it).symbol.c_str()[pos];
+
+            if (c == 0 || c != front[pos]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     /**
      * Look for a common symbol prefix.
      * Many APIs share a common prefix among their symbols.
      * If you want to load a specific symbol we can use this
      * later for a faster lookup.
      */
-    std::string get_common_prefix(vproto_t &v_prototypes, vproto_t &v_objects)
+    std::string get_common_prefix(vproto_t &v_prot, vproto_t &v_obj)
     {
-        vstring_t vec;
         size_t n;
-
-        /* copy symbol names */
-        for (const auto &e : v_prototypes) {
-            vec.push_back(e.symbol);
-        }
-
-        for (const auto &e : v_objects) {
-            vec.push_back(e.symbol);
-        }
+        vproto_t::iterator it0, it_prot0, it_obj0;
 
         /* need at least 2 symbols */
-        if (vec.size() < 2) {
+        if ((v_prot.size() + v_obj.size()) < 2) {
             return {};
         }
 
-        /* get shortest symbol length */
-        size_t shortest_sym_len = vec.front().size();
+        it_prot0 = v_prot.begin();
+        it_obj0 = v_obj.begin();
 
-        /* skip first entry */
-        for (auto it = vec.begin() + 1; it != vec.end(); it++) {
-            /* prevent `min()' macro expansion from Windows headers */
-            shortest_sym_len = std::min<size_t>(shortest_sym_len, (*it).size());
+        if (v_prot.empty()) {
+            it0 = it_obj0;
+            it_obj0++; /* skip "it0" entry */
+        } else {
+            it0 = it_prot0;
+            it_prot0++; /* skip "it0" entry */
         }
 
-        /* compare each letter of every entry */
-        for (n = 0; n < shortest_sym_len; n++) {
-            /* skip first entry */
-            for (auto it = vec.begin() + 1; it != vec.end(); it++) {
-                if ((*it).empty()) {
-                    return {};
-                }
+        const char *front = (*it0).symbol.c_str();
 
-                /* compare against first entry */
-                if ((*it).at(n) != vec.front().at(n)) {
-                    /* common prefix found (can be empty) */
-                    return vec.at(0).substr(0, n);
-                }
+        /* compare each letter of every entry */
+        for (n = 0; front[n] != 0; n++) {
+            if (compare_chars_at(it_prot0, v_prot.end(), front, n) ||
+                compare_chars_at(it_obj0, v_obj.end(), front, n))
+            {
+                break;
             }
         }
 
-        /* shortest symbol name equals prefix, i.e. if a symbol `foo'
-         * and `foobar' exist the prefix is `foo' */
-        return vec.at(0).substr(0, n);
+        return (*it0).symbol.substr(0, n);
     }
 
 } /* end anonymous namespace */
