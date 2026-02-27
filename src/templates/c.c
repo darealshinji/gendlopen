@@ -83,20 +83,13 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 /*                                save error                                 */
 /*****************************************************************************/
 
-/* GDO_SNPRINTF: use as a macro so we can use __VA_ARGS__ directly;
- * don't trust implementations and always explicitly null-termintate the string */
-#ifdef _MSC_VER
+/* GDO_SNPRINTF: use as a macro so we can use __VA_ARGS__ directly */
+#ifdef _WIN32
 # define GDO_SNPRINTF(DEST, FORMAT, ...) \
-    do { /* make MSVC happy by using the *_s function */ \
-        _gdo_sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__); \
-        DEST[_countof(DEST) - 1] = 0; \
-    } while (0)
+    _gdo_sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__)
 #else
 # define GDO_SNPRINTF(DEST, FORMAT, ...) \
-    do { \
-        _gdo_sntprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__); \
-        DEST[_countof(DEST) - 1] = 0; \
-    } while (0)
+    _gdo_sntprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__)
 #endif
 
 /* save message to error buffer */
