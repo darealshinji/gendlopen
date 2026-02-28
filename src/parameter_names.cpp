@@ -99,7 +99,6 @@ namespace /* anonymous */
         int offset;
 
         if (parse::is_function_pointer(v, it)) {
-            /* guessing the name should be save */
             /*  type (       * name ) ( )  */
             /*       ^iter + 1 2    3      */
             offset = 3;
@@ -125,6 +124,8 @@ namespace /* anonymous */
 /* get parameter names from function parameter list */
 bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, std::string &msg)
 {
+    const char *hint = "\nhint: try `" OPT_PARAM_SKIP "' or `" OPT_PARAM_CREATE "'";
+
     if (proto.prototype != proto::function || param_void_or_empty(proto)) {
         /* nothing to do */
         return true;
@@ -144,9 +145,6 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
     }
 
     /* parameter_names == param::read */
-
-#define HINT_MSG  "hint: try `" OPT_PARAM_SKIP "' or `" OPT_PARAM_CREATE "'"
-
     for (vstring_t &v : proto.args_vec)
     {
         if (v.empty()) {
@@ -160,8 +158,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
             }
 
             msg = "typename only or incorrect parameter format in function `" + proto.symbol + "': "
-                + v.front() + "\n"
-                HINT_MSG;
+                + v.front() + hint;
             return false;
         }
 
@@ -173,7 +170,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         } else if (utils::str_front(v.back()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' is missing a typename: ";
             append_strings(msg, v.begin(), v.end());
-            msg += "\n" HINT_MSG;
+            msg += hint;
             return false;
         }
 
@@ -196,7 +193,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
 
         msg = "incorrect parameter format in function `" + proto.symbol + "': ";
         append_strings(msg, v.begin(), v.end());
-        msg += "\n" HINT_MSG;
+        msg += hint;
         return false;
     }
 

@@ -236,10 +236,10 @@ namespace /* anonymous */
         switch (utils::str_front(*it))
         {
         case '(':
-            return (check_function_paren(v, p, it)         || /* TYPE ( SYMBOL ) ( ) */
-                    check_function_paren_pointer(v, p, it) || /* TYPE ( * SYMBOL ( ) ) */
-                    check_function(v, p, it)               || /* TYPE SYMBOL ( ) */
-                    check_function_pointer(v, p, it));        /* TYPE ( * SYMBOL ) ( ) */
+            return (check_function(v, p, it)                 || /* TYPE SYMBOL ( ) */
+                    check_function_pointer(v, p, it)         || /* TYPE ( * SYMBOL ) ( ) */
+                    check_function_paren(v, p, it)           || /* TYPE ( SYMBOL ) ( ) */
+                    check_function_paren_pointer(v, p, it));    /* TYPE ( * SYMBOL ( ) ) */
 
         case '[':
             return check_array(v, p, it);

@@ -84,7 +84,8 @@ namespace /* anonymous */
         /* end */
         switch (sq.end[1])
         {
-        case 0: /* 1 element */
+        case 0:
+            /* 1 element */
             if (matching(utils::str_front(v.back()), sq.end[0])) {
                 break;
             }
@@ -129,14 +130,12 @@ vstring_t::iterator parse::find_first_not_pointer_or_ident(vstring_t &v)
 
 #define XSTRLEN(x) (sizeof(x)-1)
 
-#define CHECK_FRONT(FRONT) \
-    ((XSTRLEN(FRONT) == 1 && *FRONT == *TYPE) || \
-     (XSTRLEN(FRONT) == 2 && *FRONT == *TYPE && FRONT[1] == *SYMBOL))
-
-#define MKFUNC(NAME,FRONT,MIDDLE,END) \
+/* cannot use static_assert() like this in a template function */
+#define MKFUNC(NAME, FRONT, MIDDLE, END) \
     bool NAME(vstring_t &v, const iter_t &it) \
     { \
-        static_assert(CHECK_FRONT(FRONT), \
+        static_assert(FRONT[0] == *TYPE && \
+            (XSTRLEN(FRONT) == 1 || (XSTRLEN(FRONT) == 2 && FRONT[1] == *SYMBOL)), \
             "macro parameter 'FRONT' must be either 'TYPE' or 'TYPE SYMBOL'"); \
         \
         static_assert(XSTRLEN(END) == 1 || XSTRLEN(END) == 2, \
