@@ -246,7 +246,6 @@ GDO_WARNING("__builtin_va_arg_pack() and GNU function inling are required to use
 # ifdef GDO_VA_ARG_PACK_INLINE@
     extern inline __attribute__((gnu_inline))@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        /* puts("DEBUG: %%func_symbol%%: GNU inline wrapper function called"); */@
         const bool sym_loaded = (GDO_RAWPTR_%%func_symbol%% != NULL);@
         _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, sym_loaded, GDO_T("%%func_symbol%%") );@
         GDO_HOOK_%%func_symbol%%( %%param_names%%, __builtin_va_arg_pack() );@
@@ -256,7 +255,6 @@ GDO_WARNING("__builtin_va_arg_pack() and GNU function inling are required to use
 #else@
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        /* puts("DEBUG: %%func_symbol%%: wrapper function called"); */@
         const bool sym_loaded = (GDO_RAWPTR_%%func_symbol%% != NULL);@
         _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, sym_loaded, GDO_T("%%func_symbol%%") );@
         GDO_HOOK_%%func_symbol%%( %%param_names%% );@

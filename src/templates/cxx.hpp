@@ -440,7 +440,6 @@ GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() 
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
     template<typename... Types>@
     %%type%% GDO_WRAP(%%func_symbol%%) (Types... args) {@
-        /* std::cout << "DEBUG: %%func_symbol%%: template function called" << std::endl; */@
         gdo::wrap::check( GDO_LOAD_%%func_symbol%%, GDO_RAWPTR_%%func_symbol%%, "%%func_symbol%%" );@
         GDO_HOOK_%%func_symbol%%(args...);@
         %%return%% GDO_RAWPTR_%%func_symbol%%(args...);@
@@ -448,7 +447,6 @@ GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() 
 #else@
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        /* std::cout << "DEBUG: %%func_symbol%%: wrapped function called" << std::endl; */@
         gdo::wrap::check( GDO_LOAD_%%func_symbol%%, GDO_RAWPTR_%%func_symbol%%, "%%func_symbol%%" );@
         GDO_HOOK_%%func_symbol%%(%%param_names%%);@
         %%return%% GDO_RAWPTR_%%func_symbol%%(%%param_names%%);@

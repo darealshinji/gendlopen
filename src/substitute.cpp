@@ -76,34 +76,6 @@ namespace /* anonymous */
         return false;
     }
 
-    /* check for "%def" line */
-    size_t check_def_keyword(const char *ptr, const template_t &line, bool &line_directive, size_t &substitute_lineno)
-    {
-        if (line.maybe_keyword && line.line_count == 1 &&
-            strncmp(ptr, "%def", 4) == 0 &&
-            (ptr[4] == ' ' || ptr[4] == '\t') && ptr[5] != 0)
-        {
-            ptr += 5;
-
-            if (line_directive) {
-                save::ofs << "#line " << substitute_lineno << '\n';
-                save::ofs << "#ifndef " << ptr << '\n';
-                save::ofs << "#line " << substitute_lineno << '\n';
-                save::ofs << "#define " << ptr << " 0\n";
-                save::ofs << "#line " << substitute_lineno << '\n';
-                save::ofs << "#endif\n";
-                return 6;
-            } else {
-                save::ofs << "#ifndef " << ptr << '\n';
-                save::ofs << "#define " << ptr << " 0\n";
-                save::ofs << "#endif\n";
-                return 3;
-            }
-        }
-
-        return 0;
-    }
-
     /* get the length of the longest symbol */
     size_t get_longest_symbol_size(const vproto_t &v)
     {
@@ -364,13 +336,6 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
     /* skip line */
     if (param_skip_code) {
         return 0;
-    }
-
-    /* check for "%def" line (used in "common.h") */
-    size_t line_count = check_def_keyword(ptr, line, m_line_directive, m_substitute_lineno);
-
-    if (line_count > 0) {
-        return line_count;
     }
 
     /* replace prefixes */
