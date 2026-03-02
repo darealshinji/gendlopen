@@ -154,29 +154,27 @@ void gendlopen::prefix(const std::string &s)
 }
 
 
+#define NOT_IDENT  "[^a-zA-Z0-9_]"
+#define LINE_BEGIN "^"
+#define LINE_END   "$"
+
 /* replace prefixes in string */
 std::string gendlopen::replace_prefixes(const std::string &input)
 {
     const std::regex reg_pfxupper(
-        "(([^a-zA-Z0-9_]|^)" /* no identifier or begin of line */
-        "[_]?)"              /* optional underscore */
-        "(GDO_)"             /* uppercase prefix */
+        "((" NOT_IDENT "|" LINE_BEGIN ")[_]?)(GDO_)"
     );
 
     const std::regex reg_pfxlower(
-        "(([^a-zA-Z0-9_]|^)" /* no identifier or begin of line */
-        "[_]?)"              /* optional underscore */
-        "(gdo_)"             /* lowercase prefix */
+        "((" NOT_IDENT "|" LINE_BEGIN ")[_]?)(gdo_)"
     );
 
     const std::regex reg_standalone(
-        "([^a-zA-Z0-9_]|^)"  /* no identifier or begin of line */
-        "(gdo)"              /* standalone lowercase word */
-        "([^a-zA-Z0-9_]|$)"  /* no identifier or end of line */
+        "(" NOT_IDENT "|" LINE_BEGIN ")(gdo)(" NOT_IDENT "|" LINE_END ")"
     );
 
-    std::string buf = input;
-    buf = std::regex_replace(buf, reg_pfxupper, m_fmt_upper);
+    std::string buf;
+    buf = std::regex_replace(input, reg_pfxupper, m_fmt_upper);
     buf = std::regex_replace(buf, reg_pfxlower, m_fmt_lower);
     buf = std::regex_replace(buf, reg_standalone, m_fmt_standalone);
 
