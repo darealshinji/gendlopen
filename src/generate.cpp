@@ -59,11 +59,12 @@ namespace templates
 
 namespace /* anonymous */
 {
-    bool compare_chars_at(vproto_t::iterator beg, vproto_t::iterator end, const char *front, size_t pos)
+    bool compare_chars_at(vproto_t &vec, vproto_t::iterator &it0, size_t pos)
     {
-        for (auto it = beg; it != end; it++) {
-            if ((*it).symbol.empty()) {
-                /* ignore empty entry */
+        const char *front = (*it0).symbol.c_str();
+
+        for (auto it = vec.begin(); it != vec.end(); it++) {
+            if (it == it0 || (*it).symbol.empty()) {
                 continue;
             }
 
@@ -86,37 +87,24 @@ namespace /* anonymous */
      */
     std::string get_common_prefix(vproto_t &v_prot, vproto_t &v_obj)
     {
-        size_t n;
-        vproto_t::iterator it0, it_prot0, it_obj0;
-
         /* need at least 2 symbols */
         if ((v_prot.size() + v_obj.size()) < 2) {
             return {};
         }
 
-        it_prot0 = v_prot.begin();
-        it_obj0 = v_obj.begin();
-
-        if (v_prot.empty()) {
-            it0 = it_obj0;
-            it_obj0++; /* skip "it0" entry */
-        } else {
-            it0 = it_prot0;
-            it_prot0++; /* skip "it0" entry */
-        }
-
-        const char *front = (*it0).symbol.c_str();
+        size_t i;
+        auto it0 = v_prot.empty() ? v_obj.begin() : v_prot.begin();
 
         /* compare each letter of every entry */
-        for (n = 0; front[n] != 0; n++) {
-            if (compare_chars_at(it_prot0, v_prot.end(), front, n) ||
-                compare_chars_at(it_obj0, v_obj.end(), front, n))
+        for (i = 0; i < (*it0).symbol.size(); i++) {
+            if (compare_chars_at(v_prot, it0, i) ||
+                compare_chars_at(v_obj, it0, i))
             {
                 break;
             }
         }
 
-        return (*it0).symbol.substr(0, n);
+        return (*it0).symbol.substr(0, i);
     }
 
 } /* end anonymous namespace */
