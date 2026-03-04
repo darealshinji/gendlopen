@@ -45,8 +45,8 @@ bom                 "\xEF\xBB\xBF"
 col                 [\x1B][\[][0-9;]*[m]
 split               "\\"[[:space:]]*?"\n"
 ast_begin           ^({bom})?({col})?"TranslationUnitDecl"({col})?({col})?" 0x".*
-funcvar             ^({col})?[|`]"-"({col})?({col})?("Function"|"Var")"Decl".*
-parmvar             ^({col})?[| ]" "[|`]"-"({col})?({col})?"ParmVarDecl".*
+funcvar             ^({col})?[|`]"-"({col})?({col})?("Function"|"Var")"Decl"({col})?({col})?" 0x".*
+parmvar             ^({col})?[| ]" "[|`]"-"({col})?({col})?"ParmVarDecl"({col})?({col})?" 0x".*
 
 option              ^({bom})?"%option"[[:space:]]
 optstr              [^[:space:]]+

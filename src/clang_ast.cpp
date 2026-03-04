@@ -88,9 +88,7 @@ std::string strip_line(const char *line)
     std::string s = line;
 
     /* remains of Windows line endings */
-    if (s.ends_with('\r')) {
-        s.pop_back();
-    }
+    utils::delete_suffix(s, '\r');
 
     return s.empty() ? "" : std::regex_replace(s, reg, "");
 }
@@ -101,8 +99,8 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
     std::smatch m;
 
     const std::regex reg(
-        "^.*?-ParmVarDecl 0x.*?"
-        "'(.*?)'.*"  /* type */
+        "^[| ] [|`]-ParmVarDecl 0x.*?"
+        " '(.*?)'.*"  /* type */
     );
 
     const std::string line = strip_line(yytext);
@@ -143,58 +141,58 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
 
 
 /* get function or variable declaration */
-bool gendlopen::get_declarations(int mode)
+int gendlopen::get_declarations(int mode)
 {
-    decl_t decl;
     proto_t proto;
     std::smatch m;
 
     const std::regex reg_func(
         "^[|`]-FunctionDecl 0x.*?"
-        " ([A-Za-z0-9_]*?) "  /* symbol */
+        " ([a-zA-Z0-9_]*?) "  /* symbol */
         "'(.*?)'.*"           /* type */
     );
 
     const std::regex reg_var(
         "^[|`]-VarDecl 0x.*?"
-        " ([A-Za-z0-9_]*?) "  /* symbol */
+        " ([a-zA-Z0-9_]*?) "  /* symbol */
         "'(.*?)'.*"           /* type */
     );
 
     const std::string line = strip_line(yytext);
 
     if (line.empty()) {
-        return false;
+        return 0;
     }
 
     const bool is_function = (utils::str_at(line, 2) == 'F');
 
     if (!std::regex_match(line, m, is_function ? reg_func : reg_var) || m.size() != 3) {
-        return false;
+        return 0;
     }
 
     /* check symbol prefix or list */
-    decl.symbol = m.str(1);
+    proto.symbol = m.str(1);
 
     switch (mode)
     {
     case M_PREFIX:
-        if (!utils::is_prefixed(decl.symbol, m_prefix_list)) {
-            return false; /* not prefixed */
+        if (!utils::is_prefixed(proto.symbol, m_prefix_list)) {
+            return 0;
+        }
+        break;
+
+    case M_LIST:
+        /* erase from list if found */
+        if (std::erase(m_symbol_list, proto.symbol) == 0) {
+            return 0;
         }
         break;
 
     case M_PFX_LIST:
-        if (utils::is_prefixed(decl.symbol, m_prefix_list)) {
-            break; /* prefixed */
-        }
-        /* not prefixed */
-        [[fallthrough]];
-
-    case M_LIST:
-        /* erase from list if found */
-        if (std::erase(m_symbol_list, decl.symbol) == 0) {
-            return false; /* not in list */
+        if (!utils::is_prefixed(proto.symbol, m_prefix_list) &&
+            std::erase(m_symbol_list, proto.symbol) == 0) /* erase from list if found */
+        {
+            return 0;
         }
         break;
 
@@ -204,60 +202,51 @@ bool gendlopen::get_declarations(int mode)
 
     if (is_function) {
         /* function declaration */
-        std::string args, param_names;
-        int rv, param_count = 1;
+        int rv;
+        int param_count = 1;
 
         size_t pos = m.str(2).find('(');
 
         if (pos == std::string::npos) {
-            return false;
+            return 0;
         }
 
-        decl.prototype = proto::function;
-        decl.type = m.str(2).substr(0, pos);
-        utils::strip_spaces(decl.type);
+        proto.prototype = proto::function;
+
+        proto.type = m.str(2).substr(0, pos);
+        utils::strip_spaces(proto.type);
 
         /* read next lines for parameters */
         while ((rv = yylex()) == LEX_AST_PARMVAR) {
-            if (!get_parameters(args, param_names, param_count)) {
+            if (!get_parameters(proto.args, proto.param_names, param_count)) {
                 break;
             }
         }
 
-        utils::delete_suffix(args, ", ");
-        utils::delete_suffix(param_names, ", ");
-
-        proto.prototype   = proto::function;
-        proto.type        = decl.type;
-        proto.symbol      = decl.symbol,
-        proto.args        = args;
-        proto.param_names = param_names;
+        utils::delete_suffix(proto.args, ", ");
+        utils::delete_suffix(proto.param_names, ", ");
 
         m_prototypes.push_back(proto);
 
         /* continue to analyze the current line stored in yytext buffer */
-        return true;
+        return 1;
     } else {
         /* variable declaration */
-        decl.type = m.str(2);
-        utils::strip_spaces(decl.type);
-
         if (m.str(2).find("(*)") != std::string::npos) {
-            decl.prototype = proto::function_pointer;
+            proto.prototype = proto::function_pointer;
         } else if (m.str(2).find('[') != std::string::npos) {
-            decl.prototype = proto::object_array;
+            proto.prototype = proto::object_array;
         } else {
-            decl.prototype = proto::object;
+            proto.prototype = proto::object;
         }
 
-        proto.prototype = decl.prototype;
-        proto.type      = decl.type;
-        proto.symbol    = decl.symbol;
+        proto.type = m.str(2);
+        utils::strip_spaces(proto.type);
 
         m_objects.push_back(proto);
     }
 
-    return false;
+    return 0;
 }
 
 /* read Clang AST */
@@ -289,7 +278,7 @@ void gendlopen::parse_clang_ast()
         }
 
         /* uses an inner loop to read parameters */
-        while (get_declarations(mode))
+        while (get_declarations(mode) == 1)
         {}
 
         if (mode == M_LIST && m_symbol_list.empty()) {

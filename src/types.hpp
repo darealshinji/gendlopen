@@ -58,13 +58,6 @@ typedef struct _proto {
 } proto_t;
 
 
-typedef struct _decl {
-    proto::type prototype;
-    std::string symbol;
-    std::string type;
-} decl_t;
-
-
 typedef struct _template
 {
 #ifdef USE_EXTERNAL_RESOURCES
