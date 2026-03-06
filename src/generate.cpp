@@ -64,14 +64,12 @@ namespace /* anonymous */
         const char *front = (*it0).symbol.c_str();
 
         for (auto it = vec.begin(); it != vec.end(); it++) {
-            if (it == it0 || (*it).symbol.empty()) {
-                continue;
-            }
+            if (it != it0) {
+                char c = (*it).symbol.c_str()[pos];
 
-            char c = (*it).symbol.c_str()[pos];
-
-            if (c == 0 || c != front[pos]) {
-                return true;
+                if (c == 0 || c != front[pos]) {
+                    return true;
+                }
             }
         }
 

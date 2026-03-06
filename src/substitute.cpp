@@ -108,14 +108,6 @@ size_t gendlopen::replace_function_prototypes(const std::string &entry)
     size_t line_count = 0;
     const size_t entry_lines = utils::count_linefeed(entry);
 
-    /* print #line directive to make sure the line count is on par */
-    if (m_prototypes.empty()) {
-        if (m_line_directive) {
-            save::ofs << "#line " << (m_substitute_lineno + entry_lines + 1) << '\n';
-        }
-        return entry_lines;
-    }
-
     if (entry.find("%%func_symbol_pad%%") != std::string::npos) {
         longest = get_longest_symbol_size(m_prototypes);
     }
@@ -166,14 +158,6 @@ size_t gendlopen::replace_object_prototypes(const std::string &entry)
     size_t longest = 0;
     size_t line_count = 0;
     const size_t entry_lines = utils::count_linefeed(entry);
-
-    /* print #line directive to make sure the line count is on par */
-    if (m_objects.empty()) {
-        if (m_line_directive) {
-            save::ofs << "#line " << (m_substitute_lineno + entry_lines + 1) << '\n';
-        }
-        return entry_lines;
-    }
 
     if (entry.find("%%obj_symbol_pad%%") != std::string::npos) {
         longest = get_longest_symbol_size(m_objects);
@@ -229,14 +213,6 @@ size_t gendlopen::replace_symbol_names(const std::string &entry)
         save::ofs << copy << '\n';
         line_count += entry_lines + 1;
     };
-
-    /* print #line directive to make sure the line count is on par */
-    if (m_prototypes.empty() && m_objects.empty()) {
-        if (m_line_directive) {
-            save::ofs << "#line " << (m_substitute_lineno + entry_lines + 1) << '\n';
-        }
-        return entry_lines;
-    }
 
     /* function pointer */
     for (auto &e : m_prototypes) {
@@ -374,9 +350,9 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
         case 1 << 3:
             /* any symbol */
-            if (m_prototypes.empty() && m_objects.empty()) {
-                return print_lineno();
-            }
+            //if (m_prototypes.empty() && m_objects.empty()) {
+            //    return print_lineno();
+            //}
             return replace_symbol_names(buf);
 
         default:
