@@ -43,6 +43,14 @@ namespace parse
         }
     }
 
+    template <typename T>
+    void append_strings(std::string &buf, const T &vec) {
+        for (const auto &e : vec) {
+            buf += e;
+            buf += ' ';
+        }
+    }
+
     inline bool is_ident(char c) {
         return (::isalnum(c) || c == '_');
     }

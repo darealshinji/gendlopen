@@ -128,6 +128,7 @@ namespace /* anonymous */
                         block = true;
                         curly_count = 0;
                     } else {
+                        /* part of function parameter, etc. */
                         tokens.push_back(yytext);
                     }
                     break;

@@ -133,7 +133,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
 
     /* copy parameters */
     for (auto &v : proto.args_vec) {
-        append_strings(proto.args, v.begin(), v.end());
+        append_strings(proto.args, v);
         proto.args += ", ";
     }
 
@@ -165,11 +165,11 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         /* check if a parameter begins or ends with pointer */
         if (utils::str_front(v.front()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
-            append_strings(msg, v.begin(), v.end());
+            append_strings(msg, v);
             return false;
         } else if (utils::str_front(v.back()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' is missing a typename: ";
-            append_strings(msg, v.begin(), v.end());
+            append_strings(msg, v);
             msg += hint;
             return false;
         }
@@ -192,7 +192,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         }
 
         msg = "incorrect parameter format in function `" + proto.symbol + "': ";
-        append_strings(msg, v.begin(), v.end());
+        append_strings(msg, v);
         msg += hint;
         return false;
     }
@@ -226,7 +226,7 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
         /* check if a parameter begins with pointer */
         if (utils::str_front(v.front()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
-            append_strings(msg, v.begin(), v.end());
+            append_strings(msg, v);
             return false;
         }
 
@@ -248,12 +248,12 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
             }
 
             msg = "cannot read parameter in function `" + proto.symbol + "': ";
-            append_strings(msg, v.begin(), v.end());
+            append_strings(msg, v);
             return false;
         }
 
         /* regular object or pointer */
-        append_strings(proto.args, v.begin(), v.end());
+        append_strings(proto.args, v);
         append_name(proto, param_count, ", ");
     }
 

@@ -284,12 +284,12 @@ void gendlopen::parse(std::vector<vstring_t> &vec_tokens, const std::string &inp
 
     /* nothing found? */
     if (vproto.empty()) {
-        throw error("no function or object prototypes found in " + input_name);
+        throw error(input_name + "\nno function or object prototypes found");
     }
 
     /* check for multiple definitions of a symbol */
     if (multiple_definitions(vproto, sym)) {
-        throw error("multiple definitions of symbol `" + sym + "' found in " + input_name);
+        throw error(input_name + "\nmultiple definitions of symbol `" + sym + "' found");
     }
 
     /* parameters */
