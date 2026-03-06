@@ -325,6 +325,13 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 #endif
             break;
 
+        case 'v':
+            if (arg_eq("version")) {
+                std::cout << "gendlopen " << gendlopen::version() << std::endl;
+                std::exit(0);
+            }
+            break;
+
         default:
             break;
         }

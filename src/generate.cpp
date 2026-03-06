@@ -546,7 +546,7 @@ void gendlopen::generate()
     /* define if a prototype has variable arguments */
     for (const auto &e : m_prototypes) {
         if (e.args.ends_with("...")) {
-            m_defines += "#define " + m_pfx_upper + "_HAS_VA_ARGS_" + e.symbol + '\n';
+            m_defines += "#define " + m_pfx_upper + "_HAS_VA_ARGS_" + e.symbol + " 1\n";
         }
     }
 

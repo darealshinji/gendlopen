@@ -128,6 +128,9 @@ public:
     /* d'tor */
     ~gendlopen();
 
+    /* return program version string */
+    constexpr const char *version() { return "1.0"; }
+
     /* get() / set() an option */
 
     /*   type            method name      default value */

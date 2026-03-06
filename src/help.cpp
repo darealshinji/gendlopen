@@ -51,6 +51,7 @@ namespace help
             "\n"
             "  -help             display this information\n"
             "  -full-help        show more detailed information\n"
+            "  -version          output version information and exit\n"
             "  -out=<file>       save to file instead of stdout\n"
             "  -prefix=<string>  use <string> to prefix functions, macros and C++ namespaces (default: gdo)\n"
             "  -format=<string>  set output format: c (default), c++, plugin, minimal, minimal-c++\n"
@@ -141,8 +142,14 @@ namespace help
             "    Show a brief description of all command line arguments.\n"
             "\n"
 
+
             "  -full-help\n"
             "    Show more detailed information.\n"
+            "\n"
+
+
+            "  -version\n"
+            "    Output version information and exit.\n"
             "\n"
 
 
