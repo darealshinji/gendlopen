@@ -344,21 +344,16 @@ namespace /* anonymous */
 /* create typedefs for function pointers and arrays */
 void gendlopen::create_typedefs()
 {
-    /* create typename */
-    auto mk_name = [this] (const std::string &symbol) {
-        return m_pfx_lower + '_' + symbol + "__t";
-    };
-
     for (auto &p : m_objects) {
         std::string def, name;
 
         if (p.prototype == proto::function_pointer) {
             /* function pointer */
-            name = mk_name(p.symbol);
+            name = m_pfx_lower + '_' + p.symbol + "__t";
             def = fptr_typedef(p.type, name);
         } else if (p.prototype == proto::object_array) {
             /* array type */
-            name = mk_name(p.symbol);
+            name = m_pfx_lower + '_' + p.symbol + "__t";
             def = array_typedef(p.type, name);
         } else {
             continue;
