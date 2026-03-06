@@ -126,7 +126,7 @@ void gendlopen::load_template(templates::name file)
 
 
 /* dummy */
-void gendlopen::dump_templates(const std::string&)
+void gendlopen::dump_templates(const char *)
 {
 }
 
