@@ -49,47 +49,44 @@ namespace help
             "  multi-letter options may also be prefixed with `--'\n"
 #endif
             "\n"
-            "  -help             display this information\n"
-            "  -full-help        show more detailed information\n"
-            "  -version          output version information and exit\n"
-            "  -out=<file>       save to file instead of stdout\n"
-            "  -prefix=<string>  use <string> to prefix functions, macros and C++ namespaces (default: gdo)\n"
+            "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
+            "  -D<string>        define a preprocessor macro *\n"
+#if !defined(USE_EXTERNAL_RESOURCES)
+            "  -dump-templates=<path>\n"
+            "                    dump internal template files into directory and exit\n"
+#endif
+            "  -force            always overwrite existing output files\n"
             "  -format=<string>  set output format: c (default), c++, plugin, minimal, minimal-c++\n"
-            "  -template=<file>  use a custom template (`-format' is ignored)\n"
+            "  -full-help        show more detailed information\n"
+            "  -help             display this information\n"
+            "  -ignore-options   ignore `%option' lines from input file\n"
+            "  -include=[nq:]<file>\n"
+            "                    include a header file *;\n"
+            "                    nq:<file> - no quotes are added, the string will be used as is\n"
             "  -library=[<mode>:]<lib>\n"
             "                    set a default library name to load; if <mode> is 'nq' no quotes are\n"
             "                    added, 'ext' will append a file extension to the library name and 'api:#'\n"
             "                    will create a library filename with API number\n"
-            "  -include=[nq:]<file>\n"
-            "                    include a header file *;\n"
-            "                    nq:<file> - no quotes are added, the string will be used as is\n"
-            "  -define=<string>\n"
-            "  -D<string>        define a preprocessor macro *\n"
-            "  -P<string>        look for symbols prefixed with <string> *\n"
-            "  -S<string>        look for symbol name <string> *\n"
-            "  -separate         save output into separate body and header files\n"
-            "  -force            always overwrite existing output files\n"
-            "  -param=<mode>     how to handle parameter names in function prototypes from input file;\n"
-            "                    modes are: read (default), skip, create\n"
-            "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
-            "  -print-symbols    print list of found symbols and exit\n"
-            "  -ignore-options   ignore `%option' lines from input file\n"
+            "  -line             add `#line' directives to output\n"
             "  -no-date          don't show current date in output\n"
             "  -no-pragma-once   use `#ifndef' header guard instead of `#pragma once'\n"
-            "  -line             add `#line' directives to output\n"
-
+            "  -out=<file>       save to file instead of stdout\n"
+            "  -P<string>        look for symbols prefixed with <string> *\n"
+            "  -param=<mode>     how to handle parameter names in function prototypes from input file;\n"
+            "                    modes are: read (default), skip, create\n"
+            "  -prefix=<string>  use <string> to prefix functions, macros and C++ namespaces (default: gdo)\n"
+            "  -print-symbols    print list of found symbols and exit\n"
+            "  -S<string>        look for symbol name <string> *\n"
+            "  -separate         save output into separate body and header files\n"
+            "  -template=<file>  use a custom template (`-format' is ignored)\n"
 #ifdef USE_EXTERNAL_RESOURCES
             "  -templates-path=<path>\n"
             "                    directory containing the template files (overrides environment variable\n"
             "                    TEMPLATES)\n"
-#else
-            "  -dump-templates=<path>\n"
-            "                    dump internal template files into directory and exit\n"
 #endif
-
+            "  -version          output version information and exit\n"
             "\n"
             "  * option may be passed multiple times\n"
-
 #ifdef USE_EXTERNAL_RESOURCES
             "\n"
             "environment variables:\n"
@@ -114,9 +111,15 @@ namespace help
             "    Any other code will throw an error.\n"
             "\n"
             "    Some options can be set on a line beginning with `%option':\n"
-            "    %option format=<string> prefix=<string> library=[<mode>:]<lib>\n"
-            "    %option include=[nq:]<file> D=<string> param=[skip|create|read]\n"
-            "    %option no-date no-pragma-once line\n"
+            "    %option D=<string>\n"
+            "    %option format=<string>\n"
+            "    %option include=[nq:]<file>\n"
+            "    %option library=[<mode>:]<lib>\n"
+            "    %option line\n"
+            "    %option no-date\n"
+            "    %option no-pragma-once\n"
+            "    %option param=[skip|create|read]\n"
+            "    %option prefix=<string>\n"
             "\n"
             "    See the corresponding command line options for details.\n"
             "\n"
@@ -137,33 +140,47 @@ namespace help
             "  Multi-letter options may also be prefixed with `--'.\n"
 #endif
             "\n"
-
-            "  -help\n"
-            "    Show a brief description of all command line arguments.\n"
             "\n"
 
 
-            "  -full-help\n"
-            "    Show more detailed information.\n"
+            /* A */
+
+            "  -ast-all-symbols\n"
+            "    Pass this flag if you really want to use all symbols found in a Clang AST.\n"
+            "    Be careful as this might include unwanted prototypes from other headers.\n"
+            "    It's recommended to use `-P' and/or `-S' instead.\n"
+            "    If the input is a Clang AST and this flag was set then `-P' and `-S' are\n"
+            "    ignored.\n"
+            "\n"
+            "    This flag is ignored if the input is not a Clang AST.\n"
+            "\n"
             "\n"
 
 
-            "  -version\n"
-            "    Output version information and exit.\n"
+            /* D */
+
+            "  -D<string>\n"
+            "    Set a preprocessor definition macro to be added at the top of the output code.\n"
+            "    This macro may include a value in the form of `FOO=1'.\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
             "\n"
 
 
-            "  -out=<file>\n"
-            "    Specify an output file.\n"
-            "    If this flag isn't set or if <file> is `-' output will be printed to stdout.\n"
+#if !defined(USE_EXTERNAL_RESOURCES)
+            "  -dump-templates=<path>\n"
+            "    Dump internal template files into directory and exit.\n"
             "\n"
+            "\n"
+#endif
 
 
-            "  -prefix=<string>\n"
-            "    Use <string> as a prefix in names of functions and macros or as C++\n"
-            "    namespace when generating output to avoid symbol clashes.\n"
-            "    The default string is `gdo'.\n"
-            "    Upper/lower case and underscores will be set accordingly.\n"
+            /* F */
+
+            "  -force\n"
+            "    Always overwrite existing output files. Use with care.\n"
+            "\n"
             "\n"
 
 
@@ -177,7 +194,168 @@ namespace help
             "\n"
             "    More information can be found in the comments of the header files.\n"
             "\n"
+            "\n"
 
+
+            "  -full-help\n"
+            "    Show more detailed information.\n"
+            "\n"
+            "\n"
+
+
+            /* H */
+
+            "  -help\n"
+            "    Show a brief description of all command line arguments.\n"
+            "\n"
+            "\n"
+
+
+            /* I */
+
+            "  -ignore-options\n"
+            "    Ignore lines beginning with `%option' from the input file.\n"
+            "\n"
+            "\n"
+
+
+            "  -include=[nq:]<file>\n"
+            "    Set a header file name to be included at the top of the output code.\n"
+            "    Quotation marks are put around the filename if it's not enclosed in\n"
+            "    brackets or quotation marks or if it's not prefixed with \"nq:\".\n"
+            "\n"
+            "    -include=foo.h      ==>  #include \"foo.h\"\n"
+            "    -include='\"foo.h\"'  ==>  #include \"foo.h\"\n"
+            "    -include=<foo.h>    ==>  #include <foo.h>\n"
+            "    -include=nq:foo     ==>  #include foo\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
+            "\n"
+
+
+            /* L */
+
+            "  -library=[<mode>:]<lib>\n"
+            "    Set a default library name to load.\n"
+            "    If no mode was set quotation marks are put around the filename as needed.\n"
+            "\n"
+            "    Available modes:\n"
+            "    nq    - no quotes are added, the string will be used as is\n"
+            "    ext   - filename extension will be added automatically through a macro\n"
+            "    api:# - library filename with API number will be created through a macro\n"
+            "\n"
+            "    -library=foo        ==>  \"foo\"\n"
+            "    -library=nq:foo     ==>  foo\n"
+            "    -library=ext:foo    ==>  \"foo\" LIBEXTA    ==>  i.e. \"foo.dll\"\n"
+            "    -library=api:2:foo  ==>  LIBNAMEA(foo,2)  ==>  i.e. \"libfoo.so.2\"\n"
+            "\n"
+            "\n"
+
+
+            "  -line\n"
+            "    Add `#line' directives to the output that will refer to the original template\n"
+            "    files.\n"
+            "\n"
+            "\n"
+
+
+            /* N */
+
+            "  -no-date\n"
+            "    Don't show the current date in output. Useful for reproducable builds.\n"
+            "\n"
+            "\n"
+
+
+            "  -no-pragma-once\n"
+            "    Don't add `#pragma once' to output header file. Instead use the classic\n"
+            "    `#ifndef' preprocessor header guard.\n"
+            "\n"
+            "\n"
+
+
+            /* O */
+
+            "  -out=<file>\n"
+            "    Specify an output file.\n"
+            "    If this flag isn't set or if <file> is `-' output will be printed to stdout.\n"
+            "\n"
+            "\n"
+
+
+            /* P */
+
+            "  -P<string>\n"
+            "    Look for symbols that begin with <string> when parsing the input.\n"
+            "    This is most useful if the input is a Clang AST to ignore unwanted\n"
+            "    declarations coming from i.e. standard C headers.\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
+            "\n"
+
+
+            "  -param=<mode>\n"
+            "    If <mode> is 'read':\n"
+            "    Always try to read parameter names in function prototypes when\n"
+            "    the input is being processed. This is the default behavior if `-param'\n"
+            "    was not explicitly set.\n"
+            "\n"
+            "    If <mode> is 'skip':\n"
+            "    Don't try to look for parameter names in function prototypes. This will\n"
+            "    disable any kind of wrapped functions in the output.\n"
+            "\n"
+            "    If <mode> is 'create':\n"
+            "    Create parameter names for the output to be used in wrapped functions.\n"
+            "    Function prototypes from the input are assumed to have no parameter names!\n"
+            "\n"
+            "\n"
+
+
+            "  -prefix=<string>\n"
+            "    Use <string> as a prefix in names of functions and macros or as C++\n"
+            "    namespace when generating output to avoid symbol clashes.\n"
+            "    The default string is `gdo'.\n"
+            "    Upper/lower case and underscores will be set accordingly.\n"
+            "\n"
+            "\n"
+
+
+            "  -print-symbols\n"
+            "    Don't create any output, just print a list of found symbols and exit.\n"
+            "    This is useful for debugging.\n"
+            "\n"
+            "\n"
+
+
+            /* S */
+
+            "  -S<string>\n"
+            "    Look for the symbol name <string> when parsing the input.\n"
+            "    This is most useful if the input is a Clang AST,\n"
+            "    to ignore unwanted declarations coming from i.e. standard C headers.\n"
+            "\n"
+            "    This flag may be passed multiple times.\n"
+            "\n"
+            "\n"
+
+
+            "  -separate\n"
+            "    Save output into separate body and header files.\n"
+            "    The filename extensions will be set to .c/.h or .cpp/.hpp accordingly.\n"
+            "    This flag is ignored if the output is printed to stdout or if the\n"
+            "    output format is \"minimal-C\" or \"minimal-C++\".\n"
+            "\n"
+            "    Be sure to use the same settings for the generated body file and all other\n"
+            "    compilation units that included the header file. Otherwise you will likely\n"
+            "    get linking errors. Set options with i.e. `-D' or `-include' during code\n"
+            "    generation.\n"
+            "\n"
+            "\n"
+
+
+            /* T */
 
             "  -template=<file>\n"
             "    Use a custom template file to generate output from.\n"
@@ -214,134 +392,6 @@ namespace help
             "    A line `%PARAM_SKIP_END%' will reset everything to default. This is used to\n"
             "    skip code that would otherwise require parameter names.\n"
             "\n"
-
-
-            "  -library=[<mode>:]<lib>\n"
-            "    Set a default library name to load.\n"
-            "    If no mode was set quotation marks are put around the filename as needed.\n"
-            "\n"
-            "    Available modes:\n"
-            "    nq    - no quotes are added, the string will be used as is\n"
-            "    ext   - filename extension will be added automatically through a macro\n"
-            "    api:# - library filename with API number will be created through a macro\n"
-            "\n"
-            "    -library=foo        ==>  \"foo\"\n"
-            "    -library=nq:foo     ==>  foo\n"
-            "    -library=ext:foo    ==>  \"foo\" LIBEXTA    ==>  i.e. \"foo.dll\"\n"
-            "    -library=api:2:foo  ==>  LIBNAMEA(foo,2)  ==>  i.e. \"libfoo.so.2\"\n"
-            "\n"
-
-
-            "  -include=[nq:]<file>\n"
-            "    Set a header file name to be included at the top of the output code.\n"
-            "    Quotation marks are put around the filename if it's not enclosed in\n"
-            "    brackets or quotation marks or if it's not prefixed with \"nq:\".\n"
-            "\n"
-            "    -include=foo.h      ==>  #include \"foo.h\"\n"
-            "    -include='\"foo.h\"'  ==>  #include \"foo.h\"\n"
-            "    -include=<foo.h>    ==>  #include <foo.h>\n"
-            "    -include=nq:foo     ==>  #include foo\n"
-            "\n"
-            "    This flag may be passed multiple times.\n"
-            "\n"
-
-
-            "  -D<string>\n"
-            "    Set a preprocessor definition macro to be added at the top of the output code.\n"
-            "    This macro may include a value in the form of `FOO=1'.\n"
-            "\n"
-            "    This flag may be passed multiple times.\n"
-            "\n"
-
-
-            "  -P<string>\n"
-            "    Look for symbols that begin with <string> when parsing the input.\n"
-            "    This is most useful if the input is a Clang AST to ignore unwanted\n"
-            "    declarations coming from i.e. standard C headers.\n"
-            "\n"
-            "    This flag may be passed multiple times.\n"
-            "\n"
-
-
-            "  -S<string>\n"
-            "    Look for the symbol name <string> when parsing the input.\n"
-            "    This is most useful if the input is a Clang AST,\n"
-            "    to ignore unwanted declarations coming from i.e. standard C headers.\n"
-            "\n"
-            "    This flag may be passed multiple times.\n"
-            "\n"
-
-
-            "  -separate\n"
-            "    Save output into separate body and header files.\n"
-            "    The filename extensions will be set to .c/.h or .cpp/.hpp accordingly.\n"
-            "    This flag is ignored if the output is printed to stdout or if the\n"
-            "    output format is \"minimal-C\" or \"minimal-C++\".\n"
-            "\n"
-            "    Be sure to use the same settings for the generated body file and all other\n"
-            "    compilation units that included the header file. Otherwise you will likely\n"
-            "    get linking errors. Set options with i.e. `-D' or `-include' during code\n"
-            "    generation.\n"
-            "\n"
-
-
-            "  -force\n"
-            "    Always overwrite existing output files. Use with care.\n"
-            "\n"
-
-
-            "  -param=<mode>\n"
-            "    If <mode> is 'read':\n"
-            "    Always try to read parameter names in function prototypes when\n"
-            "    the input is being processed. This is the default behavior if `-param'\n"
-            "    was not explicitly set.\n"
-            "\n"
-            "    If <mode> is 'skip':\n"
-            "    Don't try to look for parameter names in function prototypes. This will\n"
-            "    disable any kind of wrapped functions in the output.\n"
-            "\n"
-            "    If <mode> is 'create':\n"
-            "    Create parameter names for the output to be used in wrapped functions.\n"
-            "    Function prototypes from the input are assumed to have no parameter names!\n"
-            "\n"
-
-
-            "  -ast-all-symbols\n"
-            "    Pass this flag if you really want to use all symbols found in a Clang AST.\n"
-            "    Be careful as this might include unwanted prototypes from other headers.\n"
-            "    It's recommended to use `-P' and/or `-S' instead.\n"
-            "    If the input is a Clang AST and this flag was set then `-P' and `-S' are\n"
-            "    ignored.\n"
-            "\n"
-            "    This flag is ignored if the input is not a Clang AST.\n"
-            "\n"
-
-
-            "  -print-symbols\n"
-            "    Don't create any output, just print a list of found symbols and exit.\n"
-            "    This is useful for debugging.\n"
-            "\n"
-
-
-            "  -ignore-options\n"
-            "    Ignore lines beginning with `%option' from the input file.\n"
-            "\n"
-
-
-            "  -no-date\n"
-            "    Don't show the current date in output. Useful for reproducable builds.\n"
-            "\n"
-
-
-            "  -no-pragma-once\n"
-            "    Don't add `#pragma once' to output header file. Instead use the classic\n"
-            "    `#ifndef' preprocessor header guard.\n"
-            "\n"
-
-
-            "  -line\n"
-            "    Add `#line' directives to the output that will refer to the original template\n"
-            "    files.\n"
             "\n"
 
 
@@ -350,15 +400,22 @@ namespace help
             "    Specifiy the directory containing the template files. This will override the\n"
             "    environment variable TEMPLATES.\n"
             "\n"
+            "\n"
+#endif
 
+
+            /* V */
+
+            "  -version\n"
+            "    Output version information and exit.\n"
+
+
+#ifdef USE_EXTERNAL_RESOURCES
+            "\n"
             "\n"
             "Environment variables:\n"
             "  TEMPLATES\n"
             "    This will set the directory containing the template files.\n"
-#else
-            "  -dump-templates=<path>\n"
-            "    Dump internal template files into directory and exit.\n"
-            "\n"
 #endif
 
             << std::endl;
