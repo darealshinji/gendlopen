@@ -46,7 +46,7 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
             continue;
         }
 
-        /* copy filename */
+        /* copy filename first */
         plug->list[i].filename = GDO_STRDUP(files[i]);
 
         /* load plugin */

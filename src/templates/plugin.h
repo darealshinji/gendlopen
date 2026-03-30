@@ -27,12 +27,6 @@ typedef char    gdo_char_t;
  */
 typedef struct _gdo_handle
 {
-    /* symbol pointers */
-    struct _gdo_ptr {
-        %%type%% (*%%func_symbol%%)(%%args%%);
-        %%obj_type%% *%%obj_symbol%%;
-    } ptr;
-
     /* copy of module filename */
     gdo_char_t *filename;
 
@@ -43,6 +37,11 @@ typedef struct _gdo_handle
     void *handle;
 #endif
 
+    /* symbol pointers */
+    struct _gdo_ptr {
+        %%type%% (*%%func_symbol%%)(%%args%%);
+        %%obj_type%% *%%obj_symbol%%;
+    } ptr;
 } gdo_handle_t;
 
 

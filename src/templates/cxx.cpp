@@ -30,7 +30,11 @@ gdo::dl::message_callback_t gdo::dl::m_message_callback = gdo::dl::default_messa
 
 
 /* library handle */
-gdo::dl::handle_t gdo::dl::m_handle = nullptr;
+#ifdef GDO_WINAPI
+HMODULE gdo::dl::m_handle = nullptr;
+#else
+void *gdo::dl::m_handle = nullptr;
+#endif
 
 
 /* symbol pointers; symbol names must be prefixed to avoid macro expansion */
@@ -865,12 +869,16 @@ namespace gdo
     namespace wrap
     {
 #ifdef GDO_ENABLE_AUTOLOAD
-        auto _loader = dl(GDO_DEFAULT_LIBA);
+        auto _loader = dl(GDO_DEFAULT_LIB);
 #endif
 
         /* used by wrapper functions */
         void _check(int load, bool sym_loaded, const char *sym)
         {
+#if !defined(GDO_ENABLE_AUTOLOAD_LAZY)
+            UNUSED_REF(load);
+#endif
+
             /* error message lambda function */
             auto print_error = [] (const std::string &msg)
             {
@@ -900,8 +908,6 @@ namespace gdo
             }
 # else
             /* load all symbols */
-            UNUSED_REF(load);
-
             if (_loader.load_all_symbols()) {
                 return;
             }
@@ -927,8 +933,6 @@ namespace gdo
 #else //!GDO_ENABLE_AUTOLOAD
 
             /* check if library and symbol were loaded */
-
-            UNUSED_REF(load);
 
             if (dl::lib_loaded() && sym_loaded) {
                 return;

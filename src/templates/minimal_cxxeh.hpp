@@ -70,23 +70,12 @@ namespace gdo
 
 
     /**
-     * Base error class
-     */
-    class Error : public std::runtime_error
-    {
-        public:
-            Error(const std::string &message) : std::runtime_error(message) {}
-            virtual ~Error() {}
-    };
-
-
-    /**
      * An error has occurred trying to load a library.
      */
-    class LibraryError : public Error
+    class LibraryError : public std::runtime_error
     {
         public:
-            LibraryError(const std::string &message) : Error(message) {}
+            LibraryError(const std::string &message) : std::runtime_error(message) {}
             virtual ~LibraryError() {}
     };
 
@@ -94,10 +83,10 @@ namespace gdo
     /**
      * An error has occurred trying to load a symbol.
      */
-    class SymbolError : public Error
+    class SymbolError : public std::runtime_error
     {
         public:
-            SymbolError(const std::string &message) : Error(message) {}
+            SymbolError(const std::string &message) : std::runtime_error(message) {}
             virtual ~SymbolError() {}
     };
 

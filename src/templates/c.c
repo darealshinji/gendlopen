@@ -241,6 +241,10 @@ GDO_LINKAGE bool gdo_load_lib_args(const gdo_char_t *filename, int flags, bool n
 /* call LoadLibraryEx/dlopen/dlmopen */
 GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace)
 {
+#if !defined(GDO_HAVE_DLMOPEN)
+    (GDO_UNUSED_REF) new_namespace;
+#endif
+
     _gdo_clear_error();
 
 #ifdef GDO_WINAPI
@@ -262,7 +266,6 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
         }
     }
 
-    (GDO_UNUSED_REF) new_namespace;
     gdo_hndl.handle = LoadLibraryEx(copy, NULL, flags);
     free(copy);
 
@@ -278,7 +281,6 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 #else
 
     /* no dlmopen() */
-    (GDO_UNUSED_REF) new_namespace;
     gdo_hndl.handle = dlopen(filename, flags);
 
 #endif //!GDO_WINAPI

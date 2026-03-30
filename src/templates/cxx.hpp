@@ -92,9 +92,7 @@ private:
 
 #ifdef GDO_WINAPI
 
-    using handle_t = HMODULE;
-    static handle_t m_handle;
-
+    static HMODULE m_handle;
     DWORD m_last_error = 0;
     std::string m_errmsg;
     std::wstring m_werrmsg;
@@ -168,9 +166,7 @@ private:
 
 #else // !GDO_WINAPI
 
-    using handle_t = void*;
-    static handle_t m_handle;
-
+    static void *m_handle;
     std::string m_errmsg;
 
     void clear_error();
