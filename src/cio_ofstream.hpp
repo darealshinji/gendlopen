@@ -42,6 +42,20 @@ private:
     std::ofstream m_ofs;
     std::ostream *m_optr = &std::cout;
 
+    template<class T>
+    bool open_path(const T &path)
+    {
+        close();
+        m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
+
+        if (m_ofs.is_open()) {
+            m_optr = dynamic_cast<std::ostream *>(&m_ofs);
+            return true;
+        }
+
+        return false;
+    }
+
 public:
 
     ofstream();

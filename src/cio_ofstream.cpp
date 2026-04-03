@@ -38,15 +38,7 @@ ofstream::~ofstream()
 
 bool ofstream::open(const std::filesystem::path &path)
 {
-    close();
-    m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
-
-    if (m_ofs.is_open()) {
-        m_optr = dynamic_cast<std::ostream *>(&m_ofs);
-        return true;
-    }
-
-    return false;
+    return open_path(path);
 }
 
 bool ofstream::open(const std::string &file)
@@ -57,15 +49,7 @@ bool ofstream::open(const std::string &file)
         return true;
     }
 
-    close();
-    m_ofs.open(file, std::ios_base::out | std::ios_base::binary);
-
-    if (m_ofs.is_open()) {
-        m_optr = dynamic_cast<std::ostream *>(&m_ofs);
-        return true;
-    }
-
-    return false;
+    return open_path(file);
 }
 
 void ofstream::close()
