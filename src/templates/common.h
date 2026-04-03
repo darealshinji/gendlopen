@@ -181,8 +181,6 @@ typedef Dl_info _GDO_Dl_info;
 
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 # define _GDO_TARGET_WIDECHAR
-#else
-# define _GDO_TARGET_UTF8
 #endif
 
 /* GDO_DEFAULT_LIBA ?= GDO_HARDCODED_DEFAULT_LIBA */
@@ -197,21 +195,21 @@ typedef Dl_info _GDO_Dl_info;
 
 /* GDO_DEFAULT_LIB ?= GDO_DEFAULT_LIBA or GDO_DEFAULT_LIBW */
 #ifndef GDO_DEFAULT_LIB
-# if defined(GDO_DEFAULT_LIBA) && defined(_GDO_TARGET_UTF8)
+# if defined(GDO_DEFAULT_LIBA) && !defined(_GDO_TARGET_WIDECHAR)
 #  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBA
 # elif defined(GDO_DEFAULT_LIBW) && defined(_GDO_TARGET_WIDECHAR)
 #  define GDO_DEFAULT_LIB  GDO_DEFAULT_LIBW
 # endif
 #endif
 
-/* GDO_DEFAULT_LIBA ?= GDO_DEFAULT_LIB */
-#if !defined(GDO_DEFAULT_LIBA) && defined(GDO_DEFAULT_LIB) && defined(_GDO_TARGET_UTF8)
-# define GDO_DEFAULT_LIBA  GDO_DEFAULT_LIB
-#endif
-
-/* GDO_DEFAULT_LIBW ?= GDO_DEFAULT_LIB */
-#if !defined(GDO_DEFAULT_LIBW) && defined(GDO_DEFAULT_LIB) && defined(_GDO_TARGET_WIDECHAR)
-# define GDO_DEFAULT_LIBW  GDO_DEFAULT_LIB
+/* GDO_DEFAULT_LIBA or GDO_DEFAULT_LIBW ?= GDO_DEFAULT_LIB */
+#ifdef GDO_DEFAULT_LIB
+# if !defined(GDO_DEFAULT_LIBA) && !defined(_GDO_TARGET_WIDECHAR)
+#  define GDO_DEFAULT_LIBA  GDO_DEFAULT_LIB
+# endif
+# if !defined(GDO_DEFAULT_LIBW) && defined(_GDO_TARGET_WIDECHAR)
+#  define GDO_DEFAULT_LIBW  GDO_DEFAULT_LIB
+# endif
 #endif
 
 

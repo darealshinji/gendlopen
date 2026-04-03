@@ -22,64 +22,38 @@
  SOFTWARE.
 **/
 
+#ifdef _MSC_VER
+# ifndef _CRT_SECURE_NO_WARNINGS
+# define _CRT_SECURE_NO_WARNINGS
+# endif
+#endif
+
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#ifdef _WIN32
+# include <windows.h>
+#endif
 #include "gendlopen.hpp"
 #include "utils.hpp"
 
 
-#ifdef USE_EXTERNAL_RESOURCES
-
-namespace /* anonymous */
-{
-    std::string get_templates_path_env()
-    {
-        std::string path;
-
-#ifdef _MSC_VER
-        char *buf;
-        size_t len;
-
-        /* MSVC doesn't like getenv() */
-        if (_dupenv_s(&buf, &len, "TEMPLATES") == 0) {
-            if (buf && *buf) {
-                path = buf;
-            }
-
-            free(buf);
-        }
-#else
-        char *env = getenv("TEMPLATES");
-
-        if (env && *env) {
-            path = env;
-        }
-#endif /* !_MSC_VER */
-
-        if (!path.empty()) {
-            utils::append_missing_separator(path);
-        }
-
-        return path;
-    }
-} /* end anonymous namespace */
-
-#endif /* USE_EXTERNAL_RESOURCES */
-
-
-
 int main(int argc, char **argv)
 {
+#if defined(_WIN32) && defined(USE_CP_UTF8)
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+#endif
+
     try {
         gendlopen gdo;
 
 #ifdef USE_EXTERNAL_RESOURCES
         /* read templates path from environment variable;
          * default path is set in "gendlopen.hpp" */
-        std::string env = get_templates_path_env();
+        char *env = getenv("TEMPLATES");
 
-        if (!env.empty()) {
+        if (env && *env) {
             gdo.templates_path(env);
         }
 #endif

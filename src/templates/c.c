@@ -48,13 +48,6 @@
 #define GDO_INLINE  static inline
 
 
-/* see GetLastError() */
-#ifdef GDO_WINAPI
-# define GDO_SET_LAST_ERRNO(x)  do { gdo_hndl.last_errno = x; } while(0)
-#else
-# define GDO_SET_LAST_ERRNO(x)  /**/
-#endif
-
 #ifndef _countof
 # define _countof(array)  (sizeof(array) / sizeof(array[0]))
 #endif
@@ -90,6 +83,12 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #else
 # define GDO_SNPRINTF(DEST, FORMAT, ...) \
     _gdo_sntprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__)
+#endif
+
+#ifdef GDO_WINAPI
+# define GDO_SET_LAST_ERRNO(x)  do { gdo_hndl.last_errno = x; } while(0)
+#else
+# define GDO_SET_LAST_ERRNO(x)  /**/
 #endif
 
 /* save message to error buffer */
@@ -657,11 +656,15 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
 #ifdef GDO_WINAPI
 
+    const gdo_char_t *msg = (sizeof(gdo_char_t) == 1)
+        ? GDO_T("GetModuleFileNameA")
+        : GDO_T("GetModuleFileNameW");
+
     gdo_char_t buf[32*1024];
     DWORD nSize = GetModuleFileName(gdo_hndl.handle, buf, _countof(buf));
 
     if (nSize == 0 || nSize == _countof(buf)) {
-        _gdo_save_error(GDO_T("GetModuleFileName"));
+        _gdo_save_error(msg);
         return NULL;
     }
 

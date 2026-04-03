@@ -32,6 +32,11 @@ if host_is_gnu and not get_option('without_gnu_source')
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_is_win32
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
+
+    if compiler.has_argument('-utf-8')
+        cpp_args_extra += '-utf-8'
+        cpp_args_extra += '-DUSE_CP_UTF8'
+    endif
 endif
 
 if compiler.has_function('program_invocation_short_name', prefix : '#include <errno.h>')

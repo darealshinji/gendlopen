@@ -29,12 +29,13 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-struct args {
-    int argc;
-    char ** const argv;
-    int it;
-    bool longpfx;
-};
+#define OPT_ENABLE_ASSERT
+#define OPT_ENABLE_SHORTOPT
+#define OPT_ENABLE_LONGOPT
+#ifdef _WIN32
+# define OPT_ENABLE_WIN32OPT
+#endif
+#include "opt_parser.h"
 
 namespace help
 {
@@ -60,77 +61,15 @@ namespace /* anonymous */
         return false;
     }
 
-
-    bool get_argument_len(struct args &a, const char *&ptr, const char *opt, const size_t optlen)
+    template<size_t N>
+    bool get_arg(struct opt_args *a, char const (&opt)[N])
     {
-        char pfx[3] = { 0, 0, 0 };
-
-        /* only short prefix for single-letter options */
-        if (optlen == 1 && a.longpfx) {
-            return false;
-        }
-
-        const char *arg = a.argv[a.it];
-
-        /* save prefix letters and skip prefix */
-        if (a.longpfx) {
-            pfx[0] = arg[0];
-            pfx[1] = arg[1];
-            arg += 2;
-        } else {
-            pfx[0] = arg[0];
-            arg++;
-        }
-
-        /* compare option string */
-        if (strncmp(arg, opt, optlen) != 0) {
-            return false;
-        }
-
-        if (arg[optlen] == 0) {
-            /* get next argv[] entry */
-            a.it++;
-
-            if (a.it >= a.argc) {
-                throw gendlopen::error_cmd(std::string("option '") + std::string(pfx)
-                    + std::string(opt) + "' requires an argument");
-            }
-
-            ptr = a.argv[a.it];
-        }
-        else if (optlen == 1) {
-            /* -Xabc */
-            ptr = arg + optlen;
-        }
-        else if (arg[optlen] == '=') {
-            /* -foo=abc */
-            ptr = arg + optlen + 1;
-        }
-#ifdef _WIN32
-        else if (arg[optlen] == ':') {
-            /* /foo:abc */
-            ptr = arg + optlen + 1;
-        }
-#endif
-        else {
-            /* no match */
-            return false;
-        }
-
-        /* empty argument? */
-        if (*ptr == 0) {
-            throw gendlopen::error_cmd(std::string("option '")  + std::string(pfx)
-                + std::string(opt) + "' requires a non-empty argument");
-        }
-
-        return true;
+        return opt_get_arg(a, opt, N-1);
     }
 
-
-    template<size_t N>
-    bool get_argument(struct args &a, const char *&ptr, char const (&opt)[N])
+    void opt_error(const char *msg)
     {
-        return get_argument_len(a, ptr, opt, N-1);
+        throw gendlopen::error_cmd(msg);
     }
 }
 
@@ -138,205 +77,80 @@ namespace /* anonymous */
 /* parse command line arguments */
 void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 {
+    struct opt_args a;
     const char *input_file = NULL;
-    const char *p = NULL;
-    const char *arg = NULL;
-    struct args a = { .argc = argc, .argv = argv };
 
-    auto arg_eq = [&] (const char *str) -> bool {
-        return (strcmp(arg, str) == 0);
-    };
+    opt_init(&a, argc, argv, 0, opt_error);
 
-    /**
-    parse arguments:
-     - options begin with "-" or "--" (or "/" on Windows)
-     - single-letter options begin with "-" (or "/" on Windows)
-     - "-", "--" and "/" are valid non-option arguments
-     - single-letter options are uppercase, no argument separator (-Xfoo)
-     - multi-letter options are lowercase, argument separator is "=" (or ":" on Windows) (-foo=bar)
-     - arguments can be next entry in argv list (-foo bar -X foo)
-    **/
-    for (a.it = 1; a.it < argc; a.it++) {
-        arg = argv[a.it];
-
-        /* prefixed with dash(es) */
-        if (*arg == '-' && !arg_eq("-") && !arg_eq("--")) {
-            if (arg[1] == '-') {
-                /* long prefix */
-                arg += 2;
-                a.longpfx = true;
-            } else {
-                /* short prefix */
-                arg++;
-                a.longpfx = false;
-            }
-        }
-#ifdef _WIN32
-        /* prefixed with forward slash */
-        else if (*arg == '/' && arg[1] != 0) {
-            arg++;
-            a.longpfx = false;
-        }
-#endif
-        else {
+    while (opt_iterate(&a)) {
+        if (a.pfxlen == 0) {
             /* use first non-option argument as input file, otherwise warn */
             if (!input_file) {
-                input_file = arg;
+                input_file = a.current;
             } else {
-                std::cerr << "warning: non-option argument ignored: " << arg << std::endl;
+                std::cerr << "warning: non-option argument ignored: " << a.current << std::endl;
             }
-            continue;
+        } else if (opt_arg_eq(&a, "?") || opt_arg_eq(&a, "help")) {
+            help::print(argv[0]);
+            std::exit(0);
+        } else if (opt_arg_eq(&a, "full-help")) {
+            help::print_full(argv[0]);
+            std::exit(0);
+        } else if (opt_arg_eq(&a, "ast-all-symbols")) {
+            ast_all_symbols(true);
+        } else if (get_arg(&a, "D")) {
+            add_def(a.value);
         }
-
-        switch(*arg)
-        {
-        case '?':
-            if (!a.longpfx && arg_eq("?")) {
-                help::print(argv[0]);
-                std::exit(0);
-            }
-            break;
-
-        case 'a':
-            if (arg_eq("ast-all-symbols")) {
-                ast_all_symbols(true);
-                continue;
-            }
-            break;
-
-        case 'D':
-            if (get_argument(a, p, "D")) {
-                add_def(p);
-                continue;
-            }
-            break;
-
 #if !defined(USE_EXTERNAL_RESOURCES)
-        case 'd':
-            if (get_argument(a, p, "dump-templates")) {
-                dump_templates(p);
-                std::exit(0);
-            }
-            break;
-#endif
-
-        case 'f':
-            if (get_argument(a, p, "format")) {
-                format(p);
-                continue;
-            } else if (arg_eq("force")) {
-                force(true);
-                continue;
-            } else if (arg_eq("full-help")) {
-                help::print_full(argv[0]);
-                std::exit(0);
-            }
-            break;
-
-        case 'h':
-            if (arg_eq("help")) {
-                help::print(argv[0]);
-                std::exit(0);
-            }
-            break;
-
-        case 'i':
-            if (get_argument(a, p, "include")) {
-                add_inc(p);
-                continue;
-            } else if (arg_eq("ignore-options")) {
-                read_options(false);
-                continue;
-            }
-            break;
-
-        case 'l':
-            if (get_argument(a, p, "library")) {
-                default_lib(p);
-                continue;
-            } else if (arg_eq("line")) {
-                line_directive(true);
-                continue;
-            }
-            break;
-
-        case 'n':
-            if (arg_eq("no-date")) {
-                print_date(false);
-                continue;
-            } else if (arg_eq("no-pragma-once")) {
-                pragma_once(false);
-                continue;
-            }
-            break;
-
-        case 'o':
-            if (get_argument(a, p, "out")) {
-                output(p);
-                continue;
-            }
-            break;
-
-        case 'P':
-            if (get_argument(a, p, "P")) {
-                add_pfx(p);
-                continue;
-            }
-            break;
-
-        case 'p':
-            if (get_argument(a, p, "prefix")) {
-                prefix(p);
-                continue;
-            } else if (get_argument(a, p, "param")) {
-                parameter_names(p);
-                continue;
-            } else if (arg_eq("print-symbols")) {
-                print_symbols(true);
-                continue;
-            }
-            break;
-
-        case 'S':
-            if (get_argument(a, p, "S")) {
-                add_sym(p);
-                continue;
-            }
-            break;
-
-        case 's':
-            if (arg_eq("separate")) {
-                separate(true);
-                continue;
-            }
-            break;
-
-        case 't':
-            if (get_argument(a, p, "template")) {
-                custom_template(p);
-                continue;
-            }
-#ifdef USE_EXTERNAL_RESOURCES
-            else if (get_argument(a, p, "templates-path")) {
-                templates_path(p);
-                utils::append_missing_separator(m_templates_path);
-                continue;
-            }
-#endif
-            break;
-
-        case 'v':
-            if (arg_eq("version")) {
-                std::cout << "gendlopen " << gendlopen::version() << std::endl;
-                std::exit(0);
-            }
-            break;
-
-        default:
-            break;
+        else if (get_arg(&a, "dump-templates")) {
+            dump_templates(a.value);
+            std::exit(0);
         }
-
-        throw gendlopen::error_cmd(std::string("unknown option: ") + argv[a.it]);
+#endif
+        else if (get_arg(&a, "format")) {
+            format(a.value);
+        } else if (opt_arg_eq(&a, "force")) {
+            force(true);
+        } else if (get_arg(&a, "include")) {
+            add_inc(a.value);
+        } else if (opt_arg_eq(&a, "ignore-options")) {
+            read_options(false);
+        } else if (get_arg(&a, "library")) {
+            default_lib(a.value);
+        } else if (opt_arg_eq(&a, "line")) {
+            line_directive(true);
+        } else if (opt_arg_eq(&a, "no-date")) {
+            print_date(false);
+        } else if (opt_arg_eq(&a, "no-pragma-once")) {
+            pragma_once(false);
+        } else if (get_arg(&a, "out")) {
+            output(a.value);
+        } else if (get_arg(&a, "P")) {
+            add_pfx(a.value);
+        } else if (get_arg(&a, "prefix")) {
+            prefix(a.value);
+        } else if (get_arg(&a, "param")) {
+            parameter_names(a.value);
+        } else if (opt_arg_eq(&a, "print-symbols")) {
+            print_symbols(true);
+        } else if (get_arg(&a, "S")) {
+            add_sym(a.value);
+        } else if (opt_arg_eq(&a, "separate")) {
+            separate(true);
+        } else if (get_arg(&a, "template")) {
+            custom_template(a.value);
+        }
+#ifdef USE_EXTERNAL_RESOURCES
+        else if (get_arg(&a, "templates-path")) {
+            templates_path(a.value);
+        }
+#endif
+        else if (opt_arg_eq(&a, "version")) {
+            std::cout << "gendlopen " << gendlopen::version() << std::endl;
+            std::exit(0);
+        } else {
+            throw gendlopen::error_cmd(std::string("unknown option: ") + a.current);
+        }
     }
 
     if (!input_file || *input_file == 0) {
@@ -352,66 +166,28 @@ void gendlopen::parse_options(const vstring_t &options)
 {
     const char *p = NULL;
 
-    for (const auto &token : options)
-    {
-        switch (token[0])
-        {
-        case 'D':
-            if (get_option(token, p, "D=")) {
-                add_def(p);
-                continue;
-            }
-            break;
-
-        case 'f':
-            if (get_option(token, p, "format=")) {
-                format(p);
-                continue;
-            }
-            break;
-
-        case 'i':
-            if (get_option(token, p, "include=")) {
-                add_inc(p);
-                continue;
-            }
-            break;
-
-        case 'l':
-            if (get_option(token, p, "library=")) {
-                default_lib(p);
-                continue;
-            } else if (token == "line") {
-                line_directive(true);
-                continue;
-            }
-            break;
-
-        case 'n':
-            if (token == "no-date") {
-                print_date(false);
-                continue;
-            } else if (token == "no-pragma-once") {
-                pragma_once(false);
-                continue;
-            }
-            break;
-
-        case 'p':
-            if (get_option(token, p, "prefix=")) {
-                prefix(p);
-                continue;
-            } else if (get_option(token, p, "param=")) {
-                parameter_names(p);
-                continue;
-            }
-            break;
-
-        default:
-            break;
+    for (const auto &token : options) {
+        if (get_option(token, p, "D=")) {
+            add_def(p);
+        } else if (get_option(token, p, "format=")) {
+            format(p);
+        } else if (get_option(token, p, "include=")) {
+            add_inc(p);
+        } else if (get_option(token, p, "library=")) {
+            default_lib(p);
+        } else if (token == "line") {
+            line_directive(true);
+        } else if (token == "no-date") {
+            print_date(false);
+        } else if (token == "no-pragma-once") {
+            pragma_once(false);
+        } else if (get_option(token, p, "prefix=")) {
+            prefix(p);
+        } else if (get_option(token, p, "param=")) {
+            parameter_names(p);
+        } else {
+            throw gendlopen::error("unknown %option string: " + token);
         }
-
-        throw gendlopen::error("unknown %option string: " + token);
     }
 }
 

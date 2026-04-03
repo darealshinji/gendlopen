@@ -182,6 +182,18 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 }
 
 
+/* set templates path */
+#ifdef USE_EXTERNAL_RESOURCES
+void gendlopen::templates_path(const std::string &s)
+{
+    if (!s.empty()) {
+        m_templates_path = s;
+        utils::append_missing_separator(m_templates_path);
+    }
+}
+#endif
+
+
 /* read and process custom template */
 void gendlopen::process_custom_template()
 {
