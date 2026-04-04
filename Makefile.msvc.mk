@@ -20,8 +20,8 @@ CXX_SRCS = \
 	..\$(SRC)\tokenize.cpp \
 	..\$(SRC)\utils.cpp
 
-CFLAGS   = /W3 /O2 /I..\$(SRC)
-CXXFLAGS = /W3 /O2 /I..\$(SRC) /I. /EHsc /std:c++20
+CFLAGS   = /W3 /O2 /I..\$(SRC) /utf-8
+CXXFLAGS = $(CFLAGS) /I. /EHsc /std:c++20
 
 
 

@@ -9,6 +9,7 @@ project('gendlopen', ['c', 'cpp'],
     }
 )
 
+has_builtin_va_arg_pack = false
 wno_deprecated_declarations = []
 cpp_args_extra = []
 dl_dep   = []
@@ -32,10 +33,19 @@ if host_is_gnu and not get_option('without_gnu_source')
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_is_win32
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
+endif
 
-    if compiler.has_argument('-utf-8')
-        cpp_args_extra += '-utf-8'
-        cpp_args_extra += '-DUSE_CP_UTF8'
+if arg_syntax == 'msvc'
+    cpp_args_extra += '-utf-8'
+    cpp_args_extra += '-DUSE_CP_UTF8'
+else
+    code = '''
+#if !defined(__has_builtin) || !__has_builtin( __builtin_va_arg_pack )
+# error __builtin_va_arg_pack
+#endif
+'''
+    if compiler.compiles(code, name : '__builtin_va_arg_pack() test code')
+        has_builtin_va_arg_pack = true
     endif
 endif
 

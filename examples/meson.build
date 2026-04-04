@@ -1,3 +1,11 @@
+example_flags = []
+
+
+if has_builtin_va_arg_pack == false
+    example_flags += '-DGDO_DISABLE_WARNINGS'
+endif
+
+
 if host_is_win32
     # UUID
     example_uuid_win_h = custom_target('example_uuid_win.h',
@@ -13,6 +21,7 @@ if host_is_win32
 
     executable('uuid', ['uuid_win.c', example_uuid_win_h],
         dependencies : dl_dep,
+        c_args : example_flags,
         install : false
     )
 else
@@ -26,7 +35,7 @@ else
 
         executable('gtk', ['gtk.c', example_gtk_h],
             dependencies : [dl_dep, gtk_dep],
-            c_args : wno_deprecated_declarations,
+            c_args : [example_flags, wno_deprecated_declarations],
             install : false
         )
     endif
@@ -52,7 +61,7 @@ else
         executable('msgbox', ['msgbox.c', gen_hdrs],
             dependencies : [dl_dep, gtk_dep, x11_dep],
             install : false,
-            c_args : wno_deprecated_declarations,
+            c_args : [example_flags, wno_deprecated_declarations],
             include_directories : include_directories('thirdparty/sdl')
         )
     endif
@@ -69,6 +78,7 @@ else
 
         executable('hook', ['hook.c', 'hook.h', gen_hdr],
             dependencies : [dl_dep, glib_dep2],
+            c_args : example_flags,
             install : false
         )
 
@@ -76,11 +86,13 @@ else
         shared_module('preload', ['preload.c', 'hook.h', gen_hdr],
             name_prefix : '',
             dependencies : [dl_dep, glib_dep2],
+            c_args : example_flags,
             install : false
         )
 
         executable('preload_main', ['preload_main.c', 'hook.h'],
             dependencies : [glib_dep],
+            c_args : example_flags,
             install : false
         )
 
@@ -102,6 +114,7 @@ else
         executable('notify', ['notify.c', gen_hdrs],
             dependencies : [dl_dep, glib_dep2],
             include_directories : include_directories('thirdparty'),
+            c_args : example_flags,
             install : false
         )
     endif
@@ -120,6 +133,7 @@ else
     executable('uuid', ['uuid_nix.c', gen_hdr],
         dependencies : dl_dep,
         include_directories : include_directories('thirdparty/uuid'),
+        c_args : example_flags,
         install : false
     )
 endif

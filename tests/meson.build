@@ -9,8 +9,12 @@ else
     test_overrides = {'cpp_std' : 'c++11'}
 endif
 
+if has_builtin_va_arg_pack == false
+    test_flags += '-DGDO_DISABLE_WARNINGS'
+endif
+
 if host_is_win32
-    test_flags = ['-DBUILDING_STATIC']  # avoid dllimport/dllexport issues
+    test_flags += '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
 elif host_system == 'darwin'
     test_rpath = '@executable_path'
 endif
