@@ -47,15 +47,17 @@ namespace help
 namespace /* anonymous */
 {
     template<size_t N>
-    bool get_option(const std::string &str, const char *&ptr, char const (&opt)[N])
+    bool get_option(const std::string &token, const char *&ptr, char const (&opt)[N])
     {
         const size_t optlen = N - 1;
 
-        if (str.compare(0, optlen, opt) == 0 && str.size() > optlen) {
-            ptr = str.c_str() + optlen;
+        if (token.compare(0, optlen, opt) == 0) {
+            if (token.size() > optlen) {
+                ptr = token.c_str() + optlen;
+                return true;
+            }
 
-            /* ignore empty argument */
-            return (*ptr != 0);
+            throw gendlopen::error("%option string requires an argument: " + token);
         }
 
         return false;
@@ -167,7 +169,13 @@ void gendlopen::parse_options(const vstring_t &options)
     const char *p = NULL;
 
     for (const auto &token : options) {
-        if (get_option(token, p, "D=")) {
+        if (token == "line") {
+            line_directive(true);
+        } else if (token == "no-date") {
+            print_date(false);
+        } else if (token == "no-pragma-once") {
+            pragma_once(false);
+        } else if (get_option(token, p, "D=")) {
             add_def(p);
         } else if (get_option(token, p, "format=")) {
             format(p);
@@ -175,16 +183,10 @@ void gendlopen::parse_options(const vstring_t &options)
             add_inc(p);
         } else if (get_option(token, p, "library=")) {
             default_lib(p);
-        } else if (token == "line") {
-            line_directive(true);
-        } else if (token == "no-date") {
-            print_date(false);
-        } else if (token == "no-pragma-once") {
-            pragma_once(false);
-        } else if (get_option(token, p, "prefix=")) {
-            prefix(p);
         } else if (get_option(token, p, "param=")) {
             parameter_names(p);
+        } else if (get_option(token, p, "prefix=")) {
+            prefix(p);
         } else {
             throw gendlopen::error("unknown %option string: " + token);
         }
