@@ -20,7 +20,7 @@ CXX_SRCS = \
 	..\$(SRC)\tokenize.cpp \
 	..\$(SRC)\utils.cpp
 
-CFLAGS   = /W3 /O2 /I..\$(SRC) /utf-8
+CFLAGS   = /W3 /O2 /I..\$(SRC) /utf-8 /DUSE_CP_UTF8
 CXXFLAGS = $(CFLAGS) /I. /EHsc /std:c++20
 
 
@@ -31,7 +31,8 @@ clean:
 	-rmdir /Q /S $(OUT)
 
 $(OUT)\gendlopen.exe: $(OUT)\lex.yy.obj $(OUT)\template.h
-	cd $(OUT)\ && $(CXX) /nologo /MP $(CXXFLAGS) $(CXX_SRCS) /Fe:gendlopen.exe /link lex.yy.obj $(LFLAGS)
+	cd $(OUT)\ && $(CXX) /nologo /MP $(CXXFLAGS) $(CXX_SRCS) /Fe:gendlopen.exe /link lex.yy.obj $(LFLAGS) && \
+	mt -manifest ..\$(SRC)\gendlopen.manifest -outputresource:gendlopen.exe;#1
 
 # .dirstamp
 $(OUT)\.gitignore:
