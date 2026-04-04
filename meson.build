@@ -18,6 +18,8 @@ glib_dep = []
 x11_dep  = []
 sdl_dep  = []
 
+# To do: check for mt.exe
+
 
 # options
 
@@ -29,25 +31,24 @@ host_is_gnu    = (host_system == 'linux' or host_system == 'gnu')
 external_files = get_option('enable_external')
 templates_path = get_option('templates_path')
 
+
 if host_is_gnu and not get_option('without_gnu_source')
     add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
 elif host_is_win32
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
 endif
 
-if arg_syntax == 'msvc'
-    cpp_args_extra += '-utf-8'
-    cpp_args_extra += '-DUSE_CP_UTF8'
-else
-    code = '''
+
+code = '''
 #if !defined(__has_builtin) || !__has_builtin( __builtin_va_arg_pack )
 # error __builtin_va_arg_pack
 #endif
 '''
-    if compiler.compiles(code, name : '__builtin_va_arg_pack() test code')
-        has_builtin_va_arg_pack = true
-    endif
+
+if compiler.compiles(code, name : '__builtin_va_arg_pack() test code')
+    has_builtin_va_arg_pack = true
 endif
+
 
 if compiler.has_function('program_invocation_short_name', prefix : '#include <errno.h>')
     cpp_args_extra += '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
@@ -61,6 +62,12 @@ endif
 
 if templates_path != ''
     cpp_args_extra += '-DDEFAULT_TEMPLATES_PATH="' + templates_path + '"'
+endif
+
+
+if arg_syntax == 'msvc' and compiler.has_argument('-utf-8')
+    cpp_args_extra += '-utf-8'         # set source and runtime encoding to UTF-8
+    cpp_args_extra += '-DUSE_CP_UTF8'  # set codepage to CP_UTF8 in main() function
 endif
 
 

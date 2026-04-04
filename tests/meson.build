@@ -9,19 +9,18 @@ else
     test_overrides = {'cpp_std' : 'c++11'}
 endif
 
-if has_builtin_va_arg_pack == false
+if host_system == 'darwin'
+    test_rpath = '@executable_path'
+endif
+
+if not has_builtin_va_arg_pack
     test_flags += '-DGDO_DISABLE_WARNINGS'
 endif
 
 if host_is_win32
     test_flags += '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
-elif host_system == 'darwin'
-    test_rpath = '@executable_path'
-endif
-
-# set library path additionally to the rpath as backup
-if host_is_win32 == false
-    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'
+else
+    ld_library_path = 'LD_LIBRARY_PATH=$ORIGIN'  # set additionally to rpath
 endif
 
 

@@ -1,7 +1,7 @@
 example_flags = []
 
 
-if has_builtin_va_arg_pack == false
+if not has_builtin_va_arg_pack
     example_flags += '-DGDO_DISABLE_WARNINGS'
 endif
 
