@@ -25,18 +25,15 @@
 #ifndef _OPT_PARSER_H_
 #define _OPT_PARSER_H_
 
+#ifndef __cplusplus
+# include <stdbool.h>
+#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #ifndef _WIN32
 # include <strings.h>
-#endif
-
-#ifdef __cplusplus
-//extern "C" {
-#else
-# include <stdbool.h>
 #endif
 
 
@@ -191,45 +188,6 @@ void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhan
 
 
 OPT_INLINE
-uint8_t _opt_prefix_length(const char *p)
-{
-    OPT_ASSERT(p != NULL);
-
-#ifdef OPT_ENABLE_SHORTOPT
-    /* short option */
-    if (p[0] == '-' &&
-        p[1] != '-' &&
-        p[1] != 0)
-    {
-        return 1;
-    }
-#endif
-
-#ifdef OPT_ENABLE_LONGOPT
-    /* long option */
-    if (p[0] == '-' &&
-        p[1] == '-' &&
-        p[2] != 0)
-    {
-        return 2;
-    }
-#endif
-
-#ifdef OPT_ENABLE_WIN32OPT
-    /* forward slash option */
-    if (p[0] == '/' &&
-        p[1] != 0)
-    {
-        return 1;
-    }
-#endif
-
-    /* no option prefix */
-    return 0;
-}
-
-
-OPT_INLINE
 bool opt_iterate(struct opt_args *a)
 {
     OPT_ASSERT(a != NULL);
@@ -242,8 +200,44 @@ bool opt_iterate(struct opt_args *a)
     }
 
     a->current = a->argv[a->iter];
-    a->value   = NULL;
-    a->pfxlen  = _opt_prefix_length(a->current);
+    a->value = NULL;
+
+    const char *p = a->current;
+
+#ifdef OPT_ENABLE_SHORTOPT
+    /* short option */
+    if (p[0] == '-' &&
+        p[1] != '-' &&
+        p[1] != 0)
+    {
+        a->pfxlen = 1;
+        return true;
+    }
+#endif
+
+#ifdef OPT_ENABLE_LONGOPT
+    /* long option */
+    if (p[0] == '-' &&
+        p[1] == '-' &&
+        p[2] != 0)
+    {
+        a->pfxlen = 2;
+        return true;
+    }
+#endif
+
+#ifdef OPT_ENABLE_WIN32OPT
+    /* forward slash option */
+    if (p[0] == '/' &&
+        p[1] != 0)
+    {
+        a->pfxlen = 1;
+        return true;
+    }
+#endif
+
+    /* no option prefix */
+    a->pfxlen = 0;
 
     return true;
 }
@@ -383,11 +377,11 @@ int main(int argc, char **argv)
     while (opt_iterate(&a))
     {
         /* multi-character option with argument */
-        if (opt_get_arg(&a, "foo")) {
+        if (opt_get_arg(&a, "foo", 3)) {
             printf("foo == %s\n", a.value);
         }
         /* single-character option with argument */
-        else if (opt_get_arg(&a, "X")) {
+        else if (opt_get_arg(&a, "X", 1)) {
             printf("X == %s\n", a.value);
         }
         /* single-character flag */
