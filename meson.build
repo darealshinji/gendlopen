@@ -18,7 +18,6 @@ glib_dep = []
 x11_dep  = []
 sdl_dep  = []
 
-# To do: check for mt.exe
 
 
 # options
@@ -65,10 +64,10 @@ if templates_path != ''
 endif
 
 
-if arg_syntax == 'msvc' and compiler.has_argument('-utf-8')
-    cpp_args_extra += '-utf-8'         # set source and runtime encoding to UTF-8
-    cpp_args_extra += '-DUSE_CP_UTF8'  # set codepage to CP_UTF8 in main() function
-endif
+#if arg_syntax == 'msvc' and compiler.has_argument('-utf-8')
+#    cpp_args_extra += '-utf-8'         # set source and runtime encoding to UTF-8
+#    cpp_args_extra += '-DUSE_CP_UTF8'  # set codepage to CP_UTF8 in main() function
+#endif
 
 
 
