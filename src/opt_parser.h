@@ -53,31 +53,18 @@ is not possible since multi-character options may also be prefixed with a single
 **/
 
 
-/* single dash prefix */
-//#define OPT_ENABLE_SHORTOPT
-
-/* double-dash prefixes on multi-character options */
-//#define OPT_ENABLE_LONGOPT
-
-/* Windows style options (/foo:bar) */
-//#define OPT_ENABLE_WIN32OPT
-
-/* ignore case when parsing options */
-//#define OPT_CASE_INSENSITIVE
-
-/* all types of options */
-//#define OPT_ENABLE_ALLOPTS
-
-
-/* define `OPT_ENABLE_ASSERT' to build with assertions */
-#ifdef OPT_ENABLE_ASSERT
-# include <assert.h>
-# define OPT_ASSERT(x)  assert(x)
-#else
-# define OPT_ASSERT(x)  /**/
+/* compile-time settings */
+#if 0
+# define OPT_PREFIX_SHORT      /* single dash prefix on all options (-foo) */
+# define OPT_PREFIX_LONG       /* double-dash prefixes on multi-character options (--foo) */
+# define OPT_PREFIX_WIN32      /* forward slash on all options (/foo) */
+# define OPT_SEPARATOR_EQUAL   /* euqal sign separator (-foo=bar) */
+# define OPT_SEPARATOR_COLON   /* colon sign separator (-foo:bar) */
+# define OPT_ENABLE_ALL        /* enable all types of options and separators */
+# define OPT_CASE_INSENSITIVE  /* ignore case when parsing options */
+# define OPT_ENABLE_ASSERT     /* build with assertions enabled */
 #endif
 
-#define OPT_INLINE  static inline
 
 
 struct opt_args {
@@ -102,7 +89,7 @@ struct opt_args {
  * skip: number of arguments to skip, NOT counting argv[0]
  * errhandle: pointer to custom error handle function (optional)
  */
-OPT_INLINE void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhandle)(const char *msg));
+static inline void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhandle)(const char *msg));
 
 
 /**
@@ -112,7 +99,7 @@ OPT_INLINE void opt_init(struct opt_args *a, int argc, char **argv, int skip, vo
  * Sets "a->current" to the next argument in line and returns "true".
  * If no more arguments are left, "false" is returned and "a->current" is set to NULL.
  */
-OPT_INLINE bool opt_iterate(struct opt_args *a);
+static inline bool opt_iterate(struct opt_args *a);
 
 
 /**
@@ -122,7 +109,7 @@ OPT_INLINE bool opt_iterate(struct opt_args *a);
  *
  * Returns "true" on match, otherwise "false".
  */
-OPT_INLINE bool opt_arg_eq(struct opt_args *a, const char *opt);
+static inline bool opt_arg_eq(struct opt_args *a, const char *opt);
 
 
 /**
@@ -134,25 +121,35 @@ OPT_INLINE bool opt_arg_eq(struct opt_args *a, const char *opt);
  * Returns "true" on match and saves pointer to the argument's value at "a->value".
  * Otherwise "false" is returned and "a->value" is set to NULL.
  */
-OPT_INLINE bool opt_get_arg(struct opt_args *a, const char *opt, size_t len);
+static inline bool opt_get_arg(struct opt_args *a, const char *opt, size_t len);
 
 
 
-/* enable all option types */
-#ifdef OPT_ENABLE_ALLOPTS
-# undef OPT_ENABLE_SHORTOPT
-# undef OPT_ENABLE_LONGOPT
-# undef OPT_ENABLE_WIN32OPT
-# define OPT_ENABLE_SHORTOPT
-# define OPT_ENABLE_LONGOPT
-# define OPT_ENABLE_WIN32OPT
+/* enable all option and separator types */
+#ifdef OPT_ENABLE_ALL
+# undef OPT_PREFIX_SHORT
+# undef OPT_PREFIX_LONG
+# undef OPT_PREFIX_WIN32
+# undef OPT_SEPARATOR_EQUAL
+# undef OPT_SEPARATOR_COLON
+# define OPT_PREFIX_SHORT
+# define OPT_PREFIX_LONG
+# define OPT_PREFIX_WIN32
+# define OPT_SEPARATOR_EQUAL
+# define OPT_SEPARATOR_COLON
 #endif
 
 /* default to short options */
-#if !defined(OPT_ENABLE_SHORTOPT) && \
-    !defined(OPT_ENABLE_LONGOPT) && \
-    !defined(OPT_ENABLE_WIN32OPT)
-# define OPT_ENABLE_SHORTOPT
+#if !defined(OPT_PREFIX_SHORT) && \
+    !defined(OPT_PREFIX_LONG) && \
+    !defined(OPT_PREFIX_WIN32)
+# define OPT_PREFIX_SHORT
+#endif
+
+/* default to equal sign separator */
+#if !defined(OPT_SEPARATOR_EQUAL) && \
+    !defined(OPT_SEPARATOR_COLON)
+# define OPT_SEPARATOR_EQUAL
 #endif
 
 /* set string comparison functions */
@@ -169,8 +166,42 @@ OPT_INLINE bool opt_get_arg(struct opt_args *a, const char *opt, size_t len);
 # define OPT_STRNCMP   strncmp
 #endif
 
+#ifdef OPT_ENABLE_ASSERT
+# include <assert.h>
+# define OPT_ASSERT(x)  assert(x)
+#else
+# define OPT_ASSERT(x)  /**/
+#endif
 
-OPT_INLINE
+
+#ifdef OPT_PREFIX_SHORT
+static const bool _opt_prefix_short = true;
+#else
+static const bool _opt_prefix_short = false;
+#endif
+#ifdef OPT_PREFIX_LONG
+static const bool _opt_prefix_long = true;
+#else
+static const bool _opt_prefix_long = false;
+#endif
+#ifdef OPT_PREFIX_WIN32
+static const bool _opt_prefix_win32 = true;
+#else
+static const bool _opt_prefix_win32 = false;
+#endif
+#ifdef OPT_SEPARATOR_EQUAL
+static const bool _opt_separator_equal = true;
+#else
+static const bool _opt_separator_equal = false;
+#endif
+#ifdef OPT_SEPARATOR_COLON
+static const bool _opt_separator_colon = true;
+#else
+static const bool _opt_separator_colon = false;
+#endif
+
+
+static inline
 void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhandle)(const char *))
 {
     OPT_ASSERT(a != NULL);
@@ -187,7 +218,7 @@ void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhan
 }
 
 
-OPT_INLINE
+static inline
 bool opt_iterate(struct opt_args *a)
 {
     OPT_ASSERT(a != NULL);
@@ -204,37 +235,34 @@ bool opt_iterate(struct opt_args *a)
 
     const char *p = a->current;
 
-#ifdef OPT_ENABLE_SHORTOPT
     /* short option */
-    if (p[0] == '-' &&
+    if (_opt_prefix_short &&
+        p[0] == '-' &&
         p[1] != '-' &&
         p[1] != 0)
     {
         a->pfxlen = 1;
         return true;
     }
-#endif
 
-#ifdef OPT_ENABLE_LONGOPT
     /* long option */
-    if (p[0] == '-' &&
+    if (_opt_prefix_long &&
+        p[0] == '-' &&
         p[1] == '-' &&
         p[2] != 0)
     {
         a->pfxlen = 2;
         return true;
     }
-#endif
 
-#ifdef OPT_ENABLE_WIN32OPT
     /* forward slash option */
-    if (p[0] == '/' &&
+    if (_opt_prefix_win32 &&
+        p[0] == '/' &&
         p[1] != 0)
     {
         a->pfxlen = 1;
         return true;
     }
-#endif
 
     /* no option prefix */
     a->pfxlen = 0;
@@ -243,7 +271,7 @@ bool opt_iterate(struct opt_args *a)
 }
 
 
-OPT_INLINE
+static inline
 bool opt_arg_eq(struct opt_args *a, const char *opt)
 {
     OPT_ASSERT(a != NULL);
@@ -259,7 +287,7 @@ bool opt_arg_eq(struct opt_args *a, const char *opt)
 }
 
 
-OPT_INLINE
+static inline
 void _opt_handle_error(struct opt_args *a, const char *fmt, const char *pfx, const char *opt)
 {
     char buf[128];
@@ -280,7 +308,7 @@ void _opt_handle_error(struct opt_args *a, const char *fmt, const char *pfx, con
 }
 
 
-OPT_INLINE
+static inline
 bool opt_get_arg(struct opt_args *a, const char *opt, size_t len)
 {
     OPT_ASSERT(a != NULL);
@@ -294,24 +322,20 @@ bool opt_get_arg(struct opt_args *a, const char *opt, size_t len)
         return false;
     }
 
-#ifdef OPT_ENABLE_LONGOPT
     /* only short prefix for single-character options */
-    if (opt[1] == 0 && a->pfxlen != 1) {
+    if (_opt_prefix_long && opt[1] == 0 && a->pfxlen != 1) {
         return false;
     }
-#endif
 
     /* save prefix characters and skip prefix */
     const char *p = a->current;
     pfx[0] = p[0];
     p++;
 
-#ifdef OPT_ENABLE_LONGOPT
-    if (a->pfxlen == 2) {
+    if (_opt_prefix_long && a->pfxlen == 2) {
         pfx[1] = p[1];
         p++;
     }
-#endif
 
     if (OPT_STRNCMP(p, opt, len) != 0) {
         /* not the right option string */
@@ -329,17 +353,13 @@ bool opt_get_arg(struct opt_args *a, const char *opt, size_t len)
     } else if (len == 1) {
         /* -Xabc */
         a->value = p + len;
-    } else if (p[len] == '=') {
+    } else if (_opt_separator_equal && p[len] == '=') {
         /* -foo=abc */
         a->value = p + len + 1;
-    }
-#ifdef OPT_ENABLE_WIN32OPT
-    else if (p[len] == ':') {
-        /* /foo:abc */
+    } else if (_opt_separator_colon && p[len] == ':') {
+        /* -foo:abc */
         a->value = p + len + 1;
-    }
-#endif
-    else {
+    } else {
         return false;
     }
 
@@ -353,12 +373,7 @@ bool opt_get_arg(struct opt_args *a, const char *opt, size_t len)
 }
 
 
-#ifdef __cplusplus
-//} /* extern "C" */
-#endif
-
-
-// cc -Wall -O2 -DOPT_ENABLE_ASSERT -DOPT_ENABLE_ALLOPTS -DOPT_PARSER_TEST -xc opt_parser.h
+// cc -Wall -O2 -DOPT_ENABLE_ASSERT -DOPT_ENABLE_ALL -DOPT_PARSER_TEST -xc opt_parser.h
 #ifdef OPT_PARSER_TEST
 
 static void print_error(const char *msg) {

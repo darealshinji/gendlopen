@@ -29,13 +29,16 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-#define OPT_ENABLE_ASSERT
-#define OPT_ENABLE_SHORTOPT
-#define OPT_ENABLE_LONGOPT
 #ifdef _WIN32
-# define OPT_ENABLE_WIN32OPT
+# define OPT_ENABLE_ALL
+#else
+# define OPT_PREFIX_SHORT
+# define OPT_PREFIX_LONG
+# define OPT_SEPARATOR_EQUAL
 #endif
+#define OPT_ENABLE_ASSERT
 #include "opt_parser.h"
+
 
 namespace help
 {
