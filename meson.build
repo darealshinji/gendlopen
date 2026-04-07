@@ -10,7 +10,6 @@ project('gendlopen', ['c', 'cpp'],
 )
 
 has_builtin_va_arg_pack = false
-msvc_link_manifest = false
 wno_deprecated_declarations = []
 cpp_args_extra = []
 link_args_extra = []
@@ -66,10 +65,7 @@ if templates_path != ''
 endif
 
 
-if host_is_win32 and arg_syntax == 'msvc' and compiler.has_argument('-utf-8')
-    msvc_link_manifest = true
-    cpp_args_extra += '-utf-8'         # set source and runtime encoding to UTF-8
-    cpp_args_extra += '-DUSE_CP_UTF8'  # set codepage to CP_UTF8 in main() function
+if host_is_win32 and arg_syntax == 'msvc'
     link_args_extra += ['-manifest:embed', '-manifestinput:src/gendlopen.manifest']
 endif
 

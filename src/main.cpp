@@ -40,12 +40,7 @@
 
 int main(int argc, char **argv)
 {
-#if defined(_WIN32) && defined(USE_CP_UTF8)
-    /**
-     * Enable UTF-8 "codepage" in Windows consoles.
-     * For this to work "gendlopen.manifest" must also be added to the executable
-     * with the linker options `-manifest:embed -manifestinput:src/gendlopen.manifest'
-     */
+#ifdef _WIN32
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
 #endif

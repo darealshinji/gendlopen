@@ -20,7 +20,7 @@ CXX_SRCS = \
 	..\$(SRC)\tokenize.cpp \
 	..\$(SRC)\utils.cpp
 
-CFLAGS   = /W3 /O2 /I..\$(SRC) /utf-8 /DUSE_CP_UTF8
+CFLAGS   = /W3 /O2 /I..\$(SRC)
 CXXFLAGS = $(CFLAGS) /I. /EHsc /std:c++20
 LFLAGS   = /manifest:embed /manifestinput:..\$(SRC)\gendlopen.manifest
 
