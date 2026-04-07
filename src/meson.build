@@ -39,9 +39,15 @@ if not external_files
     gendlopen_deps += gen_hdr
 endif
 
+if msvc_link_manifest
+    fs = import('fs')
+    fs.copyfile('gendlopen.manifest')
+endif
+
 gendlopen_bin = executable('gendlopen',
     gendlopen_deps,
     cpp_args : cpp_args_extra,
+    link_args : link_args_extra,
     win_subsystem : 'console'
 )
 
