@@ -22,7 +22,10 @@ CXX_SRCS = \
 
 CFLAGS   = /W3 /O2 /I..\$(SRC)
 CXXFLAGS = $(CFLAGS) /I. /EHsc /std:c++20
-LFLAGS   = /manifest:embed /manifestinput:..\$(SRC)\gendlopen.manifest
+
+# enable support for UTF-8
+CXXFLAGS += /DENABLE_CP_UTF8
+LFLAGS    = /manifest:embed /manifestinput:..\$(SRC)\gendlopen.manifest
 
 
 

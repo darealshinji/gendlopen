@@ -30,6 +30,7 @@ host_is_win32  = (host_system == 'windows' or host_system == 'cygwin')
 host_is_gnu    = (host_system == 'linux' or host_system == 'gnu')
 external_files = get_option('enable_external')
 templates_path = get_option('templates_path')
+enable_utf8    = get_option('enable_utf8')
 
 
 if host_is_gnu and not get_option('without_gnu_source')
@@ -65,8 +66,12 @@ if templates_path != ''
 endif
 
 
-if host_is_win32 and arg_syntax == 'msvc'
-    link_args_extra += ['-manifest:embed', '-manifestinput:src/gendlopen.manifest']
+if host_is_win32 and enable_utf8
+    cpp_args_extra += '-DENABLE_CP_UTF8'
+
+    if arg_syntax == 'msvc'
+        link_args_extra += ['-manifest:embed', '-manifestinput:src/gendlopen.manifest']
+    endif
 endif
 
 

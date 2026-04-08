@@ -39,7 +39,7 @@ if not external_files
     gendlopen_deps += gen_hdr
 endif
 
-if host_is_win32
+if host_is_win32 and enable_utf8
     if arg_syntax == 'msvc'
         fs = import('fs')
         fs.copyfile('gendlopen.manifest')
