@@ -64,13 +64,13 @@ void gendlopen::add_inc(const std::string &inc)
 void gendlopen::add_def(const std::string &def)
 {
     std::string name, value, out;
-    const size_t pos = def.find('=');
+    size_t pos;
 
-    if (pos == std::string::npos) {
-        name = def;
-    } else {
+    if (utils::find(def, '=', pos)) {
         name = def.substr(0, pos);
         value = ' ' + def.substr(pos + 1);
+    } else {
+        name = def;
     }
 
     utils::strip_spaces(name);

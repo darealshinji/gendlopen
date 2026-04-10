@@ -99,14 +99,14 @@ void utils::strip_spaces(std::string &s)
     }
 }
 
-/* replace string "from" with string "to" in string "s" */
-void utils::replace(const std::string &from, const std::string &to, std::string &s)
+/* replace string "from" with string "to" in string "str" */
+void utils::replace(const std::string &from, const std::string &to, std::string &str)
 {
     size_t pos = 0;
-    const size_t len = from.size();
 
-    for (; (pos = s.find(from, pos)) != std::string::npos; pos += to.size()) {
-        s.replace(pos, len, to);
+    while (utils::find(str, from, pos)) {
+        str.replace(pos, from.size(), to);
+        pos += to.size();
     }
 }
 

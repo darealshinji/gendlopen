@@ -61,6 +61,20 @@ inline int strncasecmp(const char *a, const char *b, size_t n)
 }
 
 
+/* syntactic sugar */
+template<typename T>
+bool find(const std::string &haystack, const T &needle, size_t &pos)
+{
+    return ((pos = haystack.find(needle)) != std::string::npos);
+}
+
+template<typename T>
+bool find(const std::string &haystack, const T &needle)
+{
+    return (haystack.find(needle) != std::string::npos);
+}
+
+
 /* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
 template<size_t N>
 bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])

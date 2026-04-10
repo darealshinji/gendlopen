@@ -177,9 +177,9 @@ namespace /* anonymous */
     /* 'void (*)()'  ==>  'void (*name)()' */
     std::string fptr_typedef(const std::string &type, const std::string &name)
     {
-        auto pos = type.find("(*)");
+        size_t pos;
 
-        if (pos == std::string::npos || type.find('(') != pos) {
+        if (!utils::find(type, "(*)", pos) || type.find('(') != pos) {
             return {};
         }
 
@@ -193,9 +193,9 @@ namespace /* anonymous */
     /* 'char[32]'  ==>  'char name[32]' */
     std::string array_typedef(std::string &type, const std::string &name)
     {
-        auto pos = type.find('[');
+        size_t pos;
 
-        if (pos == std::string::npos) {
+        if (!utils::find(type, '[', pos)) {
             return {};
         }
 

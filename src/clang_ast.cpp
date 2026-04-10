@@ -97,6 +97,7 @@ std::string strip_line(const char *line)
 bool get_parameters(std::string &args, std::string &param_names, int &param_count)
 {
     std::smatch m;
+    size_t pos;
 
     const std::regex reg(
         "^[| ] [|`]-ParmVarDecl 0x.*?"
@@ -114,21 +115,19 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
     param_names += name + ", ";
 
     /* search for function pointer */
-    std::string str = m[1].str();
-    const size_t pos = str.find("(*)");
-
-    if (pos == std::string::npos) {
+    if (utils::find(m.str(1), "(*)", pos)) {
+        /* function pointer */
+        std::string str = m.str(1);
+        str.insert(pos + 2, name);
+        args += str + ", ";
+    } else {
         /* regular parameter */
-        args += str;
+        args += m.str(1);
 
         if (!args.ends_with('*')) {
             args += ' ';
         }
         args += name + ", ";
-    } else {
-        /* function pointer */
-        str.insert(pos + 2, name);
-        args += str + ", ";
     }
 
     /* iterate counter */
@@ -202,12 +201,10 @@ int gendlopen::get_declarations(int mode)
 
     if (is_function) {
         /* function declaration */
-        int rv;
-        int param_count = 1;
+        size_t pos;
+        int rv, param_count = 1;
 
-        size_t pos = m.str(2).find('(');
-
-        if (pos == std::string::npos) {
+        if (!utils::find(m.str(2), '(', pos)) {
             return 0;
         }
 
@@ -232,9 +229,9 @@ int gendlopen::get_declarations(int mode)
         return 1;
     } else {
         /* variable declaration */
-        if (m.str(2).find("(*)") != std::string::npos) {
+        if (utils::find(m.str(2), "(*)")) {
             proto.prototype = proto::function_pointer;
-        } else if (m.str(2).find('[') != std::string::npos) {
+        } else if (utils::find(m.str(2), '[')) {
             proto.prototype = proto::object_array;
         } else {
             proto.prototype = proto::object;
@@ -297,7 +294,7 @@ void gendlopen::parse_clang_ast()
         m_symbol_list.erase(last, m_symbol_list.end());
 
         for (const auto &e : m_symbol_list) {
-            s += " " + e;
+            s += ' ' + e;
         }
 
         throw error("the following symbols were not found:" + s);

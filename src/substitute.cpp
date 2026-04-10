@@ -99,7 +99,7 @@ size_t gendlopen::replace_function_prototypes(const std::string &entry)
         size_t pos = 0;
         const size_t len = token.size();
 
-        while ((pos = s.find(token, pos)) != std::string::npos) {
+        while (utils::find(s, token, pos)) {
             s.erase(pos, len);
         }
     };
@@ -108,7 +108,7 @@ size_t gendlopen::replace_function_prototypes(const std::string &entry)
     size_t line_count = 0;
     const size_t entry_lines = utils::count_linefeed(entry);
 
-    if (entry.find("%%func_symbol_pad%%") != std::string::npos) {
+    if (utils::find(entry, "%%func_symbol_pad%%")) {
         longest = get_longest_symbol_size(m_prototypes);
     }
 
@@ -159,7 +159,7 @@ size_t gendlopen::replace_object_prototypes(const std::string &entry)
     size_t line_count = 0;
     const size_t entry_lines = utils::count_linefeed(entry);
 
-    if (entry.find("%%obj_symbol_pad%%") != std::string::npos) {
+    if (utils::find(entry, "%%obj_symbol_pad%%")) {
         longest = get_longest_symbol_size(m_objects);
     }
 
@@ -280,7 +280,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
     auto find_keyword = [&buf] (const list_t &list) -> char {
         for (const auto &e : list) {
-            if (buf.find(e) != std::string::npos) {
+            if (utils::find(buf, e)) {
                 return 1;
             }
         }
@@ -322,7 +322,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
     }
 
     /* check if the line needs to be processed in a loop */
-    if (line.maybe_keyword && buf.find("%%") != std::string::npos) {
+    if (line.maybe_keyword && utils::find(buf, "%%")) {
         char kw = 0;
 
         kw |= find_keyword(function_keywords) << 1;
@@ -332,6 +332,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         switch (kw)
         {
         case 0:
+            /* no keywords */
             break;
 
         case 1 << 1:
@@ -350,9 +351,6 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
         case 1 << 3:
             /* any symbol */
-            //if (m_prototypes.empty() && m_objects.empty()) {
-            //    return print_lineno();
-            //}
             return replace_symbol_names(buf);
 
         default:
