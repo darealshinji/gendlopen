@@ -41,8 +41,14 @@ endif
 
 
 code = '''
-#if !defined(__has_builtin) || !__has_builtin( __builtin_va_arg_pack )
-# error __builtin_va_arg_pack
+#undef HAS_BUILTIN_VA_ARG_PACK
+#ifdef __has_builtin
+# if __has_builtin( __builtin_va_arg_pack )
+#  define HAS_BUILTIN_VA_ARG_PACK
+# endif
+#endif
+#if !defined(HAS_BUILTIN_VA_ARG_PACK)
+# error __builtin_va_arg_pack()
 #endif
 '''
 
