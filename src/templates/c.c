@@ -628,7 +628,7 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 #else
 
     if (gdo_hndl.buf[0] == 0) {
-        GDO_SNPRINTF(gdo_hndl.buf, GDO_T("%s"), "no error");
+        _gdo_save_to_errbuf("no error");
     }
 
     return gdo_hndl.buf;
