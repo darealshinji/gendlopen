@@ -95,7 +95,7 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
 {
 #ifdef GDO_WINAPI
-    gdo_hndl.buf_formatted[0] = 0;
+    gdo_hndl.formatted[0] = 0;
 #endif
 
     if (msg) {
@@ -111,7 +111,7 @@ GDO_INLINE void _gdo_save_to_errbuf(const gdo_char_t *msg)
 GDO_INLINE void _gdo_clear_error(void)
 {
     gdo_hndl.buf[0] = 0;
-    gdo_hndl.buf_formatted[0] = 0;
+    gdo_hndl.formatted[0] = 0;
     gdo_hndl.last_errno = 0;
 }
 
@@ -243,8 +243,6 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 #if !defined(GDO_HAVE_DLMOPEN)
     (GDO_UNUSED_REF) new_namespace;
 #endif
-
-    _gdo_clear_error();
 
 #ifdef GDO_WINAPI
 
@@ -462,8 +460,6 @@ GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
     void *ptr;
 
-    _gdo_clear_error();
-
 #ifdef GDO_WINAPI
     ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
 #else
@@ -589,12 +585,11 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 #ifdef GDO_WINAPI
 
     /* message was already saved */
-    if (gdo_hndl.buf_formatted[0] != 0) {
-        return gdo_hndl.buf_formatted;
+    if (gdo_hndl.formatted[0] != 0) {
+        return gdo_hndl.formatted;
     }
 
     gdo_char_t *buf = NULL;
-    gdo_char_t *msg = gdo_hndl.buf;
 
     /* format the message */
     FormatMessage(
@@ -609,21 +604,21 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
         0, NULL);
 
     if (buf) {
-        if (msg[0] != 0) {
+        if (gdo_hndl.buf[0] != 0) {
             /* put custom message in front of system error message */
-            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_T("%s: %s"), msg, buf);
+            GDO_SNPRINTF(gdo_hndl.formatted, GDO_T("%s: %s"), gdo_hndl.buf, buf);
         } else {
-            GDO_SNPRINTF(gdo_hndl.buf_formatted, GDO_T("%s"), buf);
+            GDO_SNPRINTF(gdo_hndl.formatted, GDO_T("%s"), buf);
         }
 
         LocalFree(buf);
     } else {
         /* FormatMessage() failed, save the error code */
-        GDO_SNPRINTF(gdo_hndl.buf_formatted,
+        GDO_SNPRINTF(gdo_hndl.formatted,
             GDO_T("Last saved error code: %lu"), gdo_hndl.last_errno);
     }
 
-    return gdo_hndl.buf_formatted;
+    return gdo_hndl.formatted;
 
 #else
 
@@ -657,18 +652,17 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #ifdef GDO_WINAPI
 
     const gdo_char_t *msg = (sizeof(gdo_char_t) == 1)
-        ? GDO_T("GetModuleFileNameA")
-        : GDO_T("GetModuleFileNameW");
+        ? GDO_T("GetModuleFileNameA()")
+        : GDO_T("GetModuleFileNameW()");
 
-    gdo_char_t buf[32*1024];
-    DWORD nSize = GetModuleFileName(gdo_hndl.handle, buf, _countof(buf));
+    DWORD nSize = GetModuleFileName(gdo_hndl.handle, gdo_hndl.buf, GDO_BUFLEN);
 
-    if (nSize == 0 || nSize == _countof(buf)) {
+    if (nSize == 0 || nSize == GDO_BUFLEN) {
         _gdo_save_error(msg);
         return NULL;
     }
 
-    return _tcsdup(buf);
+    return _tcsdup(gdo_hndl.buf);
 
 #elif defined(_WIN32)
 
@@ -677,15 +671,17 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
      * We can directly use GetModuleFileNameA() to receive the DLL path
      * and don't need to invoke dladdr() on a loaded symbol address. */
 
-    char buf[32*1024];
-    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, buf, sizeof(buf));
+    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, gdo_hndl.buf, GDO_BUFLEN);
 
-    if (nSize == 0 || nSize == sizeof(buf)) {
-        _gdo_save_to_errbuf("GetModuleFileNameA() failed to get library path");
+    if (nSize == 0) {
+        _gdo_save_to_errbuf("failed to get the library path");
+        return NULL;
+    } else if (nSize == GDO_BUFLEN) {
+        _gdo_save_to_errbuf("buffer is too small to hold the library path");
         return NULL;
     }
 
-    return _gdo_strdup(buf);
+    return _gdo_strdup(gdo_hndl.buf);
 
 #elif defined(GDO_HAVE_DLINFO)
 
@@ -826,7 +822,6 @@ GDO_LINKAGE void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sy
 
     GDO_PRINT_ERROR(GDO_T("fatal error: %s: %s\n"), sym, msg);
 
-    //gdo_force_free_lib();
     abort();
 
 #endif //!GDO_ENABLE_AUTOLOAD

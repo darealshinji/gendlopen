@@ -18,8 +18,7 @@
 
 
 #ifdef _WIN32
-/* FormatMessage: maximum message length according to MSDN */
-# define GDO_BUFLEN (64*1024)
+# define GDO_BUFLEN (32*1024)
 #else
 /* Linux MAX_PATH*2 */
 # define GDO_BUFLEN (8*1024)
@@ -64,7 +63,10 @@ typedef struct _gdo_handle
 #ifdef GDO_WINAPI
     HMODULE handle;
     DWORD last_errno;
-    gdo_char_t buf_formatted[GDO_BUFLEN];
+
+    /* FormatMessage() saves the formatted message string in this buffer;
+     * MSDN says this buffer cannot be larger than 64K bytes (not characters!) */
+    gdo_char_t formatted[(64*1024) / sizeof(gdo_char_t)];
 #else
     void *handle;
 #endif

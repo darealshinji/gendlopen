@@ -798,8 +798,11 @@ std::string gdo::dl::origin()
     DWORD nSize = ::GetModuleFileNameA(reinterpret_cast<HMODULE>(m_handle),
         buf, sizeof(buf));
 
-    if (nSize == 0 || nSize == sizeof(buf)) {
-        m_errmsg = "GetModuleFileNameA() failed to get library path";
+    if (nSize == 0) {
+        m_errmsg = "failed to get the library path";
+        return {};
+    } else if (nSize == sizeof(buf)) {
+        m_errmsg = "buffer is too small to hold the library path";
         return {};
     }
 
