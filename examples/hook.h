@@ -9,23 +9,23 @@
 #define GDO_HOOK_g_malloc(...) \
     do { \
       gpointer ptr = GDO_RAWPTR_g_malloc(__VA_ARGS__); \
-      printf("memory address %p: %ld bytes allocated using g_malloc()\n", &ptr, (long)n_bytes); \
+      printf("memory address %p: %zu bytes allocated using g_malloc()\n", &ptr, n_bytes); \
       return ptr; \
     } while(0)
 
 // gpointer g_realloc (gpointer mem, gsize n_bytes);
 #define GDO_HOOK_g_realloc(...) \
     do { \
-      mem = GDO_RAWPTR_g_realloc(__VA_ARGS__); \
-      printf("memory address %p: %ld bytes allocated using g_realloc()\n", &mem, (long)n_bytes); \
-      return mem; \
+      gpointer ptr = GDO_RAWPTR_g_realloc(__VA_ARGS__); \
+      printf("memory address %p: %zu bytes allocated using g_realloc()\n", &ptr, n_bytes); \
+      return ptr; \
     } while(0)
 
-// void g_free (gpointer mem);
-#define GDO_HOOK_g_free(...) \
+// void g_free_sized (gpointer mem, size_t size);
+#define GDO_HOOK_g_free_sized(...) \
     do { \
-      GDO_RAWPTR_g_free(__VA_ARGS__); \
-      printf("memory address %p: memory released using g_free()\n", &mem); \
+      GDO_RAWPTR_g_free_sized(__VA_ARGS__); \
+      printf("memory address %p: %zu bytes memory released using g_free_sized()\n", &mem, size); \
       return; \
     } while(0)
 

@@ -26,7 +26,7 @@ int main()
     gpointer mem = g_malloc(32);
     mem = g_realloc(mem, 64);
     mem = g_realloc(mem, 1024);
-    g_free(mem);
+    g_free_sized(mem, 1024);
 
     /* free resources */
     gdo_free_lib();
