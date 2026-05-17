@@ -752,17 +752,20 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #endif
 
 /* used by wrapper functions */
-GDO_LINKAGE void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym)
+GDO_LINKAGE void _gdo_wrap_check(int load, void *symbol, const gdo_char_t *sym)
 {
 #if !defined(GDO_ENABLE_AUTOLOAD_LAZY)
     (GDO_UNUSED_REF) load;
 #endif
 
+    /* nothing to do if symbol was already loaded */
+    if (symbol) {
+        return;
+    }
+
 #ifdef GDO_ENABLE_AUTOLOAD
 
     /* load library and function(s) if needed */
-
-    (GDO_UNUSED_REF) sym_loaded;
 
     const gdo_char_t *fmt, *msg;
 
@@ -814,7 +817,7 @@ GDO_LINKAGE void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sy
 
     if (!gdo_lib_is_loaded()) {
         msg = GDO_T("library not loaded");
-    } else if (!sym_loaded) {
+    } else if (!symbol) {
         msg = GDO_T("symbol not loaded");
     } else {
         return; /* library and symbol loaded */

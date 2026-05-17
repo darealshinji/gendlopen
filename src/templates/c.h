@@ -213,7 +213,7 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 #endif
 
 
-GDO_DECL void _gdo_wrap_check(int load, bool sym_loaded, const gdo_char_t *sym);
+GDO_DECL void _gdo_wrap_check(int load, void *symbol, const gdo_char_t *sym);
 
 
 /* diagnostic warnings on variable arguments functions */
@@ -248,8 +248,7 @@ GDO_WARNING("__builtin_va_arg_pack() and GNU function inling are required to use
 # ifdef GDO_VA_ARG_PACK_INLINE@
     extern inline __attribute__((gnu_inline))@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        const bool sym_loaded = (GDO_RAWPTR_%%func_symbol%% != NULL);@
-        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, sym_loaded, GDO_T("%%func_symbol%%") );@
+        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, (void *)GDO_RAWPTR_%%func_symbol%%, GDO_T("%%func_symbol%%") );@
         GDO_HOOK_%%func_symbol%%( %%param_names%%, __builtin_va_arg_pack() );@
         %%return%% GDO_RAWPTR_%%func_symbol%%( %%param_names%%, __builtin_va_arg_pack() );@
     }@
@@ -257,8 +256,7 @@ GDO_WARNING("__builtin_va_arg_pack() and GNU function inling are required to use
 #else@
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        const bool sym_loaded = (GDO_RAWPTR_%%func_symbol%% != NULL);@
-        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, sym_loaded, GDO_T("%%func_symbol%%") );@
+        _gdo_wrap_check( GDO_LOAD_%%func_symbol%%, (void *)GDO_RAWPTR_%%func_symbol%%, GDO_T("%%func_symbol%%") );@
         GDO_HOOK_%%func_symbol%%( %%param_names%% );@
         %%return%% GDO_RAWPTR_%%func_symbol%%( %%param_names%% );@
     }@

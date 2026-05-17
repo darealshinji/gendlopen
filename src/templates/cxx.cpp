@@ -892,11 +892,14 @@ namespace gdo
                 }
             };
 
+            /* nothing to do if symbol was already loaded */
+            if (sym_loaded) {
+                return;
+            }
+
 #ifdef GDO_ENABLE_AUTOLOAD
 
             /* load library and function(s) if needed */
-
-            UNUSED_REF(sym_loaded);
 
             if (!_loader.lib_loaded()) {
                 _loader.load();
@@ -932,12 +935,6 @@ namespace gdo
             std::exit(1);
 
 #else //!GDO_ENABLE_AUTOLOAD
-
-            /* check if library and symbol were loaded */
-
-            if (dl::lib_loaded() && sym_loaded) {
-                return;
-            }
 
             /* error */
 
