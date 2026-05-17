@@ -97,8 +97,8 @@ private:
     std::string m_errmsg;
     std::wstring m_werrmsg;
 
-    inline errno_t mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count);
-    inline errno_t mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count);
+    errno_t mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count);
+    errno_t mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count);
 
     template<typename T_out, typename T_in>
     std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
@@ -111,8 +111,8 @@ private:
 
     void set_error_invalid_handle();
 
-    inline HMODULE load_library_ex(const wchar_t *path);
-    inline HMODULE load_library_ex(const char *path);
+    HMODULE load_library_ex(const wchar_t *path);
+    HMODULE load_library_ex(const char *path);
 
     template<typename T>
     void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
@@ -123,14 +123,14 @@ private:
     template<typename T>
     T sym_load(const char *symbol);
 
-    inline DWORD get_module_filename(wchar_t *buf, DWORD len);
-    inline DWORD get_module_filename(char *buf, DWORD len);
+    DWORD get_module_filename(wchar_t *buf, DWORD len);
+    DWORD get_module_filename(char *buf, DWORD len);
 
     template<typename T>
     std::basic_string<T> get_origin_from_module_handle();
 
-    inline void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
-    inline void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
+    void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
+    void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
     /* std::enable_if and std::is_same combined */
     template<typename T, typename U>
@@ -149,14 +149,12 @@ private:
 
     /* return char or wchar_t string */
     template<typename T, enable_if_same_bool<T, char> = true>
-    const char *get_string(const char *str, const wchar_t *wstr) {
-        UNUSED_REF(wstr);
+    const char *get_string(const char *str, const wchar_t *) {
         return str;
     }
 
     template<typename T, enable_if_same_bool<T, wchar_t> = true>
-    const wchar_t *get_string(const char *str, const wchar_t *wstr) {
-        UNUSED_REF(str);
+    const wchar_t *get_string(const char *, const wchar_t *wstr) {
         return wstr;
     }
 
