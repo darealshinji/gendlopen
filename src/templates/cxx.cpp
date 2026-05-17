@@ -308,22 +308,19 @@ std::basic_string<T> gdo::dl::format_error_message(std::basic_string<T> &bufT, s
         ::LocalFree(buf);
     }
 
-#define GDO_STR(x)  x, L##x
-
     if (str.empty()) {
-        str = get_string<T>( GDO_STR("Last saved error code: ") );
+        str = get_string<T>("Last saved error code: ",
+                            L"Last saved error code: ");
         str += to_string<T>(m_last_error);
     }
 
     if (!bufT.empty()) {
-        str.insert(0, get_string<T>( GDO_STR(": ") ));
+        str.insert(0, get_string<T>(": ", L": "));
         str.insert(0, bufT);
     } else if (!bufU.empty()) {
-        str.insert(0, get_string<T>( GDO_STR(": ") ));
+        str.insert(0, get_string<T>(": ", L": "));
         str.insert(0, convert_string<T, U>(bufU));
     }
-
-#undef GDO_STR
 
     return str;
 }
