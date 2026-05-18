@@ -6,26 +6,16 @@
 # pragma comment(lib, "user32.lib")
 #endif
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef GDO_WINAPI
-# define _gdo_ftprintf     _ftprintf
-# define _gdo_sntprintf    _sntprintf
-# define _gdo_sntprintf_s  _sntprintf_s
-# define _gdo_tcsstr       _tcsstr
-#else
-/* dlfcn: use `char' API */
-# define _gdo_ftprintf     fprintf
-# define _gdo_sntprintf    snprintf
-# define _gdo_sntprintf_s  _snprintf_s
-# define _gdo_tcsstr       strstr
-#endif
-
-#ifdef _MSC_VER
+# define _gdo_tcsstr  _tcsstr
 # define _gdo_strdup  _strdup
 #else
+# define _gdo_tcsstr  strstr
 # define _gdo_strdup  strdup
 #endif
 
@@ -45,7 +35,7 @@
 # define GDO_OBJ_LINKAGE  /**/
 #endif
 
-#define GDO_INLINE  static inline
+#define GDO_INLINE        static inline
 
 
 #ifndef _countof
@@ -78,11 +68,9 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 
 /* GDO_SNPRINTF: use as a macro so we can use __VA_ARGS__ directly */
 #ifdef _WIN32
-# define GDO_SNPRINTF(DEST, FORMAT, ...) \
-    _gdo_sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__)
+# define GDO_SNPRINTF(DEST, FORMAT, ...)  _sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__)
 #else
-# define GDO_SNPRINTF(DEST, FORMAT, ...) \
-    _gdo_sntprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__)
+# define GDO_SNPRINTF(DEST, FORMAT, ...)  snprintf(DEST, sizeof(DEST), FORMAT, __VA_ARGS__)
 #endif
 
 #ifdef GDO_WINAPI
@@ -737,38 +725,38 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 /*****************************************************************************/
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
-#if defined(_WIN32) && defined(GDO_USE_MESSAGE_BOX)
-# define GDO_PRINT_ERROR(...) \
-    do { \
-        gdo_char_t errbuf[GDO_BUFLEN]; \
-        GDO_SNPRINTF(errbuf, __VA_ARGS__); \
-        MessageBox(NULL, errbuf, GDO_T("Error"), MB_OK | MB_ICONERROR); \
-    } while (0)
-#else
-# define GDO_PRINT_ERROR(...) \
-    do { \
-        _gdo_ftprintf(stderr, __VA_ARGS__); \
-    } while (0)
-#endif
-
-/* used by wrapper functions */
-GDO_LINKAGE void _gdo_wrap_check(int load, void *symbol, const gdo_char_t *sym)
+GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, ...)
 {
-#if !defined(GDO_ENABLE_AUTOLOAD_LAZY)
-    (GDO_UNUSED_REF) load;
-#endif
+    va_list ap;
+    va_start(ap, fmt);
 
-    /* nothing to do if symbol was already loaded */
-    if (symbol) {
-        return;
-    }
+#ifdef _WIN32
+
+# ifdef GDO_USE_MESSAGE_BOX
+    /* we can safely use gdo_hndl.buf, the last error message was saved in gdo_hndl.formatted */
+    _vsntprintf_s(gdo_hndl.buf, GDO_BUFLEN, _TRUNCATE, fmt, ap);
+    MessageBox(NULL, gdo_hndl.buf, GDO_T("Error"), MB_OK | MB_ICONERROR);
+# else
+    _vftprintf_s(stderr, fmt, ap);
+    _fputtc(GDO_T('\n'), stderr);
+# endif
+
+#else // !_WIN32
+
+    vfprintf(stderr, fmt, ap);
+    fputc('\n', stderr);
+
+#endif // !_WIN32
+
+    va_end(ap);
+}
+
+/* used by wrapper functions (assuming symbol was not loaded) */
+GDO_LINKAGE void _gdo_wrap_not_loaded(int load, const gdo_char_t *sym)
+{
+    const gdo_char_t *msg;
 
 #ifdef GDO_ENABLE_AUTOLOAD
-
-    /* load library and function(s) if needed */
-
-    const gdo_char_t *fmt, *msg;
-
     /* set auto-release, ignore errors */
     gdo_enable_autorelease();
 
@@ -787,43 +775,35 @@ GDO_LINKAGE void _gdo_wrap_check(int load, void *symbol, const gdo_char_t *sym)
     if (gdo_load_all_symbols()) {
         return;
     }
+
+    (GDO_UNUSED_REF) load;
 # endif
 
-    /* error */
     msg = gdo_last_error();
 
     if (_gdo_tcsstr(msg, GDO_DEFAULT_LIB)) {
         /* library name is already part of error message */
-        fmt = GDO_T("error: ")
-            GDO_T("%s: ")   /* sym */
-            GDO_T("%s\n");  /* msg */
+        _gdo_print_error(GDO_T("error: %s: %s"), sym, msg);
     } else {
-        fmt = GDO_T("error: ")
-            GDO_DEFAULT_LIB GDO_T(": ")
-            GDO_T("%s: ")   /* sym */
-            GDO_T("%s\n");  /* msg */
+        _gdo_print_error(GDO_T("error: ") GDO_DEFAULT_LIB GDO_T(": %s: %s"), sym, msg);
     }
-
-    GDO_PRINT_ERROR(fmt, sym, msg);
 
     gdo_force_free_lib();
     exit(1);
 
 #else //!GDO_ENABLE_AUTOLOAD
 
-    /* check if library and symbol were loaded */
+    /* don't load anything, print an error message and abort */
 
-    const gdo_char_t *msg;
+    (GDO_UNUSED_REF) load;
 
     if (!gdo_lib_is_loaded()) {
         msg = GDO_T("library not loaded");
-    } else if (!symbol) {
-        msg = GDO_T("symbol not loaded");
     } else {
-        return; /* library and symbol loaded */
+        msg = GDO_T("symbol not loaded");
     }
 
-    GDO_PRINT_ERROR(GDO_T("fatal error: %s: %s\n"), sym, msg);
+    _gdo_print_error(GDO_T("fatal error: %s: %s"), sym, msg);
 
     abort();
 
@@ -855,13 +835,13 @@ GDO_LINKAGE void _gdo_wrap_check(int load, void *symbol, const gdo_char_t *sym)
     _gdo_clear_error \
     _gdo_dladdr_get_fname \
     _gdo_load_library \
+    _gdo_print_error \
     _gdo_save_error \
     _gdo_save_to_errbuf \
     _gdo_set_error_no_library_loaded \
     _gdo_sym
 #endif //__GNUC__
 
-#undef GDO_PRINT_ERROR
 #undef GDO_SET_LAST_ERRNO
 #undef GDO_SNPRINTF
 

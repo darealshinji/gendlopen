@@ -873,13 +873,9 @@ namespace gdo
         auto _loader = dl(GDO_DEFAULT_LIB);
 #endif
 
-        /* used by wrapper functions */
-        void _check(int load, bool sym_loaded, const char *sym)
+        /* used by wrapper functions (assuming symbol was not loaded) */
+        void not_loaded(int load, const char *sym)
         {
-#if !defined(GDO_ENABLE_AUTOLOAD_LAZY)
-            UNUSED_REF(load);
-#endif
-
             /* error message lambda function */
             auto print_error = [] (const std::string &msg)
             {
@@ -892,15 +888,9 @@ namespace gdo
                 }
             };
 
-            /* nothing to do if symbol was already loaded */
-            if (sym_loaded) {
-                return;
-            }
-
 #ifdef GDO_ENABLE_AUTOLOAD
 
-            /* load library and function(s) if needed */
-
+            /* load library */
             if (!_loader.lib_loaded()) {
                 _loader.load();
             }
@@ -915,9 +905,9 @@ namespace gdo
             if (_loader.load_all_symbols()) {
                 return;
             }
-# endif
 
-            /* error */
+            UNUSED_REF(load);
+# endif
 
             std::string s = "error: ";
             std::string msg = _loader.error();
@@ -932,11 +922,14 @@ namespace gdo
             s += msg;
 
             print_error(s);
+
             std::exit(1);
 
 #else //!GDO_ENABLE_AUTOLOAD
 
-            /* error */
+            /* don't load anything, print an error message and abort */
+
+            UNUSED_REF(load);
 
             std::string msg = "fatal error: ";
             msg += sym;
@@ -948,6 +941,7 @@ namespace gdo
             }
 
             print_error(msg);
+
             std::abort();
 
 #endif //!GDO_ENABLE_AUTOLOAD

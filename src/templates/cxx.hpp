@@ -408,18 +408,6 @@ public:
 #endif
 
 
-namespace gdo {
-    namespace wrap {
-        void _check(int load, bool sym_loaded, const char *sym);
-
-        template<typename T>
-        void check(int load, T sym_ptr, const char *sym) {
-            _check(load, (sym_ptr != nullptr), sym);
-        }
-    }
-}
-
-
 /* diagnostic warnings on variable arguments functions */
 #if !defined(GDO_DISABLE_WARNINGS) && defined(GDO_WRAP_VISIBILITY)
 
@@ -429,19 +417,30 @@ GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() 
 
 #endif //!GDO_DISABLE_WARNINGS && GDO_WRAP_VISIBILITY
 
+
+namespace gdo {
+    namespace wrap {
+        void not_loaded(int load, const char *sym);
+    }
+}
+
 @
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
     template<typename... Types>@
     %%type%% GDO_WRAP(%%func_symbol%%) (Types... args) {@
-        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, GDO_RAWPTR_%%func_symbol%%, "%%func_symbol%%" );@
+        if (!GDO_RAWPTR_%%func_symbol%%) {@
+            gdo::wrap::not_loaded( GDO_LOAD_%%func_symbol%%, "%%func_symbol%%" );@
+        }@
         GDO_HOOK_%%func_symbol%%(args...);@
         %%return%% GDO_RAWPTR_%%func_symbol%%(args...);@
     }@
 #else@
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        gdo::wrap::check( GDO_LOAD_%%func_symbol%%, GDO_RAWPTR_%%func_symbol%%, "%%func_symbol%%" );@
+        if (!GDO_RAWPTR_%%func_symbol%%) {@
+            gdo::wrap::not_loaded( GDO_LOAD_%%func_symbol%%, "%%func_symbol%%" );@
+        }@
         GDO_HOOK_%%func_symbol%%(%%param_names%%);@
         %%return%% GDO_RAWPTR_%%func_symbol%%(%%param_names%%);@
     }@
