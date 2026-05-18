@@ -181,6 +181,7 @@ typedef Dl_info _GDO_Dl_info;
 
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 # define _GDO_TARGET_WIDECHAR
+# include <wchar.h>
 #endif
 
 /* GDO_DEFAULT_LIBA ?= GDO_HARDCODED_DEFAULT_LIBA */

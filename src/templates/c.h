@@ -2,14 +2,11 @@
 /*                                   C API                                   */
 /*****************************************************************************/
 
-#ifdef _GDO_TARGET_WIDECHAR
-# include <wchar.h>
-#endif
 #ifndef __cplusplus
 # include <stdbool.h>
 #endif
 
-#ifdef GDO_WINAPI
+#ifdef _WIN32
 # include <tchar.h>
 # define GDO_T(x) _T(x)
 #else

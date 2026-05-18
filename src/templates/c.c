@@ -11,13 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef GDO_WINAPI
-# define _gdo_tcsstr  _tcsstr
-# define _gdo_strdup  _strdup
-#else
-# define _gdo_tcsstr  strstr
-# define _gdo_strdup  strdup
-#endif
 
 #ifdef _GDO_TARGET_WIDECHAR
 # define GDO_XHS  L"%hs"  /* always type LPSTR */
@@ -61,18 +54,51 @@ GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 #endif
 
 
+/* strstr() */
+GDO_INLINE const gdo_char_t *_gdo_tcsstr(const gdo_char_t *haystack, const gdo_char_t *needle)
+{
+#ifdef _WIN32
+    return _tcsstr(haystack, needle);
+#else
+    return strstr(haystack, needle);
+#endif
+}
+
+
+/* strdup() */
+GDO_INLINE char *_gdo_strdup(const char *str)
+{
+#ifdef _WIN32
+    return _strdup(str);
+#else
+    return strdup(str);
+#endif
+}
+
+
+/* snprintf() */
+#define GDO_SNPRINTF(DEST, FORMAT, ...) \
+    _gdo_snprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__)
+
+GDO_INLINE void _gdo_snprintf(gdo_char_t *dest, size_t size, const gdo_char_t *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+
+#ifdef _WIN32
+    _vsntprintf_s(dest, size, _TRUNCATE, fmt, ap);
+#else
+    vsnprintf(dest, size, fmt, ap);
+#endif
+
+    va_end(ap);
+}
+
+
 
 /*****************************************************************************/
 /*                                save error                                 */
 /*****************************************************************************/
-
-/* GDO_SNPRINTF: use as a macro so we can use __VA_ARGS__ directly */
-#ifdef _WIN32
-# define GDO_SNPRINTF(DEST, FORMAT, ...)  _sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__)
-#else
-# define GDO_SNPRINTF(DEST, FORMAT, ...)  snprintf(DEST, sizeof(DEST), FORMAT, __VA_ARGS__)
-#endif
-
 #ifdef GDO_WINAPI
 # define GDO_SET_LAST_ERRNO(x)  do { gdo_hndl.last_errno = x; } while(0)
 #else

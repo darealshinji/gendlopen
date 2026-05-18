@@ -1,8 +1,3 @@
-#ifdef _GDO_TARGET_WIDECHAR
-# include <wchar.h>
-#endif
-
-
 /* declaration */
 #ifdef GDO_STATIC
 # define GDO_DECL  static inline
