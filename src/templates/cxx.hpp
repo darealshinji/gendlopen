@@ -18,8 +18,8 @@ namespace gdo
  * Symbol pointers.
  * Symbol names must be prefixed to avoid macro expansion.
  */
-extern %%type%% (*_GDO_PTR_%%func_symbol%%)(%%args%%);
-extern %%obj_type%% *_GDO_PTR_%%obj_symbol%%;
+extern %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%);
+extern %%obj_type%% *GDO_PTR_%%obj_symbol%%;
 
 
 /**
@@ -71,11 +71,11 @@ class dl
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 public:
-    using message_callback_t = void (*)(const char *);
+    using msgcb_t = void (*)(const char *);
 
 private:
     static void default_message_callback(const char *msg);
-    static message_callback_t m_message_callback;
+    static msgcb_t m_message_callback;
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
@@ -93,12 +93,12 @@ private:
 #ifdef GDO_WINAPI
 
     static HMODULE m_handle;
-    DWORD m_last_error = 0;
+    DWORD m_last_errno = 0;
     std::string m_errmsg;
     std::wstring m_werrmsg;
 
-    errno_t mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count);
-    errno_t mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count);
+    bool mbs_wcs_conv(size_t *retval, wchar_t *out, size_t size, const char *in);
+    bool mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t *in);
 
     template<typename T_out, typename T_in>
     std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
@@ -137,13 +137,13 @@ private:
     using enable_if_same_bool = typename std::enable_if<std::is_same<T, U>::value, bool>::type;
 
     /* template wrapper around std::to_(w)string */
-    template<typename T, enable_if_same_bool<T, std::string::value_type> = true>
-    std::string to_string(DWORD val) {
+    template<typename T, typename U, enable_if_same_bool<T, std::string::value_type> = true>
+    std::string to_string(U val) {
         return std::to_string(val);
     }
 
-    template<typename T, enable_if_same_bool<T, std::wstring::value_type> = true>
-    std::wstring to_string(DWORD val) {
+    template<typename T, typename U, enable_if_same_bool<T, std::wstring::value_type> = true>
+    std::wstring to_string(U val) {
         return std::to_wstring(val);
     }
 
@@ -159,8 +159,8 @@ private:
     }
 
     /* format_error_message */
-    template<typename T, typename U>
-    std::basic_string<T> format_error_message(std::basic_string<T> &buf1, std::basic_string<U> &buf2);
+    template<typename T_out, typename T_in>
+    std::basic_string<T_out> format_error_message(const std::basic_string<T_out> &buf1, const std::basic_string<T_in> &buf2);
 
 #else // !GDO_WINAPI
 
@@ -168,10 +168,7 @@ private:
     std::string m_errmsg;
 
     void clear_error();
-
-    void save_error();
-    void save_error(const std::string&);
-
+    void save_error(const std::string &msg = {}); /* `msg' is always ignored */
     void set_error_invalid_handle();
 
     void load_lib(const std::string &filename, int flags, bool new_namespace);
@@ -303,11 +300,11 @@ public:
     /**
      * Free/release the library. Internal handle and pointers are set back to NULL
      * if the underlying calls were successful, in which case `true' is returned.
+     * Can safely be called even if no library was loaded.
      *
      * force:
      *   Don't check if the underlying calls were successful.
      *   Internal handle and pointers are always set back to NULL.
-     *   Can safely be called even if no library was loaded.
      *
      * Return value is `true' if no library was loaded or if `force' was set `true'.
      */
@@ -332,16 +329,16 @@ public:
      *
      * cb:
      *   Callback function pointer of type `void (*)(const char *)'.
-     *   The function shall take a `const char *' type error message
-     *   as argument.
+     *   The function takes an error message as argument.
+     *   Setting cb to NULL will enable the default callback function.
      */
-    static void message_callback(message_callback_t cb);
+    static void message_callback(void (*cb)(const char *msg));
 
 
     /**
      * Return pointer to currently used message callback function.
      */
-    static message_callback_t message_callback();
+    static msgcb_t message_callback();
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
@@ -392,8 +389,8 @@ public:
 /**
  * Prefixed aliases, useful if GDO_DISABLE_ALIASING was defined.
  */
-#define GDO_RAWPTR_%%func_symbol_pad%% gdo::_GDO_PTR_%%func_symbol%%
-#define GDO_RAWPTR_%%obj_symbol_pad%% gdo::_GDO_PTR_%%obj_symbol%%
+#define GDO_RAWPTR_%%func_symbol_pad%% gdo::GDO_PTR_%%func_symbol%%
+#define GDO_RAWPTR_%%obj_symbol_pad%% gdo::GDO_PTR_%%obj_symbol%%
 %PARAM_SKIP_REMOVE_BEGIN%
 
 
@@ -411,8 +408,8 @@ public:
 /* diagnostic warnings on variable arguments functions */
 #if !defined(GDO_DISABLE_WARNINGS) && defined(GDO_WRAP_VISIBILITY)
 
-#ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined; use GDO_DISABLE_WARNINGS to silence this warning")@
+# ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
+GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined; define GDO_DISABLE_WARNINGS to silence this message")@
 # endif@
 
 #endif //!GDO_DISABLE_WARNINGS && GDO_WRAP_VISIBILITY
@@ -430,7 +427,7 @@ namespace gdo {
     template<typename... Types>@
     %%type%% GDO_WRAP(%%func_symbol%%) (Types... args) {@
         if (!GDO_RAWPTR_%%func_symbol%%) {@
-            gdo::wrap::not_loaded( GDO_LOAD_%%func_symbol%%, "%%func_symbol%%" );@
+            gdo::wrap::not_loaded(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
         }@
         GDO_HOOK_%%func_symbol%%(args...);@
         %%return%% GDO_RAWPTR_%%func_symbol%%(args...);@
@@ -439,7 +436,7 @@ namespace gdo {
     GDO_WRAP_DECL@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
         if (!GDO_RAWPTR_%%func_symbol%%) {@
-            gdo::wrap::not_loaded( GDO_LOAD_%%func_symbol%%, "%%func_symbol%%" );@
+            gdo::wrap::not_loaded(GDO_LOAD_%%func_symbol%%, "%%func_symbol%%");@
         }@
         GDO_HOOK_%%func_symbol%%(%%param_names%%);@
         %%return%% GDO_RAWPTR_%%func_symbol%%(%%param_names%%);@
@@ -470,12 +467,12 @@ namespace gdo {
     !defined(GDO_INCLUDED_IN_BODY) && \
     !defined(GDO_DISABLE_ALIASING)
 
-/* aliases to raw function pointers */
+/* function name aliases */
 #if !defined(GDO_WRAP_VISIBILITY)
 # define %%func_symbol_pad%% GDO_FUNC_ALIAS(%%func_symbol%%)
 #endif
 
-/* aliases to raw object pointers */
+/* object name aliases */
 #define %%obj_symbol_pad%% *GDO_RAWPTR_%%obj_symbol%%
 
 #endif //GDO_SEPARATE ...

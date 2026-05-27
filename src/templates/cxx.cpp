@@ -1,14 +1,19 @@
 #if defined(_MSC_VER) && defined(GDO_USE_MESSAGE_BOX)
-# pragma comment(lib, "user32.lib")
+# pragma comment(lib, "user32.lib")  /* dependency for MessageBox() */
 #endif
 
-#ifdef GDO_WINAPI
-# include <cstdlib>
-# include <cstring>
-#endif
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <iostream>
-#include <cstdlib>
+#include <sstream>
+
+
+#ifdef GDO_WINAPI
+# define GDO_SET_LAST_ERRNO(x)  do { m_last_errno = x; } while(0)
+#else
+# define GDO_SET_LAST_ERRNO(x)  /**/
+#endif
 
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
@@ -24,7 +29,7 @@ void gdo::dl::default_message_callback(const char *msg)
 }
 
 /* save callback function pointer */
-gdo::dl::message_callback_t gdo::dl::m_message_callback = gdo::dl::default_message_callback;
+gdo::dl::msgcb_t gdo::dl::m_message_callback = gdo::dl::default_message_callback;
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
 
@@ -81,12 +86,12 @@ std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 #ifdef GDO_WINAPI
 
 
-errno_t gdo::dl::mbs_wcs_conv(size_t *rv, wchar_t *out, size_t sz, const char *in, size_t count) {
-    return ::mbstowcs_s(rv, out, sz, in, count);
+bool gdo::dl::mbs_wcs_conv(size_t *retval, wchar_t *out, size_t size, const char *in) {
+    return (::mbstowcs_s(retval, out, size, in, _TRUNCATE) == 0);
 }
 
-errno_t gdo::dl::mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *in, size_t count) {
-    return ::wcstombs_s(rv, out, sz, in, count);
+bool gdo::dl::mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t *in) {
+    return (::wcstombs_s(retval, out, size, in, _TRUNCATE) == 0);
 }
 
 
@@ -94,46 +99,44 @@ errno_t gdo::dl::mbs_wcs_conv(size_t *rv, char *out, size_t sz, const wchar_t *i
 template<typename T_out, typename T_in>
 std::basic_string<T_out> gdo::dl::convert_string(const std::basic_string<T_in> &str_in)
 {
-    size_t len, n;
-    T_out *buf;
     std::basic_string<T_out> str_out;
+    size_t len = 0;
+    size_t n = 0;
 
     if (str_in.empty()) {
         return {};
     }
 
-    if (mbs_wcs_conv(&len, nullptr, 0, str_in.c_str(), 0) != 0 || len == 0) {
-        return {};
+    /* get length of converted string (including null terminator) */
+    if (mbs_wcs_conv(&len, nullptr, 0, str_in.c_str()) && len > 1) {
+        /* allocate buffer with zeros */
+        str_out.assign(len, 0);
+
+        auto data = const_cast<T_out *>(str_out.data());
+
+        /* convert string */
+        if (mbs_wcs_conv(&n, data, len, str_in.c_str()) && n == len) {
+            return str_out;
+        }
     }
 
-    buf = new T_out[len + 1];
-    if (!buf) return {};
-
-    if (mbs_wcs_conv(&n, buf, len+1, str_in.c_str(), len) != 0 || n == 0) {
-        return {};
-    }
-
-    buf[len] = 0;
-    str_out = buf;
-    delete[] buf;
-
-    return str_out;
+    return {};
 }
 
 
 /* clear error */
 void gdo::dl::clear_error()
 {
+    m_last_errno = 0;
     m_errmsg.clear();
     m_werrmsg.clear();
-    m_last_error = 0;
 }
 
 
 /* save last error (no extra message) */
 void gdo::dl::save_error()
 {
-    m_last_error = ::GetLastError();
+    m_last_errno = ::GetLastError();
     m_errmsg.clear();
     m_werrmsg.clear();
 }
@@ -142,7 +145,7 @@ void gdo::dl::save_error()
 /* save last error (narrow char message) */
 void gdo::dl::save_error(const std::string &msg)
 {
-    m_last_error = ::GetLastError();
+    m_last_errno = ::GetLastError();
     m_errmsg = msg;
     m_werrmsg.clear();
 }
@@ -151,7 +154,7 @@ void gdo::dl::save_error(const std::string &msg)
 /* save last error (wide char message) */
 void gdo::dl::save_error(const std::wstring &msg)
 {
-    m_last_error = ::GetLastError();
+    m_last_errno = ::GetLastError();
     m_errmsg.clear();
     m_werrmsg = msg;
 }
@@ -161,7 +164,7 @@ void gdo::dl::save_error(const std::wstring &msg)
 void gdo::dl::set_error_invalid_handle()
 {
     clear_error();
-    m_last_error = ERROR_INVALID_HANDLE;
+    m_last_errno = ERROR_INVALID_HANDLE;
 }
 
 
@@ -207,8 +210,8 @@ void gdo::dl::load_lib(const std::string &filename, int flags, bool new_namespac
 {
     UNUSED_REF(new_namespace);
 
-    m_wfilename.clear();
     m_filename = filename;
+    m_wfilename.clear();
     m_flags = flags;
 
     transform_path_and_load_library<char>(filename, '/', '\\');
@@ -232,14 +235,11 @@ void gdo::dl::load_lib(const std::wstring &filename, int flags, bool new_namespa
 template<typename T>
 T gdo::dl::sym_load(const char *symbol)
 {
-    clear_error();
-
-    /* cast to void* to supress compiler warnings */
+    /* cast to void* to suppress compiler warnings */
     auto ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
 
     if (!ptr) {
         save_error(symbol);
-        return nullptr;
     }
 
     /* cast to function pointer type */
@@ -288,38 +288,37 @@ void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf) 
 
 
 /* return a formatted error message */
-template<typename T, typename U>
-std::basic_string<T> gdo::dl::format_error_message(std::basic_string<T> &bufT, std::basic_string<U> &bufU)
+template<typename T_out, typename T_in>
+std::basic_string<T_out> gdo::dl::format_error_message(const std::basic_string<T_out> &buf_Tout, const std::basic_string<T_in> &buf_Tin)
 {
-    std::basic_string<T> str;
-    T *buf = nullptr;
+    std::basic_string<T_out> str;
+    T_out *buf = nullptr;
 
     format_message(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_IGNORE_INSERTS |
         FORMAT_MESSAGE_MAX_WIDTH_MASK,
-        m_last_error,
+        m_last_errno,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<T*>(&buf));
+        reinterpret_cast<T_out *>(&buf));
 
     if (buf) {
         str = buf;
         ::LocalFree(buf);
+    } else {
+        /* FormatMessage() failed, save the error code */
+        str = get_string<T_out>("error code: ", L"error code: ");
+        str += to_string<T_out>(m_last_errno);
     }
 
-    if (str.empty()) {
-        str = get_string<T>("Last saved error code: ",
-                            L"Last saved error code: ");
-        str += to_string<T>(m_last_error);
-    }
-
-    if (!bufT.empty()) {
-        str.insert(0, get_string<T>(": ", L": "));
-        str.insert(0, bufT);
-    } else if (!bufU.empty()) {
-        str.insert(0, get_string<T>(": ", L": "));
-        str.insert(0, convert_string<T, U>(bufU));
+    /* put custom message in front */
+    if (!buf_Tout.empty()) {
+        str.insert(0, get_string<T_out>(": ", L": "));
+        str.insert(0, buf_Tout);
+    } else if (!buf_Tin.empty()) {
+        str.insert(0, get_string<T_out>(": ", L": "));
+        str.insert(0, convert_string<T_out, T_in>(buf_Tin));
     }
 
     return str;
@@ -339,15 +338,10 @@ void gdo::dl::clear_error()
 
 
 /* save last error */
-void gdo::dl::save_error()
+void gdo::dl::save_error(const std::string&)
 {
     const char *ptr = ::dlerror();
     m_errmsg = ptr ? ptr : "";
-}
-
-void gdo::dl::save_error(const std::string&)
-{
-    save_error();
 }
 
 
@@ -386,13 +380,10 @@ void gdo::dl::load_lib(const std::string &filename, int flags, bool new_namespac
 template<typename T>
 T gdo::dl::sym_load(const char *symbol)
 {
-    clear_error();
-
     T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
 
     if (!ptr) {
         save_error();
-        return nullptr;
     }
 
     return ptr;
@@ -415,10 +406,7 @@ bool gdo::dl::load_filename(const T &filename, int flags, bool new_namespace)
     }
 
     if (filename.empty()) {
-        clear_error();
-#ifdef GDO_WINAPI
-        m_last_error = ERROR_INVALID_NAME;
-#endif
+        GDO_SET_LAST_ERRNO(ERROR_INVALID_NAME);
         m_errmsg = "empty filename";
         return false;
     }
@@ -533,13 +521,11 @@ bool gdo::dl::load_all_symbols()
     /* get symbol addresses */
 
     /* %%symbol%% */@
-    if ((_GDO_PTR_%%symbol%% =@
+    if ((GDO_RAWPTR_%%symbol%% =@
         sym_load<%%sym_type%%>@
             ("%%symbol%%")) == nullptr) {@
         return false;@
     }@
-
-    clear_error();
 
     return true;
 }
@@ -559,20 +545,18 @@ bool gdo::dl::load_symbol(int symbol_num)
     {
     /* %%symbol%% */@
     case GDO_LOAD_%%symbol%%:@
-        if (!_GDO_PTR_%%symbol%%) {@
-            _GDO_PTR_%%symbol%% =@
+        if (!GDO_RAWPTR_%%symbol%%) {@
+            GDO_RAWPTR_%%symbol%% =@
                 sym_load<%%sym_type%%>@
                     ("%%symbol%%");@
         }@
-        return (_GDO_PTR_%%symbol%% != nullptr);@
+        return (GDO_RAWPTR_%%symbol%% != nullptr);@
 
     default:
         break;
     }
 
-# ifdef GDO_WINAPI
-    m_last_error = ERROR_NOT_FOUND;
-# endif
+    GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
     m_errmsg = "unknown symbol number: " + std::to_string(symbol_num);
 
     return false;
@@ -582,15 +566,6 @@ bool gdo::dl::load_symbol(int symbol_num)
 /* load a specific symbol by name */
 bool gdo::dl::load_symbol(const char *symbol)
 {
-    auto error_unknown_symbol = [&] ()
-    {
-#ifdef GDO_WINAPI
-        m_last_error = ERROR_NOT_FOUND;
-#endif
-        m_errmsg = "unknown symbol: ";
-        m_errmsg += symbol;
-    };
-
     clear_error();
 
     if (!lib_loaded()) {
@@ -599,39 +574,36 @@ bool gdo::dl::load_symbol(const char *symbol)
     }
 
     if (!symbol || *symbol == 0) {
-#ifdef GDO_WINAPI
-        m_last_error = ERROR_INVALID_PARAMETER;
-#endif
+        GDO_SET_LAST_ERRNO(ERROR_INVALID_PARAMETER);
         m_errmsg = "empty symbol name";
         return false;
     }
 
     /* check symbol prefix */
-    const size_t n = sizeof(GDO_COMMON_PREFIX) - 1;
+    const char pfx[] = GDO_COMMON_PREFIX;
+    const size_t pfxlen = sizeof(pfx) - 1;
 
-    if (n > 0 && ::strncmp(symbol, GDO_COMMON_PREFIX, n) != 0) {
-        error_unknown_symbol();
-        return false;
+    if (pfxlen == 0 || strncmp(symbol, pfx, pfxlen) == 0) {
+        const size_t len = ::strlen(symbol);
+        const char *curr;
+        size_t curr_len;
+@
+        curr = "%%symbol%%";@
+        curr_len = sizeof("%%symbol%%") - 1;@
+@
+        if (len == curr_len && ::strcmp(symbol + pfxlen, curr + pfxlen) == 0) {@
+            if (!GDO_RAWPTR_%%symbol%%) {@
+                GDO_RAWPTR_%%symbol%% =@
+                    sym_load<%%sym_type%%>@
+                        ("%%symbol%%");@
+            }@
+            return (GDO_RAWPTR_%%symbol%% != nullptr);@
+        }
     }
 
-    /* symbols */
-    const size_t len = ::strlen(symbol);
-    const char *ptr;
-
-    ptr = "%%symbol%%";@
-    @
-    if (len == sizeof("%%symbol%%") - 1 &&@
-        ::strcmp(symbol + n, ptr + n) == 0)@
-    {@
-        if (!_GDO_PTR_%%symbol%%) {@
-            _GDO_PTR_%%symbol%% =@
-                sym_load<%%sym_type%%>@
-                    ("%%symbol%%");@
-        }@
-        return (_GDO_PTR_%%symbol%% != nullptr);@
-    }@
-
-    error_unknown_symbol();
+    GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
+    m_errmsg = "unknown symbol: ";
+    m_errmsg += symbol;
 
     return false;
 }
@@ -641,7 +613,7 @@ bool gdo::dl::load_symbol(const char *symbol)
 bool gdo::dl::all_symbols_loaded() const
 {
     if (true
-        && _GDO_PTR_%%symbol%% != nullptr
+        && GDO_RAWPTR_%%symbol%% != nullptr
     ) {
         return true;
     }
@@ -654,7 +626,7 @@ bool gdo::dl::all_symbols_loaded() const
 bool gdo::dl::no_symbols_loaded() const
 {
     if (true
-        && _GDO_PTR_%%symbol%% == nullptr
+        && GDO_RAWPTR_%%symbol%% == nullptr
     ) {
         return true;
     }
@@ -667,7 +639,7 @@ bool gdo::dl::no_symbols_loaded() const
 bool gdo::dl::any_symbol_loaded() const
 {
     if (false
-        || _GDO_PTR_%%symbol%% != nullptr
+        || GDO_RAWPTR_%%symbol%% != nullptr
     ) {
         return true;
     }
@@ -676,32 +648,36 @@ bool gdo::dl::any_symbol_loaded() const
 }
 
 
-/* free library; always succeeds if `force == true` */
+/* free library */
 bool gdo::dl::free(bool force)
 {
-    auto release_lib_handle = []() -> bool
-    {
-#ifdef GDO_WINAPI
-        return (::FreeLibrary(m_handle) == TRUE);
-#else
-        return (::dlclose(m_handle) == 0);
-#endif
-    };
+    bool rv = true;
+    std::string msg;
 
     clear_error();
 
-    /* don't exit on error if `force` was enabled */
-    const bool exit_on_error = !force;
+    if (lib_loaded()) {
+#ifdef GDO_WINAPI
+        msg = "FreeLibrary()";
+        rv = (::FreeLibrary(m_handle) == TRUE);
+#else
+        rv = (::dlclose(m_handle) == 0);
+#endif
 
-    if (lib_loaded() && !release_lib_handle() && exit_on_error) {
-        save_error();
+        /* always succeed if `force == true` */
+        if (force) {
+            rv = true;
+        }
+    }
+
+    if (!rv) {
+        save_error(msg);
         return false;
     }
 
-    clear_error();
-
+    /* set pointers back to NULL */
     m_handle = nullptr;
-    _GDO_PTR_%%symbol%% = nullptr;
+    GDO_RAWPTR_%%symbol%% = nullptr;
 
     return true;
 }
@@ -717,16 +693,20 @@ void gdo::dl::free_lib_in_dtor(bool b)
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 /* Set a message callback function. */
-void gdo::dl::message_callback(gdo::dl::message_callback_t cb)
+void gdo::dl::message_callback(gdo::dl::msgcb_t cb)
 {
     m_message_callback = cb;
 }
 
 
 /* Get a pointer to the message callback function. */
-gdo::dl::message_callback_t gdo::dl::message_callback()
+gdo::dl::msgcb_t gdo::dl::message_callback()
 {
-    return m_message_callback;
+    if (m_message_callback) {
+        return m_message_callback;
+    }
+
+    return default_message_callback;
 }
 
 #endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
@@ -758,7 +738,7 @@ std::wstring gdo::dl::error_w()
 }
 
 
-/* get filename passed to load */
+/* get the unmodified filename passed to load the library */
 std::string gdo::dl::filename()
 {
     return m_filename.empty() ? convert_string<char, wchar_t>(m_wfilename) : m_filename;
@@ -836,7 +816,7 @@ std::string gdo::dl::origin()
         }
     };
 
-    get_fname(reinterpret_cast<void *>(_GDO_PTR_%%symbol%%));@
+    get_fname(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%));@
     if (!fname.empty()) return fname;
 
     m_errmsg = "dladdr() failed to get library path";
@@ -876,17 +856,9 @@ namespace gdo
         /* used by wrapper functions (assuming symbol was not loaded) */
         void not_loaded(int load, const char *sym)
         {
-            /* error message lambda function */
-            auto print_error = [] (const std::string &msg)
-            {
-                auto cb = dl::message_callback();
+            std::stringstream sstr;
 
-                if (cb) {
-                    cb(msg.c_str());
-                } else {
-                    std::cerr << msg << std::endl;
-                }
-            };
+            auto msg_callback = dl::message_callback();
 
 #ifdef GDO_ENABLE_AUTOLOAD
 
@@ -909,39 +881,30 @@ namespace gdo
             UNUSED_REF(load);
 # endif
 
-            std::string s = "error: ";
             std::string msg = _loader.error();
 
-            if (msg.find(GDO_DEFAULT_LIBA) == std::string::npos) {
-                /* library name is not part of error message */
-                s += GDO_DEFAULT_LIBA ": ";
+            if (msg.find(GDO_DEFAULT_LIBA) != std::string::npos) {
+                /* library name is already part of error message */
+                sstr << "error: " << sym << ": " << msg;
+            } else {
+                sstr << "error: " GDO_DEFAULT_LIB ": " << sym << ": " << msg;
             }
 
-            s += sym;
-            s += ": ";
-            s += msg;
-
-            print_error(s);
-
+            msg_callback(sstr.str().c_str());
             std::exit(1);
 
 #else //!GDO_ENABLE_AUTOLOAD
 
             /* don't load anything, print an error message and abort */
 
-            UNUSED_REF(load);
-
-            std::string msg = "fatal error: ";
-            msg += sym;
-
             if (!dl::lib_loaded()) {
-                msg += ": library not loaded";
+                sstr << "fatal error: " << sym << ": library not loaded";
             } else {
-                msg += ": symbol not loaded";
+                sstr << "fatal error: " << sym << ": symbol not loaded";
             }
 
-            print_error(msg);
-
+            UNUSED_REF(load);
+            msg_callback(sstr.str().c_str());
             std::abort();
 
 #endif //!GDO_ENABLE_AUTOLOAD
@@ -965,3 +928,5 @@ namespace gdo
 #define %%obj_symbol_pad%% *GDO_RAWPTR_%%obj_symbol%%
 
 #endif //!GDO_SEPARATE
+
+#undef GDO_SET_LAST_ERRNO

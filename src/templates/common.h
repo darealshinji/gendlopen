@@ -153,19 +153,6 @@ typedef Dl_info _GDO_Dl_info;
 #endif
 
 
-/* check for "gnu_inline" attribute and __builtin_va_arg_pack()
- * https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-gnu_005finline-function-attribute
- * https://gcc.gnu.org/onlinedocs/gcc/Constructing-Calls.html */
-#if !defined(GDO_VA_ARG_PACK_INLINE) && \
-    !defined(__NO_INLINE__) && \
-    (defined(__GNUC_GNU_INLINE__) || defined(__GNUC_STDC_INLINE__)) && \
-     defined(__has_builtin)
-# if __has_builtin(__builtin_va_arg_pack)
-#  define GDO_VA_ARG_PACK_INLINE
-# endif
-#endif
-
-
 /* diagnostic #pragma warnings */
 #ifdef __GNUC__
 # define _GDO_PRAGMA(x)    _Pragma(#x)
@@ -318,7 +305,7 @@ typedef Dl_info _GDO_Dl_info;
 
 
 /* default flags */
-#ifndef GDO_DEFAULT_FLAGS
+#if !defined(GDO_DEFAULT_FLAGS)
 # ifdef GDO_WINAPI
 #  define GDO_DEFAULT_FLAGS 0
 # else

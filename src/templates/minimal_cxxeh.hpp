@@ -36,8 +36,8 @@ Usage:
 namespace gdo
 {
     /* symbol pointers; symbol names must be prefixed to avoid macro expansion */
-    %%type%% (*_GDO_PTR_%%func_symbol%%)(%%args%%) = nullptr;
-    %%obj_type%% *_GDO_PTR_%%obj_symbol%% = nullptr;
+    %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%) = nullptr;
+    %%obj_type%% *GDO_PTR_%%obj_symbol%% = nullptr;
 
 
     /**
@@ -65,7 +65,7 @@ namespace gdo
         }
 
         handle = nullptr;
-        _GDO_PTR_%%symbol%% = nullptr;
+        GDO_PTR_%%symbol%% = nullptr;
     }
 
 
@@ -131,10 +131,10 @@ namespace gdo
         };
 @
         /* %%symbol%% */@
-        _GDO_PTR_%%symbol%% =@
+        GDO_PTR_%%symbol%% =@
             reinterpret_cast<%%sym_type%%>(@
                 load_symbol("%%symbol%%"));@
-        if (!_GDO_PTR_%%symbol%%) {@
+        if (!GDO_PTR_%%symbol%%) {@
             free_library();@
             throw SymbolError("%%symbol%%");@
         }
@@ -148,8 +148,8 @@ namespace gdo
 /**
  * Aliases to raw symbol pointers
  */
-#define %%func_symbol_pad%%  gdo::_GDO_PTR_%%func_symbol%%
-#define %%obj_symbol_pad%%  *gdo::_GDO_PTR_%%obj_symbol%%
+#define %%func_symbol_pad%%  gdo::GDO_PTR_%%func_symbol%%
+#define %%obj_symbol_pad%%  *gdo::GDO_PTR_%%obj_symbol%%
 
 #endif // !GDO_DISABLE_ALIASING
 
