@@ -4,9 +4,10 @@ set -x
 
 cd ..
 
+export CLANGVER=22
+
 # https://github.com/mstorsjo/msvc-wine
 export WINSYSROOT="$HOME/opt/msvc-wine/msvc"
-export CLANGVER=19
 export PATH="$PWD/cross-files/clang-cl-wrapper:$PATH"
 
 mkdir build

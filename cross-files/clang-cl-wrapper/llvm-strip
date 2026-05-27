@@ -5,6 +5,6 @@ if [ "x$CLANGVER" = "x" ]; then
     exit 1
 fi
 
-llvm-strip-$CLANGVER "$@"
+$(basename "$0")-$CLANGVER "$@"
 exit $?
 
