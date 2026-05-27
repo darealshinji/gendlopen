@@ -1,4 +1,5 @@
 project('gendlopen', ['c', 'cpp'],
+    meson_version : '>=1.2.0',
     license : 'MIT',
     default_options : {
         'buildtype' : 'release',
