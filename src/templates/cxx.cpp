@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 
 #ifdef GDO_WINAPI
@@ -104,7 +105,7 @@ std::basic_string<T_out> gdo::dl::convert_string(const std::basic_string<T_in> &
     size_t n = 0;
 
     if (str_in.empty()) {
-        return {};
+        return {}; /* empty string in, empty string out */
     }
 
     /* get length of converted string (including null terminator) */
@@ -112,15 +113,17 @@ std::basic_string<T_out> gdo::dl::convert_string(const std::basic_string<T_in> &
         /* allocate buffer with zeros */
         str_out.assign(len, 0);
 
-        auto data = const_cast<T_out *>(str_out.data());
+        /* get pointer to buffer */
+        auto buf = const_cast<T_out *>(str_out.data());
 
         /* convert string */
-        if (mbs_wcs_conv(&n, data, len, str_in.c_str()) && n == len) {
+        if (mbs_wcs_conv(&n, buf, len, str_in.c_str()) && n == len) {
             return str_out;
         }
     }
 
-    return {};
+    /* normally this should not happen */
+    throw std::runtime_error("failed to convert string");
 }
 
 
@@ -168,12 +171,19 @@ void gdo::dl::set_error_invalid_handle()
 }
 
 
-HMODULE gdo::dl::load_library_ex(const wchar_t *path) {
-    return ::LoadLibraryExW(path, NULL, m_flags);
+HMODULE gdo::dl::load_library_ex(const std::wstring &filename) {
+    return ::LoadLibraryExW(filename.c_str(), NULL, m_flags);
 }
 
-HMODULE gdo::dl::load_library_ex(const char *path) {
-    return ::LoadLibraryExA(path, NULL, m_flags);
+
+HMODULE gdo::dl::load_library_ex(const std::string &filename)
+{
+    if (m_convert_filename_to_wcs) {
+        auto wfilename = convert_string<wchar_t, char>(filename);
+        return ::LoadLibraryExW(wfilename.c_str(), NULL, m_flags);
+    }
+
+    return ::LoadLibraryExA(filename.c_str(), NULL, m_flags);
 }
 
 
@@ -188,7 +198,7 @@ void gdo::dl::transform_path_and_load_library(const std::basic_string<T> &filena
 {
     if (filename.find(fwd_slash) == std::basic_string<T>::npos) {
         /* no forward slash found */
-        m_handle = load_library_ex(filename.c_str());
+        m_handle = load_library_ex(filename);
         return;
     }
 
@@ -481,6 +491,7 @@ bool gdo::dl::load()
         return load(m_wfilename, m_flags, m_new_namespace);
     }
 #endif
+
     return load(m_filename, m_flags, m_new_namespace);
 }
 
@@ -689,6 +700,11 @@ void gdo::dl::free_lib_in_dtor(bool b)
     m_free_lib_in_dtor = b;
 }
 
+bool gdo::dl::free_lib_in_dtor() const
+{
+    return m_free_lib_in_dtor;
+}
+
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
@@ -713,6 +729,18 @@ gdo::dl::msgcb_t gdo::dl::message_callback()
 
 
 #ifdef GDO_WINAPI
+
+/* whether or not to convert library name from narrow char to wide char */
+void gdo::dl::convert_filename_to_wcs(bool b)
+{
+    m_convert_filename_to_wcs = b;
+}
+
+bool gdo::dl::convert_filename_to_wcs() const
+{
+    return m_convert_filename_to_wcs;
+}
+
 
 /* get path of loaded library */
 std::string gdo::dl::origin()
@@ -786,7 +814,9 @@ std::string gdo::dl::origin()
 
     return buf;
 
-#elif defined(GDO_HAVE_DLINFO)
+#else //!_WIN32
+
+# ifdef GDO_HAVE_DLINFO
 
     struct link_map *lm = nullptr;
 
@@ -797,7 +827,7 @@ std::string gdo::dl::origin()
 
     return lm->l_name ? lm->l_name : "";
 
-#else
+# else
 
     /* use dladdr() to get the library path from a symbol pointer */
     std::string fname;
@@ -822,6 +852,8 @@ std::string gdo::dl::origin()
     m_errmsg = "dladdr() failed to get library path";
 
     return {};
+
+# endif //!GDO_HAVE_DLINFO
 
 #endif // !_WIN32
 }

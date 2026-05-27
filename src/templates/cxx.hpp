@@ -97,6 +97,8 @@ private:
     std::string m_errmsg;
     std::wstring m_werrmsg;
 
+    bool m_convert_filename_to_wcs = false;
+
     bool mbs_wcs_conv(size_t *retval, wchar_t *out, size_t size, const char *in);
     bool mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t *in);
 
@@ -111,8 +113,8 @@ private:
 
     void set_error_invalid_handle();
 
-    HMODULE load_library_ex(const wchar_t *path);
-    HMODULE load_library_ex(const char *path);
+    HMODULE load_library_ex(const std::wstring &filename);
+    HMODULE load_library_ex(const std::string &filename);
 
     template<typename T>
     void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
@@ -298,6 +300,25 @@ public:
 
 
     /**
+     * Whether or not narrow char (std::string / char *) library names should be
+     * converted to wide char (std::wstring / wchar_t *) and passed to LoadLibraryExW().
+     * By default no conversion is done and narrow char names will be passed to
+     * LoadLibraryExA().
+     * Wide char names are always passed to LoadLibraryExW().
+     *
+     * b:
+     *   If set `true' and the given library name was in std::string format the
+     *   name will be converted to std::wstring and passed to LoadLibraryExW().
+     *   If set `false' and the given library name was in std::string format
+     *   it will be passed to LoadLibraryExA().
+     */
+#ifdef GDO_WINAPI
+    void convert_filename_to_wcs(bool b);
+    bool convert_filename_to_wcs() const;
+#endif
+
+
+    /**
      * Free/release the library. Internal handle and pointers are set back to NULL
      * if the underlying calls were successful, in which case `true' is returned.
      * Can safely be called even if no library was loaded.
@@ -312,13 +333,15 @@ public:
 
 
     /**
-     * Enable or disable automatic library freeing through class destructor.
+     * Explicitly enable or disable automatic library freeing through class destructor.
+     * This is enabled by default.
      *
      * b:
      *   true == enable
      *   false == disable
      */
     void free_lib_in_dtor(bool b);
+    bool free_lib_in_dtor() const;
 
 
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
