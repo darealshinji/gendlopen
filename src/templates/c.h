@@ -55,7 +55,6 @@ typedef struct _gdo_handle
 #else
     void    *handle;        /* handle returned by dlopen() */
 #endif
-    int      flags;         /* the flags that where used to load the library */
     bool     free_lib_reg;  /* whether registering the function to automatically */
                             /* free the library upon exit was successful */
 

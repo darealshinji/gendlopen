@@ -47,9 +47,11 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 /* forward declarations */
 GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg);
-
 #if !defined(_WIN32) && !defined(GDO_HAVE_DLINFO)
 GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr);
+#endif
+#ifdef GDO_WINAPI
+GDO_INLINE HMODULE _gdo_load_library_ex(const gdo_char_t *filename, int flags);
 #endif
 
 
@@ -247,7 +249,7 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 
     if (!_tcschr(filename, _T('/'))) {
         /* no forward slash found */
-        gdo_hndl.handle = LoadLibraryEx(filename, NULL, flags);
+        gdo_hndl.handle = _gdo_load_library_ex(filename, flags);
         return;
     }
 
@@ -261,7 +263,7 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
     }
 
     GDO_UNUSED_REF(new_namespace);
-    gdo_hndl.handle = LoadLibraryEx(copy, NULL, flags);
+    gdo_hndl.handle = _gdo_load_library_ex(copy, flags);
     free(copy);
 
 #elif defined(GDO_HAVE_DLMOPEN)
@@ -281,6 +283,51 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 
 #endif //!GDO_WINAPI
 }
+
+#ifdef GDO_WINAPI
+# if !defined(_GDO_TARGET_WIDECHAR) && defined(GDO_CONVERT_FILENAME)
+GDO_INLINE wchar_t *_gdo_mbstowcs(const char *filename)
+{
+    wchar_t *wcs;
+    size_t len = 0;
+    size_t n = 0;
+
+    /* get length of converted string (including null terminator) */
+    if (mbstowcs_s(&len, NULL, 0, filename, _TRUNCATE) == 0 && len > 1) {
+        wcs = (wchar_t *)malloc(len * sizeof(wchar_t));
+
+        /* convert string */
+        if (mbstowcs_s(&n, wcs, len, filename, _TRUNCATE) == 0 && n == len) {
+            return wcs;
+        }
+
+        free(wcs);
+    }
+
+    return NULL;
+}
+# endif //!_GDO_TARGET_WIDECHAR && GDO_CONVERT_FILENAME
+
+GDO_INLINE HMODULE _gdo_load_library_ex(const gdo_char_t *filename, int flags)
+{
+# if !defined(_GDO_TARGET_WIDECHAR) && defined(GDO_CONVERT_FILENAME)
+    /* convert filename to wchar_t and use it on LoadLibraryExW() */
+    wchar_t *wcs = _gdo_mbstowcs(filename);
+
+    if (wcs) {
+        HMODULE handle = LoadLibraryExW(wcs, NULL, flags);
+        free(wcs);
+        return handle;
+    }
+
+    GDO_SET_LAST_ERRNO(ERROR_INVALID_NAME);
+    _gdo_save_to_errbuf("mbstowcs_s: failed to convert filename");
+    return NULL;
+# else
+    return LoadLibraryEx(filename, NULL, flags);
+# endif //!_GDO_TARGET_WIDECHAR && GDO_CONVERT_FILENAME
+}
+#endif //GDO_WINAPI
 /*****************************************************************************/
 
 
@@ -831,20 +878,6 @@ GDO_LINKAGE void _gdo_wrap_not_loaded(int load, const gdo_char_t *sym)
 #define %%obj_symbol_pad%% *GDO_RAWPTR_%%obj_symbol%%
 
 #endif //!GDO_SEPARATE
-
-
-/* keep these functions "private" */
-#ifdef __GNUC__
-#pragma GCC poison \
-    _gdo_clear_error \
-    _gdo_dladdr_get_fname \
-    _gdo_load_library \
-    _gdo_print_error \
-    _gdo_save_error \
-    _gdo_save_to_errbuf \
-    _gdo_set_error_no_library_loaded \
-    _gdo_sym
-#endif //__GNUC__
 
 #undef GDO_SET_LAST_ERRNO
 #undef GDO_SNPRINTF

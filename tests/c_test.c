@@ -4,6 +4,7 @@
 #include "helloworld.h"
 
 #define GDO_DEFAULT_LIB GDO_LIBNAME(helloworld,0)
+#define GDO_CONVERT_FILENAME
 
 /* include generated header file */
 #include "c_test.h"

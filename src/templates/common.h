@@ -29,6 +29,10 @@ GDO_USE_MESSAGE_BOX
     Windows only: if GDO_ENABLE_AUTOLOAD was activated this will enable
     error messages from auto-loading to be displayed in MessageBox windows.
 
+GDO_CONVERT_FILENAME
+    Windows only: don't use LoadLibraryExA(), instead convert the filename
+    to wchar_t and use LoadLibraryExW().
+
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names.
 
