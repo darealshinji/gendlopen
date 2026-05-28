@@ -81,58 +81,17 @@ private:
 
 private:
 
-    std::string m_filename;
 #ifdef GDO_WINAPI
+    bool m_convert_filename_to_wcs = false;
+    std::string m_filename;
     std::wstring m_wfilename;
+#else
+    std::string m_filename;
 #endif
 
     int m_flags = default_flags;
     bool m_new_namespace = false;
     bool m_free_lib_in_dtor = true;
-
-#ifdef GDO_WINAPI
-
-    static HMODULE m_handle;
-    DWORD m_last_errno = 0;
-    std::string m_errmsg;
-    std::wstring m_werrmsg;
-
-    bool m_convert_filename_to_wcs = false;
-
-    bool mbs_wcs_conv(size_t *retval, wchar_t *out, size_t size, const char *in);
-    bool mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t *in);
-
-    template<typename T_out, typename T_in>
-    std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
-
-    void clear_error();
-
-    void save_error();
-    void save_error(const std::string &msg);
-    void save_error(const std::wstring &msg);
-
-    void set_error_invalid_handle();
-
-    HMODULE load_library_ex(const std::wstring &filename);
-    HMODULE load_library_ex(const std::string &filename);
-
-    template<typename T>
-    void transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash);
-
-    void load_lib(const std::string &filename, int flags, bool new_namespace);
-    void load_lib(const std::wstring &filename, int flags, bool new_namespace);
-
-    template<typename T>
-    T sym_load(const char *symbol);
-
-    DWORD get_module_filename(wchar_t *buf, DWORD len);
-    DWORD get_module_filename(char *buf, DWORD len);
-
-    template<typename T>
-    std::basic_string<T> get_origin_from_module_handle();
-
-    void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
-    void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
     /* std::enable_if and std::is_same combined */
     template<typename T, typename U>
@@ -160,6 +119,56 @@ private:
         return wstr;
     }
 
+    /* return char or wchar_t */
+    template<typename T, enable_if_same_bool<T, std::string::value_type> = true>
+    char get_char(char ch, wchar_t) {
+        return ch;
+    }
+
+    template<typename T, enable_if_same_bool<T, std::wstring::value_type> = true>
+    wchar_t get_char(char, wchar_t wch) {
+        return wch;
+    }
+
+#ifdef GDO_WINAPI
+
+    static HMODULE m_handle;
+    DWORD m_last_errno = 0;
+    std::string m_errmsg;
+    std::wstring m_werrmsg;
+
+    bool mbs_wcs_conv(size_t *retval, wchar_t *out, size_t size, const char *in);
+    bool mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t *in);
+
+    template<typename T_out, typename T_in>
+    std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
+
+    void clear_error();
+
+    void save_error();
+    void save_error(const std::string &msg);
+    void save_error(const std::wstring &msg);
+
+    void set_error_invalid_handle();
+
+    HMODULE load_library_ex(const std::wstring &filename);
+    HMODULE load_library_ex(const std::string &filename);
+
+    template<typename T, typename U>
+    void load_lib(const T &filename);
+
+    template<typename T>
+    T sym_load(const char *symbol);
+
+    DWORD get_module_filename(wchar_t *buf, DWORD len);
+    DWORD get_module_filename(char *buf, DWORD len);
+
+    template<typename T>
+    std::basic_string<T> get_origin_from_module_handle();
+
+    void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
+    void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
+
     /* format_error_message */
     template<typename T_out, typename T_in>
     std::basic_string<T_out> format_error_message(const std::basic_string<T_out> &buf1, const std::basic_string<T_in> &buf2);
@@ -173,15 +182,15 @@ private:
     void save_error(const std::string &msg = {}); /* `msg' is always ignored */
     void set_error_invalid_handle();
 
-    void load_lib(const std::string &filename, int flags, bool new_namespace);
+    void load_lib(const std::string &filename);
 
     template<typename T>
     T sym_load(const char *symbol);
 
 #endif // !GDO_WINAPI
 
-    template<typename T>
-    bool load_filename(const T &filename, int flags, bool new_namespace);
+    template<typename T, typename U>
+    bool load_filename(const T &filename);
 
 
 public:
@@ -193,7 +202,7 @@ public:
 
 
     /**
-     * Constructor. The specified filename is not loaded yet.
+     * Constructor. The specified filename will not be loaded yet.
      *
      * filename:
      *   Library filename or path to load. Must not be empty.
@@ -206,10 +215,15 @@ public:
      *   This is done using dlmopen() with the LM_ID_NEWLM argument.
      *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
      *   otherwise it has no effect.
+     *
+     * convert:
+     *   If true the given library name will be converted to std::wstring and
+     *   passed to LoadLibraryExW(), otherwise it will be passed to LoadLibraryExA().
      */
     dl(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 #ifdef GDO_WINAPI
-    dl(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
+    dl(bool convert, const std::string &filename, int flags=default_flags);
+    dl(const std::wstring &filename, int flags=default_flags);
 #endif
 
 
@@ -234,12 +248,17 @@ public:
      *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
      *   otherwise it has no effect.
      *
+     * convert:
+     *   If true the given library name will be converted to std::wstring and
+     *   passed to LoadLibraryExW(), otherwise it will be passed to LoadLibraryExA().
+     *
      * On success `true' is returned.
      * On an error or if the library is already loaded the return value is `false'.
      */
     bool load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
 #ifdef GDO_WINAPI
-    bool load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
+    bool load(bool convert, const std::string &filename, int flags=default_flags);
+    bool load(const std::wstring &filename, int flags=default_flags);
 #endif
 
 
@@ -297,25 +316,6 @@ public:
     bool all_symbols_loaded() const;
     bool no_symbols_loaded() const;
     bool any_symbol_loaded() const;
-
-
-    /**
-     * Whether or not narrow char (std::string / char *) library names should be
-     * converted to wide char (std::wstring / wchar_t *) and passed to LoadLibraryExW().
-     * By default no conversion is done and narrow char names will be passed to
-     * LoadLibraryExA().
-     * Wide char names are always passed to LoadLibraryExW().
-     *
-     * b:
-     *   If set `true' and the given library name was in std::string format the
-     *   name will be converted to std::wstring and passed to LoadLibraryExW().
-     *   If set `false' and the given library name was in std::string format
-     *   it will be passed to LoadLibraryExA().
-     */
-#ifdef GDO_WINAPI
-    void convert_filename_to_wcs(bool b);
-    bool convert_filename_to_wcs() const;
-#endif
 
 
     /**

@@ -188,56 +188,35 @@ HMODULE gdo::dl::load_library_ex(const std::string &filename)
 
 
 /**
- * Call the underlying LoadLibraryEx() function.
+ * load library
  *
  * According to MSDN only backward slash path separators shall be used,
  * so the path is transformed if needed.
  */
-template<typename T>
-void gdo::dl::transform_path_and_load_library(const std::basic_string<T> &filename, const T &fwd_slash, const T &bwd_slash)
+template<typename T, typename U = typename T::value_type>
+void gdo::dl::load_lib(const T &filename)
 {
-    if (filename.find(fwd_slash) == std::basic_string<T>::npos) {
+    const auto fwd_slash = get_char<U>('/', L'/');
+    const auto bwd_slash = get_char<U>('\\', L'\\');
+
+    clear_error();
+
+    if (filename.find(fwd_slash) == T::npos) {
         /* no forward slash found */
         m_handle = load_library_ex(filename);
         return;
     }
 
-    auto repl = [&] (T &c) {
+    auto replace = [&] (U &c) {
         if (c == fwd_slash) {
             c = bwd_slash;
         }
     };
 
     auto copy = filename;
-    std::for_each(copy.begin(), copy.end(), repl);
+    std::for_each(copy.begin(), copy.end(), replace);
 
-    m_handle = load_library_ex(copy.c_str());
-}
-
-
-/* load library */
-void gdo::dl::load_lib(const std::string &filename, int flags, bool new_namespace)
-{
-    UNUSED_REF(new_namespace);
-
-    m_filename = filename;
-    m_wfilename.clear();
-    m_flags = flags;
-
-    transform_path_and_load_library<char>(filename, '/', '\\');
-}
-
-
-/* load library (wide character) */
-void gdo::dl::load_lib(const std::wstring &filename, int flags, bool new_namespace)
-{
-    UNUSED_REF(new_namespace);
-
-    m_filename.clear();
-    m_wfilename = filename;
-    m_flags = flags;
-
-    transform_path_and_load_library<wchar_t>(filename, L'/', L'\\');
+    m_handle = load_library_ex(copy);
 }
 
 
@@ -364,23 +343,19 @@ void gdo::dl::set_error_invalid_handle()
 
 
 /* load library */
-void gdo::dl::load_lib(const std::string &filename, int flags, bool new_namespace)
+void gdo::dl::load_lib(const std::string &filename)
 {
     clear_error();
 
-    m_flags = flags;
-    m_filename = filename;
-
 #ifdef GDO_HAVE_DLMOPEN
     /* dlmopen() for new namespace or dlopen() */
-    if (new_namespace) {
+    if (m_new_namespace) {
         m_handle = ::dlmopen(LM_ID_NEWLM, filename.c_str(), m_flags);
     } else {
         m_handle = ::dlopen(filename.c_str(), m_flags);
     }
 #else
     /* no dlmopen() */
-    UNUSED_REF(new_namespace);
     m_handle = ::dlopen(filename.c_str(), m_flags);
 #endif
 }
@@ -404,8 +379,8 @@ T gdo::dl::sym_load(const char *symbol)
 
 
 /* load library by filename */
-template<typename T>
-bool gdo::dl::load_filename(const T &filename, int flags, bool new_namespace)
+template<typename T, typename U = typename T::value_type>
+bool gdo::dl::load_filename(const T &filename)
 {
     clear_error();
 
@@ -421,7 +396,7 @@ bool gdo::dl::load_filename(const T &filename, int flags, bool new_namespace)
         return false;
     }
 
-    load_lib(filename, flags, new_namespace);
+    load_lib(filename);
 
     if (!lib_loaded()) {
         save_error(filename);
@@ -448,11 +423,21 @@ gdo::dl::dl(const std::string &filename, int flags, bool new_namespace)
 
 
 #ifdef GDO_WINAPI
+/* c'tor (set narrow character filename, optionally convert name) */
+gdo::dl::dl(bool convert, const std::string &filename, int flags)
+ : m_convert_filename_to_wcs(convert),
+   m_filename(filename),
+   m_flags(flags)
+{
+}
+#endif
+
+
+#ifdef GDO_WINAPI
 /* c'tor (set wide character filename) */
-gdo::dl::dl(const std::wstring &filename, int flags, bool new_namespace)
+gdo::dl::dl(const std::wstring &filename, int flags)
  : m_wfilename(filename),
-   m_flags(flags),
-   m_new_namespace(new_namespace)
+   m_flags(flags)
 {
 }
 #endif
@@ -469,15 +454,40 @@ gdo::dl::~dl()
 /* load library */
 bool gdo::dl::load(const std::string &filename, int flags, bool new_namespace)
 {
-    return load_filename(filename, flags, new_namespace);
+#ifdef GDO_WINAPI
+    m_wfilename.clear();
+#endif
+    m_filename = filename;
+    m_flags = flags;
+    m_new_namespace = new_namespace;
+
+    return load_filename(m_filename);
 }
 
 
 #ifdef GDO_WINAPI
-/* load library (wide characters version) */
-bool gdo::dl::load(const std::wstring &filename, int flags, bool new_namespace)
+/* load library */
+bool gdo::dl::load(bool convert, const std::string &filename, int flags)
 {
-    return load_filename(filename, flags, new_namespace);
+    m_convert_filename_to_wcs = convert;
+    m_wfilename.clear();
+    m_filename = filename;
+    m_flags = flags;
+
+    return load_filename(m_filename);
+}
+#endif
+
+
+#ifdef GDO_WINAPI
+/* load library (wide characters version) */
+bool gdo::dl::load(const std::wstring &filename, int flags)
+{
+    m_filename.clear();
+    m_wfilename = filename;
+    m_flags = flags;
+
+    return load_filename(m_wfilename);
 }
 #endif
 
@@ -486,13 +496,12 @@ bool gdo::dl::load(const std::wstring &filename, int flags, bool new_namespace)
 bool gdo::dl::load()
 {
 #ifdef GDO_WINAPI
-    /* prefer wide characters filename */
     if (!m_wfilename.empty()) {
-        return load(m_wfilename, m_flags, m_new_namespace);
+        return load_filename(m_wfilename);
     }
 #endif
 
-    return load(m_filename, m_flags, m_new_namespace);
+    return load_filename(m_filename);
 }
 
 
@@ -613,8 +622,7 @@ bool gdo::dl::load_symbol(const char *symbol)
     }
 
     GDO_SET_LAST_ERRNO(ERROR_NOT_FOUND);
-    m_errmsg = "unknown symbol: ";
-    m_errmsg += symbol;
+    m_errmsg = "unknown symbol: " + std::string(symbol);
 
     return false;
 }
@@ -729,18 +737,6 @@ gdo::dl::msgcb_t gdo::dl::message_callback()
 
 
 #ifdef GDO_WINAPI
-
-/* whether or not to convert library name from narrow char to wide char */
-void gdo::dl::convert_filename_to_wcs(bool b)
-{
-    m_convert_filename_to_wcs = b;
-}
-
-bool gdo::dl::convert_filename_to_wcs() const
-{
-    return m_convert_filename_to_wcs;
-}
-
 
 /* get path of loaded library */
 std::string gdo::dl::origin()

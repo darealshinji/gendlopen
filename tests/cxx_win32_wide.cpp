@@ -25,9 +25,7 @@ static void ctor_load_lib_and_symbols_convert()
 {
     const std::string name = "./" + gdo::make_libname("helloworld", 0);
 
-    gdo::dl loader(name);
-
-    loader.convert_filename_to_wcs(true);
+    gdo::dl loader(true, name);
 
     if (!loader.load_lib_and_symbols()) {
         std::wcerr << loader.error_w() << std::endl;
