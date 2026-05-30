@@ -28,8 +28,6 @@
 # define GDO_OBJ_LINKAGE  /**/
 #endif
 
-#define GDO_INLINE        static inline
-
 
 #ifndef _countof
 # define _countof(array)  (sizeof(array) / sizeof(array[0]))
@@ -803,10 +801,15 @@ GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, ...)
     va_end(ap);
 }
 
-/* used by wrapper functions (assuming symbol was not loaded) */
-GDO_LINKAGE void _gdo_wrap_not_loaded(int load, const gdo_char_t *sym)
+/* used by wrapper functions */
+GDO_LINKAGE void _gdo_wrap_check_loaded(void *symptr, int load, const gdo_char_t *sym)
 {
     const gdo_char_t *msg;
+
+    /* symbol was already loaded */
+    if (symptr != NULL) {
+        return;
+    }
 
 #ifdef GDO_ENABLE_AUTOLOAD
     /* set auto-release, ignore errors */

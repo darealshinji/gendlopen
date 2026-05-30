@@ -66,8 +66,12 @@ GDO_HOOK_<function>(...)
 
     #define GDO_HOOK_sum_of_a_and_b(...) \
       printf("debug: the sum of %d and %d is %d\n", \
-        val_a, val_b, GDO_RAWPTR_sum_of_a_and_b(__VA_ARGS__));
+        val_a, val_b, GDO_RAWPTR_sum_of_a_and_b(__VA_ARGS__))
 
+    Note: when using GCC variable length argument functions are implemented using
+    inline functions, so inlining must be enabled or else linking will later fail.
+    On other compilers these functions are implemented using preprocessor macros
+    which means there will be some limitations when using hook macros.
 ***/
 
 

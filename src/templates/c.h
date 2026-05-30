@@ -28,6 +28,8 @@
 # define GDO_OBJ_DECL  extern
 #endif
 
+#define GDO_INLINE     static inline
+
 #ifdef _GDO_TARGET_WIDECHAR
 typedef wchar_t gdo_char_t;
 #else
@@ -207,14 +209,10 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 
 
 /* right now only GCC supports __builtin_va_arg_pack() */
-#ifdef __GNUC__
-# define GDO_FORCE_INLINE  extern inline __attribute__ ((__gnu_inline__))
-#endif
-
-#if defined(GDO_FORCE_INLINE) && \
+#if defined(__GNUC__) && \
     defined(__has_builtin)
 # if __has_builtin(__builtin_va_arg_pack)
-#  define GDO_VA_ARG_PACK_INLINE
+#  define GDO_BUILTIN_VA_ARG_PACK
 # endif
 #endif
 
@@ -224,19 +222,18 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-# ifdef GDO_VA_ARG_PACK_INLINE@
-#  ifdef GDO_WRAP_VISIBILITY@
+# ifdef GDO_WRAP_VISIBILITY@
 GDO_WARNING("GDO_WRAP_VISIBILITY defined but wrapper function %%func_symbol%%() can only be used inlined; define GDO_DISABLE_WARNINGS to silence this message")@
-#  endif@
-# else@
-GDO_WARNING("__builtin_va_arg_pack() is required to use variable arguments wrapper for %%func_symbol%%(); define GDO_DISABLE_WARNINGS to silence this message")@
 # endif@
 #endif@
 
 #endif //!GDO_DISABLE_WARNINGS
 
 
-GDO_DECL void _gdo_wrap_not_loaded(int load, const gdo_char_t *sym);
+GDO_DECL void _gdo_wrap_check_loaded(void *symptr, int load, const gdo_char_t *sym);
+
+#define _GDO_WRAP_CHECK_LOADED(SYMBOL) \
+    _gdo_wrap_check_loaded( (void *)GDO_RAWPTR_##SYMBOL, GDO_LOAD_##SYMBOL, _T( #SYMBOL ) )
 
 
 /**
@@ -251,22 +248,24 @@ GDO_DECL void _gdo_wrap_not_loaded(int load, const gdo_char_t *sym);
 @
 /* %%func_symbol%%() */@
 #ifdef GDO_HAS_VA_ARGS_%%func_symbol%%@
-# ifdef GDO_VA_ARG_PACK_INLINE@
-    GDO_FORCE_INLINE@
+# ifdef GDO_BUILTIN_VA_ARG_PACK@
+    /* inline function (always inlined) */@
+    extern inline __attribute__ ((__gnu_inline__))@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        if (!GDO_RAWPTR_%%func_symbol%%) {@
-            _gdo_wrap_not_loaded( GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%") );@
-        }@
+        _GDO_WRAP_CHECK_LOADED( %%func_symbol%% );@
         GDO_HOOK_%%func_symbol%%( %%param_names%%, __builtin_va_arg_pack() );@
         %%return%% GDO_RAWPTR_%%func_symbol%%( %%param_names%%, __builtin_va_arg_pack() );@
     }@
+# else /* fall back to using a macro */@
+#  define GDO_WRAP_%%func_symbol%%(...) \@
+    (_GDO_WRAP_CHECK_LOADED( %%func_symbol%% ),\@
+     (GDO_HOOK_%%func_symbol%%( __VA_ARGS__ )),\@
+      GDO_RAWPTR_%%func_symbol%%( __VA_ARGS__ ))@
 # endif@
-#else@
-    GDO_WRAP_DECL@
+#else //!GDO_HAS_VA_ARGS_%%func_symbol%%@
+    GDO_WRAP_DECL /* wrapper function */@
     %%type%% GDO_WRAP(%%func_symbol%%) (%%args%%) {@
-        if (!GDO_RAWPTR_%%func_symbol%%) {@
-            _gdo_wrap_not_loaded( GDO_LOAD_%%func_symbol%%, _T("%%func_symbol%%") );@
-        }@
+        _GDO_WRAP_CHECK_LOADED( %%func_symbol%% );@
         GDO_HOOK_%%func_symbol%%( %%param_names%% );@
         %%return%% GDO_RAWPTR_%%func_symbol%%( %%param_names%% );@
     }@

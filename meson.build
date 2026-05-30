@@ -41,23 +41,6 @@ elif host_is_win32
 endif
 
 
-code = '''
-#undef HAS_BUILTIN_VA_ARG_PACK
-#ifdef __has_builtin
-# if __has_builtin( __builtin_va_arg_pack )
-#  define HAS_BUILTIN_VA_ARG_PACK
-# endif
-#endif
-#if !defined(HAS_BUILTIN_VA_ARG_PACK)
-# error __builtin_va_arg_pack()
-#endif
-'''
-
-if compiler.compiles(code, name : '__builtin_va_arg_pack() test code')
-    has_builtin_va_arg_pack = true
-endif
-
-
 if compiler.has_function('program_invocation_short_name', prefix : '#include <errno.h>')
     cpp_args_extra += '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
 elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')

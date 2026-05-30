@@ -13,10 +13,6 @@ if host_system == 'darwin'
     test_rpath = '@executable_path'
 endif
 
-if not has_builtin_va_arg_pack
-    test_flags += '-DGDO_DISABLE_WARNINGS'
-endif
-
 if host_is_win32
     test_flags += '-DBUILDING_STATIC'  # avoid dllimport/dllexport issues
 else
