@@ -119,14 +119,14 @@ void append_missing_separator(std::string &path);
 #ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
 
 /* GNU */
-inline const char *progname(const char *) {
+inline const char *progname(char *) {
     return program_invocation_short_name;
 }
 
 #elif defined(HAVE_GETPROGNAME)
 
 /* BSD */
-inline const char *progname(const char *) {
+inline const char *progname(char *) {
     return getprogname();
 }
 
@@ -134,7 +134,7 @@ inline const char *progname(const char *) {
 
 /* other */
 #define UTILS_PROGNAME_FALLBACK 1
-const char *progname(const char *argv0);
+const char *progname(char *argv0);
 
 #endif
 

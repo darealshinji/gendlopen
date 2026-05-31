@@ -34,7 +34,7 @@
 
 namespace help
 {
-    void print(const char *prog)
+    void print(char *prog)
     {
         std::cout <<
             "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n"
@@ -97,7 +97,7 @@ namespace help
     }
 
 
-    void print_full(const char *prog)
+    void print_full(char *prog)
     {
         std::cout <<
             "usage: " << utils::progname(prog) << " [OPTIONS..] <file>\n"

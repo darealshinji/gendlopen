@@ -23,6 +23,9 @@
 **/
 
 #include <cctype>
+#ifdef _WIN32
+# include <algorithm>
+#endif
 #include "utils.hpp"
 
 
@@ -202,21 +205,33 @@ void utils::append_missing_separator(std::string &path)
 #ifdef UTILS_PROGNAME_FALLBACK
 
 /* get program name without full path */
-const char *utils::progname(const char *argv0)
+const char *utils::progname(char *argv0)
 {
-#ifdef _WIN32
-    int path_separator = '\\';
-#else
-    int path_separator = '/';
-#endif
+    char *path = argv0;
 
-    const char *p = strrchr(argv0, path_separator);
+#ifdef _WIN32
+    char *tmp = NULL;
+
+    /* prefer _pgmptr over argv[0] */
+    if (_get_pgmptr(&tmp) == 0) {
+        path = tmp;
+    }
+
+    const char *p = ::strrchr(path, '\\');
+    const char *p2 = ::strrchr(path, '/');
+
+    if (p2) {
+        p = p ? std::max(p, p2) : p2;
+    }
+#else
+    const char *p = ::strrchr(path, '/');
+#endif
 
     if (p && *(p+1) != 0) {
         return p + 1;
     }
 
-    return argv0;
+    return path;
 }
 
 #endif /* UTILS_PROGNAME_FALLBACK */

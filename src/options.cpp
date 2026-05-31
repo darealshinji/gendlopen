@@ -42,8 +42,8 @@
 
 namespace help
 {
-    extern void print(const char *prog);
-    extern void print_full(const char *prog);
+    extern void print(char *prog);
+    extern void print_full(char *prog);
 }
 
 
