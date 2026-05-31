@@ -202,9 +202,13 @@ GDO_DECL gdo_char_t *gdo_lib_origin(void)
 /*****************************************************************************/
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
-/* #define empty hooks by default */
+/* we need an actual function for the VA_ARGS macro */
+inline void _gdo_noop(void) {}
+
+
+/* by default #define hooks that do nothing */
 #ifndef GDO_HOOK_%%func_symbol%%@
-#define GDO_HOOK_%%func_symbol%%(...) /**/@
+#define GDO_HOOK_%%func_symbol%%(...)  _gdo_noop()@
 #endif
 
 
