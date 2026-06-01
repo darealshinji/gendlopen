@@ -20,12 +20,9 @@ CXX_SRCS = \
 	..\$(SRC)\tokenize.cpp \
 	..\$(SRC)\utils.cpp
 
-CFLAGS   = /W3 /O2 /I..\$(SRC)
-CXXFLAGS = $(CFLAGS) /I. /EHsc /std:c++20
-
-# enable support for UTF-8
-CXXFLAGS += /DENABLE_CP_UTF8
-LFLAGS    = /manifest:embed /manifestinput:..\$(SRC)\gendlopen.manifest
+CFLAGS   = /W3 /O2 /I. /I..\$(SRC)
+CXXFLAGS = /W3 /O2 /I. /I..\$(SRC) /DENABLE_CP_UTF8 /EHsc /std:c++20
+LFLAGS   = /manifest:embed /manifestinput:..\$(SRC)\gendlopen.manifest
 
 
 
