@@ -134,14 +134,14 @@ private:
 
     static HMODULE m_handle;
     DWORD m_last_errno = 0;
-    std::string m_errmsg;
-    std::wstring m_werrmsg;
+    std::string m_errmsg, m_formatted;
+    std::wstring m_werrmsg, m_wformatted;
 
     bool mbs_wcs_conv(size_t *retval, wchar_t *out, size_t size, const char *in);
     bool mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t *in);
 
-    template<typename T_out, typename T_in>
-    std::basic_string<T_out> convert_string(const std::basic_string<T_in> &str_in);
+    template<typename T_in, typename T_out>
+    bool convert_string(const std::basic_string<T_in> &str_in, std::basic_string<T_out> &str_out);
 
     void clear_error();
 
@@ -170,8 +170,8 @@ private:
     void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
 
     /* format_error_message */
-    template<typename T_out, typename T_in>
-    std::basic_string<T_out> format_error_message(const std::basic_string<T_out> &buf1, const std::basic_string<T_in> &buf2);
+    template<typename T_in, typename T_out>
+    std::basic_string<T_out> format_error_message(const std::basic_string<T_in> &buf_Tin, const std::basic_string<T_out> &buf_Tout);
 
 #else // !GDO_WINAPI
 
@@ -189,7 +189,7 @@ private:
 
 #endif // !GDO_WINAPI
 
-    template<typename T, typename U>
+    template<typename T>
     bool load_filename(const T &filename);
 
 

@@ -97,15 +97,16 @@ bool gdo::dl::mbs_wcs_conv(size_t *retval, char *out, size_t size, const wchar_t
 
 
 /* convert between char and wchar_t */
-template<typename T_out, typename T_in>
-std::basic_string<T_out> gdo::dl::convert_string(const std::basic_string<T_in> &str_in)
+template<typename T_in, typename T_out>
+bool gdo::dl::convert_string(const std::basic_string<T_in> &str_in, std::basic_string<T_out> &str_out)
 {
-    std::basic_string<T_out> str_out;
     size_t len = 0;
     size_t n = 0;
 
     if (str_in.empty()) {
-        return {}; /* empty string in, empty string out */
+        /* empty string in, empty string out */
+        str_out.clear();
+        return true;
     }
 
     /* get length of converted string (including null terminator) */
@@ -118,12 +119,14 @@ std::basic_string<T_out> gdo::dl::convert_string(const std::basic_string<T_in> &
 
         /* convert string */
         if (mbs_wcs_conv(&n, buf, len, str_in.c_str()) && n == len) {
-            return str_out;
+            return true;
         }
     }
 
-    /* normally this should not happen */
-    throw std::runtime_error("failed to convert string");
+    /* clear output buffer on error */
+    str_out.clear();
+
+    return false;
 }
 
 
@@ -133,32 +136,33 @@ void gdo::dl::clear_error()
     m_last_errno = 0;
     m_errmsg.clear();
     m_werrmsg.clear();
+    m_formatted.clear();
+    m_wformatted.clear();
 }
 
 
 /* save last error (no extra message) */
 void gdo::dl::save_error()
 {
+    clear_error();
     m_last_errno = ::GetLastError();
-    m_errmsg.clear();
-    m_werrmsg.clear();
 }
 
 
 /* save last error (narrow char message) */
 void gdo::dl::save_error(const std::string &msg)
 {
+    clear_error();
     m_last_errno = ::GetLastError();
     m_errmsg = msg;
-    m_werrmsg.clear();
 }
 
 
 /* save last error (wide char message) */
 void gdo::dl::save_error(const std::wstring &msg)
 {
+    clear_error();
     m_last_errno = ::GetLastError();
-    m_errmsg.clear();
     m_werrmsg = msg;
 }
 
@@ -178,9 +182,16 @@ HMODULE gdo::dl::load_library_ex(const std::wstring &filename) {
 
 HMODULE gdo::dl::load_library_ex(const std::string &filename)
 {
+    std::wstring wfilename;
+
     if (m_convert_filename_to_wcs) {
-        auto wfilename = convert_string<wchar_t, char>(filename);
-        return ::LoadLibraryExW(wfilename.c_str(), NULL, m_flags);
+        if (convert_string<char, wchar_t>(filename, wfilename)) {
+            return ::LoadLibraryExW(wfilename.c_str(), NULL, m_flags);
+        }
+
+        m_last_errno = ERROR_INVALID_NAME;
+        m_errmsg = "mbstowcs_s: failed to convert filename";
+        return NULL;
     }
 
     return ::LoadLibraryExA(filename.c_str(), NULL, m_flags);
@@ -277,10 +288,10 @@ void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf) 
 
 
 /* return a formatted error message */
-template<typename T_out, typename T_in>
-std::basic_string<T_out> gdo::dl::format_error_message(const std::basic_string<T_out> &buf_Tout, const std::basic_string<T_in> &buf_Tin)
+template<typename T_in, typename T_out>
+std::basic_string<T_out> gdo::dl::format_error_message(const std::basic_string<T_in> &msg_Tin, const std::basic_string<T_out> &msg_Tout)
 {
-    std::basic_string<T_out> str;
+    std::basic_string<T_out> str, tmp;
     T_out *buf = nullptr;
 
     format_message(
@@ -302,12 +313,12 @@ std::basic_string<T_out> gdo::dl::format_error_message(const std::basic_string<T
     }
 
     /* put custom message in front */
-    if (!buf_Tout.empty()) {
+    if (!msg_Tout.empty()) {
         str.insert(0, get_string<T_out>(": ", L": "));
-        str.insert(0, buf_Tout);
-    } else if (!buf_Tin.empty()) {
+        str.insert(0, msg_Tout);
+    } else if (!msg_Tin.empty() && convert_string<T_in, T_out>(msg_Tin, tmp)) {
         str.insert(0, get_string<T_out>(": ", L": "));
-        str.insert(0, convert_string<T_out, T_in>(buf_Tin));
+        str.insert(0, tmp);
     }
 
     return str;
@@ -379,7 +390,7 @@ T gdo::dl::sym_load(const char *symbol)
 
 
 /* load library by filename */
-template<typename T, typename U = typename T::value_type>
+template<typename T>
 bool gdo::dl::load_filename(const T &filename)
 {
     clear_error();
@@ -423,24 +434,24 @@ gdo::dl::dl(const std::string &filename, int flags, bool new_namespace)
 
 
 #ifdef GDO_WINAPI
-/* c'tor (set narrow character filename, optionally convert name) */
+
+/* c'tor (set narrow character filename and whether to convert name) */
 gdo::dl::dl(bool convert, const std::string &filename, int flags)
  : m_convert_filename_to_wcs(convert),
    m_filename(filename),
    m_flags(flags)
 {
 }
-#endif
 
 
-#ifdef GDO_WINAPI
 /* c'tor (set wide character filename) */
 gdo::dl::dl(const std::wstring &filename, int flags)
  : m_wfilename(filename),
    m_flags(flags)
 {
 }
-#endif
+
+#endif //GDO_WINAPI
 
 
 /* d'tor */
@@ -451,14 +462,15 @@ gdo::dl::~dl()
     }
 }
 
+
 /* load library */
 bool gdo::dl::load(const std::string &filename, int flags, bool new_namespace)
 {
 #ifdef GDO_WINAPI
     m_wfilename.clear();
 #endif
-    m_filename = filename;
-    m_flags = flags;
+    m_filename      = filename;
+    m_flags         = flags;
     m_new_namespace = new_namespace;
 
     return load_filename(m_filename);
@@ -466,30 +478,31 @@ bool gdo::dl::load(const std::string &filename, int flags, bool new_namespace)
 
 
 #ifdef GDO_WINAPI
+
 /* load library */
 bool gdo::dl::load(bool convert, const std::string &filename, int flags)
 {
     m_convert_filename_to_wcs = convert;
     m_wfilename.clear();
+
     m_filename = filename;
-    m_flags = flags;
+    m_flags    = flags;
 
     return load_filename(m_filename);
 }
-#endif
 
 
-#ifdef GDO_WINAPI
 /* load library (wide characters version) */
 bool gdo::dl::load(const std::wstring &filename, int flags)
 {
     m_filename.clear();
     m_wfilename = filename;
-    m_flags = flags;
+    m_flags     = flags;
 
     return load_filename(m_wfilename);
 }
-#endif
+
+#endif //GDO_WINAPI
 
 
 /* load library */
@@ -753,24 +766,40 @@ std::wstring gdo::dl::origin_w()
 /* retrieve the last error */
 std::string gdo::dl::error()
 {
-    return format_error_message<char, wchar_t>(m_errmsg, m_werrmsg);
+    if (m_formatted.empty()) {
+        m_formatted = format_error_message<wchar_t, char>(m_werrmsg, m_errmsg);
+    }
+
+    return m_formatted;
 }
 
 std::wstring gdo::dl::error_w()
 {
-    return format_error_message<wchar_t, char>(m_werrmsg, m_errmsg);
+    if (m_wformatted.empty()) {
+        m_wformatted = format_error_message<char, wchar_t>(m_errmsg, m_werrmsg);
+    }
+
+    return m_wformatted;
 }
 
 
 /* get the unmodified filename passed to load the library */
 std::string gdo::dl::filename()
 {
-    return m_filename.empty() ? convert_string<char, wchar_t>(m_wfilename) : m_filename;
+    if (m_filename.empty() && !m_wfilename.empty()) {
+        convert_string<wchar_t, char>(m_wfilename, m_filename);
+    }
+
+    return m_filename;
 }
 
 std::wstring gdo::dl::filename_w()
 {
-    return m_wfilename.empty() ? convert_string<wchar_t, char>(m_filename) : m_wfilename;
+    if (m_wfilename.empty() && !m_filename.empty()) {
+        convert_string<char, wchar_t>(m_filename, m_wfilename);
+    }
+
+    return m_wfilename;
 }
 
 
