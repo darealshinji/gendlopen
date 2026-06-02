@@ -34,9 +34,7 @@ templates_path = get_option('templates_path')
 enable_utf8    = get_option('enable_utf8')
 
 
-if host_is_gnu and not get_option('without_gnu_source')
-    add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
-elif host_is_win32
+if host_is_win32
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
 endif
 

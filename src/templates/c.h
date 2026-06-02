@@ -89,8 +89,7 @@ GDO_OBJ_DECL gdo_handle_t gdo_hndl;
  *
  * new_namespace:
  *   If true the library will be loaded into a new namespace using dlmopen().
- *   This argument is only used on Linux (if `_GNU_SOURCE' was defined) and
- *   Solaris/IllumOS.
+ *   This argument is only used on Linux (Glibc) and Solaris/IllumOS.
  *
  * On success `true' is returned.
  * On an error or if the library is already loaded the return value is `false'.

@@ -755,7 +755,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 #if !defined(_WIN32) && !defined(GDO_HAVE_DLINFO)
 GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
 {
-    _GDO_Dl_info info;
+    Dl_info info;
 
     if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {
         return strdup(info.dli_fname);

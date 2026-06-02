@@ -92,34 +92,6 @@ GDO_HOOK_<function>(...)
 #endif
 
 
-#if defined(__GLIBC__) && !defined(_GNU_SOURCE)
-
-/* Provide a declaration for `dladdr(3)'.
- * This is simply for convenience so that it's not required
- * to always set _GNU_SOURCE on Linux. */
-
-typedef struct {
-  const char *dli_fname;
-  void       *dli_fbase;
-  const char *dli_sname;
-  void       *dli_saddr;
-} _GDO_Dl_info;
-
-# ifdef __cplusplus
-extern "C" int dladdr(const void *, _GDO_Dl_info *);
-# else
-extern     int dladdr(const void *, _GDO_Dl_info *);
-# endif
-
-#elif !defined(GDO_WINAPI)
-
-/* typename in POSIX-2024 is `Dl_info_t' but systems that
- * conform to it usually provide `Dl_info' too */
-typedef Dl_info _GDO_Dl_info;
-
-#endif //__GLIBC__ && !_GNU_SOURCE
-
-
 /* dlinfo(3); n/a on Windows, macOS, OpenBSD and Haiku */
 #if !defined(_WIN32) && \
     !defined(__APPLE__) && \
@@ -139,6 +111,18 @@ typedef Dl_info _GDO_Dl_info;
     !defined(GDO_HAVE_DLMOPEN)
 # define GDO_HAVE_DLMOPEN
 #endif
+
+
+/* Linux: declarations for Glibc if _GNU_SOURCE was not defined */
+#if defined(__GLIBC__) && \
+    !defined(_GNU_SOURCE) && \
+    !defined(RTLD_DI_LINKMAP)
+# define LM_ID_NEWLM     -1
+# define RTLD_DI_LINKMAP  2
+typedef long int Lmid_t;
+extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
+extern int dlinfo(void *handle, int request, void *info);
+#endif //__GLIBC__ && !_GNU_SOURCE
 
 
 /* GCC specific attributes */

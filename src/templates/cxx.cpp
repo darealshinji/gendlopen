@@ -864,7 +864,7 @@ std::string gdo::dl::origin()
 
     auto get_fname = [&fname] (const void *ptr)
     {
-        _GDO_Dl_info info;
+        Dl_info info;
 
         if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {
             fname = info.dli_fname;

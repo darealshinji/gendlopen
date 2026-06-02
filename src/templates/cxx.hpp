@@ -211,10 +211,8 @@ public:
      *   These are passed to the underlying library loading functions.
      *
      * new_namespace:
-     *   If true the library will be loaded into a new namespace.
-     *   This is done using dlmopen() with the LM_ID_NEWLM argument.
-     *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
-     *   otherwise it has no effect.
+     *   If true the library will be loaded into a new namespace using dlmopen().
+     *   This argument is only used on Linux (Glibc) and Solaris/IllumOS.
      *
      * convert:
      *   If true the given library name will be converted to std::wstring and
@@ -243,10 +241,8 @@ public:
      *   These are passed to the underlying library loading functions.
      *
      * new_namespace:
-     *   If true the library will be loaded into a new namespace.
-     *   This is done using dlmopen() with the LM_ID_NEWLM argument.
-     *   This argument is only used on Glibc and if _GNU_SOURCE was defined,
-     *   otherwise it has no effect.
+     *   If true the library will be loaded into a new namespace using dlmopen().
+     *   This argument is only used on Linux (Glibc) and Solaris/IllumOS.
      *
      * convert:
      *   If true the given library name will be converted to std::wstring and
