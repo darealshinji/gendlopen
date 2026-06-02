@@ -26,12 +26,10 @@
 
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
+#include <stdlib.h> /* malloc() and free() */
 #include <crtdbg.h>
 #endif
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 /* Older versions do not have this type */
 #if _WIN32_WINNT < 0x0500
@@ -61,7 +59,12 @@ typedef ULONG ULONG_PTR;
 
 #ifdef _MSC_VER
 #if _MSC_VER >= 1000
-/* https://docs.microsoft.com/en-us/cpp/intrinsics/returnaddress */
+/* https://docs.microsoft.com/en-us/cpp/intrinsics/returnaddress
+ * When compiling in C++ mode, it is required to have C declaration for _ReturnAddress.
+ */
+#ifdef __cplusplus
+extern "C" void *_ReturnAddress(void);
+#endif
 #pragma intrinsic( _ReturnAddress )
 #else
 /* On older version read return address from the value on stack pointer + 4 of
@@ -70,7 +73,11 @@ typedef ULONG ULONG_PTR;
  * EBP register optimization. Read value of EBP + 4 via inline assembly. And
  * because inline assembly does not have a return value, put it into naked
  * function which does not have prologue and epilogue and preserve registers.
+ * When compiling in C++ mode, it is required to have C declaration for _alloca.
  */
+#ifdef __cplusplus
+extern "C" void *__cdecl _alloca(size_t);
+#endif
 __declspec( naked ) static void *_ReturnAddress( void ) { __asm mov eax, [ebp+4] __asm ret }
 #define _ReturnAddress( ) ( _alloca(1), _ReturnAddress( ) )
 #endif
@@ -95,6 +102,24 @@ __declspec( naked ) static void *_ReturnAddress( void ) { __asm mov eax, [ebp+4]
 #else
 #define DLFCN_NOINLINE
 #endif
+
+static void *MyAlloc( size_t size )
+{
+#ifdef _DEBUG
+    return malloc( size );
+#else
+    return LocalAlloc( LPTR, size );
+#endif
+}
+
+static void MyFree( void *ptr )
+{
+#ifdef _DEBUG
+    free( ptr );
+#else
+    LocalFree( ptr );
+#endif
+}
 
 /* Note:
  * MSDN says these functions are not thread-safe. We make no efforts to have
@@ -140,7 +165,7 @@ static BOOL local_add( HMODULE hModule )
 
     for( pobject = &first_object; pobject->next; pobject = pobject->next );
 
-    nobject = (local_object *) malloc( sizeof( local_object ) );
+    nobject = (local_object *) MyAlloc( sizeof( local_object ) );
 
     if( !nobject )
         return FALSE;
@@ -170,7 +195,7 @@ static void local_rem( HMODULE hModule )
     if( pobject->previous )
         pobject->previous->next = pobject->next;
 
-    free( pobject );
+    MyFree( pobject );
 }
 
 /* POSIX says dlerror( ) doesn't have to be thread-safe, so we use one
@@ -184,19 +209,15 @@ static BOOL error_occurred;
 static void save_err_str( const char *str, DWORD dwMessageId )
 {
     DWORD ret;
-    size_t pos, len;
-
-    len = strlen( str );
-    if( len > sizeof( error_buffer ) - 5 )
-        len = sizeof( error_buffer ) - 5;
+    size_t pos, i;
 
     /* Format error message to:
      * "<argument to function that failed>": <Windows localized error message>
       */
     pos = 0;
     error_buffer[pos++] = '"';
-    memcpy( error_buffer + pos, str, len );
-    pos += len;
+    for( i = 0; i < sizeof( error_buffer ) - 5 && str[i] != '\0'; i++ )
+        error_buffer[pos++] = str[i];
     error_buffer[pos++] = '"';
     error_buffer[pos++] = ':';
     error_buffer[pos++] = ' ';
@@ -233,7 +254,7 @@ static void save_err_ptr_str( const void *ptr, DWORD dwMessageId )
     for( i = 0; i < 2 * sizeof( ptr ); i++ )
     {
         num = (char) ( ( ( (ULONG_PTR) ptr ) >> ( 8 * sizeof( ptr ) - 4 * ( i + 1 ) ) ) & 0xF );
-        ptr_buf[2 + i] = num + ( ( num < 0xA ) ? '0' : ( 'A' - 0xA ) );
+        ptr_buf[2 + i] = (char) ( num + ( ( num < 0xA ) ? '0' : ( 'A' - 0xA ) ) );
     }
 
     ptr_buf[2 + 2 * sizeof( ptr )] = 0;
@@ -252,7 +273,7 @@ static UINT MySetErrorMode( UINT uMode )
     {
         kernel32 = GetModuleHandleA( "Kernel32.dll" );
         if( kernel32 != NULL )
-            SetThreadErrorModePtr = (BOOL (WINAPI *)(DWORD, DWORD *)) (LPVOID) GetProcAddress( kernel32, "SetThreadErrorMode" );
+            SetThreadErrorModePtr = (BOOL (WINAPI *)(DWORD, DWORD *)) (void(*)(void)) GetProcAddress( kernel32, "SetThreadErrorMode" );
         if( SetThreadErrorModePtr == NULL )
             failed = TRUE;
     }
@@ -283,7 +304,7 @@ static HMODULE MyGetModuleHandleFromAddress( const void *addr )
     {
         kernel32 = GetModuleHandleA( "Kernel32.dll" );
         if( kernel32 != NULL )
-            GetModuleHandleExAPtr = (BOOL (WINAPI *)(DWORD, LPCSTR, HMODULE *)) (LPVOID) GetProcAddress( kernel32, "GetModuleHandleExA" );
+            GetModuleHandleExAPtr = (BOOL (WINAPI *)(DWORD, LPCSTR, HMODULE *)) (void(*)(void)) GetProcAddress( kernel32, "GetModuleHandleExA" );
         if( GetModuleHandleExAPtr == NULL )
             failed = TRUE;
     }
@@ -291,7 +312,7 @@ static HMODULE MyGetModuleHandleFromAddress( const void *addr )
     if( !failed )
     {
         /* If GetModuleHandleExA is available use it with GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS */
-        if( !GetModuleHandleExAPtr( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, addr, &hModule ) )
+        if( !GetModuleHandleExAPtr( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR) addr, &hModule ) )
             return NULL;
     }
     else
@@ -314,6 +335,7 @@ static BOOL MyEnumProcessModules( HANDLE hProcess, HMODULE *lphModule, DWORD cb,
     static BOOL (WINAPI *EnumProcessModulesPtr)(HANDLE, HMODULE *, DWORD, LPDWORD) = NULL;
     static BOOL failed = FALSE;
     UINT uMode;
+    HMODULE kernel32;
     HMODULE psapi;
 
     if( failed )
@@ -322,9 +344,9 @@ static BOOL MyEnumProcessModules( HANDLE hProcess, HMODULE *lphModule, DWORD cb,
     if( EnumProcessModulesPtr == NULL )
     {
         /* Windows 7 and newer versions have K32EnumProcessModules in Kernel32.dll which is always pre-loaded */
-        psapi = GetModuleHandleA( "Kernel32.dll" );
-        if( psapi != NULL )
-            EnumProcessModulesPtr = (BOOL (WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD)) (LPVOID) GetProcAddress( psapi, "K32EnumProcessModules" );
+        kernel32 = GetModuleHandleA( "Kernel32.dll" );
+        if( kernel32 != NULL )
+            EnumProcessModulesPtr = (BOOL (WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD)) (void(*)(void)) GetProcAddress( kernel32, "K32EnumProcessModules" );
 
         /* Windows Vista and older version have EnumProcessModules in Psapi.dll which needs to be loaded */
         if( EnumProcessModulesPtr == NULL )
@@ -332,13 +354,13 @@ static BOOL MyEnumProcessModules( HANDLE hProcess, HMODULE *lphModule, DWORD cb,
             /* Do not let Windows display the critical-error-handler message box */
             uMode = MySetErrorMode( SEM_FAILCRITICALERRORS );
             psapi = LoadLibraryA( "Psapi.dll" );
+            MySetErrorMode( uMode );
             if( psapi != NULL )
             {
-                EnumProcessModulesPtr = (BOOL (WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD)) (LPVOID) GetProcAddress( psapi, "EnumProcessModules" );
+                EnumProcessModulesPtr = (BOOL (WINAPI *)(HANDLE, HMODULE *, DWORD, LPDWORD)) (void(*)(void)) GetProcAddress( psapi, "EnumProcessModules" );
                 if( EnumProcessModulesPtr == NULL )
                     FreeLibrary( psapi );
             }
-            MySetErrorMode( uMode );
         }
 
         if( EnumProcessModulesPtr == NULL )
@@ -368,13 +390,13 @@ void *dlopen( const char *file, int mode )
          * symbol object must be provided. That object must be able to access
          * all symbols from the original program file, and any objects loaded
          * with the RTLD_GLOBAL flag.
-         * The return value from GetModuleHandle( ) allows us to retrieve
+         * The return value from GetModuleHandleA( ) allows us to retrieve
          * symbols only from the original program file. EnumProcessModules() is
          * used to access symbols from other libraries. For objects loaded
          * with the RTLD_LOCAL flag, we create our own list later on. They are
          * excluded from EnumProcessModules() iteration.
          */
-        hModule = GetModuleHandle( NULL );
+        hModule = GetModuleHandleA( NULL );
 
         if( !hModule )
             save_err_str( "(null)", GetLastError( ) );
@@ -386,7 +408,11 @@ void *dlopen( const char *file, int mode )
         char lpFileName[MAX_PATH];
         size_t i, len;
 
-        len = strlen( file );
+        for( len = 0; ; len++ )
+        {
+            if( file[len] == '\0' )
+                break;
+        }
 
         if( len >= sizeof( lpFileName ) )
         {
@@ -466,6 +492,10 @@ int dlclose( void *handle )
 
     error_occurred = FALSE;
 
+    /* dlopen(NULL, ...) does not call LoadLibrary(), so do not call FreeLibrary(). */
+    if( hModule == GetModuleHandleA( NULL ) )
+        return 0;
+
     ret = FreeLibrary( hModule );
 
     /* If the object was loaded with RTLD_LOCAL, remove it from list of local
@@ -495,7 +525,7 @@ void *dlsym( void *handle, const char *name )
 
     symbol = NULL;
     hCaller = NULL;
-    hModule = GetModuleHandle( NULL );
+    hModule = GetModuleHandleA( NULL );
     dwMessageId = 0;
 
     if( handle == RTLD_DEFAULT )
@@ -548,13 +578,13 @@ void *dlsym( void *handle, const char *name )
 
         hCurrentProc = GetCurrentProcess( );
 
-        /* GetModuleHandle( NULL ) only returns the current program file. So
+        /* GetModuleHandleA( NULL ) only returns the current program file. So
          * if we want to get ALL loaded module including those in linked DLLs,
          * we have to use EnumProcessModules( ).
          */
         if( MyEnumProcessModules( hCurrentProc, NULL, 0, &dwSize ) != 0 )
         {
-            modules = malloc( dwSize );
+            modules = (HMODULE *) MyAlloc( dwSize );
             if( modules )
             {
                 if( MyEnumProcessModules( hCurrentProc, modules, dwSize, &cbNeeded ) != 0 && dwSize == cbNeeded )
@@ -573,13 +603,13 @@ void *dlsym( void *handle, const char *name )
                         symbol = GetProcAddress( modules[i], name );
                         if( symbol != NULL )
                         {
-                            free( modules );
+                            MyFree( modules );
                             goto end;
                         }
                     }
 
                 }
-                free( modules );
+                MyFree( modules );
             }
             else
             {
@@ -640,7 +670,7 @@ static BOOL get_image_section( HMODULE module, int index, void **ptr, DWORD *siz
     if( optionalHeader->Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC )
         return FALSE;
 
-    if( index < 0 || index >= IMAGE_NUMBEROF_DIRECTORY_ENTRIES || index >= optionalHeader->NumberOfRvaAndSizes )
+    if( index < 0 || index >= IMAGE_NUMBEROF_DIRECTORY_ENTRIES || (DWORD)index >= optionalHeader->NumberOfRvaAndSizes )
         return FALSE;
 
     if( optionalHeader->DataDirectory[index].Size == 0 || optionalHeader->DataDirectory[index].VirtualAddress == 0 )
@@ -699,18 +729,18 @@ static BOOL is_valid_address( const void *addr )
     /* check valid pointer */
     result = VirtualQuery( addr, &info, sizeof( info ) );
 
-    if( result == 0 || info.AllocationBase == NULL || info.AllocationProtect == 0 || info.AllocationProtect == PAGE_NOACCESS )
+    if( result != sizeof( info ) || info.AllocationBase == NULL || info.State == MEM_FREE || info.State == MEM_RESERVE || info.Protect == 0 || info.Protect == PAGE_NOACCESS )
         return FALSE;
 
     return TRUE;
 }
 
 #if defined(_M_ARM64) || defined(__aarch64__)
-static INT64 sign_extend(UINT64 value, UINT bits)
+static INT64 sign_extend( UINT64 value, UINT bits )
 {
     const UINT left = 64 - bits;
     const INT64 m1 = -1;
-    const INT64 wide = (INT64) (value << left);
+    const INT64 wide = (INT64) ( value << left );
     const INT64 sign = ( wide < 0 ) ? ( m1 << left ) : 0;
 
     return value | sign;
@@ -742,16 +772,18 @@ static INT64 sign_extend(UINT64 value, UINT bits)
 static BOOL is_import_thunk( const void *addr )
 {
 #if defined(_M_ARM64) || defined(__aarch64__)
-    ULONG opCode1 = * (ULONG *) ( (BYTE *) addr );
-    ULONG opCode2 = * (ULONG *) ( (BYTE *) addr + 4 );
-    ULONG opCode3 = * (ULONG *) ( (BYTE *) addr + 8 );
+    ULONG opCode1 = *(ULONG *) ( (BYTE *) addr );
+    ULONG opCode2 = *(ULONG *) ( (BYTE *) addr + 4 );
+    ULONG opCode3 = *(ULONG *) ( (BYTE *) addr + 8 );
 
-    return (opCode1 & 0x9f00001f) == 0x90000010    /* adrp x16, [page_offset] */
-        && (opCode2 & 0xffe003ff) == 0xf9400210    /* ldr  x16, [x16, offset] */
+    return ( opCode1 & 0x9f00001f ) == 0x90000010  /* adrp x16, [page_offset] */
+        && ( opCode2 & 0xffe003ff ) == 0xf9400210  /* ldr  x16, [x16, offset] */
         && opCode3 == 0xd61f0200                   /* br   x16 */
         ? TRUE : FALSE;
+#elif defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+    return *(USHORT *) addr == 0x25ff ? TRUE : FALSE;
 #else
-    return *(short *) addr == 0x25ff ? TRUE : FALSE;
+    return FALSE;
 #endif
 }
 
@@ -768,24 +800,24 @@ static void *get_address_from_import_address_table( void *iat, DWORD iat_size, c
      *  0x7ff772ae78c4 <+25764>: ldr    x16, [x16, #0xdc0]
      *  0x7ff772ae78c8 <+25768>: br     x16
      */
-    ULONG opCode1 = * (ULONG *) ( (BYTE *) addr );
-    ULONG opCode2 = * (ULONG *) ( (BYTE *) addr + 4 );
+    ULONG opCode1 = *(ULONG *) ( (BYTE *) addr );
+    ULONG opCode2 = *(ULONG *) ( (BYTE *) addr + 4 );
 
     /* Extract the offset from adrp instruction */
-    UINT64 pageLow2 = (opCode1 >> 29) & 3;
-    UINT64 pageHigh19 = (opCode1 >> 5) & ~(~0ull << 19);
-    INT64 page = sign_extend((pageHigh19 << 2) | pageLow2, 21) << 12;
+    UINT64 pageLow2 = ( opCode1 >> 29 ) & 3;
+    UINT64 pageHigh19 = ( opCode1 >> 5 ) & ~( ~0ull << 19 );
+    INT64 page = sign_extend( ( pageHigh19 << 2 ) | pageLow2, 21 ) << 12;
 
     /* Extract the offset from ldr instruction */
-    UINT64 offset = ((opCode2 >> 10) & ~(~0ull << 12)) << 3;
+    UINT64 offset = ( ( opCode2 >> 10 ) & ~( ~0ull << 12 ) ) << 3;
 
     /* Calculate the final address */
     BYTE *ptr = (BYTE *) ( (ULONG64) thkp & ~0xfffull ) + page + offset;
-#else
+#elif defined(_M_AMD64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
     /* Get offset from thunk table (after instruction 0xff 0x25)
      *   4018c8 <_VirtualQuery>: ff 25 4a 8a 00 00
      */
-    ULONG offset = *(ULONG *)( thkp + 2 );
+    ULONG offset = *(ULONG *) ( thkp + 2 );
 #if defined(_M_AMD64) || defined(__x86_64__)
     /* On 64 bit the offset is relative
      *      4018c8:   ff 25 4a 8a 00 00    jmpq    *0x8a4a(%rip)    # 40a318 <__imp_VirtualQuery>
@@ -793,13 +825,15 @@ static void *get_address_from_import_address_table( void *iat, DWORD iat_size, c
      *   100002f20:   ff 25 3a e1 ff ff    jmpq   *-0x1ec6(%rip)    # 0x100001060
      * So cast to signed LONG type
      */
-    BYTE *ptr = (BYTE *)( thkp + 6 + (LONG) offset );
+    BYTE *ptr = (BYTE *) ( thkp + 6 + (LONG) offset );
 #else
     /* On 32 bit the offset is absolute
      *   4019b4:    ff 25 90 71 40 00    jmp    *0x40719
      */
     BYTE *ptr = (BYTE *) offset;
 #endif
+#else
+    return NULL;
 #endif
 
     if( !is_valid_address( ptr ) || ptr < (BYTE *) iat || ptr > (BYTE *) iat + iat_size )
