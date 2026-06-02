@@ -45,9 +45,6 @@ GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 /* forward declarations */
 GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool new_namespace);
 GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg);
-#if !defined(_WIN32) && !defined(GDO_HAVE_DLINFO)
-GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr);
-#endif
 #ifdef GDO_WINAPI
 GDO_INLINE HMODULE _gdo_load_library_ex(const gdo_char_t *filename, int flags);
 #endif
@@ -583,7 +580,6 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
 @
         curr = "%%symbol%%";@
         curr_len = sizeof("%%symbol%%") - 1;@
-@
         if (len == curr_len && strcmp(symbol + pfxlen, curr + pfxlen) == 0) {@
             if (!GDO_RAWPTR_%%symbol%%) {@
                 GDO_RAWPTR_%%symbol%% =@
@@ -676,7 +672,13 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-#ifdef _WIN32
+#ifdef _AIX
+
+    /* no dlinfo() or dladdr() available */
+    _gdo_save_to_errbuf("function not implemented");
+    return NULL;
+
+#elif defined(_WIN32)
 
 # ifdef GDO_WINAPI
 
@@ -733,15 +735,18 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 # else
 
     /* use dladdr() to get the library path from a symbol pointer */
-    char *fname;
+    Dl_info nfo;
+    void *ptr;
 
     if (gdo_no_symbols_loaded()) {
         _gdo_save_to_errbuf("no symbols were loaded");
         return NULL;
     }
 
-    fname = _gdo_dladdr_get_fname((void *)GDO_RAWPTR_%%symbol%%);@
-    if (fname) return fname;
+    ptr = (void *)GDO_RAWPTR_%%symbol%%;@
+    if (ptr && dladdr(ptr, &nfo) != 0 && nfo.dli_fname) {@
+        return strdup(nfo.dli_fname);@
+    }@
 
     _gdo_save_to_errbuf("dladdr() failed to get library path");
 
@@ -751,19 +756,6 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
 #endif //!_WIN32
 }
-
-#if !defined(_WIN32) && !defined(GDO_HAVE_DLINFO)
-GDO_INLINE char *_gdo_dladdr_get_fname(const void *ptr)
-{
-    Dl_info info;
-
-    if (ptr && dladdr(ptr, &info) != 0 && info.dli_fname) {
-        return strdup(info.dli_fname);
-    }
-
-    return NULL;
-}
-#endif
 /*****************************************************************************/
 %PARAM_SKIP_REMOVE_BEGIN%
 

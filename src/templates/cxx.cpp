@@ -616,14 +616,13 @@ bool gdo::dl::load_symbol(const char *symbol)
     const char pfx[] = GDO_COMMON_PREFIX;
     const size_t pfxlen = sizeof(pfx) - 1;
 
-    if (pfxlen == 0 || strncmp(symbol, pfx, pfxlen) == 0) {
+    if (pfxlen == 0 || ::strncmp(symbol, pfx, pfxlen) == 0) {
         const size_t len = ::strlen(symbol);
         const char *curr;
         size_t curr_len;
 @
         curr = "%%symbol%%";@
         curr_len = sizeof("%%symbol%%") - 1;@
-@
         if (len == curr_len && ::strcmp(symbol + pfxlen, curr + pfxlen) == 0) {@
             if (!GDO_RAWPTR_%%symbol%%) {@
                 GDO_RAWPTR_%%symbol%% =@
@@ -817,7 +816,13 @@ std::string gdo::dl::origin()
         return {};
     }
 
-#ifdef _WIN32
+#ifdef _AIX
+
+    /* no dlinfo() or dladdr() available */
+    m_errmsg = "function not implemented";
+    return {};
+
+#elif defined(_WIN32)
 
     /* dlfcn-win32:
      * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
@@ -843,9 +848,10 @@ std::string gdo::dl::origin()
 
 # ifdef GDO_HAVE_DLINFO
 
+    /* use dlinfo() to get a link map */
     struct link_map *lm = nullptr;
 
-    if (::dlinfo(m_handle, RTLD_DI_LINKMAP, reinterpret_cast<void *>(&lm)) == -1) {
+    if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == -1) {
         save_error();
         return {};
     }
@@ -855,24 +861,18 @@ std::string gdo::dl::origin()
 # else
 
     /* use dladdr() to get the library path from a symbol pointer */
-    std::string fname;
+    Dl_info nfo;
+    void *ptr;
 
     if (no_symbols_loaded()) {
         m_errmsg = "no symbols were loaded";
         return {};
     }
 
-    auto get_fname = [&fname] (const void *ptr)
-    {
-        Dl_info info;
-
-        if (ptr && ::dladdr(ptr, &info) != 0 && info.dli_fname) {
-            fname = info.dli_fname;
-        }
-    };
-
-    get_fname(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%));@
-    if (!fname.empty()) return fname;
+    ptr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%);@
+    if (ptr && ::dladdr(ptr, &nfo) != 0 && nfo.dli_fname) {@
+        return nfo.dli_fname;@
+    }@
 
     m_errmsg = "dladdr() failed to get library path";
 

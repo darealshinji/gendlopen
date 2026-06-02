@@ -92,10 +92,11 @@ GDO_HOOK_<function>(...)
 #endif
 
 
-/* dlinfo(3); n/a on Windows, macOS, OpenBSD and Haiku */
+/* dlinfo(3); n/a on Windows, macOS, OpenBSD, AIX and Haiku */
 #if !defined(_WIN32) && \
     !defined(__APPLE__) && \
     !defined(__OpenBSD__) && \
+    !defined(_AIX) && \
     !defined(__HAIKU__) && \
     !defined(GDO_HAVE_DLINFO)
 # define GDO_HAVE_DLINFO
@@ -117,11 +118,15 @@ GDO_HOOK_<function>(...)
 #if defined(__GLIBC__) && \
     !defined(_GNU_SOURCE) && \
     !defined(RTLD_DI_LINKMAP)
-# define LM_ID_NEWLM     -1
-# define RTLD_DI_LINKMAP  2
+
+# define LM_ID_NEWLM     -1  /* dlmopen(), create new namespace */
+# define RTLD_DI_LINKMAP  2  /* dlinfo(), request link map */
+
 typedef long int Lmid_t;
+
 extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
 extern int dlinfo(void *handle, int request, void *info);
+
 #endif //__GLIBC__ && !_GNU_SOURCE
 
 
