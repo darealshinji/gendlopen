@@ -31,7 +31,7 @@ GDO_USE_MESSAGE_BOX
 
 GDO_CONVERT_FILENAME
     Windows only: don't use LoadLibraryExA(), instead convert the filename
-    to wchar_t and use LoadLibraryExW().
+    to wchar_t and use LoadLibraryExW() (C only).
 
 GDO_DISABLE_ALIASING
     Don't use preprocessor macros to alias symbol names.
@@ -172,12 +172,18 @@ typedef void *gdo_hmod_t;
 /* Linux: declarations for Glibc if _GNU_SOURCE was not defined */
 #if defined(__GLIBC__) && \
     !defined(_GNU_SOURCE) && \
-    !defined(RTLD_DI_LINKMAP)
+    !defined(LM_ID_NEWLM)
 
-# define LM_ID_NEWLM     -1  /* dlmopen(), create new namespace */
-# define RTLD_DI_LINKMAP  2  /* dlinfo(), request link map */
+/* dlmopen(3), create new namespace */
+#define LM_ID_NEWLM  -1
+
+/* dlinfo(3), value to request link map */
+enum {
+    RTLD_DI_LINKMAP = 2
+};
 
 typedef long int Lmid_t;
+
 typedef struct {
   const char *dli_fname;
   void       *dli_fbase;
@@ -480,7 +486,7 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
         return NULL;
     }
 
-    /* archive member name */
+    /* archive member name after library path */
     *member = path + strlen(path) + 1;
 
     return path;
