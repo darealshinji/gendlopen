@@ -75,8 +75,16 @@ GDO_HOOK_<function>(...)
 ***/
 
 
-#if defined(_WIN32) && !defined(GDO_USE_DLOPEN)
-# define GDO_WINAPI
+#if defined(_WIN32)
+# ifdef GDO_USE_DLOPEN
+#  define GDO_DLFCN_WIN32
+# else
+#  define GDO_WINAPI
+# endif
+#endif
+
+#ifndef __cplusplus
+# include <stdbool.h>
 #endif
 
 #ifdef _WIN32
@@ -87,8 +95,56 @@ GDO_HOOK_<function>(...)
 # include <limits.h> /* includes <features.h> indirectly if present */
 #endif
 
+#ifdef _AIX
+# include <inttypes.h>
+# include <string.h>
+# include <sys/ldr.h>
+#endif
+
 #ifndef GDO_WINAPI
 # include <dlfcn.h>
+#endif
+
+
+#ifdef GDO_WINAPI
+typedef HMODULE gdo_hmod_t;
+#else
+typedef void *gdo_hmod_t;
+#endif
+
+
+#define GDO_INLINE  static inline
+
+
+#ifdef _WIN32
+# define GDO_BUFLEN (32*1024) /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
+#else
+# define GDO_BUFLEN (8*1024)  /* 2x Linux MAX_PATH */
+#endif
+
+
+#ifdef _AIX
+# define GDO_AIX_LOADQUERY_BUFLEN (16*1024)  /* loadquery() buffer length */
+#endif
+
+
+/* flags to use on FormatMessage() */
+#ifdef GDO_WINAPI
+# define GDO_FORMAT_MESSAGE_FLAGS \
+    (FORMAT_MESSAGE_ALLOCATE_BUFFER | \
+     FORMAT_MESSAGE_FROM_SYSTEM | \
+     FORMAT_MESSAGE_IGNORE_INSERTS | \
+     FORMAT_MESSAGE_MAX_WIDTH_MASK)
+#endif
+
+
+/* Silence `unused reference' compiler warnings. */
+#define GDO_UNUSED_REF(x) (void)(x)
+
+
+/* dladdr(3); n/a on Windows (WINAPI) and AIX */
+#if !defined(GDO_WINAPI) && !defined(_AIX)
+# define GDO_HAVE_DLADDR
 #endif
 
 
@@ -97,8 +153,7 @@ GDO_HOOK_<function>(...)
     !defined(__APPLE__) && \
     !defined(__OpenBSD__) && \
     !defined(_AIX) && \
-    !defined(__HAIKU__) && \
-    !defined(GDO_HAVE_DLINFO)
+    !defined(__HAIKU__)
 # define GDO_HAVE_DLINFO
 #endif
 
@@ -123,9 +178,16 @@ GDO_HOOK_<function>(...)
 # define RTLD_DI_LINKMAP  2  /* dlinfo(), request link map */
 
 typedef long int Lmid_t;
+typedef struct {
+  const char *dli_fname;
+  void       *dli_fbase;
+  const char *dli_sname;
+  void       *dli_saddr;
+} Dl_info;
 
 extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
 extern int dlinfo(void *handle, int request, void *info);
+extern int dladdr(const void *addr, Dl_info *info);
 
 #endif //__GLIBC__ && !_GNU_SOURCE
 
@@ -328,3 +390,101 @@ extern int dlinfo(void *handle, int request, void *info);
 #endif
 %PARAM_SKIP_END%
 
+
+
+/* common inline routines */
+
+
+GDO_INLINE void *_gdo_call_dlsym(gdo_hmod_t handle, const char *symbol)
+{
+#ifdef GDO_WINAPI
+    return (void *)GetProcAddress(handle, symbol);
+#else
+    return dlsym(handle, symbol);
+#endif
+}
+
+
+GDO_INLINE bool _gdo_call_dlclose(gdo_hmod_t handle)
+{
+#ifdef GDO_WINAPI
+    return (FreeLibrary(handle) == TRUE);
+#else
+    return (dlclose(handle) == 0);
+#endif
+}
+
+
+#if !defined(GDO_WINAPI)
+
+GDO_INLINE void *_gdo_call_dlopen(const char *filename, int flags, bool new_namespace)
+{
+#ifdef GDO_HAVE_DLMOPEN
+    if (new_namespace) {
+        return dlmopen(LM_ID_NEWLM, filename, flags);
+    }
+#else
+    GDO_UNUSED_REF(new_namespace);
+#endif
+
+    return dlopen(filename, flags);
+}
+
+
+#ifdef GDO_HAVE_DLADDR
+GDO_INLINE bool _gdo_call_dladdr(const void *addr, Dl_info *info)
+{
+    info->dli_fname = NULL;
+
+    return (addr && dladdr(addr, info) != 0 && info->dli_fname && info->dli_fname[0] != 0);
+}
+#endif
+
+
+/* parse ld_info struct and search for library filename that provides sym */
+#ifdef _AIX
+GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym, const char **member)
+{
+    struct ld_info *cur = info;
+
+    while (true) {
+        uint8_t *text = (uint8_t *)cur->ldinfo_textorg;
+        uint8_t *data = (uint8_t *)cur->ldinfo_dataorg;
+        uint8_t *text_end = text;
+        uint8_t *data_end = data;
+
+        if (cur->ldinfo_textsize > 0) {
+            text_end += cur->ldinfo_textsize - 1;
+        }
+
+        if (cur->ldinfo_datasize > 0) {
+            data_end += cur->ldinfo_datasize - 1;
+        }
+
+        /* check if symbol pointer address lies within current text or data section */
+        if ((sym >= text && sym <= text_end) || (sym >= data && sym <= data_end)) {
+            /* found */
+            break;
+        } else if (cur->ldinfo_next == 0) {
+            /* end of linked list */
+            return NULL;
+        } else {
+            /* next entry in linked list */
+            cur = (struct ld_info *)((uint8_t *)cur + cur->ldinfo_next);
+        }
+    }
+
+    const char *path = cur->ldinfo_filename;
+
+    if (!path || path[0] == 0) {
+        return NULL;
+    }
+
+    /* archive member name */
+    *member = path + strlen(path) + 1;
+
+    return path;
+}
+#endif //_AIX
+
+#endif //!GDO_WINAPI

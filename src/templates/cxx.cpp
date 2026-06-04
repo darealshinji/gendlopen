@@ -36,11 +36,7 @@ gdo::dl::msgcb_t gdo::dl::m_message_callback = gdo::dl::default_message_callback
 
 
 /* library handle */
-#ifdef GDO_WINAPI
-HMODULE gdo::dl::m_handle = nullptr;
-#else
-void *gdo::dl::m_handle = nullptr;
-#endif
+gdo_hmod_t gdo::dl::m_handle = nullptr;
 
 
 /* symbol pointers; symbol names must be prefixed to avoid macro expansion */
@@ -231,22 +227,6 @@ void gdo::dl::load_lib(const T &filename)
 }
 
 
-/* load symbol address */
-template<typename T>
-T gdo::dl::sym_load(const char *symbol)
-{
-    /* cast to void* to suppress compiler warnings */
-    auto ptr = reinterpret_cast<void *>(::GetProcAddress(m_handle, symbol));
-
-    if (!ptr) {
-        save_error(symbol);
-    }
-
-    /* cast to function pointer type */
-    return reinterpret_cast<T>(ptr);
-}
-
-
 DWORD gdo::dl::get_module_filename(wchar_t *buf, DWORD len) {
     return ::GetModuleFileNameW(m_handle, buf, len);
 }
@@ -265,7 +245,7 @@ std::basic_string<T> gdo::dl::get_origin_from_module_handle()
         return {};
     }
 
-    T buf[32*1024];
+    T buf[GDO_BUFLEN];
     DWORD nSize = get_module_filename(buf, _countof(buf));
 
     if (nSize == 0 || nSize == _countof(buf)) {
@@ -278,28 +258,24 @@ std::basic_string<T> gdo::dl::get_origin_from_module_handle()
 }
 
 
-void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf) {
-    ::FormatMessageW(flags, NULL, msgId, langId, buf, 0, NULL);
+void gdo::dl::format_message(DWORD msgId, DWORD langId, wchar_t *buf) {
+    ::FormatMessageW(GDO_FORMAT_MESSAGE_FLAGS, NULL, msgId, langId, buf, 0, NULL);
 }
 
-void gdo::dl::format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf) {
-    ::FormatMessageA(flags, NULL, msgId, langId, buf, 0, NULL);
+void gdo::dl::format_message(DWORD msgId, DWORD langId, char *buf) {
+    ::FormatMessageA(GDO_FORMAT_MESSAGE_FLAGS, NULL, msgId, langId, buf, 0, NULL);
 }
 
 
 /* return a formatted error message */
 template<typename T_in, typename T_out>
-std::basic_string<T_out> gdo::dl::format_error_message(const std::basic_string<T_in> &msg_Tin, const std::basic_string<T_out> &msg_Tout)
+std::basic_string<T_out> gdo::dl::format_error_message(const std::basic_string<T_in> &msg_Tin,
+                                                       const std::basic_string<T_out> &msg_Tout)
 {
     std::basic_string<T_out> str, tmp;
     T_out *buf = nullptr;
 
-    format_message(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS |
-        FORMAT_MESSAGE_MAX_WIDTH_MASK,
-        m_last_errno,
+    format_message(m_last_errno,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         reinterpret_cast<T_out *>(&buf));
 
@@ -357,26 +333,42 @@ void gdo::dl::set_error_invalid_handle()
 void gdo::dl::load_lib(const std::string &filename)
 {
     clear_error();
-
-#ifdef GDO_HAVE_DLMOPEN
-    /* dlmopen() for new namespace or dlopen() */
-    if (m_new_namespace) {
-        m_handle = ::dlmopen(LM_ID_NEWLM, filename.c_str(), m_flags);
-    } else {
-        m_handle = ::dlopen(filename.c_str(), m_flags);
-    }
-#else
-    /* no dlmopen() */
-    m_handle = ::dlopen(filename.c_str(), m_flags);
-#endif
+    m_handle = _gdo_call_dlopen(filename.c_str(), m_flags, m_new_namespace);
 }
+
+
+#ifdef _AIX
+std::string gdo::dl::aix_fname_from_symbol(struct ld_info *info, uint8_t *sym)
+{
+    const char *member = NULL;
+    const char *path = _gdo_aix_parse_ldinfo(info, sym, reinterpret_cast<const char **>(&member));
+
+    if (!path) {
+        return {};
+    }
+
+    /* check for an archive member name */
+    if (member && member[0] != 0) {
+        std::string str = path;
+        str += '(';
+        str += member;
+        str += ')';
+
+        return str;
+    }
+
+    return path;
+}
+#endif //_AIX
+
+#endif // !GDO_WINAPI
 
 
 /* load symbol address */
 template<typename T>
 T gdo::dl::sym_load(const char *symbol)
 {
-    T ptr = reinterpret_cast<T>(::dlsym(m_handle, symbol));
+    T ptr = reinterpret_cast<T>(_gdo_call_dlsym(m_handle, symbol));
 
     if (!ptr) {
         save_error();
@@ -384,9 +376,6 @@ T gdo::dl::sym_load(const char *symbol)
 
     return ptr;
 }
-
-
-#endif // !GDO_WINAPI
 
 
 /* load library by filename */
@@ -683,17 +672,11 @@ bool gdo::dl::any_symbol_loaded() const
 bool gdo::dl::free(bool force)
 {
     bool rv = true;
-    std::string msg;
 
     clear_error();
 
     if (lib_loaded()) {
-#ifdef GDO_WINAPI
-        msg = "FreeLibrary()";
-        rv = (::FreeLibrary(m_handle) == TRUE);
-#else
-        rv = (::dlclose(m_handle) == 0);
-#endif
+        rv = _gdo_call_dlclose(m_handle);
 
         /* always succeed if `force == true` */
         if (force) {
@@ -702,7 +685,11 @@ bool gdo::dl::free(bool force)
     }
 
     if (!rv) {
-        save_error(msg);
+#ifdef GDO_WINAPI
+        save_error("FreeLibrary()");
+#else
+        save_error();
+#endif
         return false;
     }
 
@@ -816,20 +803,14 @@ std::string gdo::dl::origin()
         return {};
     }
 
-#ifdef _AIX
-
-    /* no dlinfo() or dladdr() available */
-    m_errmsg = "function not implemented";
-    return {};
-
-#elif defined(_WIN32)
+#ifdef GDO_DLFCN_WIN32
 
     /* dlfcn-win32:
      * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
      * We can directly use GetModuleFileNameA() to receive the DLL path
      * and don't need to invoke dladdr() on a loaded symbol address. */
 
-    char buf[32*1024];
+    char buf[GDO_BUFLEN];
 
     DWORD nSize = ::GetModuleFileNameA(reinterpret_cast<HMODULE>(m_handle),
         buf, sizeof(buf));
@@ -844,9 +825,29 @@ std::string gdo::dl::origin()
 
     return buf;
 
-#else //!_WIN32
+#elif defined(_AIX)
 
-# ifdef GDO_HAVE_DLINFO
+    uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
+    std::string fname;
+
+    if (no_symbols_loaded()) {
+        m_errmsg = "no symbols were loaded";
+        return {};
+    }
+
+    if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
+        auto info = reinterpret_cast<struct ld_info *>(buf);
+        uint8_t *ptr;
+@
+        ptr = reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%);@
+        fname = aix_fname_from_symbol(info, ptr);@
+        if (!fname.empty()) { return fname; }
+    }
+
+    m_errmsg = "failed to get the library path";
+    return {};
+
+#elif defined(GDO_HAVE_INFO)
 
     /* use dlinfo() to get a link map */
     struct link_map *lm = nullptr;
@@ -856,31 +857,36 @@ std::string gdo::dl::origin()
         return {};
     }
 
-    return lm->l_name ? lm->l_name : "";
+    if (!lm->l_name || lm->l_name[0] == 0) {
+        m_errmsg = "dlinfo() failed to get library path";
+        return {};
+    }
 
-# else
+    return lm->l_name;
+
+#elif defined(GDO_HAVE_DLADDR)
 
     /* use dladdr() to get the library path from a symbol pointer */
-    Dl_info nfo;
-    void *ptr;
+    Dl_info info;
 
     if (no_symbols_loaded()) {
         m_errmsg = "no symbols were loaded";
         return {};
     }
 
-    ptr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%);@
-    if (ptr && ::dladdr(ptr, &nfo) != 0 && nfo.dli_fname) {@
-        return nfo.dli_fname;@
+    if (_gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)) {@
+        return info.dli_fname;@
     }@
 
     m_errmsg = "dladdr() failed to get library path";
-
     return {};
 
-# endif //!GDO_HAVE_DLINFO
+#else
 
-#endif // !_WIN32
+    m_errmsg = "function not implemented";
+    return {};
+
+#endif
 }
 
 

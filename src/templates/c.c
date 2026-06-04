@@ -34,10 +34,6 @@
 #endif
 
 
-/* Silence `unused reference' compiler warnings. */
-#define GDO_UNUSED_REF(x) (void)(x)
-
-
 /* library handle */
 GDO_OBJ_LINKAGE gdo_handle_t gdo_hndl;
 
@@ -47,6 +43,9 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
 GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg);
 #ifdef GDO_WINAPI
 GDO_INLINE HMODULE _gdo_load_library_ex(const gdo_char_t *filename, int flags);
+#endif
+#ifdef _AIX
+GDO_INLINE char *_gdo_aix_fname_from_symbol(struct ld_info *info, uint8_t *sym);
 #endif
 
 
@@ -261,20 +260,9 @@ GDO_INLINE void _gdo_load_library(const gdo_char_t *filename, int flags, bool ne
     gdo_hndl.handle = _gdo_load_library_ex(copy, flags);
     free(copy);
 
-#elif defined(GDO_HAVE_DLMOPEN)
-
-    /* call dlmopen() for new namespace, otherwise dlopen() */
-    if (new_namespace) {
-        gdo_hndl.handle = dlmopen(LM_ID_NEWLM, filename, flags);
-    } else {
-        gdo_hndl.handle = dlopen(filename, flags);
-    }
-
 #else
 
-    /* no dlmopen() */
-    GDO_UNUSED_REF(new_namespace);
-    gdo_hndl.handle = dlopen(filename, flags);
+    gdo_hndl.handle = _gdo_call_dlopen(filename, flags, new_namespace);
 
 #endif //!GDO_WINAPI
 }
@@ -343,21 +331,16 @@ GDO_LINKAGE bool gdo_lib_is_loaded(void)
 /*****************************************************************************/
 GDO_LINKAGE bool gdo_free_lib(void)
 {
-    bool rv;
-    const gdo_char_t *msg = NULL;
-
     _gdo_clear_error();
 
     if (gdo_lib_is_loaded()) {
+        if (!_gdo_call_dlclose(gdo_hndl.handle))
+        {
 #ifdef GDO_WINAPI
-        msg = _T("FreeLibrary()");
-        rv = (FreeLibrary(gdo_hndl.handle) == TRUE);
+            _gdo_save_error(_T("FreeLibrary()"));
 #else
-        rv = (dlclose(gdo_hndl.handle) == 0);
+            _gdo_save_error(NULL);
 #endif
-
-        if (!rv) {
-            _gdo_save_error(msg);
             return false;
         }
     }
@@ -380,11 +363,7 @@ GDO_LINKAGE void gdo_force_free_lib(void)
     _gdo_clear_error();
 
     if (gdo_lib_is_loaded()) {
-#ifdef GDO_WINAPI
-        FreeLibrary(gdo_hndl.handle);
-#else
-        dlclose(gdo_hndl.handle);
-#endif
+        _gdo_call_dlclose(gdo_hndl.handle);
     }
 
     /* set pointers back to NULL */
@@ -497,13 +476,7 @@ GDO_LINKAGE bool gdo_load_all_symbols(void)
 
 GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg)
 {
-    void *ptr;
-
-#ifdef GDO_WINAPI
-    ptr = (void *)GetProcAddress(gdo_hndl.handle, symbol);
-#else
-    ptr = dlsym(gdo_hndl.handle, symbol);
-#endif
+    void *ptr = _gdo_call_dlsym(gdo_hndl.handle, symbol);
 
     if (!ptr) {
         _gdo_save_error(msg);
@@ -613,16 +586,13 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 
     gdo_char_t *buf = NULL;
 
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS |
-        FORMAT_MESSAGE_MAX_WIDTH_MASK,
-        NULL,
-        gdo_hndl.last_errno,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (gdo_char_t *)&buf,
-        0, NULL);
+    FormatMessage(GDO_FORMAT_MESSAGE_FLAGS,
+                  NULL,
+                  gdo_hndl.last_errno,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  (gdo_char_t *)&buf,
+                  0,
+                  NULL);
 
     if (buf) {
         if (gdo_hndl.errbuf[0] != 0) {
@@ -672,15 +642,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-#ifdef _AIX
-
-    /* no dlinfo() or dladdr() available */
-    _gdo_save_to_errbuf("function not implemented");
-    return NULL;
-
-#elif defined(_WIN32)
-
-# ifdef GDO_WINAPI
+#ifdef GDO_WINAPI
 
     const gdo_char_t *msg = (sizeof(gdo_char_t) == 1)
         ? _T("GetModuleFileNameA()")
@@ -696,7 +658,7 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
     return _tcsdup(gdo_hndl.errbuf);
 
-# else
+#elif defined(GDO_DLFCN_WIN32)
 
     /* dlfcn-win32:
      * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
@@ -716,11 +678,29 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
     return _strdup(gdo_hndl.errbuf);
 
-# endif //GDO_WINAPI
+#elif defined(_AIX)
 
-#else //!_WIN32
+    uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
+    char *fname;
 
-# ifdef GDO_HAVE_DLINFO
+    if (gdo_no_symbols_loaded()) {
+        _gdo_save_to_errbuf("no symbols were loaded");
+        return NULL;
+    }
+
+    if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
+        struct ld_info *info = (struct ld_info *)buf;
+        uint8_t *ptr;
+@
+        ptr = (uint8_t *)GDO_RAWPTR_%%symbol%%;@
+        fname = _gdo_aix_fname_from_symbol(info, ptr);@
+        if (fname) { return fname; }
+    }
+
+    _gdo_save_to_errbuf("failed to get the library path");
+    return NULL;
+
+#elif defined(GDO_HAVE_DLINFO)
 
     /* use dlinfo() to get a link map */
     struct link_map *lm = NULL;
@@ -730,32 +710,60 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    return lm->l_name ? strdup(lm->l_name) : NULL;
+    if (!lm->l_name || lm->l_name[0] == 0) {
+        _gdo_save_to_errbuf("dlinfo() failed to get library path");
+        return NULL;
+    }
 
-# else
+    return strdup(lm->l_name);
+
+#elif defined(GDO_HAVE_DLADDR)
 
     /* use dladdr() to get the library path from a symbol pointer */
-    Dl_info nfo;
-    void *ptr;
+    Dl_info info;
 
     if (gdo_no_symbols_loaded()) {
         _gdo_save_to_errbuf("no symbols were loaded");
         return NULL;
     }
 
-    ptr = (void *)GDO_RAWPTR_%%symbol%%;@
-    if (ptr && dladdr(ptr, &nfo) != 0 && nfo.dli_fname) {@
-        return strdup(nfo.dli_fname);@
+    if (_gdo_call_dladdr((void *)GDO_RAWPTR_%%symbol%%, &info)) {@
+        return strdup(info.dli_fname);@
     }@
 
     _gdo_save_to_errbuf("dladdr() failed to get library path");
-
     return NULL;
 
-# endif //!GDO_HAVE_DLINFO
+#else
 
-#endif //!_WIN32
+    _gdo_save_to_errbuf("function not implemented");
+    return NULL;
+
+#endif
 }
+
+#ifdef _AIX
+GDO_INLINE char *_gdo_aix_fname_from_symbol(struct ld_info *info, uint8_t *sym)
+{
+    const char *member = NULL;
+    const char *path = _gdo_aix_parse_ldinfo(info, sym, (const char **)&member);
+
+    if (!path) {
+        return NULL;
+    }
+
+    /* check for an archive member name */
+    if (member && member[0] != 0) {
+        size_t len = strlen(path) + strlen(member) + 3;
+        char *buf = (char *)malloc(len);
+        snprintf(buf, len, "%s(%s)", path, member);
+        return buf;
+    }
+
+    /* path is not an archive */
+    return strdup(path);
+}
+#endif
 /*****************************************************************************/
 %PARAM_SKIP_REMOVE_BEGIN%
 
@@ -782,14 +790,14 @@ GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, ...)
 # else
     _vftprintf_s(stderr, fmt, ap);
     _fputtc(_T('\n'), stderr);
-# endif
+# endif //GDO_USE_MESSAGE_BOX
 
-#else // !_WIN32
+#else //!_WIN32
 
     vfprintf(stderr, fmt, ap);
     fputc('\n', stderr);
 
-#endif // !_WIN32
+#endif //!_WIN32
 
     va_end(ap);
 }

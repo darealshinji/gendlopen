@@ -2,21 +2,11 @@
 /*                                   C API                                   */
 /*****************************************************************************/
 
-#ifndef __cplusplus
-# include <stdbool.h>
-#endif
-
 #ifdef _WIN32
 # include <tchar.h>
 #else
 # undef _T
 # define _T(x) x
-#endif
-
-#ifdef _WIN32
-# define GDO_BUFLEN (32*1024) /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
-#else
-# define GDO_BUFLEN (8*1024)  /* 2x Linux MAX_PATH */
 #endif
 
 /* static/extern declarations */
@@ -27,8 +17,6 @@
 # define GDO_DECL      extern
 # define GDO_OBJ_DECL  extern
 #endif
-
-#define GDO_INLINE     static inline
 
 #ifdef _GDO_TARGET_WIDECHAR
 typedef wchar_t gdo_char_t;
@@ -51,14 +39,12 @@ enum {
  */
 typedef struct _gdo_handle
 {
+    gdo_hmod_t handle;        /* handle returned by dlopen()/LoadLibraryEx() */
 #ifdef GDO_WINAPI
-    HMODULE  handle;        /* handle returned by LoadLibraryEx() */
-    DWORD    last_errno;    /* value returned by GetLastError() */
-#else
-    void    *handle;        /* handle returned by dlopen() */
+    DWORD      last_errno;    /* value returned by GetLastError() */
 #endif
-    bool     free_lib_reg;  /* whether registering the function to automatically */
-                            /* free the library upon exit was successful */
+    bool       free_lib_reg;  /* whether registering the function to automatically */
+                              /* free the library upon exit was successful */
 
     /* symbol pointers; symbol names MUST be prefixed to avoid macro expansion */
     %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%);

@@ -1,5 +1,9 @@
 #include <iostream>
 #include <string>
+#ifdef _AIX
+# include <inttypes.h>
+# include <sys/ldr.h>
+#endif
 
 
 /**
@@ -81,6 +85,8 @@ private:
 
 private:
 
+    static gdo_hmod_t m_handle;
+
 #ifdef GDO_WINAPI
     bool m_convert_filename_to_wcs = false;
     std::string m_filename;
@@ -132,7 +138,6 @@ private:
 
 #ifdef GDO_WINAPI
 
-    static HMODULE m_handle;
     DWORD m_last_errno = 0;
     std::string m_errmsg, m_formatted;
     std::wstring m_werrmsg, m_wformatted;
@@ -157,25 +162,22 @@ private:
     template<typename T, typename U>
     void load_lib(const T &filename);
 
-    template<typename T>
-    T sym_load(const char *symbol);
-
     DWORD get_module_filename(wchar_t *buf, DWORD len);
     DWORD get_module_filename(char *buf, DWORD len);
 
     template<typename T>
     std::basic_string<T> get_origin_from_module_handle();
 
-    void format_message(DWORD flags, DWORD msgId, DWORD langId, wchar_t *buf);
-    void format_message(DWORD flags, DWORD msgId, DWORD langId, char *buf);
+    void format_message(DWORD msgId, DWORD langId, wchar_t *buf);
+    void format_message(DWORD msgId, DWORD langId, char *buf);
 
     /* format_error_message */
     template<typename T_in, typename T_out>
-    std::basic_string<T_out> format_error_message(const std::basic_string<T_in> &buf_Tin, const std::basic_string<T_out> &buf_Tout);
+    std::basic_string<T_out> format_error_message(const std::basic_string<T_in> &buf_Tin,
+                                                  const std::basic_string<T_out> &buf_Tout);
 
 #else // !GDO_WINAPI
 
-    static void *m_handle;
     std::string m_errmsg;
 
     void clear_error();
@@ -184,10 +186,14 @@ private:
 
     void load_lib(const std::string &filename);
 
-    template<typename T>
-    T sym_load(const char *symbol);
+#ifdef _AIX
+    std::string aix_fname_from_symbol(struct ld_info *info, uint8_t *sym);
+#endif
 
 #endif // !GDO_WINAPI
+
+    template<typename T>
+    T sym_load(const char *symbol);
 
     template<typename T>
     bool load_filename(const T &filename);
