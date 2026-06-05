@@ -90,7 +90,7 @@ GDO_HOOK_<function>(...)
 #ifdef _WIN32
 # include <windows.h>
 #elif defined(HAVE_FEATURES_H)
-# include <features.h> /* __GLIBC__ */
+# include <features.h> /* defines __GLIBC__ */
 #else
 # include <limits.h> /* includes <features.h> indirectly if present */
 #endif
@@ -138,64 +138,85 @@ typedef void *gdo_hmod_t;
 #endif
 
 
-/* Silence `unused reference' compiler warnings. */
-#define GDO_UNUSED_REF(x) (void)(x)
-
-
 /* dladdr(3); n/a on Windows (WINAPI) and AIX */
-#if !defined(GDO_WINAPI) && !defined(_AIX)
+#if !defined(GDO_WINAPI) && \
+    !defined(_AIX)
 # define GDO_HAVE_DLADDR
 #endif
 
-
-/* dlinfo(3); n/a on Windows, macOS, OpenBSD, AIX and Haiku */
-#if !defined(_WIN32) && \
-    !defined(__APPLE__) && \
-    !defined(__OpenBSD__) && \
-    !defined(_AIX) && \
-    !defined(__HAIKU__)
-# define GDO_HAVE_DLINFO
+#ifdef GDO_HAVE_DLADDR
+# if !defined(_GNU_SOURCE) && (defined(__GLIBC__) || defined(__UCLIBC__))
+#  define GDO_NEED_DLADDR_PROTO
+# elif !defined(_NETBSD_SOURCE) && (defined(__NetBSD__) || defined(__minix))
+#  define GDO_NEED_DLADDR_PROTO
+# endif
 #endif
 
-#ifdef GDO_HAVE_DLINFO
-# include <link.h>
-#endif
-
-
-/* dlmopen(3); only on Glibc (or compatible C libraries) and Solaris/IllumOS */
-#if (defined(__GLIBC__) || defined(__sun)) && \
-    !defined(GDO_HAVE_DLMOPEN)
-# define GDO_HAVE_DLMOPEN
-#endif
-
-
-/* Linux: declarations for Glibc if _GNU_SOURCE was not defined */
-#if defined(__GLIBC__) && \
-    !defined(_GNU_SOURCE) && \
-    !defined(LM_ID_NEWLM)
-
-/* dlmopen(3), create new namespace */
-#define LM_ID_NEWLM  -1
-
-/* dlinfo(3), value to request link map */
-enum {
-    RTLD_DI_LINKMAP = 2
-};
-
-typedef long int Lmid_t;
-
+#if !defined(DLADDR_PROTOTYPE) && defined(GDO_NEED_DLADDR_PROTO)
+# define DLADDR_PROTOTYPE
 typedef struct {
   const char *dli_fname;
   void       *dli_fbase;
   const char *dli_sname;
   void       *dli_saddr;
 } Dl_info;
-
-extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
-extern int dlinfo(void *handle, int request, void *info);
 extern int dladdr(const void *addr, Dl_info *info);
+#endif
 
-#endif //__GLIBC__ && !_GNU_SOURCE
+
+/* dlinfo(3); systems that support dlinfo() with RTLD_DI_LINKMAP request */
+#if !defined(GDO_HAVE_DLINFO) && \
+    (defined(__GLIBC__) || \
+     defined(__FreeBSD__) || \
+     defined(__NetBSD__) || \
+     defined(__DragonFly__) || \
+     defined(__minix) || \
+     defined(__sun))
+# define GDO_HAVE_DLINFO
+#endif
+
+#ifdef GDO_HAVE_DLINFO
+# include <link.h> /* link map */
+#endif
+
+#ifdef GDO_HAVE_DLINFO
+# if !defined(_GNU_SOURCE) && defined(__GLIBC__)
+#  define GDO_NEED_DLINFO_PROTO
+# elif !defined(_NETBSD_SOURCE) && (defined(__NetBSD__) || defined(__minix))
+#  define GDO_NEED_DLINFO_PROTO
+# endif
+#endif
+
+#if !defined(DLINFO_PROTOTYPE) && defined(GDO_NEED_DLINFO_PROTO)
+# define DLINFO_PROTOTYPE
+# ifdef __GLIBC__
+#  define RTLD_DI_LINKMAP 2  /* Glibc */
+# else
+#  define RTLD_DI_LINKMAP 3  /* NetBSD libc */
+# endif
+extern int dlinfo(void *handle, int request, void *info);
+#endif
+
+
+/* dlmopen(3); only on Glibc and Solaris/IllumOS */
+#if !defined(GDO_HAVE_DLMOPEN) && \
+    (defined(__GLIBC__) || \
+     defined(__sun))
+# define GDO_HAVE_DLMOPEN
+#endif
+
+#ifdef GDO_HAVE_DLMOPEN
+# if !defined(_GNU_SOURCE) && defined(__GLIBC__)
+#  define GDO_NEED_DLMOPEN_PROTO
+# endif
+#endif
+
+#if !defined(DLMOPEN_PROTOTYPE) && defined(GDO_NEED_DLMOPEN_PROTO)
+# define DLMOPEN_PROTOTYPE
+# define LM_ID_NEWLM -1  /* new namespace */
+typedef long int Lmid_t;
+extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
+#endif
 
 
 /* GCC specific attributes */
@@ -430,7 +451,7 @@ GDO_INLINE void *_gdo_call_dlopen(const char *filename, int flags, bool new_name
         return dlmopen(LM_ID_NEWLM, filename, flags);
     }
 #else
-    GDO_UNUSED_REF(new_namespace);
+    (void)new_namespace;
 #endif
 
     return dlopen(filename, flags);

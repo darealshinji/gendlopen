@@ -29,6 +29,10 @@
 #endif
 
 
+/* Silence `unused reference' compiler warnings. */
+#define GDO_UNUSED_REF(x) (void)(x)
+
+
 #ifndef _countof
 # define _countof(array)  (sizeof(array) / sizeof(array[0]))
 #endif
