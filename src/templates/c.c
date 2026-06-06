@@ -648,19 +648,27 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
 
 #ifdef GDO_WINAPI
 
+    /* use GetModuleFileName() */
+
     const gdo_char_t *msg = (sizeof(gdo_char_t) == 1)
         ? _T("GetModuleFileNameA()")
         : _T("GetModuleFileNameW()");
 
     /* use gdo_hndl.errbuf as a temporary buffer */
-    DWORD nSize = GetModuleFileName(gdo_hndl.handle, gdo_hndl.errbuf, GDO_BUFLEN);
+    gdo_char_t *buf = gdo_hndl.errbuf;
+
+    DWORD nSize = GetModuleFileName(gdo_hndl.handle, buf, GDO_BUFLEN);
 
     if (nSize == 0 || nSize == GDO_BUFLEN) {
         _gdo_save_error(msg);
         return NULL;
     }
 
-    return _tcsdup(gdo_hndl.errbuf);
+    /* copy path and clear buffer */
+    gdo_char_t *path = _tcsdup(buf);
+    _gdo_clear_error();
+
+    return path;
 
 #elif defined(GDO_DLFCN_WIN32)
 
@@ -670,7 +678,9 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
      * and don't need to invoke dladdr() on a loaded symbol address. */
 
     /* use gdo_hndl.errbuf as a temporary buffer */
-    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, gdo_hndl.errbuf, GDO_BUFLEN);
+    char *buf = gdo_hndl.errbuf;
+
+    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, buf, GDO_BUFLEN);
 
     if (nSize == 0) {
         _gdo_save_to_errbuf("failed to get the library path");
@@ -680,9 +690,15 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    return _strdup(gdo_hndl.errbuf);
+    /* copy path and clear buffer */
+    char *path = _strdup(buf);
+    _gdo_clear_error();
+
+    return path;
 
 #elif defined(_AIX)
+
+    /* AIX's equivalent of dladdr() */
 
     uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
     char *fname;
