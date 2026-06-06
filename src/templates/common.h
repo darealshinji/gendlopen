@@ -145,7 +145,10 @@ typedef void *gdo_hmod_t;
 #endif
 
 #ifdef GDO_HAVE_DLADDR
-# if !defined(_GNU_SOURCE) && (defined(__GLIBC__) || defined(__UCLIBC__))
+# if !defined(_GNU_SOURCE) && \
+     (defined(__GLIBC__) || \
+      defined(__UCLIBC__) || \
+      defined(__dietlibc__))
 #  define GDO_NEED_DLADDR_PROTO
 # elif !defined(_NETBSD_SOURCE) && (defined(__NetBSD__) || defined(__minix))
 #  define GDO_NEED_DLADDR_PROTO
@@ -444,7 +447,7 @@ GDO_INLINE bool _gdo_call_dlclose(gdo_hmod_t handle)
 
 #if !defined(GDO_WINAPI)
 
-GDO_INLINE void *_gdo_call_dlopen(const char *filename, int flags, bool new_namespace)
+GDO_INLINE gdo_hmod_t _gdo_call_dlopen(const char *filename, int flags, bool new_namespace)
 {
 #ifdef GDO_HAVE_DLMOPEN
     if (new_namespace) {
@@ -477,19 +480,11 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
     while (true) {
         uint8_t *text = (uint8_t *)cur->ldinfo_textorg;
         uint8_t *data = (uint8_t *)cur->ldinfo_dataorg;
-        uint8_t *text_end = text;
-        uint8_t *data_end = data;
-
-        if (cur->ldinfo_textsize > 0) {
-            text_end += cur->ldinfo_textsize - 1;
-        }
-
-        if (cur->ldinfo_datasize > 0) {
-            data_end += cur->ldinfo_datasize - 1;
-        }
+        uint8_t *text_end = text + cur->ldinfo_textsize;
+        uint8_t *data_end = data + cur->ldinfo_datasize;
 
         /* check if symbol pointer address lies within current text or data section */
-        if ((sym >= text && sym <= text_end) || (sym >= data && sym <= data_end)) {
+        if ((sym >= text && sym < text_end) || (sym >= data && sym < data_end)) {
             /* found */
             break;
         } else if (cur->ldinfo_next == 0) {
