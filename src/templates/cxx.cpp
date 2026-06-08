@@ -862,6 +862,17 @@ std::string gdo::dl::origin()
         return {};
     }
 
+# ifdef __linux__
+    char *path;
+
+    /* try to get the full library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && (path = _gdo_fullpath_proc_self_maps(lm)) != NULL) {
+        std::string s = path;
+        free(path);
+        return s;
+    }
+# endif
+
     return lm->l_name;
 
 #elif defined(GDO_HAVE_DLADDR)

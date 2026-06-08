@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/*                         common macros and headers                         */
+/*                    common macros, headers and functions                   */
 /*****************************************************************************/
 
 
@@ -93,12 +93,6 @@ GDO_HOOK_<function>(...)
 # include <features.h> /* defines __GLIBC__ */
 #else
 # include <limits.h> /* includes <features.h> indirectly if present */
-#endif
-
-#ifdef _AIX
-# include <inttypes.h>
-# include <string.h>
-# include <sys/ldr.h>
 #endif
 
 #ifndef GDO_WINAPI
@@ -447,6 +441,7 @@ GDO_INLINE bool _gdo_call_dlclose(gdo_hmod_t handle)
 
 #if !defined(GDO_WINAPI)
 
+
 GDO_INLINE gdo_hmod_t _gdo_call_dlopen(const char *filename, int flags, bool new_namespace)
 {
 #ifdef GDO_HAVE_DLMOPEN
@@ -471,8 +466,13 @@ GDO_INLINE bool _gdo_call_dladdr(const void *addr, Dl_info *info)
 #endif
 
 
-/* parse ld_info struct and search for library filename that provides sym */
 #ifdef _AIX
+
+#include <inttypes.h>
+#include <string.h>
+#include <sys/ldr.h>
+
+/* parse ld_info struct and search for library filename that provides sym */
 GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym, const char **member)
 {
     struct ld_info *cur = info;
@@ -507,6 +507,76 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
 
     return path;
 }
+
 #endif //_AIX
+
+
+#if defined(GDO_HAVE_DLINFO) && defined(__linux__)
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* try to get the full library path from /proc/self/maps */
+GDO_INLINE char *_gdo_fullpath_proc_self_maps(struct link_map *lm)
+{
+    char *line = NULL;
+    char *p = NULL;
+    size_t n = 0;
+    ssize_t nread;
+
+    FILE *fp = fopen("/proc/self/maps", "r");
+
+    if (!fp) {
+        return NULL;
+    }
+
+    /* large enough for a 64 bit address with 0x prefix */
+    char addr[32];
+    snprintf(addr, sizeof(addr), "%p-", (void *)lm->l_addr);
+
+    /* skip 0x prefix */
+    char *paddr = addr + 2;
+    const size_t addr_len = strlen(paddr);
+
+    /* find mapping address */
+    while ((nread = getline(&line, &n, fp)) != -1) {
+        if (strncmp(line, paddr, addr_len) == 0) {
+            line[nread-1] = 0; /* delete newline */
+            p = line + addr_len;
+            break;
+        }
+    }
+
+    fclose(fp);
+
+    if (p) {
+        /* get entry #6; lines look like this:
+         * 7de29d200000-7de29d228000 r--p 00000000 103:01 2758110    /usr/lib/x86_64-linux-gnu/libc.so.6 */
+        for (int i = 0; i < 5; i++) {
+            /* find next whitespace */
+            while (!isspace(*p)) p++;
+            if (*p == 0) break;
+
+            /* skip whitespace */
+            while (isspace(*p)) p++;
+            if (*p == 0) break;
+        }
+
+        /* move string to front of buffer */
+        if (*p == '/') {
+            memmove(line, p, strlen(p) + 1);
+            return line;
+        }
+    }
+
+    free(line);
+
+    return NULL;
+}
+
+#endif //GDO_HAVE_DLINFO && __linux__
+
 
 #endif //!GDO_WINAPI

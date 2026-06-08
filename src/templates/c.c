@@ -735,6 +735,15 @@ GDO_LINKAGE gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
+# ifdef __linux__
+    char *path;
+
+    /* try to get the full library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && (path = _gdo_fullpath_proc_self_maps(lm)) != NULL) {
+        return path;
+    }
+# endif
+
     return strdup(lm->l_name);
 
 #elif defined(GDO_HAVE_DLADDR)
