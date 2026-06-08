@@ -369,7 +369,7 @@ public:
 
 
     /**
-     * Return the full library path.
+     * Return the library path.
      * On error or if no library was loaded an empty string is returned.
      *
      * On some systems and configurations the path is taken from the loaded symbols
