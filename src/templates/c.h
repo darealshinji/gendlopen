@@ -163,15 +163,14 @@ GDO_DECL const gdo_char_t *gdo_last_error(void)
 
 
 /**
- * Return the library path. The returned string MUST be deallocated with free().
- * On error or if no library was loaded NULL is returned.
+ * Return the library path. On error or if no library was loaded NULL is returned.
+ * Do not free the returned pointer!
  *
  * On some systems and configurations the path is taken from the loaded symbols
  * in which case at least one symbol must have been successfully loaded before
  * using this function.
  */
-GDO_DECL gdo_char_t *gdo_lib_origin(void)
-    GDO_GCC_ATTRIBUTE (warn_unused_result);
+GDO_DECL const gdo_char_t *gdo_lib_origin(void);
 
 
 /**

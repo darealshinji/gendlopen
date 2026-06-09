@@ -338,7 +338,7 @@ void gdo::dl::load_lib(const std::string &filename)
 
 
 #ifdef _AIX
-std::string gdo::dl::aix_fname_from_symbol(struct ld_info *info, uint8_t *sym)
+std::string gdo::dl::aix_origin(struct ld_info *info, uint8_t *sym)
 {
     const char *member = NULL;
     const char *path = _gdo_aix_parse_ldinfo(info, sym, reinterpret_cast<const char **>(&member));
@@ -811,9 +811,8 @@ std::string gdo::dl::origin()
      * and don't need to invoke dladdr() on a loaded symbol address. */
 
     char buf[GDO_BUFLEN];
-
-    DWORD nSize = ::GetModuleFileNameA(reinterpret_cast<HMODULE>(m_handle),
-        buf, sizeof(buf));
+    auto hmod = reinterpret_cast<HMODULE>(m_handle);
+    DWORD nSize = ::GetModuleFileNameA(hmod, buf, sizeof(buf));
 
     if (nSize == 0) {
         m_errmsg = "failed to get the library path";
@@ -840,7 +839,7 @@ std::string gdo::dl::origin()
         uint8_t *ptr;
 @
         ptr = reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%);@
-        fname = aix_fname_from_symbol(info, ptr);@
+        fname = aix_origin(info, ptr);@
         if (!fname.empty()) { return fname; }
     }
 
@@ -863,13 +862,11 @@ std::string gdo::dl::origin()
     }
 
 # ifdef __linux__
-    char *path;
+    char buf[GDO_BUFLEN];
 
     /* try to get the full library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && (path = _gdo_fullpath_proc_self_maps(lm)) != NULL) {
-        std::string s = path;
-        free(path);
-        return s;
+    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, buf, GDO_BUFLEN)) {
+        return buf;
     }
 # endif
 

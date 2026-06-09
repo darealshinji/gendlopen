@@ -201,7 +201,7 @@ static bool load_from_list(
         const char *(*last_error) (),
         bool        (*lib_is_loaded) (),
         bool        (*load_all_symbols) (),
-        char *      (*lib_origin) ())
+        const char *(*lib_origin) ())
 {
     const char *library = *list;
 
@@ -225,11 +225,10 @@ static bool load_from_list(
         return false;
     }
 
-    char *orig = lib_origin();
+    const char *orig = lib_origin();
 
     if (orig) {
         printf("loaded: %s\n", orig);
-        free(orig);
     }
 
     return true;

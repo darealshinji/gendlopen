@@ -113,7 +113,7 @@ typedef void *gdo_hmod_t;
 #ifdef _WIN32
 # define GDO_BUFLEN (32*1024) /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
 #else
-# define GDO_BUFLEN (8*1024)  /* 2x Linux MAX_PATH */
+# define GDO_BUFLEN (8*1024)  /* 2x Linux PATH_MAX */
 #endif
 
 
@@ -513,14 +513,54 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
 
 #if defined(GDO_HAVE_DLINFO) && defined(__linux__)
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <linux/fs.h>
 
-/* try to get the full library path from /proc/self/maps */
-GDO_INLINE char *_gdo_fullpath_proc_self_maps(struct link_map *lm)
+#ifdef PROCMAP_QUERY
+# include <fcntl.h>
+# include <sys/ioctl.h>
+# include <unistd.h>
+#else
+# include <ctype.h>
+# include <stdlib.h>
+# include <stdio.h>
+#endif
+
+
+/* try to get the full library path from process map */
+GDO_INLINE bool _gdo_fullpath_procmap(struct link_map *lm, char *buf, size_t bufsize)
 {
+# ifdef PROCMAP_QUERY
+
+    struct procmap_query q;
+
+    int fd = open("/proc/self/maps", O_RDONLY | O_NONBLOCK);
+
+    if (fd == -1) {
+        return false;
+    }
+
+    memset(&q, 0, sizeof(struct procmap_query));
+
+    q.size          = sizeof(struct procmap_query);
+    q.query_flags   = PROCMAP_QUERY_FILE_BACKED_VMA;
+    q.query_addr    = (__u64)lm->l_addr;  /* find this address */
+    q.vma_name_size = bufsize;     /* in: buffer size; out: saved path length + NUL byte */
+    q.vma_name_addr = (__u64)buf;  /* path buffer */
+
+    if (ioctl(fd, PROCMAP_QUERY, &q) < 0) {
+        close(fd);
+        return false;
+    }
+
+    close(fd);
+
+    return (q.vma_name_size > 0);
+
+# else
+
+    /* parse /proc/self/maps manually */
+
     char *line = NULL;
     char *p = NULL;
     size_t n = 0;
@@ -529,7 +569,7 @@ GDO_INLINE char *_gdo_fullpath_proc_self_maps(struct link_map *lm)
     FILE *fp = fopen("/proc/self/maps", "r");
 
     if (!fp) {
-        return NULL;
+        return false;
     }
 
     /* large enough for a 64 bit address with 0x prefix */
@@ -559,21 +599,28 @@ GDO_INLINE char *_gdo_fullpath_proc_self_maps(struct link_map *lm)
             while (!isspace(*p)) p++;
             if (*p == 0) break;
 
-            /* skip whitespace */
+            /* skip whitespaces */
             while (isspace(*p)) p++;
             if (*p == 0) break;
         }
 
-        /* move string to front of buffer */
+        /* copy to buffer */
         if (*p == '/') {
-            memmove(line, p, strlen(p) + 1);
-            return line;
+            size_t len = strlen(p) + 1;
+
+            if (len <= bufsize) {
+                memcpy(buf, p, len);
+                free(line);
+                return true;
+            }
         }
     }
 
     free(line);
 
-    return NULL;
+    return false;
+
+# endif //PROCMAP_QUERY
 }
 
 #endif //GDO_HAVE_DLINFO && __linux__

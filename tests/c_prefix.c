@@ -96,11 +96,10 @@ static void load_lib_and_symbols()
 
 static void print_lib_origin()
 {
-    myprefix_char_t *origin = myprefix_lib_origin();
+    const myprefix_char_t *origin = myprefix_lib_origin();
 
     if (origin) {
         printf("library loaded at: %s\n", origin);
-        free(origin);
     } else {
         fprintf(stderr, "%s\n", myprefix_last_error());
     }
