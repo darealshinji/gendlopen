@@ -730,15 +730,14 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin(void)
     }
 # endif
 
-    size_t len = strlen(lm->l_name) + 1;
+    size_t len = strlen(lm->l_name);
 
-    if (len > GDO_BUFLEN) {
-        return NULL;
+    if (len < GDO_BUFLEN) {
+        memcpy(buf, lm->l_name, len + 1);
+        return buf;
     }
 
-    memcpy(buf, lm->l_name, len);
-
-    return buf;
+    return NULL;
 
 #elif defined(GDO_HAVE_DLADDR)
 
