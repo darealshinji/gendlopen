@@ -22,21 +22,15 @@ typedef char    gdo_char_t;
  */
 typedef struct _gdo_handle
 {
-    /* copy of module filename */
-    gdo_char_t *filename;
-
-    /* library handle */
-#ifdef GDO_WINAPI
-    HMODULE handle;
-#else
-    void *handle;
-#endif
+    gdo_char_t *filename;  /* copy of module filename */
+    gdo_hmod_t  handle;    /* library handle */
 
     /* symbol pointers */
     struct _gdo_ptr {
         %%type%% (*%%func_symbol%%)(%%args%%);
         %%obj_type%% *%%obj_symbol%%;
     } ptr;
+
 } gdo_handle_t;
 
 
@@ -45,11 +39,8 @@ typedef struct _gdo_handle
  */
 typedef struct _gdo_plugin
 {
-    /* number of elements in `list' */
-    size_t num;
-
-    /* list of library handles */
-    gdo_handle_t *list;
+    size_t        num;   /* number of elements in `list' */
+    gdo_handle_t *list;  /* list of library handles */
 
 } gdo_plugin_t;
 
