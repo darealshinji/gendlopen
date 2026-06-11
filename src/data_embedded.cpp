@@ -79,7 +79,8 @@ void gendlopen::dump_templates(const char *dir)
         throw error(std::string("failed to create directory: ") + dir);
     }
 
-#define TEMPLATE(x) save_to_file(dir, FILENAME_##x, templates::ptr_##x);
+#define TEMPLATE(FILE, VAR) \
+    save_to_file(dir, #FILE, templates::ptr_##VAR);
 
 #include "list.h"
 }

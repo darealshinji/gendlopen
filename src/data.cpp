@@ -31,8 +31,8 @@
 
 namespace templates
 {
-#define TEMPLATE(x) \
-    extern const template_t *ptr_##x;
+#define TEMPLATE(FILE, VAR) \
+    extern const template_t *ptr_##VAR;
 
 #include "list.h"
 }
@@ -44,12 +44,19 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
     auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
     {
         load_template(templates::file_common_header);
-        header.push_back(templates::ptr_common_header);
-        header.push_back(t_header);
+        load_template(templates::file_common_body);
 
         if (m_separate) {
+            /* common header + header, common body + body */
+            header.push_back(templates::ptr_common_header);
+            header.push_back(t_header);
+            body.push_back(templates::ptr_common_body);
             body.push_back(t_body);
         } else {
+            /* common data + header + body */
+            header.push_back(templates::ptr_common_header);
+            header.push_back(templates::ptr_common_body);
+            header.push_back(t_header);
             header.push_back(t_body);
         }
     };

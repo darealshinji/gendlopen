@@ -112,7 +112,8 @@ namespace param
 /* enum for template files */
 namespace templates
 {
-#define TEMPLATE(x)  file_##x,
+#define TEMPLATE(FILE, VAR) \
+    file_##VAR,
 
     typedef enum {
 #include "list.h"

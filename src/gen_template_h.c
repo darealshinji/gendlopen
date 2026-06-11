@@ -45,6 +45,7 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
     size_t count = 0;
     FILE *fp;
 
+    /* whether a line contains a `%' symbol */
     const char * const true_false[2] = { "false", "true" };
     int percent = 0;
 
@@ -64,10 +65,10 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
 
     /* write output */
     fprintf(fpOut, "/* %s */\n", in_file);
-    fprintf(fpOut, "#define FILENAME_%s \"%s\"\n", varName, in_file);
     fprintf(fpOut, "static const template_t %s[] = {\n", varName);
 
-    if (strcmp("license", varName) != 0) {
+    /* don't add line directive to license part */
+    if (strcmp("license.h", in_file) != 0) {
         fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", false, 1 },\n", in_file);
     }
 
@@ -160,15 +161,13 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
     fclose(fp);
 }
 
+
 int main(int argc, char **argv)
 {
     if (argc != 3) {
         fprintf(stderr, "usage: %s <INPUT_DIR> <OUTFILE>\n", argv[0]);
         return 1;
     }
-
-    /* input directory */
-    const char *d = argv[1];
 
     /* open output file for writing */
     FILE *fp = fopen(argv[2], "wb");
@@ -184,18 +183,10 @@ int main(int argc, char **argv)
         "\n"
         "#pragma once\n");
 
-/* fpOut, in_dir, in_file,           varName */
-    dump(fp, d, "license.h",         "license");
-    dump(fp, d, "filename_macros.h", "filename_macros");
-    dump(fp, d, "common.h",          "common_header");
-    dump(fp, d, "c.h",               "c_header");
-    dump(fp, d, "c.c",               "c_body");
-    dump(fp, d, "cxx.hpp",           "cxx_header");
-    dump(fp, d, "cxx.cpp",           "cxx_body");
-    dump(fp, d, "minimal.h",         "min_c_header");
-    dump(fp, d, "minimal_cxxeh.hpp", "min_cxx_header");
-    dump(fp, d, "plugin.h",          "plugin_header");
-    dump(fp, d, "plugin.c",          "plugin_body");
+#define TEMPLATE(FILE, VAR) \
+    dump(fp, argv[1], #FILE, #VAR);
+
+#include "list.h"
 
     fclose(fp);
 

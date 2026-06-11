@@ -39,11 +39,13 @@
 
 namespace templates
 {
-#define TEMPLATE(x) \
-    std::vector<template_t> data_##x; \
-    const template_t *ptr_##x = nullptr;
+#define TEMPLATE(FILE, VAR) \
+    std::vector<template_t> data_##VAR; \
+    const template_t *ptr_##VAR = nullptr;
 
 #include "list.h"
+
+#undef TEMPLATE
 }
 
 
@@ -51,11 +53,21 @@ namespace /* anonymous */
 {
 
 /* find template and load it into memory */
-void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
+void load_from_file(const template_t *&ptr, std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
 {
     std::string path, buf;
     template_t entry;
     bool eof = false;
+
+    if (ptr) {
+        /* pointer is already assigned */
+        return;
+    }
+
+    /* don't add line directive to license part */
+    if (::strcmp(file, "license.h") == 0) {
+        line_directive = false;
+    }
 
     /* lookup path */
     path = dir + file;
@@ -89,6 +101,9 @@ void load_from_file(std::vector<template_t> &data, const std::string &dir, const
 
     entry = { "", 0, 0 };
     data.push_back(entry);
+
+    /* assign pointer */
+    ptr = data.data();
 }
 
 } /* end anonymous namespace */
@@ -97,30 +112,14 @@ void load_from_file(std::vector<template_t> &data, const std::string &dir, const
 /* load template into memory */
 void gendlopen::load_template(templates::name file)
 {
-#define CASE_X(x, NAME, LINE_DIRECTIVE) \
-    case templates::file_##x: \
-        if (!templates::ptr_##x) { \
-            load_from_file(templates::data_##x, m_templates_path, NAME, LINE_DIRECTIVE); \
-            templates::ptr_##x = templates::data_##x.data(); \
-        } \
-        break
-
-    const bool b = m_line_directive;
+#define TEMPLATE(FILE, VAR) \
+    case templates::file_##VAR: \
+        load_from_file(templates::ptr_##VAR, templates::data_##VAR, m_templates_path, #FILE, m_line_directive); \
+        break;
 
     switch (file)
     {
-        /* never add line directive to license part */
-        CASE_X(license,         "license.h",         false);
-        CASE_X(filename_macros, "filename_macros.h", b);
-        CASE_X(common_header,   "common.h",          b);
-        CASE_X(c_header,        "c.h",               b);
-        CASE_X(c_body,          "c.c",               b);
-        CASE_X(cxx_header,      "cxx.hpp",           b);
-        CASE_X(cxx_body,        "cxx.cpp",           b);
-        CASE_X(min_c_header,    "minimal.h",         b);
-        CASE_X(min_cxx_header,  "minimal_cxxeh.hpp", b);
-        CASE_X(plugin_header,   "plugin.h",          b);
-        CASE_X(plugin_body,     "plugin.c",          b);
+#include "list.h"
     }
 }
 
