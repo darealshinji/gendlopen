@@ -229,10 +229,7 @@ void gendlopen::process_custom_template()
     while (rv) {
         rv = utils::get_lines(fp, line, entry);
         substitute_line(entry, param_skip_code);
-
-        if (m_line_directive) {
-            m_substitute_lineno += entry.line_count;
-        }
+        m_substitute_lineno += entry.line_count;
     }
 }
 
