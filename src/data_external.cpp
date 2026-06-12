@@ -55,9 +55,9 @@ namespace /* anonymous */
 /* find template and load it into memory */
 void load_from_file(const template_t *&ptr, std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
 {
-    std::string path, buf;
+    std::string path, line;
     template_t entry;
-    bool eof = false;
+    bool rv = true;
 
     if (ptr) {
         /* pointer is already assigned */
@@ -84,18 +84,18 @@ void load_from_file(const template_t *&ptr, std::vector<template_t> &data, const
     /* add initial #line directive */
     if (line_directive) {
         if (fp == stdin) {
-            buf = "#line 1 \"<STDIN>\"";
+            line = "#line 1 \"<STDIN>\"";
         } else {
-            buf = "#line 1 \"" + std::string(file) + "\"\n";
+            line = "#line 1 \"" + std::string(file) + "\"\n";
         }
 
-        entry = { buf, false, 1 };
+        entry = { line, false, 1 };
         data.push_back(entry);
     }
 
     /* read lines */
-    while (!eof) {
-        eof = utils::get_lines(fp, buf, entry);
+    while (rv) {
+        rv = utils::get_lines(fp, line, entry);
         data.push_back(entry);
     }
 

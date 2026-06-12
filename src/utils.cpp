@@ -29,6 +29,48 @@
 #include "utils.hpp"
 
 
+namespace /* anonymous */
+{
+
+/* returns false on EOL or EOF */
+bool save_to_line(int c, std::string &line, template_t &entry)
+{
+    switch (c)
+    {
+    case '\n':
+        /* concatenate lines ending on '@' */
+        if (line.ends_with('@')) {
+            line.back() = '\n';
+            entry.line_count++;
+            break;
+        } else if (line.ends_with("@\r")) {
+            /* Windows line ending */
+            line.replace(line.size() - 2, 2, "\r\n");
+            entry.line_count++;
+            break;
+        }
+        return false;
+
+    case EOF:
+        /* remove trailing '@' */
+        utils::delete_suffix(line, '@');
+        return false;
+
+    case '%':
+        entry.maybe_keyword = true;
+        [[fallthrough]];
+
+    default:
+        line.push_back(static_cast<char>(c));
+        break;
+    }
+
+    return true;
+}
+
+}
+
+
 /* convert string to uppercase */
 std::string utils::to_upper(const std::string &str, bool underscores)
 {
@@ -130,58 +172,23 @@ size_t utils::count_linefeed(const std::string &str)
 /* read input lines */
 bool utils::get_lines(FILE *fp, std::string &line, template_t &entry)
 {
-    bool loop = true;
     int c = EOF;
 
     line.clear();
     entry.maybe_keyword = false;
     entry.line_count = 1;
 
-    /* just in case */
-    if (!fp) {
-        loop = false;
-    }
+    while (true) {
+        c = ::fgetc(fp);
 
-    while (loop)
-    {
-        c = fgetc(fp);
-
-        switch (c)
-        {
-        case '\n':
-            /* concatenate lines ending on '@' */
-            if (line.ends_with('@')) {
-                line.back() = '\n';
-                entry.line_count++;
-                continue;
-            } else if (line.ends_with("@\r")) {
-                /* Windows line ending */
-                line.replace(line.size() - 2, 2, "\r\n");
-                entry.line_count++;
-                continue;
-            }
-            loop = false;
+        if (!save_to_line(c, line, entry)) {
             break;
-
-        case EOF:
-            /* remove trailing '@' */
-            delete_suffix(line, '@');
-            loop = false;
-            break;
-
-        case '%':
-            entry.maybe_keyword = true;
-            [[fallthrough]];
-
-        default:
-            line.push_back(static_cast<char>(c));
-            continue;
         }
     }
 
     entry.data = string_to_data(line);
 
-    return (c == EOF);
+    return (c != EOF);
 }
 
 

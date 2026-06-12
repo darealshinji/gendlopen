@@ -197,10 +197,10 @@ void gendlopen::templates_path(const std::string &s)
 /* read and process custom template */
 void gendlopen::process_custom_template()
 {
-    std::string buf;
+    std::string line;
     template_t entry;
     bool param_skip_code = false;
-    bool eof = false;
+    bool rv = true;
 
     /* open file for reading */
     open_file file(m_custom_template);
@@ -226,8 +226,8 @@ void gendlopen::process_custom_template()
     }
 
     /* parse lines */
-    while (!eof) {
-        eof = utils::get_lines(fp, buf, entry);
+    while (rv) {
+        rv = utils::get_lines(fp, line, entry);
         substitute_line(entry, param_skip_code);
 
         if (m_line_directive) {
