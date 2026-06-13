@@ -808,6 +808,10 @@ GDO_INLINE bool _gdo_aix_origin(struct ld_info *info, uint8_t *sym, char *buf, s
 /*****************************************************************************/
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
+#if !defined(__GNUC__) && !defined(_MSC_VER)
+void _gdo_noop(void) {}
+#endif
+
 GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, ...)
 {
     va_list ap;

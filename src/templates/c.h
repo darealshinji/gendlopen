@@ -187,7 +187,13 @@ GDO_DECL const gdo_char_t *gdo_lib_origin(void);
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 /* we need an actual function for the VA_ARGS macro */
-inline void _gdo_noop(void) {}
+#ifdef __GNUC__
+inline __attribute__ ((always_inline)) void _gdo_noop(void) {}
+#elif defined(_MSC_VER)
+__forceinline void _gdo_noop(void) {}
+#else
+extern void _gdo_noop(void);
+#endif
 
 
 /* by default #define hooks that do nothing */
@@ -198,6 +204,7 @@ inline void _gdo_noop(void) {}
 
 /* right now only GCC supports __builtin_va_arg_pack() */
 #if defined(__GNUC__) && \
+    !defined(__NO_INLINE__) && \
     defined(__has_builtin)
 # if __has_builtin(__builtin_va_arg_pack)
 #  define GDO_BUILTIN_VA_ARG_PACK
@@ -232,6 +239,7 @@ GDO_DECL void _gdo_wrap_check_loaded(void *symptr, int load, const gdo_char_t *s
  * __builtin_va_arg_pack() is a GNU extension and will be resolved to the
  * additional parameters provided by the `...' argument.
  * This requires function inlining optimizations to be enabled.
+ * The function HAS to be declared `extern inline __attribute__ ((__gnu_inline__))'.
  */
 @
 /* %%func_symbol%%() */@
