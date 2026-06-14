@@ -13,7 +13,6 @@ export PATH="$PWD/cross-files/clang-cl-wrapper:$PATH"
 mkdir build
 meson setup -Denable_tests=true \
     -Denable_examples=true \
-    -Denable_utf8=true \
     --cross-file cross-files/x86_64-windows-msvc-clang.ini \
     build
 

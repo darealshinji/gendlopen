@@ -39,10 +39,11 @@ if not external_files
     gendlopen_deps += gen_hdr
 endif
 
-if host_is_win32 and enable_utf8
+if host_is_win32
     if arg_syntax == 'msvc'
         fs = import('fs')
         fs.copyfile('gendlopen.manifest')
+        link_args_extra += ['-manifest:embed', '-manifestinput:src/gendlopen.manifest']
     else
         windows = import('windows')
         gendlopen_deps += windows.compile_resources('gendlopen.rc')

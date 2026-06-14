@@ -40,7 +40,7 @@
 
 int main(int argc, char **argv)
 {
-#if defined(_WIN32) && defined(ENABLE_CP_UTF8)
+#ifdef _WIN32
     /* Set the process code page to UTF-8 with the activeCodePage property in
      * the appxmanifest during linking and set the console output codepage to
      * UTF-8 here. SetConsoleCP() is not required and it would keep the new

@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: python -m pip install meson ninja
       - name: Meson configure
-        run: meson setup build -Dbuildtype=debug -Denable_tests=true -Denable_examples=true -Denable_utf8=true
+        run: meson setup build -Dbuildtype=debug -Denable_tests=true -Denable_examples=true
       - name: Meson compile
         run: meson compile -C build -v
       - name: Run tests

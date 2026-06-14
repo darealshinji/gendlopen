@@ -21,7 +21,7 @@ CXX_SRCS = \
 	..\$(SRC)\utils.cpp
 
 CFLAGS   = /W3 /O2 /I. /I..\$(SRC)
-CXXFLAGS = /W3 /O2 /I. /I..\$(SRC) /DENABLE_CP_UTF8 /EHsc /std:c++20
+CXXFLAGS = /W3 /O2 /I. /I..\$(SRC) /EHsc /std:c++20
 LFLAGS   = /manifest:embed /manifestinput:..\$(SRC)\gendlopen.manifest
 
 
