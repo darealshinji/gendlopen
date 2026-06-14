@@ -36,7 +36,7 @@ GDO_INLINE gdo_hmod_t _gdo_call_dlopen(const char *filename, int flags, bool new
 }
 
 
-#ifdef GDO_HAVE_DLADDR
+#if defined(GDO_HAVE_DLADDR) && !defined(GDO_HAVE_DLINFO)
 GDO_INLINE bool _gdo_call_dladdr(const void *addr, Dl_info *info)
 {
     info->dli_fname = NULL;

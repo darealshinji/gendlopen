@@ -846,7 +846,7 @@ std::string gdo::dl::origin()
     m_errmsg = "failed to get the library path";
     return {};
 
-#elif defined(GDO_HAVE_INFO)
+#elif defined(GDO_HAVE_DLINFO)
 
     /* use dlinfo() to get a link map */
     struct link_map *lm = nullptr;
