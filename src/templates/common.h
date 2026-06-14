@@ -75,24 +75,24 @@ GDO_HOOK_<function>(...)
 ***/
 
 
-#if defined(_WIN32)
-# ifdef GDO_USE_DLOPEN
-#  define GDO_DLFCN_WIN32
-# else
-#  define GDO_WINAPI
-# endif
-#endif
-
 #ifndef __cplusplus
 # include <stdbool.h>
 #endif
 
 #ifdef _WIN32
+# ifdef GDO_USE_DLOPEN
+#  define GDO_DLFCN_WIN32
+# else
+#  define GDO_WINAPI
+# endif
 # include <windows.h>
-#elif defined(HAVE_FEATURES_H)
-# include <features.h> /* defines __GLIBC__ */
+# include <wchar.h>
 #else
-# include <limits.h> /* includes <features.h> indirectly if present */
+# ifdef HAVE_FEATURES_H
+#  include <features.h> /* defines macros to identify C library */
+# else
+#  include <limits.h> /* includes <features.h> indirectly if present */
+# endif
 #endif
 
 #ifndef GDO_WINAPI
@@ -251,7 +251,6 @@ extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
 
 #if defined(GDO_WINAPI) && defined(_UNICODE)
 # define _GDO_TARGET_WIDECHAR
-# include <wchar.h>
 #endif
 
 /* GDO_DEFAULT_LIBA ?= GDO_HARDCODED_DEFAULT_LIBA */

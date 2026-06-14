@@ -6,7 +6,6 @@
 # pragma comment(lib, "user32.lib")  /* dependency for MessageBox() */
 #endif
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,20 +64,13 @@ GDO_INLINE const gdo_char_t *_gdo_tcsstr(const gdo_char_t *haystack, const gdo_c
 
 
 /* snprintf() / snwprintf() */
-GDO_INLINE void _gdo_snprintf(gdo_char_t *dest, size_t size, const gdo_char_t *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
 #ifdef _WIN32
-    _vsntprintf_s(dest, size, _TRUNCATE, fmt, ap);
+# define GDO_SNPRINTF(DEST, FORMAT, ...) \
+    _sntprintf_s(DEST, _countof(DEST), _TRUNCATE, FORMAT, __VA_ARGS__)
 #else
-    vsnprintf(dest, size, fmt, ap);
+# define GDO_SNPRINTF(DEST, FORMAT, ...) \
+    snprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__)
 #endif
-    va_end(ap);
-}
-
-#define GDO_SNPRINTF(DEST, FORMAT, ...) \
-    _gdo_snprintf(DEST, _countof(DEST), FORMAT, __VA_ARGS__)
 
 
 
@@ -812,32 +804,27 @@ GDO_INLINE bool _gdo_aix_origin(struct ld_info *info, uint8_t *sym, char *buf, s
 void _gdo_noop(void) {}
 #endif
 
-GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, ...)
+GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, const gdo_char_t *sym, const gdo_char_t *msg)
 {
-    va_list ap;
-    va_start(ap, fmt);
-
 #ifdef _WIN32
 
 # ifdef GDO_USE_MESSAGE_BOX
     /* we can safely use gdo_hndl.errbuf, the last error message
      * was saved in gdo_hndl.formatted */
-    _vsntprintf_s(gdo_hndl.errbuf, GDO_BUFLEN, _TRUNCATE, fmt, ap);
+    _sntprintf_s(gdo_hndl.errbuf, GDO_BUFLEN, _TRUNCATE, fmt, sym, msg);
     MessageBox(NULL, gdo_hndl.errbuf, _T("Error"), MB_OK | MB_ICONERROR);
-    gdo_hndl.errbuf[0] = 0;
+    _gdo_clear_error();
 # else
-    _vftprintf_s(stderr, fmt, ap);
+    _ftprintf_s(stderr, fmt, sym, msg);
     _fputtc(_T('\n'), stderr);
 # endif //GDO_USE_MESSAGE_BOX
 
 #else //!_WIN32
 
-    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, fmt, sym, msg);
     fputc('\n', stderr);
 
 #endif //!_WIN32
-
-    va_end(ap);
 }
 
 /* used by wrapper functions */
