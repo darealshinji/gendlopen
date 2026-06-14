@@ -23,18 +23,121 @@
 **/
 
 #include <filesystem>
+#include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
+#include <cstdlib>
+#include "cio_ofstream.hpp"
+#include "open_file.hpp"
 #include "gendlopen.hpp"
 #include "types.hpp"
+#include "utils.hpp"
+
+namespace fs = std::filesystem;
+
+
+/* silence `unused reference' compiler warnings */
+template<typename T>
+void UNUSED_REF(T x) {
+    static_cast<void>(x);
+}
 
 
 namespace templates
 {
-#define TEMPLATE(FILE, VAR) \
-    extern const template_t *ptr_##VAR;
+#ifdef USE_EXTERNAL_RESOURCES
 
-#include "list.h"
+# define TEMPLATE(FILE, VAR) \
+    std::vector<template_t> data_##VAR; \
+    const template_t *ptr_##VAR = nullptr;
+# include "list.h"
+# undef TEMPLATE
+
+#else
+
+# include "template.h"
+
+#endif
+}
+
+
+namespace /* anonymous */
+{
+#ifdef USE_EXTERNAL_RESOURCES
+
+    /* find template and load it into memory */
+    void load_from_file(const template_t *&ptr, std::vector<template_t> &data, const std::string &dir,
+                        const char *file, bool line_directive)
+    {
+        std::string path, line;
+        template_t entry;
+        bool rv = true;
+
+        /* don't add line directive to license part */
+        if (strcmp(file, "license.h") == 0) {
+            line_directive = false;
+        }
+
+        /* lookup path */
+        path = dir + file;
+
+        /* open file for reading */
+        open_file ofs(path);
+
+        if (!ofs.is_open()) {
+            throw gendlopen::error("failed to open file for reading: " + path);
+        }
+
+        FILE *fp = ofs.file_pointer();
+
+        /* add initial #line directive */
+        if (line_directive) {
+            if (fp == stdin) {
+                line = "#line 1 \"<STDIN>\"";
+            } else {
+                line = "#line 1 \"" + std::string(file) + "\"\n";
+            }
+
+            entry = { line, false, 1 };
+            data.push_back(entry);
+        }
+
+        /* read lines */
+        while (rv) {
+            rv = utils::get_lines(fp, line, entry);
+            data.push_back(entry);
+        }
+
+        entry = { "", 0, 0 };
+        data.push_back(entry);
+
+        /* assign pointer */
+        ptr = data.data();
+    }
+
+#else //!USE_EXTERNAL_RESOURCES
+
+    /* save template data to file */
+    void save_to_file(std::string path, const char *filename, const template_t *list)
+    {
+        cio::ofstream ofs;
+
+        utils::append_missing_separator(path);
+        path += filename;
+
+        if (!ofs.open(path)) {
+            throw gendlopen::error(std::string("failed to open file for writing: ") + path);
+        }
+
+        std::cout << "saving " << path << std::endl;
+
+        for ( ; list->line_count != 0; list++) {
+            ofs << list->data << '\n';
+        }
+    }
+
+#endif //!USE_EXTERNAL_RESOURCES
 }
 
 
@@ -94,5 +197,48 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
     [[unlikely]] case output::error:
         throw error(std::string(__func__) + ": format == output::error");
     }
+}
+
+
+/* load template into memory */
+void gendlopen::load_template(templates::name file)
+{
+#ifdef USE_EXTERNAL_RESOURCES
+    switch (file)
+    {
+# define TEMPLATE(FILE, VAR) \
+    case templates::file_##VAR: \
+        load_from_file(templates::ptr_##VAR, templates::data_##VAR, m_templates_path, #FILE, m_line_directive); \
+        break;
+
+# include "list.h"
+# undef TEMPLATE
+
+    default:
+        break;
+    }
+#endif //USE_EXTERNAL_RESOURCES
+
+    UNUSED_REF(file);
+}
+
+
+/* dump templates */
+void gendlopen::dump_templates(const char *dir)
+{
+#if !defined(USE_EXTERNAL_RESOURCES)
+    if (!fs::exists(fs::symlink_status(dir)) && !fs::create_directories(dir)) {
+        throw error(std::string("failed to create directory: ") + dir);
+    }
+
+# define TEMPLATE(FILE, VAR) \
+    save_to_file(dir, #FILE, templates::ptr_##VAR);
+
+# include "list.h"
+# undef TEMPLATE
+
+#endif //!USE_EXTERNAL_RESOURCES
+
+    UNUSED_REF(dir);
 }
 

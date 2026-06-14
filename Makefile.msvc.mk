@@ -6,8 +6,6 @@ CXX_SRCS = \
 	..\$(SRC)\check_pattern.cpp \
 	..\$(SRC)\clang_ast.cpp \
 	..\$(SRC)\data.cpp \
-	..\$(SRC)\data_embedded.cpp \
-	..\$(SRC)\data_external.cpp \
 	..\$(SRC)\gendlopen.cpp \
 	..\$(SRC)\generate.cpp \
 	..\$(SRC)\help.cpp \

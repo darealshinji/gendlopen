@@ -6,8 +6,6 @@ OBJS = \
 	$(OUT)/check_pattern.o \
 	$(OUT)/clang_ast.o \
 	$(OUT)/data.o \
-	$(OUT)/data_embedded.o \
-	$(OUT)/data_external.o \
 	$(OUT)/gendlopen.o \
 	$(OUT)/generate.o \
 	$(OUT)/help.o \
@@ -22,7 +20,7 @@ OBJS = \
 	$(OUT)/utils.o
 
 CFLAGS      = -Wall -O3 -I$(SRC)
-CXXFLAGS    = -Wall -O3 -I$(SRC) -I$(OUT) -std=c++20
+CXXFLAGS    = -Wall -O3 -I$(SRC) -I$(OUT) -std=c++20 #-DUSE_EXTERNAL_RESOURCES
 LDFLAGS     = -Wl,-O1 -s
 COMPILE_C   = $(CC) $(CFLAGS) $(CPPFLAGS) -c -o
 COMPILE_CXX = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o
@@ -49,7 +47,7 @@ $(OUT)/template.h: $(OUT)/gen_template_h
 $(OUT)/gen_template_h: $(OUT)/.gitignore $(SRC)/gen_template_h.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $(SRC)/gen_template_h.c $(LDFLAGS)
 
-$(SRC)/data_embedded.cpp: $(OUT)/template.h
+$(SRC)/data.cpp: $(OUT)/template.h
 
 $(OUT)/cio_ofstream.o: $(SRC)/cio_ofstream.cpp
 	$(COMPILE_CXX) $@ $(SRC)/cio_ofstream.cpp
@@ -62,12 +60,6 @@ $(OUT)/clang_ast.o: $(SRC)/clang_ast.cpp
 
 $(OUT)/data.o: $(SRC)/data.cpp
 	$(COMPILE_CXX) $@ $(SRC)/data.cpp
-
-$(OUT)/data_embedded.o: $(SRC)/data_embedded.cpp
-	$(COMPILE_CXX) $@ $(SRC)/data_embedded.cpp
-
-$(OUT)/data_external.o: $(SRC)/data_external.cpp
-	$(COMPILE_CXX) $@ $(SRC)/data_external.cpp
 
 $(OUT)/gendlopen.o: $(SRC)/gendlopen.cpp
 	$(COMPILE_CXX) $@ $(SRC)/gendlopen.cpp

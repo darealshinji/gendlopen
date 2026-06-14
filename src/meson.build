@@ -3,8 +3,6 @@ gendlopen_src = files(
     'check_pattern.cpp',
     'clang_ast.cpp',
     'data.cpp',
-    'data_embedded.cpp',
-    'data_external.cpp',
     'gendlopen.cpp',
     'generate.cpp',
     'help.cpp',
