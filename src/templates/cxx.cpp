@@ -338,26 +338,25 @@ void gdo::dl::load_lib(const std::string &filename)
 
 
 #ifdef _AIX
-std::string gdo::dl::aix_origin(struct ld_info *info, uint8_t *sym)
+bool gdo::dl::aix_origin(struct ld_info *info, uint8_t *sym, std::string &filename)
 {
     const char *member = NULL;
     const char *path = _gdo_aix_parse_ldinfo(info, sym, reinterpret_cast<const char **>(&member));
 
     if (!path) {
-        return {};
+        return false;
     }
 
-    /* check for an archive member name */
+    filename = path;
+
+    /* archive member name */
     if (member && member[0] != 0) {
-        std::string str = path;
-        str += '(';
-        str += member;
-        str += ')';
-
-        return str;
+        filename += '(';
+        filename += member;
+        filename += ')';
     }
 
-    return path;
+    return true;
 }
 #endif //_AIX
 
@@ -827,7 +826,6 @@ std::string gdo::dl::origin()
 #elif defined(_AIX)
 
     uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
-    std::string fname;
 
     if (no_symbols_loaded()) {
         m_errmsg = "no symbols were loaded";
@@ -836,11 +834,13 @@ std::string gdo::dl::origin()
 
     if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
         auto info = reinterpret_cast<struct ld_info *>(buf);
-        uint8_t *ptr;
-@
-        ptr = reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%);@
-        fname = aix_origin(info, ptr);@
-        if (!fname.empty()) { return fname; }
+        std::string fname;
+
+        if (false
+            || aix_origin(info, reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%), fname)
+        ) {
+            return fname;
+        }
     }
 
     m_errmsg = "failed to get the library path";
@@ -882,9 +882,11 @@ std::string gdo::dl::origin()
         return {};
     }
 
-    if (_gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)) {@
-        return info.dli_fname;@
-    }@
+    if (false
+        || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
+    ) {
+        return info.dli_fname;
+    }
 
     m_errmsg = "dladdr() failed to get library path";
     return {};

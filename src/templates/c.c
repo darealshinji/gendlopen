@@ -689,9 +689,11 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin(void)
 
     if (loadquery(L_GETINFO, q, sizeof(q)) != -1) {
         struct ld_info *info = (struct ld_info *)q;
-@
-        if (_gdo_aix_origin(info, (uint8_t *)GDO_RAWPTR_%%symbol%%, buf, GDO_BUFLEN)) {@
-            return buf;@
+
+        if (false
+            || _gdo_aix_origin(info, (uint8_t *)GDO_RAWPTR_%%symbol%%, buf, GDO_BUFLEN)
+        ) {
+            return buf;
         }
     }
 
@@ -741,9 +743,11 @@ GDO_LINKAGE const gdo_char_t *gdo_lib_origin(void)
         return NULL;
     }
 
-    if (_gdo_call_dladdr((void *)GDO_RAWPTR_%%symbol%%, &info)) {@
-        return info.dli_fname;@
-    }@
+    if (false
+        || _gdo_call_dladdr((void *)GDO_RAWPTR_%%symbol%%, &info)
+    ) {
+        return info.dli_fname;
+    }
 
     _gdo_save_to_errbuf("dladdr() failed to get library path");
     return NULL;
