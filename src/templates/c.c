@@ -813,7 +813,6 @@ GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, const gdo_char_t *sym, c
      * was saved in gdo_hndl.formatted */
     _sntprintf_s(gdo_hndl.errbuf, GDO_BUFLEN, _TRUNCATE, fmt, sym, msg);
     MessageBox(NULL, gdo_hndl.errbuf, _T("Error"), MB_OK | MB_ICONERROR);
-    _gdo_clear_error();
 # else
     _ftprintf_s(stderr, fmt, sym, msg);
     _fputtc(_T('\n'), stderr);
