@@ -34,8 +34,6 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-namespace fs = std::filesystem;
-
 
 /* silence `unused reference' compiler warnings */
 template<typename T>
@@ -60,6 +58,9 @@ namespace templates
 
 #endif
 }
+
+namespace fs = std::filesystem;
+namespace t = templates;
 
 
 namespace /* anonymous */
@@ -146,19 +147,19 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
 {
     auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
     {
-        load_template(templates::file_common_header);
-        load_template(templates::file_common_body);
+        load_template(t::file_common_header);
+        load_template(t::file_common_body);
 
         if (m_separate) {
             /* common header + header, common body + body */
-            header.push_back(templates::ptr_common_header);
+            header.push_back(t::ptr_common_header);
             header.push_back(t_header);
-            body.push_back(templates::ptr_common_body);
+            body.push_back(t::ptr_common_body);
             body.push_back(t_body);
         } else {
             /* common data + header + body */
-            header.push_back(templates::ptr_common_header);
-            header.push_back(templates::ptr_common_body);
+            header.push_back(t::ptr_common_header);
+            header.push_back(t::ptr_common_body);
             header.push_back(t_header);
             header.push_back(t_body);
         }
@@ -167,31 +168,31 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
     switch (m_format)
     {
     case output::c:
-        load_template(templates::file_c_header);
-        load_template(templates::file_c_body);
-        concat_sources(templates::ptr_c_header, templates::ptr_c_body);
+        load_template(t::file_c_header);
+        load_template(t::file_c_body);
+        concat_sources(t::ptr_c_header, t::ptr_c_body);
         break;
 
     case output::cxx:
-        load_template(templates::file_cxx_header);
-        load_template(templates::file_cxx_body);
-        concat_sources(templates::ptr_cxx_header, templates::ptr_cxx_body);
+        load_template(t::file_cxx_header);
+        load_template(t::file_cxx_body);
+        concat_sources(t::ptr_cxx_header, t::ptr_cxx_body);
         break;
 
     case output::plugin:
-        load_template(templates::file_plugin_header);
-        load_template(templates::file_plugin_body);
-        concat_sources(templates::ptr_plugin_header, templates::ptr_plugin_body);
+        load_template(t::file_plugin_header);
+        load_template(t::file_plugin_body);
+        concat_sources(t::ptr_plugin_header, t::ptr_plugin_body);
         break;
 
     case output::minimal:
-        load_template(templates::file_min_c_header);
-        header.push_back(templates::ptr_min_c_header);
+        load_template(t::file_min_c_header);
+        header.push_back(t::ptr_min_c_header);
         break;
 
     case output::minimal_cxx:
-        load_template(templates::file_min_cxx_header);
-        header.push_back(templates::ptr_min_cxx_header);
+        load_template(t::file_min_cxx_header);
+        header.push_back(t::ptr_min_cxx_header);
         break;
 
     [[unlikely]] case output::error:
@@ -208,7 +209,11 @@ void gendlopen::load_template(templates::name file)
     {
 # define TEMPLATE(FILE, VAR) \
     case templates::file_##VAR: \
-        load_from_file(templates::ptr_##VAR, templates::data_##VAR, m_templates_path, #FILE, m_line_directive); \
+        load_from_file(templates::ptr_##VAR, \
+                       templates::data_##VAR, \
+                       m_templates_path, \
+                       #FILE, \
+                       m_line_directive); \
         break;
 
 # include "list.h"
@@ -227,7 +232,9 @@ void gendlopen::load_template(templates::name file)
 void gendlopen::dump_templates(const char *dir)
 {
 #if !defined(USE_EXTERNAL_RESOURCES)
-    if (!fs::exists(fs::symlink_status(dir)) && !fs::create_directories(dir)) {
+    auto st = fs::symlink_status(dir);
+
+    if (!fs::exists(st) && !fs::create_directories(dir)) {
         throw error(std::string("failed to create directory: ") + dir);
     }
 
