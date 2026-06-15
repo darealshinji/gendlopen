@@ -369,7 +369,7 @@ size_t gendlopen::save_data(const template_t *list)
 
     if (!m_line_directive) {
         /* skip initial line directive */
-        if (strncmp(data_to_c_str(list->data), "#line", 5) == 0) {
+        if (strncmp(utils::get_data(list), "#line", 5) == 0) {
             list++;
         }
     }

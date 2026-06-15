@@ -287,7 +287,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return 0;
     };
 
-    const char *ptr = data_to_c_str(line.data);
+    const char *ptr = utils::get_data(line);
 
     /* empty line */
     if (ptr[0] == 0) {
@@ -385,7 +385,7 @@ size_t gendlopen::substitute(const vtemplate_t &data)
 
         if (!m_line_directive) {
             /* skip initial line directive */
-            if (strncmp(data_to_c_str(list->data), "#line", 5) == 0) {
+            if (strncmp(utils::get_data(list), "#line", 5) == 0) {
                 list++;
             }
         }

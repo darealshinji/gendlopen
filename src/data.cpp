@@ -196,7 +196,7 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
         break;
 
     [[unlikely]] case output::error:
-        throw error(std::string(__func__) + ": format == output::error");
+        throw error(std::string(__func__) + ": m_format == output::error");
     }
 }
 

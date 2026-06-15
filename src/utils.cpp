@@ -186,7 +186,11 @@ bool utils::get_lines(FILE *fp, std::string &line, template_t &entry)
         }
     }
 
-    entry.data = string_to_data(line);
+#ifdef USE_EXTERNAL_RESOURCES
+    entry.data = line;
+#else
+    entry.data = line.c_str();
+#endif
 
     return (c != EOF);
 }
@@ -201,6 +205,7 @@ void utils::append_missing_separator(std::string &path)
     case '\\':
 #endif
     case '/':
+    case '\0': /* empty string */
         break;
     default:
         path.push_back('/');

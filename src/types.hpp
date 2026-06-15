@@ -70,16 +70,6 @@ typedef struct _template
 } template_t;
 
 
-/* cast between string types and .data type */
-#ifdef USE_EXTERNAL_RESOURCES
-inline const char *data_to_c_str(const std::string &d) { return d.c_str(); }
-inline std::string string_to_data(std::string &s) { return s; }
-#else
-inline const char *data_to_c_str(const char *d) { return d; }
-inline const char *string_to_data(std::string &s) { return s.c_str(); }
-#endif
-
-
 using vproto_t = std::vector<proto_t>;
 using vtemplate_t = std::vector<const template_t *>;
 
