@@ -367,11 +367,9 @@ size_t gendlopen::save_data(const template_t *list)
 {
     size_t total_lines = 0;
 
-    if (!m_line_directive) {
-        /* skip initial line directive */
-        if (strncmp(utils::get_data(list), "#line", 5) == 0) {
-            list++;
-        }
+    /* skip initial line directive */
+    if (!m_line_directive && strncmp(list->data.c_str(), "#line", 5) == 0) {
+        list++;
     }
 
     for ( ; list->line_count != 0; list++) {

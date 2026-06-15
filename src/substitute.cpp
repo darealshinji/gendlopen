@@ -287,10 +287,8 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return 0;
     };
 
-    const char *ptr = utils::get_data(line);
-
     /* empty line */
-    if (ptr[0] == 0) {
+    if (line.data.empty()) {
         if (!param_skip_code) {
             save::ofs << '\n';
             return 1; /* 1 line */
@@ -300,7 +298,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
     /* check if we have to comment out lines between
      * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-    if (line.maybe_keyword && check_skip_keyword(ptr, param_skip_code, m_parameter_names)) {
+    if (line.maybe_keyword && check_skip_keyword(line.data.c_str(), param_skip_code, m_parameter_names)) {
         if (!param_skip_code && m_line_directive) {
             /* +1 to compensate for the removed %PARAM_SKIP_* line */
             save::ofs << "#line " << (m_substitute_lineno + 1) << '\n';
@@ -355,7 +353,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
         default:
             throw error("cannot mix function, object and regular symbol"
-                        " placeholders:\n" + std::string{line.data});
+                        " placeholders:\n" + line.data);
         }
     }
 
@@ -366,12 +364,12 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 }
 
 /* substitute placeholders */
-size_t gendlopen::substitute(const vtemplate_t &data)
+size_t gendlopen::substitute(const vtemplate_t &vec)
 {
     size_t lines_written = 0;
     bool param_skip_code = false;
 
-    if (data.empty()) {
+    if (vec.empty()) {
         return 0;
     }
 
@@ -379,15 +377,13 @@ size_t gendlopen::substitute(const vtemplate_t &data)
         throw error("no function or object prototypes");
     }
 
-    for (const template_t *list : data) {
+    for (const template_t *list : vec) {
         /* init input template line count */
         m_substitute_lineno = 0;
 
-        if (!m_line_directive) {
-            /* skip initial line directive */
-            if (strncmp(utils::get_data(list), "#line", 5) == 0) {
-                list++;
-            }
+        /* skip initial line directive */
+        if (!m_line_directive && strncmp(list->data.c_str(), "#line", 5) == 0) {
+            list++;
         }
 
         for ( ; list->line_count != 0; list++) {

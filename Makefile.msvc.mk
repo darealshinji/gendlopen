@@ -16,7 +16,8 @@ CXX_SRCS = \
 	..\$(SRC)\parse.cpp \
 	..\$(SRC)\substitute.cpp \
 	..\$(SRC)\tokenize.cpp \
-	..\$(SRC)\utils.cpp
+	..\$(SRC)\utils.cpp \
+	templates_data.cpp
 
 CFLAGS   = /W3 /O2 /I. /I..\$(SRC)
 CXXFLAGS = /W3 /O2 /I. /I..\$(SRC) /EHsc /std:c++20
@@ -29,7 +30,7 @@ all: $(OUT)\gendlopen.exe
 clean:
 	-rmdir /Q /S $(OUT)
 
-$(OUT)\gendlopen.exe: $(OUT)\lex.yy.obj $(OUT)\template.h
+$(OUT)\gendlopen.exe: $(OUT)\lex.yy.obj $(OUT)\templates_data.cpp
 	cd $(OUT)\ && $(CXX) /nologo /MP $(CXXFLAGS) $(CXX_SRCS) /Fe:gendlopen.exe /link lex.yy.obj $(LFLAGS)
 
 # .dirstamp
@@ -39,9 +40,9 @@ $(OUT)\.gitignore:
 $(OUT)\lex.yy.obj: $(OUT)\.gitignore
 	cd $(OUT)\ && $(CC) /nologo $(CFLAGS) /c ..\$(SRC)\lex.yy.c
 
-$(OUT)\template.h: $(OUT)\gen_template_h.exe
-	$(OUT)\gen_template_h.exe $(SRC)\templates $(OUT)\template.h
+$(OUT)\templates_data.cpp: $(OUT)\gen_templates_data.exe
+	$(OUT)\gen_templates_data.exe $(SRC)\templates $@
 
-$(OUT)\gen_template_h.exe: $(OUT)\.gitignore
-	cd $(OUT)\ && $(CC) /nologo /Fe:gen_template_h.exe ..\$(SRC)\gen_template_h.c
+$(OUT)\gen_templates_data.exe: $(OUT)\.gitignore
+	cd $(OUT)\ && $(CC) /nologo /Fe:gen_templates_data.exe ..\$(SRC)\gen_templates_data.c
 

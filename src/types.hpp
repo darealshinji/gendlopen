@@ -58,13 +58,8 @@ typedef struct _proto {
 } proto_t;
 
 
-typedef struct _template
-{
-#ifdef USE_EXTERNAL_RESOURCES
+typedef struct _template {
     std::string data;
-#else
-    const char *data;
-#endif
     bool maybe_keyword;
     size_t line_count;
 } template_t;

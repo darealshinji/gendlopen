@@ -51,10 +51,8 @@ namespace help
             "\n"
             "  -ast-all-symbols  use all symbols from a Clang AST (`-P' and `-S' are ignored)\n"
             "  -D<string>        define a preprocessor macro *\n"
-#if !defined(USE_EXTERNAL_RESOURCES)
             "  -dump-templates=<path>\n"
             "                    dump internal template files into directory and exit\n"
-#endif
             "  -force            always overwrite existing output files\n"
             "  -format=<string>  set output format: c (default), c++, plugin, minimal, minimal-c++\n"
             "  -full-help        show more detailed information\n"
@@ -78,20 +76,12 @@ namespace help
             "  -print-symbols    print list of found symbols and exit\n"
             "  -S<string>        look for symbol name <string> *\n"
             "  -separate         save output into separate body and header files\n"
-            "  -template=<file>  use a custom template (`-format' is ignored)\n"
-#ifdef USE_EXTERNAL_RESOURCES
+            "  -template=<file>  use a custom template (`-format' and `-templates-path' are ignored)\n"
             "  -templates-path=<path>\n"
-            "                    directory containing the template files (overrides environment variable\n"
-            "                    TEMPLATES)\n"
-#endif
+            "                    use external template files\n"
             "  -version          output version information and exit\n"
             "\n"
             "  * option may be passed multiple times\n"
-#ifdef USE_EXTERNAL_RESOURCES
-            "\n"
-            "environment variables:\n"
-            "  TEMPLATES         directory containing the template files\n"
-#endif
 
             << std::endl;
     }
@@ -168,12 +158,10 @@ namespace help
             "\n"
 
 
-#if !defined(USE_EXTERNAL_RESOURCES)
             "  -dump-templates=<path>\n"
             "    Dump internal template files into directory and exit.\n"
             "\n"
             "\n"
-#endif
 
 
             /* F */
@@ -359,7 +347,7 @@ namespace help
 
             "  -template=<file>\n"
             "    Use a custom template file to generate output from.\n"
-            "    The flag `-format' will be ignored in this case.\n"
+            "    The options `-format' and `-templates-path' will be ignored in this case.\n"
             "\n"
             "    Text substitution in the template file is done as following:\n"
             "\n"
@@ -395,13 +383,10 @@ namespace help
             "\n"
 
 
-#ifdef USE_EXTERNAL_RESOURCES
             "  -templates-path=<path>\n"
-            "    Specifiy the directory containing the template files. This will override the\n"
-            "    environment variable TEMPLATES.\n"
+            "    Specifiy a directory containing template files to use.\n"
             "\n"
             "\n"
-#endif
 
 
             /* V */
@@ -409,14 +394,6 @@ namespace help
             "  -version\n"
             "    Output version information and exit.\n"
 
-
-#ifdef USE_EXTERNAL_RESOURCES
-            "\n"
-            "\n"
-            "Environment variables:\n"
-            "  TEMPLATES\n"
-            "    This will set the directory containing the template files.\n"
-#endif
 
             << std::endl;
     }

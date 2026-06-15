@@ -22,15 +22,8 @@
  SOFTWARE.
 **/
 
-#ifdef _MSC_VER
-# ifndef _CRT_SECURE_NO_WARNINGS
-# define _CRT_SECURE_NO_WARNINGS
-# endif
-#endif
-
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #ifdef _WIN32
 # include <windows.h>
 #endif
@@ -50,16 +43,6 @@ int main(int argc, char **argv)
 
     try {
         gendlopen gdo;
-
-#ifdef USE_EXTERNAL_RESOURCES
-        /* read templates path from environment variable;
-         * default path is set in "gendlopen.hpp" */
-        char *env = getenv("TEMPLATES");
-
-        if (env && *env) {
-            gdo.templates_path(env);
-        }
-#endif
 
         /* parse command line and tokenize input file */
         gdo.parse_cmdline(argc, argv);

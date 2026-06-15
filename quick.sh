@@ -2,17 +2,11 @@
 set -e
 set -x
 
-EXTERNAL=false
 DEBUG=false
-
 
 mkdir build
 
-if [ ${EXTERNAL} = true ]; then
-    meson setup -Denable_external=true build
-    meson compile -C build
-    ./build/src/gendlopen tests/helloworld.txt -line -templates-path=src/templates > build/test.h
-elif [ ${DEBUG} = true ]; then
+if [ ${DEBUG} = true ]; then
     meson setup -Dbuildtype=debug \
         -Denable_tests=true \
         -Denable_examples=true \
@@ -28,4 +22,6 @@ else
     meson compile -C build
     meson test -C build
 fi
+
+./build/src/gendlopen -templates-path src/templates -format minimal tests/helloworld.txt > build/test_external.h
 

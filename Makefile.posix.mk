@@ -16,11 +16,12 @@ OBJS = \
 	$(OUT)/parameter_names.o \
 	$(OUT)/parse.o \
 	$(OUT)/substitute.o \
+	$(OUT)/templates_data.o \
 	$(OUT)/tokenize.o \
 	$(OUT)/utils.o
 
 CFLAGS      = -Wall -O3 -I$(SRC)
-CXXFLAGS    = -Wall -O3 -I$(SRC) -I$(OUT) -std=c++20 #-DUSE_EXTERNAL_RESOURCES
+CXXFLAGS    = -Wall -O3 -I$(SRC) -I$(OUT) -std=c++20
 LDFLAGS     = -Wl,-O1 -s
 COMPILE_C   = $(CC) $(CFLAGS) $(CPPFLAGS) -c -o
 COMPILE_CXX = $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o
@@ -41,13 +42,11 @@ $(OUT)/.gitignore:
 
 $(OBJS): $(OUT)/.gitignore
 
-$(OUT)/template.h: $(OUT)/gen_template_h
-	$(OUT)/gen_template_h $(SRC)/templates $(OUT)/template.h
+$(OUT)/templates_data.cpp: $(OUT)/gen_templates_data
+	$(OUT)/gen_templates_data $(SRC)/templates $@
 
-$(OUT)/gen_template_h: $(OUT)/.gitignore $(SRC)/gen_template_h.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $(SRC)/gen_template_h.c $(LDFLAGS)
-
-$(SRC)/data.cpp: $(OUT)/template.h
+$(OUT)/gen_templates_data: $(OUT)/.gitignore $(SRC)/gen_templates_data.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $(SRC)/gen_templates_data.c $(LDFLAGS)
 
 $(OUT)/cio_ofstream.o: $(SRC)/cio_ofstream.cpp
 	$(COMPILE_CXX) $@ $(SRC)/cio_ofstream.cpp
@@ -93,6 +92,9 @@ $(OUT)/parse.o: $(SRC)/parse.cpp
 
 $(OUT)/substitute.o: $(SRC)/substitute.cpp
 	$(COMPILE_CXX) $@ $(SRC)/substitute.cpp
+
+$(OUT)/templates_data.o: $(OUT)/templates_data.cpp
+	$(COMPILE_CXX) $@ $(OUT)/templates_data.cpp
 
 $(OUT)/tokenize.o: $(SRC)/tokenize.cpp
 	$(COMPILE_CXX) $@ $(SRC)/tokenize.cpp

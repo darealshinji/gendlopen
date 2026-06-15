@@ -154,7 +154,7 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
         fprintf(fpOut, "\", %s, %zd },\n", true_false[percent], count);
     }
 
-    fprintf(fpOut, "%s", "  { NULL, 0, 0 }\n");
+    fprintf(fpOut, "%s", "  { {}, 0, 0 }\n");
     fprintf(fpOut, "%s", "};\n");
     fprintf(fpOut, "const template_t *ptr_%s = %s;\n\n", varName, varName);
 
@@ -181,12 +181,15 @@ int main(int argc, char **argv)
     fprintf(fp, "%s\n",
         "/* this file was automatically generated; do not edit! */\n"
         "\n"
-        "#pragma once\n");
+        "#include \"types.hpp\"\n"
+        "\n"
+        "namespace templates\n"
+        "{\n");
 
-#define TEMPLATE(FILE, VAR) \
-    dump(fp, argv[1], #FILE, #VAR);
-
+#define TEMPLATE(FILE, VAR) dump(fp, argv[1], #FILE, #VAR);
 #include "list.h"
+
+    fprintf(fp, "%s\n", "} /* end namespace templates */");
 
     fclose(fp);
 

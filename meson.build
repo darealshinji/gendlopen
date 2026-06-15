@@ -28,8 +28,6 @@ arg_syntax     = compiler.get_argument_syntax()
 host_system    = host_machine.system()
 host_is_win32  = (host_system == 'windows' or host_system == 'cygwin')
 host_is_gnu    = (host_system == 'linux' or host_system == 'gnu')
-external_files = get_option('enable_external')
-templates_path = get_option('templates_path')
 
 if host_is_win32
     add_project_arguments('-DWIN32_LEAN_AND_MEAN', language: ['c', 'cpp'])
@@ -39,14 +37,6 @@ if compiler.has_function('program_invocation_short_name', prefix : '#include <er
     cpp_args_extra += '-DHAVE_PROGRAM_INVOCATION_SHORT_NAME'
 elif compiler.has_function('getprogname', prefix : '#include <stdlib.h>')
     cpp_args_extra += '-DHAVE_GETPROGNAME'
-endif
-
-if external_files
-    cpp_args_extra += '-DUSE_EXTERNAL_RESOURCES'
-endif
-
-if templates_path != ''
-    cpp_args_extra += '-DDEFAULT_TEMPLATES_PATH="' + templates_path + '"'
 endif
 
 

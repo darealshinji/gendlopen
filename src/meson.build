@@ -19,24 +19,24 @@ gendlopen_src = files(
 
 gendlopen_deps = gendlopen_src
 
-if not external_files
-    gen_template_h = executable(
-        'gen_template_h',
-        'gen_template_h.c',
-        win_subsystem : 'console',
-        install : false,
-        native : true
-    )
+# templates_data.cpp
+gen_templates_data = executable(
+    'gen_templates_data',
+    'gen_templates_data.c',
+    win_subsystem : 'console',
+    install : false,
+    native : true
+)
 
-    gen_hdr = custom_target(
-        'template.h',
-        depends : gen_template_h,
-        output : 'template.h',
-        command : [gen_template_h, '@CURRENT_SOURCE_DIR@/templates', '@OUTPUT@'])
+gen_sources = custom_target(
+    'templates_data.cpp',
+    depends : gen_templates_data,
+    output : 'templates_data.cpp',
+    command : [gen_templates_data, '@CURRENT_SOURCE_DIR@/templates', '@OUTPUT@'])
 
-    gendlopen_deps += gen_hdr
-endif
+gendlopen_deps += gen_sources
 
+# manifest
 if host_is_win32
     if arg_syntax == 'msvc'
         fs = import('fs')

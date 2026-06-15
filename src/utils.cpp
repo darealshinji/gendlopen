@@ -33,19 +33,19 @@ namespace /* anonymous */
 {
 
 /* returns false on EOL or EOF */
-bool save_to_line(int c, std::string &line, template_t &entry)
+bool save_to_line(int c, template_t &entry)
 {
     switch (c)
     {
     case '\n':
         /* concatenate lines ending on '@' */
-        if (line.ends_with('@')) {
-            line.back() = '\n';
+        if (entry.data.ends_with('@')) {
+            entry.data.back() = '\n';
             entry.line_count++;
             break;
-        } else if (line.ends_with("@\r")) {
+        } else if (entry.data.ends_with("@\r")) {
             /* Windows line ending */
-            line.replace(line.size() - 2, 2, "\r\n");
+            entry.data.replace(entry.data.size() - 2, 2, "\r\n");
             entry.line_count++;
             break;
         }
@@ -53,7 +53,7 @@ bool save_to_line(int c, std::string &line, template_t &entry)
 
     case EOF:
         /* remove trailing '@' */
-        utils::delete_suffix(line, '@');
+        utils::delete_suffix(entry.data, '@');
         return false;
 
     case '%':
@@ -61,7 +61,7 @@ bool save_to_line(int c, std::string &line, template_t &entry)
         [[fallthrough]];
 
     default:
-        line.push_back(static_cast<char>(c));
+        entry.data.push_back(static_cast<char>(c));
         break;
     }
 
@@ -170,27 +170,21 @@ size_t utils::count_linefeed(const std::string &str)
 }
 
 /* read input lines */
-bool utils::get_lines(FILE *fp, std::string &line, template_t &entry)
+bool utils::get_lines(FILE *fp, template_t &entry)
 {
     int c = EOF;
 
-    line.clear();
     entry.maybe_keyword = false;
     entry.line_count = 1;
+    entry.data.clear();
 
     while (true) {
         c = ::fgetc(fp);
 
-        if (!save_to_line(c, line, entry)) {
+        if (!save_to_line(c, entry)) {
             break;
         }
     }
-
-#ifdef USE_EXTERNAL_RESOURCES
-    entry.data = line;
-#else
-    entry.data = line.c_str();
-#endif
 
     return (c != EOF);
 }

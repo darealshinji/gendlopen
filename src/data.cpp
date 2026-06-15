@@ -35,28 +35,14 @@
 #include "utils.hpp"
 
 
-/* silence `unused reference' compiler warnings */
-template<typename T>
-void UNUSED_REF(T x) {
-    static_cast<void>(x);
-}
-
-
 namespace templates
 {
-#ifdef USE_EXTERNAL_RESOURCES
-
-# define TEMPLATE(FILE, VAR) \
+#define TEMPLATE(FILE, VAR) \
     std::vector<template_t> data_##VAR; \
-    const template_t *ptr_##VAR = nullptr;
-# include "list.h"
-# undef TEMPLATE
+    extern const template_t *ptr_##VAR;
 
-#else
-
-# include "template.h"
-
-#endif
+#include "list.h"
+#undef TEMPLATE
 }
 
 namespace fs = std::filesystem;
@@ -65,12 +51,10 @@ namespace t = templates;
 
 namespace /* anonymous */
 {
-#ifdef USE_EXTERNAL_RESOURCES
-
     /* find template and load it into memory */
     void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
     {
-        std::string path, line;
+        std::string path;
         template_t entry;
         bool rv = true;
 
@@ -94,26 +78,23 @@ namespace /* anonymous */
         /* add initial #line directive */
         if (line_directive) {
             if (fp == stdin) {
-                line = "#line 1 \"<STDIN>\"";
+                entry = { "#line 1 \"<STDIN>\"", false, 1 };
             } else {
-                line = "#line 1 \"" + std::string(file) + "\"\n";
+                entry = { "#line 1 \"" + std::string(file) + "\"\n", false, 1 };
             }
 
-            entry = { line, false, 1 };
             data.push_back(entry);
         }
 
         /* read lines */
         while (rv) {
-            rv = utils::get_lines(fp, line, entry);
+            rv = utils::get_lines(fp, entry);
             data.push_back(entry);
         }
 
         entry = { "", 0, 0 };
         data.push_back(entry);
     }
-
-#else //!USE_EXTERNAL_RESOURCES
 
     /* save template data to file */
     void save_to_file(std::string path, const char *filename, const template_t *list)
@@ -133,8 +114,6 @@ namespace /* anonymous */
             ofs << list->data << '\n';
         }
     }
-
-#endif //!USE_EXTERNAL_RESOURCES
 }
 
 
@@ -200,45 +179,39 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
 /* load template into memory */
 void gendlopen::load_template(templates::name file)
 {
-#ifdef USE_EXTERNAL_RESOURCES
+    if (m_templates_path.empty()) {
+        /* nothing to load */
+        return;
+    }
+
     switch (file)
     {
-# define TEMPLATE(FILE, VAR) \
+#define TEMPLATE(FILE, VAR) \
     case templates::file_##VAR: \
         load_from_file(templates::data_##VAR, m_templates_path, #FILE, m_line_directive); \
         templates::ptr_##VAR = templates::data_##VAR.data(); \
         break;
 
-# include "list.h"
-# undef TEMPLATE
+#include "list.h"
+#undef TEMPLATE
 
     default:
         break;
     }
-#endif //USE_EXTERNAL_RESOURCES
-
-    UNUSED_REF(file);
 }
 
 
 /* dump templates */
 void gendlopen::dump_templates(const char *dir)
 {
-#if !defined(USE_EXTERNAL_RESOURCES)
     auto st = fs::symlink_status(dir);
 
     if (!fs::exists(st) && !fs::create_directories(dir)) {
         throw error(std::string("failed to create directory: ") + dir);
     }
 
-# define TEMPLATE(FILE, VAR) \
-    save_to_file(dir, #FILE, templates::ptr_##VAR);
-
-# include "list.h"
-# undef TEMPLATE
-
-#endif //!USE_EXTERNAL_RESOURCES
-
-    UNUSED_REF(dir);
+#define TEMPLATE(FILE, VAR) save_to_file(dir, #FILE, templates::ptr_##VAR);
+#include "list.h"
+#undef TEMPLATE
 }
 

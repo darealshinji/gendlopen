@@ -183,7 +183,6 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 
 
 /* set templates path */
-#ifdef USE_EXTERNAL_RESOURCES
 void gendlopen::templates_path(const std::string &s)
 {
     if (!s.empty()) {
@@ -191,13 +190,11 @@ void gendlopen::templates_path(const std::string &s)
         utils::append_missing_separator(m_templates_path);
     }
 }
-#endif
 
 
 /* read and process custom template */
 void gendlopen::process_custom_template()
 {
-    std::string line;
     template_t entry;
     bool param_skip_code = false;
     bool rv = true;
@@ -227,7 +224,7 @@ void gendlopen::process_custom_template()
 
     /* parse lines */
     while (rv) {
-        rv = utils::get_lines(fp, line, entry);
+        rv = utils::get_lines(fp, entry);
         substitute_line(entry, param_skip_code);
         m_substitute_lineno += entry.line_count;
     }

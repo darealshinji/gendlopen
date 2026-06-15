@@ -61,23 +61,6 @@ inline int strncasecmp(const char *a, const char *b, size_t n)
 }
 
 
-/* access template data */
-
-inline const char *get_data(const template_t *t)
-{
-#ifdef USE_EXTERNAL_RESOURCES
-    return t->data.c_str();
-#else
-    return t->data;
-#endif
-}
-
-inline const char *get_data(const template_t &t)
-{
-    return get_data(&t);
-}
-
-
 /* syntactic sugar */
 template<typename T>
 bool find(const std::string &haystack, const T &needle, size_t &pos)
@@ -125,7 +108,7 @@ size_t count_linefeed(const std::string &str);
 
 
 /* read input lines */
-bool get_lines(FILE *fp, std::string &line, template_t &entry);
+bool get_lines(FILE *fp, template_t &entry);
 
 
 /* append missing path separator */

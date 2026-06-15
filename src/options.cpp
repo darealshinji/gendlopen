@@ -105,14 +105,10 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             ast_all_symbols(true);
         } else if (get_arg(&a, "D")) {
             add_def(a.value);
-        }
-#if !defined(USE_EXTERNAL_RESOURCES)
-        else if (get_arg(&a, "dump-templates")) {
+        } else if (get_arg(&a, "dump-templates")) {
             dump_templates(a.value);
             std::exit(0);
-        }
-#endif
-        else if (get_arg(&a, "format")) {
+        } else if (get_arg(&a, "format")) {
             format(a.value);
         } else if (opt_arg_eq(&a, "force")) {
             force(true);
@@ -144,13 +140,9 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             separate(true);
         } else if (get_arg(&a, "template")) {
             custom_template(a.value);
-        }
-#ifdef USE_EXTERNAL_RESOURCES
-        else if (get_arg(&a, "templates-path")) {
+        } else if (get_arg(&a, "templates-path")) {
             templates_path(a.value);
-        }
-#endif
-        else if (opt_arg_eq(&a, "version")) {
+        } else if (opt_arg_eq(&a, "version")) {
             std::cout << "gendlopen " << gendlopen::version() << std::endl;
             std::exit(0);
         } else {

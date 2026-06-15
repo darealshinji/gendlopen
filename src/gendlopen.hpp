@@ -31,11 +31,6 @@
 #include "cio_ofstream.hpp"
 #include "types.hpp"
 
-/* default search path for external resources */
-#ifndef DEFAULT_TEMPLATES_PATH
-#define DEFAULT_TEMPLATES_PATH  "templates/"
-#endif
-
 
 
 namespace save
@@ -77,10 +72,7 @@ private:
 
     vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;
     vproto_t m_prototypes, m_objects;
-    std::string m_defines;
-#ifdef USE_EXTERNAL_RESOURCES
-    std::string m_templates_path = DEFAULT_TEMPLATES_PATH;
-#endif
+    std::string m_defines, m_templates_path;
 
     std::string m_pfx = "gdo"; /* can be mixed case, used to create header name on STDOUT */
     std::string m_pfx_upper = "GDO";
@@ -142,7 +134,6 @@ public:
     OPT( output::format, format,          output::c   )
     OPT( param::names,   parameter_names, param::read )
     OPT( std::string,    custom_template, {}          )
-  //OPT( std::string,    templates_path,  DEFAULT_TEMPLATES_PATH )
     OPT( std::string,    default_lib,     {}          )
     OPT( bool,           force,           false       )
     OPT( bool,           separate,        false       )
@@ -164,9 +155,7 @@ public:
     void print_symbols_to_stdout();
     void process_custom_template();
     void parameter_names(const char *str); /* set from string */
-#ifdef USE_EXTERNAL_RESOURCES
     void templates_path(const std::string &s);
-#endif
 
     /* generate.cpp */
     void generate();
