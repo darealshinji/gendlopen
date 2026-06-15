@@ -68,8 +68,7 @@ namespace /* anonymous */
 #ifdef USE_EXTERNAL_RESOURCES
 
     /* find template and load it into memory */
-    void load_from_file(const template_t *&ptr, std::vector<template_t> &data, const std::string &dir,
-                        const char *file, bool line_directive)
+    void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
     {
         std::string path, line;
         template_t entry;
@@ -112,9 +111,6 @@ namespace /* anonymous */
 
         entry = { "", 0, 0 };
         data.push_back(entry);
-
-        /* assign pointer */
-        ptr = data.data();
     }
 
 #else //!USE_EXTERNAL_RESOURCES
@@ -209,11 +205,8 @@ void gendlopen::load_template(templates::name file)
     {
 # define TEMPLATE(FILE, VAR) \
     case templates::file_##VAR: \
-        load_from_file(templates::ptr_##VAR, \
-                       templates::data_##VAR, \
-                       m_templates_path, \
-                       #FILE, \
-                       m_line_directive); \
+        load_from_file(templates::data_##VAR, m_templates_path, #FILE, m_line_directive); \
+        templates::ptr_##VAR = templates::data_##VAR.data(); \
         break;
 
 # include "list.h"
