@@ -201,7 +201,7 @@ static bool load_from_list(
         const char *(*last_error) (),
         bool        (*lib_is_loaded) (),
         bool        (*load_all_symbols) (),
-        const char *(*lib_origin) ())
+        const char *(*library_path) ())
 {
     const char *library = *list;
 
@@ -225,10 +225,10 @@ static bool load_from_list(
         return false;
     }
 
-    const char *orig = lib_origin();
+    const char *path = library_path();
 
-    if (orig) {
-        printf("loaded: %s\n", orig);
+    if (path) {
+        printf("loaded: %s\n", path);
     }
 
     return true;
@@ -244,7 +244,7 @@ static bool load_from_list(
         PREFIX##last_error, \
         PREFIX##lib_is_loaded, \
         PREFIX##load_all_symbols, \
-        PREFIX##lib_origin)
+        PREFIX##library_path)
 
 
 /* load Gtk+ v3 or v2 */

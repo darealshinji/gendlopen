@@ -89,10 +89,10 @@ private:
 
 #ifdef GDO_WINAPI
     bool m_convert_filename_to_wcs = false;
-    std::string m_filename;
-    std::wstring m_wfilename;
+    std::string m_filename, m_libpath;
+    std::wstring m_wfilename, m_wlibpath;
 #else
-    std::string m_filename;
+    std::string m_filename, m_libpath;
 #endif
 
     int m_flags = default_flags;
@@ -166,7 +166,7 @@ private:
     DWORD get_module_filename(char *buf, DWORD len);
 
     template<typename T>
-    std::basic_string<T> get_origin_from_module_handle();
+    void get_library_path(std::basic_string<T> &path);
 
     void format_message(DWORD msgId, DWORD langId, wchar_t *buf);
     void format_message(DWORD msgId, DWORD langId, char *buf);
@@ -186,8 +186,17 @@ private:
 
     void load_lib(const std::string &filename);
 
+#if defined(GDO_DLFCN_WIN32) || defined(_AIX)
+    bool get_library_path(void);
+#endif
 #ifdef _AIX
-    std::string aix_fname_from_symbol(struct ld_info *info, uint8_t *sym);
+    bool aix_libpath(struct ld_info *info, uint8_t *sym);
+#endif
+#ifdef GDO_HAVE_DLINFO
+    bool get_library_path_dlinfo(void);
+#endif
+#ifdef GDO_HAVE_DLADDR
+    bool get_library_path_dladdr(void);
 #endif
 
 #endif // !GDO_WINAPI
@@ -376,9 +385,21 @@ public:
      * in which case at least one symbol must have been successfully loaded before
      * using this function.
      */
-    std::string origin();
+    std::string library_path();
 #ifdef GDO_WINAPI
-    std::wstring origin_w();
+    std::wstring library_path_w();
+#endif
+
+
+    /**
+     * Return the original filename passed to load.
+     * This is not the same as `library_path()'.
+     */
+#ifdef GDO_WINAPI
+    std::string filename();
+    std::wstring filename_w();
+#else
+    std::string filename() const;
 #endif
 
 
@@ -392,17 +413,6 @@ public:
     std::wstring error_w();
 #else
     std::string error() const;
-#endif
-
-    /**
-     * Return the original filename passed to load.
-     * This is not the same as `origin()'.
-     */
-#ifdef GDO_WINAPI
-    std::string filename();
-    std::wstring filename_w();
-#else
-    std::string filename() const;
 #endif
 
 };

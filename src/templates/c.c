@@ -47,8 +47,14 @@ GDO_INLINE void *_gdo_sym(const char *symbol, const gdo_char_t *msg);
 #ifdef GDO_WINAPI
 GDO_INLINE HMODULE _gdo_load_library_ex(const gdo_char_t *filename, int flags);
 #endif
-#ifdef _AIX
-GDO_INLINE bool _gdo_aix_origin(struct ld_info *info, uint8_t *sym, char *buf, size_t bufsize);
+#if defined(_WIN32) || defined(_AIX)
+GDO_INLINE bool _gdo_library_path(void);
+#endif
+#ifdef GDO_HAVE_DLINFO
+GDO_INLINE bool _gdo_libpath_dlinfo(void);
+#endif
+#ifdef GDO_HAVE_DLADDR
+GDO_INLINE bool _gdo_libpath_dladdr(void);
 #endif
 
 
@@ -341,6 +347,8 @@ GDO_LINKAGE bool gdo_free_lib(void)
         }
     }
 
+    gdo_hndl.libpath[0] = 0;
+
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
     GDO_RAWPTR_%%symbol%% = NULL;
@@ -361,6 +369,8 @@ GDO_LINKAGE void gdo_force_free_lib(void)
     if (gdo_lib_is_loaded()) {
         _gdo_call_dlclose(gdo_hndl.handle);
     }
+
+    gdo_hndl.libpath[0] = 0;
 
     /* set pointers back to NULL */
     gdo_hndl.handle = NULL;
@@ -629,143 +639,104 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 /*****************************************************************************/
 /*                        get the loaded library path                        */
 /*****************************************************************************/
-GDO_LINKAGE const gdo_char_t *gdo_lib_origin(void)
+GDO_LINKAGE const gdo_char_t *gdo_library_path(void)
 {
     _gdo_clear_error();
+
+#if !defined(_WIN32) && !defined(_AIX) && !defined(GDO_HAVE_DLINFO) && !defined(GDO_HAVE_DLADDR)
+    _gdo_save_to_errbuf("function not implemented");
+    return NULL;
+#endif
 
     if (!gdo_lib_is_loaded()) {
         _gdo_set_error_no_library_loaded();
         return NULL;
     }
 
-#ifdef GDO_WINAPI
+    /* was the library path already saved? */
+    if (gdo_hndl.libpath[0] != 0) {
+        return gdo_hndl.libpath;
+    }
 
-    /* use GetModuleFileName() */
+#if defined(_WIN32) || defined(_AIX)
+    if (_gdo_library_path()) {
+        return gdo_hndl.libpath;
+    }
+#endif
+
+#ifdef GDO_HAVE_DLINFO
+    /* prefer dlinfo() over dladdr() */
+    if (_gdo_libpath_dlinfo()) {
+        return gdo_hndl.libpath;
+    }
+#endif
+
+#ifdef GDO_HAVE_DLADDR
+    if (_gdo_libpath_dladdr()) {
+        return gdo_hndl.libpath;
+    }
+#endif
+
+    /* error */
+    gdo_hndl.libpath[0] = 0;
+
+    return NULL;
+}
+
+
+#ifdef _WIN32 /* Windows (WINAPI and dlfcn) */
+GDO_INLINE bool _gdo_library_path(void)
+{
+    /* use GetModuleFileName() to get the path */
+
+# ifdef GDO_WINAPI
 
     const gdo_char_t *msg = (sizeof(gdo_char_t) == 1)
         ? _T("GetModuleFileNameA()")
         : _T("GetModuleFileNameW()");
 
-    static gdo_char_t buf[GDO_BUFLEN];
-    DWORD nSize = GetModuleFileName(gdo_hndl.handle, buf, GDO_BUFLEN);
+    DWORD nSize = GetModuleFileName(gdo_hndl.handle, gdo_hndl.libpath, GDO_BUFLEN);
 
     if (nSize == 0 || nSize == GDO_BUFLEN) {
         _gdo_save_error(msg);
-        return NULL;
+        return false;
     }
 
-    return buf;
-
-#elif defined(GDO_DLFCN_WIN32)
+# elif defined(GDO_DLFCN_WIN32)
 
     /* dlfcn-win32:
-     * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
-     * We can directly use GetModuleFileNameA() to receive the DLL path
-     * and don't need to invoke dladdr() on a loaded symbol address. */
+     * The handle returned by dlopen() is a `HMODULE' casted to `void *',
+     * so we can directly use GetModuleFileNameA() to receive the DLL path. */
 
-    static char buf[GDO_BUFLEN];
-    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, buf, GDO_BUFLEN);
+    DWORD nSize = GetModuleFileNameA((HMODULE)gdo_hndl.handle, gdo_hndl.libpath, GDO_BUFLEN);
 
     if (nSize == 0) {
         _gdo_save_to_errbuf("failed to get the library path");
-        return NULL;
+        return false;
     } else if (nSize == GDO_BUFLEN) {
         _gdo_save_to_errbuf("buffer is too small to hold the library path");
-        return NULL;
+        return false;
     }
 
-    return buf;
-
-#elif defined(_AIX)
-
-    /* AIX's equivalent of dladdr() */
-    static char buf[GDO_BUFLEN];
-    uint8_t q[GDO_AIX_LOADQUERY_BUFLEN];
-
-    if (gdo_no_symbols_loaded()) {
-        _gdo_save_to_errbuf("no symbols were loaded");
-        return NULL;
-    }
-
-    if (loadquery(L_GETINFO, q, sizeof(q)) != -1) {
-        struct ld_info *info = (struct ld_info *)q;
-
-        if (false
-            || _gdo_aix_origin(info, (uint8_t *)GDO_RAWPTR_%%symbol%%, buf, GDO_BUFLEN)
-        ) {
-            return buf;
-        }
-    }
-
-    _gdo_save_to_errbuf("failed to get the library path");
-    return NULL;
-
-#elif defined(GDO_HAVE_DLINFO)
-
-    static char buf[GDO_BUFLEN];
-
-    /* use dlinfo() to get a link map */
-    struct link_map *lm = NULL;
-
-    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        _gdo_save_error(NULL);
-        return NULL;
-    }
-
-    if (!lm->l_name || lm->l_name[0] == 0) {
-        _gdo_save_to_errbuf("dlinfo() failed to get library path");
-        return NULL;
-    }
-
-# ifdef __linux__
-    /* try to get the full library path from process map */
-    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, buf, GDO_BUFLEN)) {
-        return buf;
-    }
 # endif
 
-    size_t len = strlen(lm->l_name);
-
-    if (len < GDO_BUFLEN) {
-        memcpy(buf, lm->l_name, len + 1);
-        return buf;
-    }
-
-    return NULL;
-
-#elif defined(GDO_HAVE_DLADDR)
-
-    /* use dladdr() to get the library path from a symbol pointer */
-    static Dl_info info;
-
-    if (gdo_no_symbols_loaded()) {
-        _gdo_save_to_errbuf("no symbols were loaded");
-        return NULL;
-    }
-
-    if (false
-        || _gdo_call_dladdr((void *)GDO_RAWPTR_%%symbol%%, &info)
-    ) {
-        return info.dli_fname;
-    }
-
-    _gdo_save_to_errbuf("dladdr() failed to get library path");
-    return NULL;
-
-#else
-
-    _gdo_save_to_errbuf("function not implemented");
-    return NULL;
-
-#endif
+    return true;
 }
+#endif //_WIN32
 
-#ifdef _AIX
-GDO_INLINE bool _gdo_aix_origin(struct ld_info *info, uint8_t *sym, char *buf, size_t bufsize)
+
+#ifdef _AIX /* AIX */
+GDO_INLINE bool _gdo_libpath_from_symptr(struct ld_info *info, uint8_t *sym)
 {
+    const char *path, *member;
     size_t len;
-    const char *member = NULL;
-    const char *path = _gdo_aix_parse_ldinfo(info, sym, (const char **)&member);
+
+    if (!sym) {
+        return false;
+    }
+
+    member = NULL;
+    path = _gdo_aix_parse_ldinfo(info, sym, (const char **)&member);
 
     if (!path) {
         return false;
@@ -773,27 +744,129 @@ GDO_INLINE bool _gdo_aix_origin(struct ld_info *info, uint8_t *sym, char *buf, s
 
     /* check for an archive member name */
     if (member && member[0] != 0) {
-        len = strlen(path) + strlen(member) + 3;
+        len = strlen(path) + strlen(member) + 3; /* + parentheses and NUL byte */
 
-        if (len > bufsize) {
+        if (len > GDO_BUFLEN) {
             return false;
         }
 
-        snprintf(buf, len, "%s(%s)", path, member);
+        snprintf(gdo_hndl.libpath, len, "%s(%s)", path, member);
     } else {
         /* path is not an archive */
-        len = strlen(path) + 1;
+        len = strlen(path) + 1; /* + NUL byte */
 
-        if (len > bufsize) {
+        if (len > GDO_BUFLEN) {
             return false;
         }
 
-        memcpy(buf, path, len);
+        memcpy(gdo_hndl.libpath, path, len);
     }
 
     return true;
 }
-#endif
+
+GDO_INLINE bool _gdo_library_path(void)
+{
+    uint8_t q[GDO_AIX_LOADQUERY_BUFLEN];
+
+    if (gdo_no_symbols_loaded()) {
+        _gdo_save_to_errbuf("no symbols were loaded");
+        return false;
+    }
+
+    if (loadquery(L_GETINFO, q, sizeof(q)) != -1) {
+        struct ld_info *info = (struct ld_info *)q;
+
+        if (false
+            || _gdo_libpath_from_symptr(info, (uint8_t *)GDO_RAWPTR_%%symbol%%)
+        ) {
+            return true;
+        }
+    }
+
+    _gdo_save_to_errbuf("loadquery() failed to get the library path");
+
+    return false;
+}
+#endif //_AIX
+
+
+#ifdef GDO_HAVE_DLINFO /* dlinfo() (Linux, FreeBSD, ...) */
+GDO_INLINE bool _gdo_libpath_dlinfo(void)
+{
+    /* use dlinfo() to get a link map */
+    struct link_map *lm = NULL;
+
+    _gdo_clear_error();
+
+    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
+        _gdo_save_error(NULL);
+        return false;
+    }
+
+    if (!lm->l_name || lm->l_name[0] == 0) {
+        _gdo_save_to_errbuf("dlinfo() failed to get library path");
+        return false;
+    }
+
+# ifdef __linux__
+    /* if the path is relative try to get the full library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, gdo_hndl.libpath, GDO_BUFLEN)) {
+        return true;
+    }
+# endif
+
+    size_t len = strlen(lm->l_name) + 1;
+
+    if (len > GDO_BUFLEN) {
+        return false;
+    }
+
+    memcpy(gdo_hndl.libpath, lm->l_name, len);
+
+    return true;
+}
+#endif //GDO_HAVE_DLINFO
+
+
+#ifdef GDO_HAVE_DLADDR /* dladdr() (POSIX.1-2024) */
+GDO_INLINE bool _gdo_libpath_dladdr(void)
+{
+    /* use dladdr() to get the library path from a symbol pointer */
+
+    const char *path = NULL;
+    Dl_info info;
+
+    _gdo_clear_error();
+
+    if (gdo_no_symbols_loaded()) {
+        _gdo_save_to_errbuf("no symbols were loaded");
+        return false;
+    }
+
+    if (false
+        || _gdo_call_dladdr((void *)GDO_RAWPTR_%%symbol%%, &info)
+    ) {
+        path = info.dli_fname;
+    }
+
+    if (!path) {
+        _gdo_save_to_errbuf("dladdr() failed to get library path");
+        return false;
+    }
+
+    size_t len = strlen(path) + 1;
+
+    if (len > GDO_BUFLEN) {
+        return false;
+    }
+
+    memcpy(gdo_hndl.libpath, path, len);
+
+    return true;
+}
+#endif //GDO_HAVE_DLADDR
+
 /*****************************************************************************/
 %PARAM_SKIP_REMOVE_BEGIN%
 

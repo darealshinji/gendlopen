@@ -238,23 +238,31 @@ DWORD gdo::dl::get_module_filename(char *buf, DWORD len) {
 
 /* get the module's full path using GetModuleFileName() */
 template<typename T>
-std::basic_string<T> gdo::dl::get_origin_from_module_handle()
+void gdo::dl::get_library_path(std::basic_string<T> &path)
 {
+    clear_error();
+
+    /* was the library path already saved? */
+    if (!path.empty()) {
+        return;
+    }
+
     if (!lib_loaded()) {
         set_error_invalid_handle();
-        return {};
+        return;
     }
 
     T buf[GDO_BUFLEN];
     DWORD nSize = get_module_filename(buf, _countof(buf));
 
-    if (nSize == 0 || nSize == _countof(buf)) {
-        auto msg = get_string<T>("GetModuleFileNameA()", L"GetModuleFileNameW()");
-        save_error(msg);
-        return {};
+    if (nSize > 0 && nSize < _countof(buf)) {
+        /* success */
+        path = buf;
+        return;
     }
 
-    return buf;
+    /* error */
+    save_error(get_string<T>("GetModuleFileNameA()", L"GetModuleFileNameW()"));
 }
 
 
@@ -337,28 +345,142 @@ void gdo::dl::load_lib(const std::string &filename)
 }
 
 
-#ifdef _AIX
-bool gdo::dl::aix_origin(struct ld_info *info, uint8_t *sym, std::string &filename)
+/* get library path */
+
+#ifdef GDO_DLFCN_WIN32
+bool gdo::dl::get_library_path(void)
 {
-    const char *member = NULL;
-    const char *path = _gdo_aix_parse_ldinfo(info, sym, reinterpret_cast<const char **>(&member));
+    /* dlfcn-win32:
+     * The handle returned by dlopen() is a `HMODULE' casted to `void *',
+     * so we can directly use GetModuleFileNameA() to receive the DLL path. */
+
+    char buf[GDO_BUFLEN];
+    auto hmod = reinterpret_cast<HMODULE>(m_handle);
+    DWORD nSize = ::GetModuleFileNameA(hmod, buf, sizeof(buf));
+
+    if (nSize == 0) {
+        m_errmsg = "failed to get the library path";
+        return false;
+    } else if (nSize == sizeof(buf)) {
+        m_errmsg = "buffer is too small to hold the library path";
+        return false;
+    }
+
+    m_libpath = buf;
+
+    return true;
+}
+#endif //GDO_DLFCN_WIN32
+
+
+#ifdef _AIX
+bool gdo::dl::aix_libpath(struct ld_info *info, uint8_t *sym)
+{
+    const char *path, *member;
+
+    if (!sym) {
+        return false;
+    }
+
+    member = nullptr;
+    path = _gdo_aix_parse_ldinfo(info, sym, reinterpret_cast<const char **>(&member));
 
     if (!path) {
         return false;
     }
 
-    filename = path;
+    m_libpath = path;
 
     /* archive member name */
     if (member && member[0] != 0) {
-        filename += '(';
-        filename += member;
-        filename += ')';
+        m_libpath += '(';
+        m_libpath += member;
+        m_libpath += ')';
     }
 
     return true;
 }
+
+bool gdo::dl::get_library_path(void)
+{
+    uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
+
+    if (no_symbols_loaded()) {
+        m_errmsg = "no symbols were loaded";
+        return false;
+    }
+
+    if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
+        auto info = reinterpret_cast<struct ld_info *>(buf);
+
+        if (false
+            || aix_libpath(info, reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%))
+        ) {
+            return true;
+        }
+    }
+
+    m_errmsg = "failed to get the library path";
+
+    return false;
+}
 #endif //_AIX
+
+#ifdef GDO_HAVE_DLINFO
+bool gdo::dl::get_library_path_dlinfo(void)
+{
+    /* use dlinfo() to get a link map */
+    struct link_map *lm = nullptr;
+
+    if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == -1) {
+        save_error();
+        return false;
+    }
+
+    if (!lm->l_name || lm->l_name[0] == 0) {
+        m_errmsg = "dlinfo() failed to get library path";
+        return false;
+    }
+
+# ifdef __linux__
+    char buf[GDO_BUFLEN];
+
+    /* if the path is relative try to get the full library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, buf, GDO_BUFLEN)) {
+        m_libpath = buf;
+        return true;
+    }
+# endif
+
+    m_libpath = lm->l_name;
+
+    return true;
+}
+#endif //GDO_HAVE_DLINFO
+
+#ifdef GDO_HAVE_DLADDR
+bool gdo::dl::get_library_path_dladdr(void)
+{
+    /* use dladdr() to get the library path from a symbol pointer */
+    Dl_info info;
+
+    if (no_symbols_loaded()) {
+        m_errmsg = "no symbols were loaded";
+        return false;
+    }
+
+    if (false
+        || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
+    ) {
+        m_libpath = info.dli_fname;
+        return true;
+    }
+
+    m_errmsg = "dladdr() failed to get library path";
+
+    return false;
+}
+#endif //GDO_HAVE_DLADDR
 
 #endif // !GDO_WINAPI
 
@@ -692,6 +814,11 @@ bool gdo::dl::free(bool force)
         return false;
     }
 
+    m_libpath.clear();
+#ifdef GDO_WINAPI
+    m_wlibpath.clear();
+#endif
+
     /* set pointers back to NULL */
     m_handle = nullptr;
     GDO_RAWPTR_%%symbol%% = nullptr;
@@ -737,14 +864,16 @@ gdo::dl::msgcb_t gdo::dl::message_callback()
 #ifdef GDO_WINAPI
 
 /* get path of loaded library */
-std::string gdo::dl::origin()
+std::string gdo::dl::library_path()
 {
-    return get_origin_from_module_handle<char>();
+    get_library_path<char>(m_libpath);
+    return m_libpath;
 }
 
-std::wstring gdo::dl::origin_w()
+std::wstring gdo::dl::library_path_w()
 {
-    return get_origin_from_module_handle<wchar_t>();
+    get_library_path<wchar_t>(m_wlibpath);
+    return m_wlibpath;
 }
 
 
@@ -793,110 +922,49 @@ std::wstring gdo::dl::filename_w()
 
 
 /* get path of loaded library */
-std::string gdo::dl::origin()
+std::string gdo::dl::library_path()
 {
     clear_error();
+
+#if !defined(_AIX) && \
+    !defined(GDO_DLFCN_WIN32) && \
+    !defined(GDO_HAVE_DLINFO) && \
+    !defined(GDO_HAVE_DLADDR)
+    m_errmsg = "function not implemented";
+    return {};
+#endif
 
     if (!lib_loaded()) {
         set_error_invalid_handle();
         return {};
     }
 
-#ifdef GDO_DLFCN_WIN32
-
-    /* dlfcn-win32:
-     * The handle returned by dlopen() is a `HMODULE' casted to `void *'.
-     * We can directly use GetModuleFileNameA() to receive the DLL path
-     * and don't need to invoke dladdr() on a loaded symbol address. */
-
-    char buf[GDO_BUFLEN];
-    auto hmod = reinterpret_cast<HMODULE>(m_handle);
-    DWORD nSize = ::GetModuleFileNameA(hmod, buf, sizeof(buf));
-
-    if (nSize == 0) {
-        m_errmsg = "failed to get the library path";
-        return {};
-    } else if (nSize == sizeof(buf)) {
-        m_errmsg = "buffer is too small to hold the library path";
-        return {};
+    /* was the library path already saved? */
+    if (!m_libpath.empty()) {
+        return m_libpath;
     }
 
-    return buf;
-
-#elif defined(_AIX)
-
-    uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
-
-    if (no_symbols_loaded()) {
-        m_errmsg = "no symbols were loaded";
-        return {};
+#if defined(GDO_DLFCN_WIN32) || defined(_AIX)
+    if (get_library_path()) {
+        return m_libpath;
     }
-
-    if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
-        auto info = reinterpret_cast<struct ld_info *>(buf);
-        std::string fname;
-
-        if (false
-            || aix_origin(info, reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%), fname)
-        ) {
-            return fname;
-        }
-    }
-
-    m_errmsg = "failed to get the library path";
-    return {};
-
-#elif defined(GDO_HAVE_DLINFO)
-
-    /* use dlinfo() to get a link map */
-    struct link_map *lm = nullptr;
-
-    if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        save_error();
-        return {};
-    }
-
-    if (!lm->l_name || lm->l_name[0] == 0) {
-        m_errmsg = "dlinfo() failed to get library path";
-        return {};
-    }
-
-# ifdef __linux__
-    char buf[GDO_BUFLEN];
-
-    /* try to get the full library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, buf, GDO_BUFLEN)) {
-        return buf;
-    }
-# endif
-
-    return lm->l_name;
-
-#elif defined(GDO_HAVE_DLADDR)
-
-    /* use dladdr() to get the library path from a symbol pointer */
-    Dl_info info;
-
-    if (no_symbols_loaded()) {
-        m_errmsg = "no symbols were loaded";
-        return {};
-    }
-
-    if (false
-        || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
-    ) {
-        return info.dli_fname;
-    }
-
-    m_errmsg = "dladdr() failed to get library path";
-    return {};
-
-#else
-
-    m_errmsg = "function not implemented";
-    return {};
-
 #endif
+
+#ifdef GDO_HAVE_DLINFO
+    /* prefer dlinfo() over dladdr() */
+    if (get_library_path_dlinfo()) {
+        return m_libpath;
+    }
+#endif
+
+#ifdef GDO_HAVE_DLADDR
+    if (get_library_path_dladdr()) {
+        return m_libpath;
+    }
+#endif
+
+    /* error */
+    return {};
 }
 
 

@@ -36,7 +36,7 @@ GDO_INLINE gdo_hmod_t _gdo_call_dlopen(const char *filename, int flags, bool new
 }
 
 
-#if defined(GDO_HAVE_DLADDR) && !defined(GDO_HAVE_DLINFO)
+#ifdef GDO_HAVE_DLADDR
 GDO_INLINE bool _gdo_call_dladdr(const void *addr, Dl_info *info)
 {
     info->dli_fname = NULL;
@@ -55,7 +55,7 @@ GDO_INLINE bool _gdo_call_dladdr(const void *addr, Dl_info *info)
 #include <sys/ldr.h>
 
 
-/* parse ld_info struct and search for library filename that provides sym */
+/* parse ld_info struct and search for library filename that provides the address of `sym' */
 GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym, const char **member)
 {
     struct ld_info *cur = info;
@@ -85,7 +85,7 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
         return NULL;
     }
 
-    /* archive member name after library path */
+    /* archive member name after library path (can be empty) */
     *member = path + strlen(path) + 1;
 
     return path;

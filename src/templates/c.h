@@ -50,7 +50,8 @@ typedef struct _gdo_handle
     %%type%% (*GDO_PTR_%%func_symbol%%)(%%args%%);
     %%obj_type%% *GDO_PTR_%%obj_symbol%%;
 
-    gdo_char_t errbuf[GDO_BUFLEN]; /* buffer for error messages */
+    gdo_char_t libpath[GDO_BUFLEN]; /* buffer to save path of loaded library */
+    gdo_char_t errbuf[GDO_BUFLEN];  /* buffer for error messages */
 
 #ifdef GDO_WINAPI
     /**
@@ -170,7 +171,7 @@ GDO_DECL const gdo_char_t *gdo_last_error(void)
  * in which case at least one symbol must have been successfully loaded before
  * using this function.
  */
-GDO_DECL const gdo_char_t *gdo_lib_origin(void);
+GDO_DECL const gdo_char_t *gdo_library_path(void);
 
 
 /**

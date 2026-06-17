@@ -98,12 +98,12 @@ static void load_lib_and_symbols()
     }
 }
 
-static void print_lib_origin()
+static void print_libpath()
 {
-    const gdo_char_t *origin = gdo_lib_origin();
+    const gdo_char_t *path = gdo_library_path();
 
-    if (origin) {
-        printf("library loaded at: %s\n", origin);
+    if (path) {
+        printf("library loaded at: %s\n", path);
     } else {
         fprintf(stderr, "%s\n", gdo_last_error());
     }
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     // #4
     load_lib_and_symbols();
 
-    print_lib_origin();
+    print_libpath();
 
     assert(gdo_all_symbols_loaded() == true);
     assert(gdo_no_symbols_loaded() == false);

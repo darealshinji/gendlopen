@@ -96,12 +96,12 @@ int main()
         return 1;
     }
 
-    std::string orig = loader.origin();
+    std::string path = loader.library_path();
 
-    if (orig.empty()) {
+    if (path.empty()) {
         std::cerr << loader.error() << std::endl;
     } else {
-        std::cout << "library loaded at: " << orig << std::endl;
+        std::cout << "library loaded at: " << path << std::endl;
     }
 
     /* our code */

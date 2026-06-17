@@ -49,12 +49,12 @@ int wmain()
     }
 
     /* get and print library path */
-    std::wstring orig = loader.origin_w();
+    std::wstring path = loader.library_path_w();
 
-    if (orig.empty()) {
+    if (path.empty()) {
         std::wcerr << loader.error_w() << std::endl;
     } else {
-        std::wcout << L"library loaded at: " << orig << std::endl;
+        std::wcout << L"library loaded at: " << path << std::endl;
     }
 
 
