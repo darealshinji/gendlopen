@@ -114,7 +114,7 @@ namespace /* anonymous */
             if (list->line_count == 1) {
                 ofs << list->data << '\n';
             } else {
-                /* we need append @ symbols to multiline data lines */
+                /* we need to append `@' symbols to multiline data */
                 for (const char &c : list->data) {
                     if (c == '\n') {
                         ofs << "@\n";
