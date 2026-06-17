@@ -111,7 +111,20 @@ namespace /* anonymous */
         std::cout << "saving " << path << std::endl;
 
         for ( ; list->line_count != 0; list++) {
-            ofs << list->data << '\n';
+            if (list->line_count == 1) {
+                ofs << list->data << '\n';
+            } else {
+                /* we need append @ symbols to multiline data lines */
+                for (const char &c : list->data) {
+                    if (c == '\n') {
+                        ofs << "@\n";
+                    } else {
+                        ofs << c;
+                    }
+                }
+
+                ofs << '\n';
+            }
         }
     }
 }
