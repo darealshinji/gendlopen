@@ -106,7 +106,7 @@ private:
     void dump_templates(const char *dir);
 
     /* generate.cpp */
-    size_t save_data(const template_t *list);
+    size_t save_data(templates::name file, const template_t *list);
 
     /* substitute.cpp */
     size_t replace_function_prototypes(const std::string &entry);

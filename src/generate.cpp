@@ -294,17 +294,18 @@ size_t includes(const vstring_t &incs, bool is_cxx)
     return utils::count_linefeed(str);
 }
 
-size_t header_guard_begin(const std::string &header_guard, bool is_cxx)
+size_t header_guard_begin(const std::string &header_name, const std::string &pfx_upper, bool pragma_once, bool is_cxx)
 {
     std::string str;
 
-    if (header_guard.empty()) {
+    if (pragma_once) {
         str = "\n"
             "#pragma once\n\n";
     } else {
+        std::string guard = '_' + pfx_upper + '_' + utils::to_upper(header_name) + '_';
         str = "\n"
-            "#ifndef " + header_guard + "\n"
-            "#define " + header_guard + "\n\n";
+            "#ifndef " + guard + "\n"
+            "#define " + guard + "\n\n";
     }
 
     if (!is_cxx) {
@@ -320,7 +321,7 @@ size_t header_guard_begin(const std::string &header_guard, bool is_cxx)
 }
 
 /* don't need to count lines anymore */
-void header_guard_end(const std::string &header_guard, bool is_cxx)
+void header_guard_end(const std::string &header_name, const std::string &pfx_upper, bool pragma_once, bool is_cxx)
 {
     if (!is_cxx) {
         /* extern C end */
@@ -329,9 +330,19 @@ void header_guard_end(const std::string &header_guard, bool is_cxx)
             "#endif\n";
     }
 
-    if (!header_guard.empty()) {
-        ofs << "\n#endif //" << header_guard << "_\n";
+    if (!pragma_once) {
+        ofs << "\n"
+            "#endif //_" << pfx_upper << '_' << utils::to_upper(header_name) << "_\n";
     }
+}
+
+void include_header(const std::string &header_name, const std::string &pfx_upper)
+{
+    /* define "GDO_INCLUDED_IN_BODY" before including the header */
+    ofs << "\n"
+        "#define " << pfx_upper << "_INCLUDED_IN_BODY\n"
+        "#include \"" << header_name << "\"\n"
+        "\n";
 }
 
 /* open output file stream for writing */
@@ -359,13 +370,28 @@ void open_ofstream(const fs::path &opath, bool force)
     }
 }
 
+size_t line_directive(const size_t lines, bool line_directive, const std::string &header_name)
+{
+    if (!line_directive) {
+        return 0;
+    }
+
+    /* +1 to count the "#line" directive itself and
+     * +1 to print the number of the next line */
+    save::ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
+
+    return 1;
+}
+
 } /* end namespace save */
 
 
 /* save data, replace prefixes, return line count */
-size_t gendlopen::save_data(const template_t *list)
+size_t gendlopen::save_data(templates::name file, const template_t *list)
 {
     size_t total_lines = 0;
+
+    load_template(file);
 
     /* skip initial line directive */
     if (!m_line_directive && strncmp(list->data.c_str(), "#line", 5) == 0) {
@@ -404,78 +430,6 @@ void gendlopen::generate()
     bool is_cxx = false;
     size_t lines = 0;
 
-    /************* lambda functions *************/
-
-    auto lf_print_lineno = [&, this] () {
-        if (m_line_directive) {
-            /* increment to count the "#line" directive */
-            lines++;
-
-            /* print number of next line */
-            save::ofs << "#line " << (lines + 1) << " \"" << header_name << "\"\n";
-        }
-    };
-
-    auto lf_note_and_license = [&, this] () {
-        load_template(templates::file_license);
-        lines += save::note(m_print_date);
-        lines += save_data(templates::ptr_license);
-    };
-
-    auto lf_header_guard_begin = [&, this] () {
-        lf_print_lineno();
-
-        if (!m_pragma_once) {
-            header_guard = '_' + m_pfx_upper + '_' + utils::to_upper(header_name) + '_';
-        }
-        lines += save::header_guard_begin(header_guard, is_cxx);
-    };
-
-    auto lf_header_filename_macros = [&] () {
-        load_template(templates::file_filename_macros);
-        lines += save_data(templates::ptr_filename_macros);
-    };
-
-    auto lf_header_generated_data = [&, this] () {
-        /* print extra data after filename macros as includes or defines
-         * might make use of it */
-        if (m_line_directive) {
-            lf_print_lineno();
-
-            /* extra padding */
-            save::ofs << '\n';
-            lines++;
-        }
-
-        lines += save::extra_defines(m_defines);
-        lines += save::includes(m_includes, is_cxx);
-        lines += save::typedefs(m_typedefs);
-    };
-
-    auto lf_header_template_data = [&] () {
-        lines += substitute(header_data);
-    };
-
-    auto lf_header_guard_end = [&] () {
-        lf_print_lineno();
-        /* no more line counting needed from here on */
-        save::header_guard_end(header_guard, is_cxx);
-    };
-
-    auto lf_body_generated_data = [&, this] () {
-        /* define "GDO_INCLUDED_IN_BODY" before including the header */
-        save::ofs << '\n';
-        save::ofs << "#define " << m_pfx_upper << "_INCLUDED_IN_BODY\n";
-        save::ofs << "#include \"" << header_name << "\"\n";
-        save::ofs << '\n';
-    };
-
-    auto lf_body_template_data = [&] () {
-        substitute(body_data);
-    };
-
-    /********************************************/
-
     const bool use_stdout = (m_output == "-");
 
     if (use_stdout) {
@@ -490,6 +444,7 @@ void gendlopen::generate()
 #endif
     }
 
+    /* change settings based on output format */
     switch (m_format)
     {
     case output::c:
@@ -555,15 +510,21 @@ void gendlopen::generate()
     /*************** header data ***************/
     save::open_ofstream(ofhdr, m_force);
 
-    lf_note_and_license();
-    lf_header_guard_begin();
+    lines += save::note(m_print_date);
+    lines += save_data(templates::file_license, templates::ptr_license);
 
-    lf_header_filename_macros();
-    lf_header_generated_data();
+    lines += save::line_directive(lines, m_line_directive, header_name);
+    lines += save::header_guard_begin(header_name, m_pfx_upper, m_pragma_once, is_cxx);
 
-    lf_header_template_data();
+    lines += save_data(templates::file_filename_macros, templates::ptr_filename_macros);
+    lines += save::extra_defines(m_defines);
+    lines += save::includes(m_includes, is_cxx);
+    lines += save::typedefs(m_typedefs);
 
-    lf_header_guard_end();
+    lines += substitute(header_data);
+
+    lines += save::line_directive(lines, m_line_directive, header_name);
+    save::header_guard_end(header_name, m_pfx_upper, m_pragma_once, is_cxx);
 
     save::ofs.close();
 
@@ -572,9 +533,11 @@ void gendlopen::generate()
     if (!body_data.empty()) {
         save::open_ofstream(ofbody, m_force);
 
-        lf_note_and_license();
-        lf_body_generated_data();
-        lf_body_template_data();
+        save::note(m_print_date);
+        save_data(templates::file_license, templates::ptr_license);
+        save::include_header(header_name, m_pfx_upper);
+
+        substitute(body_data);
     }
 }
 
