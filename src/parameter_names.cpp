@@ -118,14 +118,75 @@ namespace /* anonymous */
         return true;
     }
 
+
+    bool read_parameter_names(proto_t &proto, std::string &msg)
+    {
+        const char *hint = "\nhint: try `" OPT_PARAM_SKIP "' or `" OPT_PARAM_CREATE "'";
+
+        /* parameter_names == param::read */
+        for (vstring_t &v : proto.args_vec)
+        {
+            if (v.empty()) {
+                msg = "empty parameter in function `" + proto.symbol + "'";
+                return false;
+            } else if (v.size() == 1) {
+                /* check for `...' */
+                if (v.front() == "...") {
+                    /* don't append to proto.param_names */
+                    continue;
+                }
+
+                msg = "typename only or incorrect parameter format in function `" + proto.symbol + "': "
+                    + v.front() + hint;
+                return false;
+            }
+
+            /* check if a parameter begins or ends with pointer (v.size() > 1) */
+            if (utils::str_front(v.front()) == '*') {
+                msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
+                parse::append_strings(msg, v);
+                return false;
+            } else if (utils::str_back(v.back()) == '*') {
+                msg = "parameter in function `" + proto.symbol + "' is missing a typename: ";
+                parse::append_strings(msg, v);
+                msg += hint;
+                return false;
+            }
+
+            iter_t it = parse::find_first_not_pointer_or_ident(v);
+
+            if (parse::is_object(v, it)) {
+                proto.param_names += v.back() + ", ";
+                continue;
+            } else if (parse::is_function_pointer(v, it)) {
+                /* type (     * symbol ) ( ) */
+                /*      ^it + 1 2            */
+                proto.param_names += *(it + 2) + ", ";
+                continue;
+            } else if (parse::is_array(v, it)) {
+                /* type symbol [   ] */
+                /*      -1     ^it   */
+                proto.param_names += *(it - 1) + ", ";
+                continue;
+            }
+
+            msg = "incorrect parameter format in function `" + proto.symbol + "': ";
+            parse::append_strings(msg, v);
+            msg += hint;
+            return false;
+        }
+
+        utils::delete_suffix(proto.param_names, ", ");
+
+        return true;
+    }
+
 } /* end anonymous namespace */
 
 
 /* get parameter names from function parameter list */
 bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, std::string &msg)
 {
-    const char *hint = "\nhint: try `" OPT_PARAM_SKIP "' or `" OPT_PARAM_CREATE "'";
-
     if (proto.prototype != proto::function || param_void_or_empty(proto)) {
         /* nothing to do */
         return true;
@@ -144,62 +205,7 @@ bool parse::get_parameter_names(proto_t &proto, param::names &parameter_names, s
         return true;
     }
 
-    /* parameter_names == param::read */
-    for (vstring_t &v : proto.args_vec)
-    {
-        if (v.empty()) {
-            msg = "empty parameter in function `" + proto.symbol + "'";
-            return false;
-        } else if (v.size() == 1) {
-            /* check for `...' */
-            if (v.front() == "...") {
-                /* don't append to proto.param_names */
-                continue;
-            }
-
-            msg = "typename only or incorrect parameter format in function `" + proto.symbol + "': "
-                + v.front() + hint;
-            return false;
-        }
-
-        /* check if a parameter begins or ends with pointer */
-        if (v.front().starts_with('*')) {
-            msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
-            append_strings(msg, v);
-            return false;
-        } else if (v.back().ends_with('*')) {
-            msg = "parameter in function `" + proto.symbol + "' is missing a typename: ";
-            append_strings(msg, v);
-            msg += hint;
-            return false;
-        }
-
-        iter_t it = find_first_not_pointer_or_ident(v);
-
-        if (is_object(v, it)) {
-            proto.param_names += v.back() + ", ";
-            continue;
-        } else if (is_function_pointer(v, it)) {
-            /* type (     * symbol ) ( ) */
-            /*      ^it + 1 2            */
-            proto.param_names += *(it + 2) + ", ";
-            continue;
-        } else if (is_array(v, it)) {
-            /* type symbol [   ] */
-            /*      -1     ^it   */
-            proto.param_names += *(it - 1) + ", ";
-            continue;
-        }
-
-        msg = "incorrect parameter format in function `" + proto.symbol + "': ";
-        append_strings(msg, v);
-        msg += hint;
-        return false;
-    }
-
-    utils::delete_suffix(proto.param_names, ", ");
-
-    return true;
+    return read_parameter_names(proto, msg);
 }
 
 
@@ -224,7 +230,7 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
         }
 
         /* check if a parameter begins with pointer */
-        if (v.front().starts_with('*')) {
+        if (utils::str_front(v.front()) == '*') {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
             append_strings(msg, v);
             return false;
@@ -237,24 +243,26 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
             continue;
         }
 
-        /* function pointer and array types */
         iter_t it = parse::find_first_not_pointer_or_ident(v);
 
-        if (it != v.end()) {
-            if (get_function_pointer_type(v, it, proto, param_count) ||
-                get_array_type(v, it, proto, param_count))
-            {
-                continue;
-            }
-
-            msg = "cannot read parameter in function `" + proto.symbol + "': ";
-            append_strings(msg, v);
-            return false;
+        /* regular object or pointer type */
+        if (it == v.end()) {
+            append_strings(proto.args, v);
+            append_name(proto, param_count, ", ");
+            continue;
         }
 
-        /* regular object or pointer */
-        append_strings(proto.args, v);
-        append_name(proto, param_count, ", ");
+        /* function pointer or array type */
+        if (get_function_pointer_type(v, it, proto, param_count) ||
+            get_array_type(v, it, proto, param_count))
+        {
+            continue;
+        }
+
+        /* error */
+        msg = "cannot read parameter in function `" + proto.symbol + "': ";
+        append_strings(msg, v);
+        return false;
     }
 
     utils::delete_suffix(proto.args, ", ");

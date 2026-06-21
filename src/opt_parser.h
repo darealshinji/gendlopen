@@ -65,6 +65,10 @@ is not possible since multi-character options may also be prefixed with a single
 # define OPT_ENABLE_ASSERT     /* build with assertions enabled */
 #endif
 
+#ifndef OPT_LINKAGE
+#define OPT_LINKAGE  static inline
+#endif
+
 
 
 struct opt_args {
@@ -89,7 +93,7 @@ struct opt_args {
  * skip: number of arguments to skip, NOT counting argv[0]
  * errhandle: pointer to custom error handle function (optional)
  */
-static inline void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhandle)(const char *msg));
+OPT_LINKAGE void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhandle)(const char *msg));
 
 
 /**
@@ -99,7 +103,7 @@ static inline void opt_init(struct opt_args *a, int argc, char **argv, int skip,
  * Sets "a->current" to the next argument in line and returns "true".
  * If no more arguments are left, "false" is returned and "a->current" is set to NULL.
  */
-static inline bool opt_iterate(struct opt_args *a);
+OPT_LINKAGE bool opt_iterate(struct opt_args *a);
 
 
 /**
@@ -109,7 +113,7 @@ static inline bool opt_iterate(struct opt_args *a);
  *
  * Returns "true" on match, otherwise "false".
  */
-static inline bool opt_arg_eq(struct opt_args *a, const char *opt);
+OPT_LINKAGE bool opt_arg_eq(struct opt_args *a, const char *opt);
 
 
 /**
@@ -121,7 +125,7 @@ static inline bool opt_arg_eq(struct opt_args *a, const char *opt);
  * Returns "true" on match and saves pointer to the argument's value at "a->value".
  * Otherwise "false" is returned and "a->value" is set to NULL.
  */
-static inline bool opt_get_arg(struct opt_args *a, const char *opt, size_t len);
+OPT_LINKAGE bool opt_get_arg(struct opt_args *a, const char *opt, size_t len);
 
 
 
@@ -201,7 +205,7 @@ static const bool _opt_separator_colon = false;
 #endif
 
 
-static inline
+OPT_LINKAGE
 void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhandle)(const char *))
 {
     OPT_ASSERT(a != NULL);
@@ -218,7 +222,7 @@ void opt_init(struct opt_args *a, int argc, char **argv, int skip, void (*errhan
 }
 
 
-static inline
+OPT_LINKAGE
 bool opt_iterate(struct opt_args *a)
 {
     OPT_ASSERT(a != NULL);
@@ -271,7 +275,7 @@ bool opt_iterate(struct opt_args *a)
 }
 
 
-static inline
+OPT_LINKAGE
 bool opt_arg_eq(struct opt_args *a, const char *opt)
 {
     OPT_ASSERT(a != NULL);
@@ -287,7 +291,7 @@ bool opt_arg_eq(struct opt_args *a, const char *opt)
 }
 
 
-static inline
+OPT_LINKAGE
 void _opt_handle_error(struct opt_args *a, const char *fmt, const char *pfx, const char *opt)
 {
     char buf[128];
@@ -308,7 +312,7 @@ void _opt_handle_error(struct opt_args *a, const char *fmt, const char *pfx, con
 }
 
 
-static inline
+OPT_LINKAGE
 bool opt_get_arg(struct opt_args *a, const char *opt, size_t len)
 {
     OPT_ASSERT(a != NULL);

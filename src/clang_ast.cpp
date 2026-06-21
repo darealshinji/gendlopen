@@ -54,7 +54,6 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 ***/
 
 #include <stddef.h>
-#include <algorithm>
 #include <regex>
 #include <string>
 #include <vector>
@@ -72,15 +71,7 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 namespace /* anonymous */
 {
 
-enum {
-    M_DEFAULT,  /* no filter */
-    M_PREFIX,   /* look for prefixed symbols */
-    M_LIST,     /* look for whitelisted symbols */
-    M_PFX_LIST  /* look for prefixed and/or whitelisted symbols */
-};
-
-
-/* strip ANSI colors from line */
+/* strip ANSI colors and Windows line endings from line */
 std::string strip_line(const char *line)
 {
     const std::regex reg(R"(\x1B\[[0-9;]*m)");
@@ -140,7 +131,7 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
 
 
 /* get function or variable declaration */
-int gendlopen::get_declarations(int mode)
+int gendlopen::get_declarations(filter::mode mode)
 {
     proto_t proto;
     std::smatch m;
@@ -169,25 +160,25 @@ int gendlopen::get_declarations(int mode)
         return 0;
     }
 
-    /* check symbol prefix or list */
+    /* check for a prefixed symbol or a symbol from a whitelist */
     proto.symbol = m.str(1);
 
     switch (mode)
     {
-    case M_PREFIX:
+    case filter::prefix:
         if (!utils::is_prefixed(proto.symbol, m_prefix_list)) {
             return 0;
         }
         break;
 
-    case M_LIST:
+    case filter::list:
         /* erase from list if found */
         if (std::erase(m_symbol_list, proto.symbol) == 0) {
             return 0;
         }
         break;
 
-    case M_PFX_LIST:
+    case filter::prefix_list:
         if (!utils::is_prefixed(proto.symbol, m_prefix_list) &&
             std::erase(m_symbol_list, proto.symbol) == 0) /* erase from list if found */
         {
@@ -249,7 +240,7 @@ int gendlopen::get_declarations(int mode)
 /* read Clang AST */
 void gendlopen::parse_clang_ast()
 {
-    int mode = M_DEFAULT;
+    filter::mode mode = filter::none;
     int rv;
 
     /* ignore symbol lists if m_ast_all_symbols was set */
@@ -259,11 +250,11 @@ void gendlopen::parse_clang_ast()
         }
 
         if (m_symbol_list.size() > 0 && m_prefix_list.size() > 0) {
-            mode = M_PFX_LIST;
+            mode = filter::prefix_list;
         } else if (m_prefix_list.size() > 0) {
-            mode = M_PREFIX;
+            mode = filter::prefix;
         } else if (m_symbol_list.size() > 0) {
-            mode = M_LIST;
+            mode = filter::list;
         }
     }
 
@@ -278,20 +269,17 @@ void gendlopen::parse_clang_ast()
         while (get_declarations(mode) == 1)
         {}
 
-        if (mode == M_LIST && m_symbol_list.empty()) {
+        if (mode == filter::list && m_symbol_list.empty()) {
             /* nothing left to look for */
             break;
         }
     }
 
     /* throw an error if not all symbols on the list were found */
-    if ((mode == M_LIST || mode == M_PFX_LIST) && !m_symbol_list.empty()) {
+    if ((mode == filter::list || mode == filter::prefix_list) && !m_symbol_list.empty()) {
         std::string s;
 
-        /* sort list and remove duplicates */
-        std::sort(m_symbol_list.begin(), m_symbol_list.end());
-        auto last = std::unique(m_symbol_list.begin(), m_symbol_list.end());
-        m_symbol_list.erase(last, m_symbol_list.end());
+        utils::sort_dedup(m_symbol_list);
 
         for (const auto &e : m_symbol_list) {
             s += ' ' + e;

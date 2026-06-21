@@ -47,7 +47,7 @@ namespace help
 }
 
 
-namespace /* anonymous */
+namespace opt
 {
     template<size_t N>
     bool get_option(const std::string &token, const char *&ptr, char const (&opt)[N])
@@ -72,7 +72,7 @@ namespace /* anonymous */
         return opt_get_arg(a, opt, N-1);
     }
 
-    void opt_error(const char *msg)
+    static void error(const char *msg)
     {
         throw gendlopen::error_cmd(msg);
     }
@@ -85,7 +85,7 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
     struct opt_args a;
     const char *input_file = NULL;
 
-    opt_init(&a, argc, argv, 0, opt_error);
+    opt_init(&a, argc, argv, 0, opt::error);
 
     while (opt_iterate(&a)) {
         if (a.pfxlen == 0) {
@@ -103,20 +103,20 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             std::exit(0);
         } else if (opt_arg_eq(&a, "ast-all-symbols")) {
             ast_all_symbols(true);
-        } else if (get_arg(&a, "D")) {
+        } else if (opt::get_arg(&a, "D")) {
             add_def(a.value);
-        } else if (get_arg(&a, "dump-templates")) {
+        } else if (opt::get_arg(&a, "dump-templates")) {
             dump_templates(a.value);
             std::exit(0);
-        } else if (get_arg(&a, "format")) {
+        } else if (opt::get_arg(&a, "format")) {
             format(a.value);
         } else if (opt_arg_eq(&a, "force")) {
             force(true);
-        } else if (get_arg(&a, "include")) {
+        } else if (opt::get_arg(&a, "include")) {
             add_inc(a.value);
         } else if (opt_arg_eq(&a, "ignore-options")) {
             read_options(false);
-        } else if (get_arg(&a, "library")) {
+        } else if (opt::get_arg(&a, "library")) {
             default_lib(a.value);
         } else if (opt_arg_eq(&a, "line")) {
             line_directive(true);
@@ -124,23 +124,23 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
             print_date(false);
         } else if (opt_arg_eq(&a, "no-pragma-once")) {
             pragma_once(false);
-        } else if (get_arg(&a, "out")) {
+        } else if (opt::get_arg(&a, "out")) {
             output(a.value);
-        } else if (get_arg(&a, "P")) {
+        } else if (opt::get_arg(&a, "P")) {
             add_pfx(a.value);
-        } else if (get_arg(&a, "prefix")) {
+        } else if (opt::get_arg(&a, "prefix")) {
             prefix(a.value);
-        } else if (get_arg(&a, "param")) {
+        } else if (opt::get_arg(&a, "param")) {
             parameter_names(a.value);
         } else if (opt_arg_eq(&a, "print-symbols")) {
             print_symbols(true);
-        } else if (get_arg(&a, "S")) {
+        } else if (opt::get_arg(&a, "S")) {
             add_sym(a.value);
         } else if (opt_arg_eq(&a, "separate")) {
             separate(true);
-        } else if (get_arg(&a, "template")) {
+        } else if (opt::get_arg(&a, "template")) {
             custom_template(a.value);
-        } else if (get_arg(&a, "templates-path")) {
+        } else if (opt::get_arg(&a, "templates-path")) {
             templates_path(a.value);
         } else if (opt_arg_eq(&a, "version")) {
             std::cout << "gendlopen " << gendlopen::version() << std::endl;
@@ -170,17 +170,17 @@ void gendlopen::parse_options(const vstring_t &options)
             print_date(false);
         } else if (token == "no-pragma-once") {
             pragma_once(false);
-        } else if (get_option(token, p, "D=")) {
+        } else if (opt::get_option(token, p, "D=")) {
             add_def(p);
-        } else if (get_option(token, p, "format=")) {
+        } else if (opt::get_option(token, p, "format=")) {
             format(p);
-        } else if (get_option(token, p, "include=")) {
+        } else if (opt::get_option(token, p, "include=")) {
             add_inc(p);
-        } else if (get_option(token, p, "library=")) {
+        } else if (opt::get_option(token, p, "library=")) {
             default_lib(p);
-        } else if (get_option(token, p, "param=")) {
+        } else if (opt::get_option(token, p, "param=")) {
             parameter_names(p);
-        } else if (get_option(token, p, "prefix=")) {
+        } else if (opt::get_option(token, p, "prefix=")) {
             prefix(p);
         } else {
             throw gendlopen::error("unknown %option string: " + token);

@@ -91,7 +91,7 @@ private:
     void create_typedefs();
 
     /* clang_ast.cpp */
-    int get_declarations(int mode);
+    int get_declarations(filter::mode mode);
     void parse_clang_ast();
 
     /* parse.cpp */

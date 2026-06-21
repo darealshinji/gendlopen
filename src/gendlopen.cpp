@@ -185,10 +185,10 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 /* set templates path */
 void gendlopen::templates_path(const std::string &s)
 {
-    if (!s.empty()) {
-        m_templates_path = s;
-        utils::append_missing_separator(m_templates_path);
-    }
+    m_templates_path = s;
+
+    /* does nothing on an empty string */
+    utils::append_missing_separator(m_templates_path);
 }
 
 

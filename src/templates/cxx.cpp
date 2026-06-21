@@ -59,7 +59,7 @@ std::string gdo::make_libname(const std::string &name, const size_t api)
     return "lib" + name + '.'    + std::to_string(api) + ".dylib";
 #elif defined(_AIX)
     UNUSED_REF(api);
-    return "lib" + name                                + ".a";
+    return "lib" + name                                + ".a"; /* ".a(shr.o)" */
 #elif defined(__ANDROID__)
     UNUSED_REF(api);
     return "lib" + name                                + ".so";

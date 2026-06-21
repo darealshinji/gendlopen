@@ -49,6 +49,30 @@ typedef struct _entry {
 using ventry_t = std::vector<entry_t>;
 
 
+namespace lex
+{
+    static const char *error() {
+        return (::lex_errmsg[0] == 0) ? NULL : ::lex_errmsg;
+    }
+
+    static const char *text() {
+        return ::yytext;
+    }
+
+    static void set_illegal_char() {
+        ::set_illegal_char();
+    }
+
+    static int lex() {
+        return ::yylex();
+    }
+
+    static void set_fpin(FILE *fp) {
+        ::yyset_in(fp);
+    }
+}
+
+
 
 namespace /* anonymous */
 {
@@ -63,7 +87,7 @@ namespace /* anonymous */
 
         while (loop)
         {
-            rv = yylex();
+            rv = lex::lex();
 
             if (block)
             {
@@ -99,7 +123,7 @@ namespace /* anonymous */
                 /* "%option" line */
                 case LEX_OPTION:
                     if (options) {
-                        options->push_back(yytext);
+                        options->push_back(lex::text());
                     }
                     break;
 
@@ -116,7 +140,7 @@ namespace /* anonymous */
                 /* identifier, other tokens */
                 case LEX_ID:
                 case LEX_OTHER:
-                    tokens.push_back(yytext);
+                    tokens.push_back(lex::text());
                     break;
 
                 /* struct, union, enum or typedef */
@@ -129,7 +153,7 @@ namespace /* anonymous */
                         curly_count = 0;
                     } else {
                         /* part of function parameter, etc. */
-                        tokens.push_back(yytext);
+                        tokens.push_back(lex::text());
                     }
                     break;
 
@@ -137,7 +161,7 @@ namespace /* anonymous */
                 case LEX_CURLY_OPEN:
                 case LEX_CURLY_CLOSE:
                 case LEX_EQUAL:
-                    set_illegal_char();
+                    lex::set_illegal_char();
                     rv = LEX_ERROR;
                     loop = false;
                     break;
@@ -153,7 +177,7 @@ namespace /* anonymous */
                 /* "%option" line */
                 case LEX_OPTION:
                     if (options) {
-                        options->push_back(yytext);
+                        options->push_back(lex::text());
                     }
                     break;
 
@@ -397,14 +421,16 @@ void gendlopen::tokenize()
     }
 
     /* set input file pointer */
-    yyset_in(file.file_pointer());
+    lex::set_fpin(file.file_pointer());
 
     /* read and tokenize input */
     int ret = tokenize_stream(vec_tokens, poptions);
 
     if (ret == LEX_ERROR) {
-        if (*lex_errmsg) {
-            throw error(input_name + '\n' + lex_errmsg);
+        const char *msg = lex::error();
+
+        if (msg) {
+            throw error(input_name + '\n' + msg);
         }
         throw error(input_name);
     } else if (ret == LEX_AST_BEGIN) {

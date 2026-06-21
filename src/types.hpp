@@ -94,6 +94,18 @@ namespace param
 }
 
 
+/* enum for symbol filtering */
+namespace filter
+{
+    typedef enum {
+        none,        /* no filter */
+        prefix,      /* look for prefixed symbols */
+        list,        /* look for whitelisted symbols */
+        prefix_list  /* look for prefixed and/or whitelisted symbols */
+    } mode;
+};
+
+
 /* enum for template files */
 namespace templates
 {

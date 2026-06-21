@@ -30,6 +30,7 @@
 #include <errno.h>  /* program_invocation_short_name */
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include "types.hpp"
@@ -172,6 +173,18 @@ inline void delete_suffix(std::string &str, const std::string &suffix) {
 inline void delete_suffix(std::string &str, const char suffix) {
     if (str.ends_with(suffix)) {
         str.pop_back();
+    }
+}
+
+
+/* sort list and remove duplicates */
+template <class T>
+void sort_dedup(T &list)
+{
+    if (list.size() > 1) {
+        std::sort(list.begin(), list.end());
+        auto last = std::unique(list.begin(), list.end());
+        list.erase(last, list.end());
     }
 }
 

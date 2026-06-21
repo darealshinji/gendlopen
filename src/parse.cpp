@@ -65,7 +65,7 @@ namespace /* anonymous */
     }
 
 
-    /* copy function parameters, don't mess up function pointers */
+    /* copy function parameters but don't mess up function pointer types */
     void copy_parameters(const iter_t &it_beg, const iter_t &it_end, proto_t &proto)
     {
         int scope = 0;
