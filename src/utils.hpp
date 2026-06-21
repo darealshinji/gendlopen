@@ -177,6 +177,22 @@ inline void delete_suffix(std::string &str, const char suffix) {
 }
 
 
+/* get correct filter mode */
+template <class T>
+filter::mode get_filter_mode(const T &vec_prefixes, const T &vec_symbols)
+{
+    if (vec_prefixes.size() > 0 && vec_symbols.size() > 0) {
+        return filter::pfx_list;
+    } else if (vec_prefixes.size() > 0) {
+        return filter::prefix;
+    } else if (vec_symbols.size() > 0) {
+        return filter::list;
+    }
+
+    return filter::none;
+}
+
+
 /* sort list and remove duplicates */
 template <class T>
 void sort_dedup(T &list)

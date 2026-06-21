@@ -40,6 +40,7 @@ using list_t = std::list<const char *>;
 namespace proto
 {
     typedef enum {
+        none,
         function,
         function_pointer,
         object,
@@ -50,6 +51,7 @@ namespace proto
 
 typedef struct _proto {
     proto::type prototype;
+    bool saved;
     std::string type;
     std::string symbol;
     std::string args;
@@ -98,10 +100,10 @@ namespace param
 namespace filter
 {
     typedef enum {
-        none,        /* no filter */
-        prefix,      /* look for prefixed symbols */
-        list,        /* look for whitelisted symbols */
-        prefix_list  /* look for prefixed and/or whitelisted symbols */
+        none     =      0,        /* no filter */
+        prefix   = 1 << 1,        /* look for prefixed symbols */
+        list     = 1 << 2,        /* look for whitelisted symbols */
+        pfx_list = prefix | list, /* look for prefixed and/or whitelisted symbols */
     } mode;
 };
 

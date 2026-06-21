@@ -62,14 +62,15 @@ TranslationUnitDecl 0x5b4b21b885b8 <<invalid sloc>> <invalid sloc>
 #include "types.hpp"
 #include "utils.hpp"
 
-/* make sure these match the ones in help.cpp and options.cpp */
-#define MSG_AST_NO_SYMBOLS \
-    "Clang AST: no symbols provided to look for\n" \
-    "use `-S', `-P' or `-ast-all-symbols'"
-
 
 namespace /* anonymous */
 {
+
+/* make sure these match the ones in help.cpp and options.cpp */
+constexpr const char *err_no_symbols =
+    "Clang AST: no symbols provided to look for\n"
+    "use `-S', `-P' or `-ast-all-symbols'";
+
 
 /* strip ANSI colors and Windows line endings from line */
 std::string strip_line(const char *line)
@@ -83,6 +84,7 @@ std::string strip_line(const char *line)
 
     return s.empty() ? "" : std::regex_replace(s, reg, "");
 }
+
 
 /* get function parameter declaration */
 bool get_parameters(std::string &args, std::string &param_names, int &param_count)
@@ -115,7 +117,7 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
         /* regular parameter */
         args += m.str(1);
 
-        if (!args.ends_with('*')) {
+        if (utils::str_back(args) != '*') {
             args += ' ';
         }
         args += name + ", ";
@@ -178,7 +180,7 @@ int gendlopen::get_declarations(filter::mode mode)
         }
         break;
 
-    case filter::prefix_list:
+    case filter::pfx_list:
         if (!utils::is_prefixed(proto.symbol, m_prefix_list) &&
             std::erase(m_symbol_list, proto.symbol) == 0) /* erase from list if found */
         {
@@ -243,18 +245,12 @@ void gendlopen::parse_clang_ast()
     filter::mode mode = filter::none;
     int rv;
 
-    /* ignore symbol lists if m_ast_all_symbols was set */
+    /* ignore symbol and prefix lists if m_ast_all_symbols was set */
     if (!m_ast_all_symbols) {
-        if (m_symbol_list.empty() && m_prefix_list.empty()) {
-            throw error(MSG_AST_NO_SYMBOLS);
-        }
+        mode = utils::get_filter_mode(m_prefix_list, m_symbol_list);
 
-        if (m_symbol_list.size() > 0 && m_prefix_list.size() > 0) {
-            mode = filter::prefix_list;
-        } else if (m_prefix_list.size() > 0) {
-            mode = filter::prefix;
-        } else if (m_symbol_list.size() > 0) {
-            mode = filter::list;
+        if (mode == filter::none) {
+            throw error(err_no_symbols);
         }
     }
 
@@ -276,7 +272,7 @@ void gendlopen::parse_clang_ast()
     }
 
     /* throw an error if not all symbols on the list were found */
-    if ((mode == filter::list || mode == filter::prefix_list) && !m_symbol_list.empty()) {
+    if ((mode & filter::list) && !m_symbol_list.empty()) {
         std::string s;
 
         utils::sort_dedup(m_symbol_list);

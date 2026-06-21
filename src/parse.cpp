@@ -252,11 +252,14 @@ namespace /* anonymous */
     }
 
 
-    /* parse tokens vector and save prototypes */
+    /* parse tokens vector and save prototypes (initialization of prototype structs) */
     bool parse_tokens(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
     {
         for (vstring_t &v : vec_tokens) {
-            proto_t p;
+            proto_t p = {
+                .prototype = proto::none,
+                .saved     = false
+            };
 
             if (!check_prototype(v, p)) {
                 print_tokens(v);
@@ -311,40 +314,54 @@ void gendlopen::parse(std::vector<vstring_t> &vec_tokens, const std::string &inp
 
     /* filter and copy symbols */
 
-    auto save_symbol = [this] (const proto_t &p)
+    auto save_symbol = [this] (proto_t &p)
     {
-        if (p.prototype == proto::function) {
-            m_prototypes.push_back(p);
-        } else {
-            m_objects.push_back(p);
+        if (!p.saved) {
+            if (p.prototype == proto::function) {
+                m_prototypes.push_back(p);
+            } else {
+                m_objects.push_back(p);
+            }
+
+            p.saved = true;
         }
     };
 
-    if (m_prefix_list.empty() && m_symbol_list.empty()) {
+    auto mode = utils::get_filter_mode(m_prefix_list, m_symbol_list);
+
+    if (mode == filter::none) {
         /* copy all symbols */
-        for (const auto &e : vproto) {
+        for (auto &e : vproto) {
             save_symbol(e);
         }
     } else {
-        /* copy prefixed symbols */
-        if (!m_prefix_list.empty()) {
-            for (const auto &e : vproto) {
+        if (mode & filter::prefix) {
+            for (auto &e : vproto) {
                 if (utils::is_prefixed(e.symbol, m_prefix_list)) {
                     save_symbol(e);
                 }
             }
         }
 
-        /* copy whitelisted symbols */
-        if (!m_symbol_list.empty()) {
-            auto it_beg = m_symbol_list.begin();
-            auto it_end = m_symbol_list.end();
-
-            for (const auto &e : vproto) {
-                /* look for item e.symbol in list m_symbol_list */
-                if (std::find(it_beg, it_end, e.symbol) != it_end) {
+        if (mode & filter::list) {
+            /* erase from list if found */
+            for (auto &e : vproto) {
+                if (std::erase(m_symbol_list, e.symbol) > 0) {
                     save_symbol(e);
                 }
+            }
+
+            /* throw an error if not all symbols on the list were found */
+            if (!m_symbol_list.empty()) {
+                std::string s;
+
+                utils::sort_dedup(m_symbol_list);
+
+                for (const auto &e : m_symbol_list) {
+                    s += ' ' + e;
+                }
+
+                throw error("the following symbols were not found:" + s);
             }
         }
     }
