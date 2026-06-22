@@ -387,8 +387,8 @@ void gendlopen::create_typedefs()
             throw error("failed to create typedef for symbol `" + p.symbol + "'");
         }
 
-        m_typedefs.push_back(def); /* add to typedefs */
-        p.type = name; /* replace old type */
+        m_typedefs.push_back(std::move(def)); /* add to typedefs */
+        p.type = std::move(name); /* replace old type */
     }
 }
 
