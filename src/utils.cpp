@@ -23,9 +23,6 @@
 **/
 
 #include <cctype>
-#ifdef _WIN32
-# include <algorithm>
-#endif
 #include "utils.hpp"
 
 
@@ -193,18 +190,15 @@ bool utils::get_lines(FILE *fp, template_t &entry)
 /* append missing path separator */
 void utils::append_missing_separator(std::string &path)
 {
-    switch (utils::str_back(path))
-    {
 #ifdef _WIN32
-    case '\\':
-#endif
-    case '/':
-    case '\0': /* empty string */
-        break;
-    default:
-        path.push_back('/');
-        break;
+    if (!(path.empty() || path.ends_with('\\') || path.ends_with('/'))) {
+        path.push_back('\\');
     }
+#else
+    if (!(path.empty() || path.ends_with('/'))) {
+        path.push_back('/');
+    }
+#endif
 }
 
 
@@ -213,24 +207,22 @@ void utils::append_missing_separator(std::string &path)
 /* get program name without full path */
 const char *utils::progname(char *argv0)
 {
+    const char *p = NULL;
     char *path = argv0;
 
 #ifdef _WIN32
-    char *tmp = NULL;
-
     /* prefer _pgmptr over argv[0] */
-    if (_get_pgmptr(&tmp) == 0) {
-        path = tmp;
+    if (_get_pgmptr(&path) != 0) {
+        path = argv0;
     }
 
-    const char *p = ::strrchr(path, '\\');
-    const char *p2 = ::strrchr(path, '/');
-
-    if (p2) {
-        p = p ? std::max(p, p2) : p2;
+    for (auto cur = path; *cur != 0; cur++) {
+        if (*cur == '\\' || *cur == '/') {
+            p = cur;
+        }
     }
 #else
-    const char *p = ::strrchr(path, '/');
+    p = ::strrchr(path, '/');
 #endif
 
     if (p && *(p+1) != 0) {
