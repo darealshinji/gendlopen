@@ -117,7 +117,7 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
         /* regular parameter */
         args += m.str(1);
 
-        if (utils::str_back(args) != '*') {
+        if (!args.ends_with('*')) {
             args += ' ';
         }
         args += name + ", ";

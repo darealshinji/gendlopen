@@ -142,11 +142,11 @@ namespace /* anonymous */
             }
 
             /* check if a parameter begins or ends with pointer (v.size() > 1) */
-            if (utils::str_front(v.front()) == '*') {
+            if (v.front().starts_with('*')) {
                 msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
                 parse::append_strings(msg, v);
                 return false;
-            } else if (utils::str_back(v.back()) == '*') {
+            } else if (v.back().ends_with('*')) {
                 msg = "parameter in function `" + proto.symbol + "' is missing a typename: ";
                 parse::append_strings(msg, v);
                 msg += hint;
@@ -230,7 +230,7 @@ bool parse::create_parameter_names(proto_t &proto, std::string &msg)
         }
 
         /* check if a parameter begins with pointer */
-        if (utils::str_front(v.front()) == '*') {
+        if (v.front().starts_with('*')) {
             msg = "parameter in function `" + proto.symbol + "' begins with pointer `*': ";
             append_strings(msg, v);
             return false;

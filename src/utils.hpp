@@ -140,7 +140,7 @@ const char *progname(char *argv0);
 #endif
 
 
-/* std::string's .at(), .front() and .back() methods, but NUL
+/* std::string's .at() and .front() methods but NUL
  * is returned instead of causing undefined behavior */
 inline char str_at(const std::string &str, size_t pos) {
     return (str.size() > pos) ? str.at(pos) : 0;
@@ -148,10 +148,6 @@ inline char str_at(const std::string &str, size_t pos) {
 
 inline char str_front(const std::string &str) {
     return str.empty() ? 0 : str.front();
-}
-
-inline char str_back(const std::string &str) {
-    return str.empty() ? 0 : str.back();
 }
 
 
