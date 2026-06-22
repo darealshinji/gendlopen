@@ -74,7 +74,6 @@ using vtemplate_t = std::vector<const template_t *>;
 namespace output
 {
     typedef enum {
-        error,
         c,
         cxx,
         plugin,

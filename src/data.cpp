@@ -182,9 +182,6 @@ void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
         load_template(t::file_min_cxx_header);
         header.push_back(t::ptr_min_cxx_header);
         break;
-
-    [[unlikely]] case output::error:
-        throw error(std::string(__func__) + ": m_format == output::error");
     }
 }
 

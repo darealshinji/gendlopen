@@ -150,12 +150,12 @@ public:
     /* gendlopen.cpp */
     void add_inc(const std::string &s);
     void add_def(const std::string &s);
-    void prefix(const std::string &s);
-    void format(const std::string &s);
+    void prefix(const char *str);
+    void format(const char *str);
     void print_symbols_to_stdout();
     void process_custom_template();
-    void parameter_names(const char *str); /* set from string */
-    void templates_path(const std::string &s);
+    void parameter_names(const char *str);
+    void templates_path(const char *str);
 
     /* generate.cpp */
     void generate();

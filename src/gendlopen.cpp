@@ -84,38 +84,23 @@ void gendlopen::add_def(const std::string &def)
 
 
 /* set output format */
-void gendlopen::format(const std::string &in)
+void gendlopen::format(const char *str)
 {
-    output::format out = output::error;
-    std::string s = utils::to_lower(in, false);
+    std::string s = utils::to_lower(str, false);
 
-    if (s.starts_with('c')) {
-        if (s == "c") {
-            out = output::c;
-        } else if (s == "cxx" || s == "c++" || s == "cpp") {
-            out = output::cxx;
-        }
-    } else if (s.starts_with("minimal")) {
-        s.erase(0, 7);
-
-        if (s.empty() || s == "-c") {
-            out = output::minimal;
-        } else if (s == "-cxx" || s == "-c++" || s == "-cpp") {
-            out = output::minimal_cxx;
-        }
-    } else if (s.starts_with("plugin")) {
-        s.erase(0, 6);
-
-        if (s.empty() || s == "-c") {
-            out = output::plugin;
-        }
+    if (s == "c") {
+        format(output::c);
+    } else if (s == "cxx" || s == "c++" || s == "cpp") {
+        format(output::cxx);
+    } else if (s == "minimal" || s == "minimal-c") {
+        format(output::minimal);
+    } else if (s == "minimal-cxx" || s == "minimal-c++" || s == "minimal-cpp") {
+        format(output::minimal_cxx);
+    } else if (s == "plugin" || s == "plugin-c") {
+        format(output::plugin);
+    } else {
+        throw error("unknown output format: " + std::string(str));
     }
-
-    if (out == output::error) {
-        throw error("unknown output format: " + in);
-    }
-
-    format(out);
 }
 
 
@@ -124,24 +109,21 @@ void gendlopen::parameter_names(const char *str)
 {
     if (utils::strcasecmp(str, "skip") == 0) {
         parameter_names(param::skip);
-        return;
     } else if (utils::strcasecmp(str, "create") == 0) {
         parameter_names(param::create);
-        return;
     } else if (utils::strcasecmp(str, "read") == 0) {
         parameter_names(param::read);
-        return;
+    } else {
+        throw error(std::string(__func__) + std::string(": unknown mode: ") + str);
     }
-
-    throw error(std::string(__func__) + std::string(": unknown mode: ") + str);
 }
 
 
 /* set symbol prefix name */
-void gendlopen::prefix(const std::string &s)
+void gendlopen::prefix(const char *str)
 {
     /* set name */
-    m_pfx = s;
+    m_pfx = str;
 
     /* set uppercase/lowercase name */
     m_pfx_upper = utils::to_upper(m_pfx);
@@ -183,9 +165,9 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 
 
 /* set templates path */
-void gendlopen::templates_path(const std::string &s)
+void gendlopen::templates_path(const char *str)
 {
-    m_templates_path = s;
+    m_templates_path = str;
 
     /* does nothing on an empty string */
     utils::append_missing_separator(m_templates_path);

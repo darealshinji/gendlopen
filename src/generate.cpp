@@ -447,25 +447,18 @@ void gendlopen::generate()
     /* change settings based on output format */
     switch (m_format)
     {
-    case output::c:
-    case output::plugin:
-        break;
-
     case output::cxx:
         is_cxx = true;
         break;
-
     case output::minimal:
         m_separate = false;
         break;
-
     case output::minimal_cxx:
         m_separate = false;
         is_cxx = true;
         break;
-
-    [[unlikely]] case output::error:
-        throw error(std::string(__func__) + ": m_format == output::error");
+    default:
+        break;
     }
 
     /* rename file extensions only if we save into separate files */
