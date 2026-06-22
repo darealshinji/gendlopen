@@ -40,7 +40,6 @@ using list_t = std::list<const char *>;
 namespace proto
 {
     typedef enum {
-        none,
         function,
         function_pointer,
         object,

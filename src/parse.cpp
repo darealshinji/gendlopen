@@ -256,15 +256,14 @@ namespace /* anonymous */
     bool parse_tokens(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
     {
         for (vstring_t &v : vec_tokens) {
-            proto_t p = {
-                .prototype = proto::none,
-                .saved     = false
-            };
+            proto_t p;
 
             if (!check_prototype(v, p)) {
                 print_tokens(v);
                 return false;
             }
+
+            p.saved = false;
 
             vproto.push_back(p);
         }
