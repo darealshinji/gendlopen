@@ -2,7 +2,7 @@
 set -e
 set -x
 
-DEBUG=false
+DEBUG=true
 
 mkdir build
 
@@ -23,5 +23,5 @@ else
     meson test -C build
 fi
 
-./build/src/gendlopen -templates-path src/templates -format minimal tests/helloworld.txt > build/test_external.h
+#./build/src/gendlopen -templates-path src/templates -format minimal tests/helloworld.txt > build/test_external.h
 

@@ -35,7 +35,8 @@
 
 namespace /* anonymous */
 {
-    /* check if prototype parameters are empty or of type "void" */
+    /* check if prototype parameters are empty or of type "void";
+     * saves "void" parameter */
     bool param_void_or_empty(proto_t &proto)
     {
         if (proto.args_vec.empty()) {
