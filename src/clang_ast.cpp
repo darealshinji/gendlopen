@@ -97,7 +97,7 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
         " '(.*?)'.*"  /* type */
     );
 
-    const std::string line = strip_line(yytext);
+    const std::string line = strip_line(lex::text());
 
     if (line.empty() || !std::regex_match(line, m, reg) || m.size() != 2) {
         return false;
@@ -132,10 +132,9 @@ bool get_parameters(std::string &args, std::string &param_names, int &param_coun
 } /* end anonymous namespace */
 
 
-/* get function or variable declaration */
+/* get function or variable declaration (initialization of prototype structs) */
 int gendlopen::get_declarations(filter::mode mode)
 {
-    proto_t proto;
     std::smatch m;
 
     const std::regex reg_func(
@@ -150,7 +149,7 @@ int gendlopen::get_declarations(filter::mode mode)
         "'(.*?)'.*"           /* type */
     );
 
-    const std::string line = strip_line(yytext);
+    const std::string line = strip_line(lex::text());
 
     if (line.empty()) {
         return 0;
@@ -163,7 +162,11 @@ int gendlopen::get_declarations(filter::mode mode)
     }
 
     /* check for a prefixed symbol or a symbol from a whitelist */
-    proto.symbol = m.str(1);
+    proto_t proto;
+
+    proto.prototype = proto::function;
+    proto.saved     = false;
+    proto.symbol    = m.str(1);
 
     switch (mode)
     {
@@ -207,7 +210,7 @@ int gendlopen::get_declarations(filter::mode mode)
         utils::strip_spaces(proto.type);
 
         /* read next lines for parameters */
-        while ((rv = yylex()) == LEX_AST_PARMVAR) {
+        while ((rv = lex::lex()) == LEX_AST_PARMVAR) {
             if (!get_parameters(proto.args, proto.param_names, param_count)) {
                 break;
             }
@@ -216,7 +219,7 @@ int gendlopen::get_declarations(filter::mode mode)
         utils::delete_suffix(proto.args, ", ");
         utils::delete_suffix(proto.param_names, ", ");
 
-        m_prototypes.push_back(proto);
+        m_prototypes.push_back(std::move(proto));
 
         /* continue to analyze the current line stored in yytext buffer */
         return 1;
@@ -233,7 +236,7 @@ int gendlopen::get_declarations(filter::mode mode)
         proto.type = m.str(2);
         utils::strip_spaces(proto.type);
 
-        m_objects.push_back(proto);
+        m_objects.push_back(std::move(proto));
     }
 
     return 0;
@@ -255,7 +258,7 @@ void gendlopen::parse_clang_ast()
     }
 
     /* read lines */
-    while ((rv = yylex()) == LEX_AST_FUNCVAR || rv == LEX_AST_PARMVAR) {
+    while ((rv = lex::lex()) == LEX_AST_FUNCVAR || rv == LEX_AST_PARMVAR) {
         if (rv == LEX_AST_PARMVAR) {
             /* ignore */
             continue;

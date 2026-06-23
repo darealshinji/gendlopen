@@ -29,7 +29,7 @@
 namespace /* anonymous */
 {
 
-/* returns false on EOL or EOF */
+/* returns false on \n or EOF */
 bool save_to_line(int c, template_t &entry)
 {
     switch (c)
@@ -171,9 +171,10 @@ bool utils::get_lines(FILE *fp, template_t &entry)
 {
     int c = EOF;
 
+    /* initialize data */
+    entry.data.clear();
     entry.maybe_keyword = false;
     entry.line_count = 1;
-    entry.data.clear();
 
     while (true) {
         c = ::fgetc(fp);

@@ -49,31 +49,6 @@ typedef struct _entry {
 using ventry_t = std::vector<entry_t>;
 
 
-namespace lex
-{
-    static const char *error() {
-        return (::lex_errmsg[0] == 0) ? NULL : ::lex_errmsg;
-    }
-
-    static const char *text() {
-        return ::yytext;
-    }
-
-    static void set_illegal_char() {
-        ::set_illegal_char();
-    }
-
-    static int lex() {
-        return ::yylex();
-    }
-
-    static void set_fpin(FILE *fp) {
-        ::yyset_in(fp);
-    }
-}
-
-
-
 namespace /* anonymous */
 {
     /* tokenize stream into prototype tokens and options */

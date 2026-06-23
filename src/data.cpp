@@ -55,7 +55,6 @@ namespace /* anonymous */
     void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
     {
         std::string path;
-        template_t entry;
         bool rv = true;
 
         /* don't add line directive to license part */
@@ -75,12 +74,16 @@ namespace /* anonymous */
 
         FILE *fp = ofs.file_pointer();
 
+        template_t entry;
+        entry.maybe_keyword = false;
+        entry.line_count = 1;
+
         /* add initial #line directive */
         if (line_directive) {
             if (fp == stdin) {
-                entry = { "#line 1 \"<STDIN>\"", false, 1 };
+                entry.data = "#line 1 \"<STDIN>\"";
             } else {
-                entry = { "#line 1 \"" + std::string(file) + "\"\n", false, 1 };
+                entry.data = "#line 1 \"" + std::string(file) + "\"\n";
             }
 
             data.push_back(entry);
@@ -92,7 +95,7 @@ namespace /* anonymous */
             data.push_back(entry);
         }
 
-        entry = { "", 0, 0 };
+        entry = { {}, 0, 0 };
         data.push_back(entry);
     }
 

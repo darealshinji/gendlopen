@@ -96,7 +96,7 @@ namespace /* anonymous */
         }
 
         if (!tokens.empty()) {
-            proto.args_vec.push_back(tokens);
+            proto.args_vec.push_back(std::move(tokens));
         }
     }
 
@@ -256,16 +256,16 @@ namespace /* anonymous */
     bool parse_tokens(std::vector<vstring_t> &vec_tokens, vproto_t &vproto)
     {
         for (vstring_t &v : vec_tokens) {
-            proto_t p;
+            proto_t proto;
+            proto.prototype = proto::function;
+            proto.saved = false;
 
-            if (!check_prototype(v, p)) {
+            if (!check_prototype(v, proto)) {
                 print_tokens(v);
                 return false;
             }
 
-            p.saved = false;
-
-            vproto.push_back(p);
+            vproto.push_back(std::move(proto));
         }
 
         return true;

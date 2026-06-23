@@ -33,6 +33,30 @@ void set_illegal_char();
 int yylex();
 void yyset_in(FILE *);
 
+
 #ifdef __cplusplus
+} /* extern "C" */
+
+namespace lex
+{
+    inline const char *error() {
+        return (::lex_errmsg[0] == 0) ? NULL : ::lex_errmsg;
+    }
+
+    inline const char *text() {
+        return ::yytext;
+    }
+
+    inline void set_illegal_char() {
+        ::set_illegal_char();
+    }
+
+    inline int lex() {
+        return ::yylex();
+    }
+
+    inline void set_fpin(FILE *fp) {
+        ::yyset_in(fp);
+    }
 }
-#endif
+#endif //__cplusplus
