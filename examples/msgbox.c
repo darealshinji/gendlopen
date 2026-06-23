@@ -32,8 +32,18 @@ extern void fl_message_title_MANGLED(const char *title);
 #define LIBNAME(...)  DL_GTK_LIBNAME(__VA_ARGS__)
 #define LIBEXT        DL_GTK_LIBEXT
 
-/* same as _countof() */
-#define COUNTOF(array) (sizeof(array) / sizeof(array[0]))
+#ifndef _countof
+#define _countof(array) (sizeof(array) / sizeof(array[0]))
+#endif
+
+/**
+ * prevent references to functions that we didn't load and which are
+ * typically not directly available to language bindings (use with care)
+ */
+#undef GTK_WINDOW
+#define GTK_WINDOW(obj)  ((GtkWindow *)obj)
+#undef GTK_DIALOG
+#define GTK_DIALOG(obj)  ((GtkDialog *)obj)
 
 
 enum {
@@ -160,7 +170,7 @@ static void show_x11_message_box(const char *msg)
         case Expose:
             /* draw text */
             x = 16; y = h/2;
-            XDrawText(display, window, gc, x, y, items, COUNTOF(items));
+            XDrawText(display, window, gc, x, y, items, _countof(items));
             break;
 
         case ClientMessage:

@@ -9,6 +9,16 @@
 #include "example_gtk.h"
 
 
+/**
+ * prevent references to functions that we didn't load and which are
+ * typically not directly available to language bindings (use with care)
+ */
+#undef GTK_WINDOW
+#define GTK_WINDOW(obj)  ((GtkWindow *)obj)
+#undef GTK_DIALOG
+#define GTK_DIALOG(obj)  ((GtkDialog *)obj)
+
+
 /* Gtk+ code */
 static void show_gtk_message_box(const char *title, const char *msg1, const char *msg2)
 {
