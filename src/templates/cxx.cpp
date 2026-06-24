@@ -44,27 +44,41 @@ gdo_hmod_t gdo::dl::m_handle = nullptr;
 %%obj_type%% *GDO_RAWPTR_%%obj_symbol%% = nullptr;
 
 
-/* Create versioned library names for DLLs, dylibs and DSOs.
+/* Create versioned shared library names.
  * make_libname("z",1) for example will return "libz.1.dylib" on macOS */
 std::string gdo::make_libname(const std::string &name, const size_t api)
 {
-    /* prefix + name + middle + api + suffix */
 #ifdef _WIN32
+
 # ifdef __MINGW32__
-    return "lib" + name + '-'    + std::to_string(api) + ".dll";
+    return "lib" + name + '-' + std::to_string(api) + ".dll";
 # else
-    return         name + '-'    + std::to_string(api) + ".dll";
+    return         name + '-' + std::to_string(api) + ".dll";
 # endif
+
 #elif defined(__APPLE__)
-    return "lib" + name + '.'    + std::to_string(api) + ".dylib";
+
+    return "lib" + name + '.' + std::to_string(api) + ".dylib";
+
 #elif defined(_AIX)
+
     UNUSED_REF(api);
-    return "lib" + name                                + ".a"; /* ".a(shr.o)" */
+
+    if (sizeof(void *) == 8) {
+        return "lib" + name + ".a(shr_64.o)";
+    } else {
+        return "lib" + name + ".a(shr.o)";
+    }
+
 #elif defined(__ANDROID__)
+
     UNUSED_REF(api);
-    return "lib" + name                                + ".so";
+    return "lib" + name + ".so";
+
 #else
+
     return "lib" + name + ".so." + std::to_string(api);
+
 #endif
 }
 

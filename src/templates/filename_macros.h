@@ -21,27 +21,15 @@ GDO_LIBEXTW
 ***/
 
 /* default library filename extension */
-#ifdef GDO_LIBEXT
-# undef GDO_LIBEXT
-#endif
-#ifdef GDO_LIBEXTA
-# undef GDO_LIBEXTA
-#endif
-#ifdef GDO_LIBEXTW
-# undef GDO_LIBEXTW
-#endif
+#undef GDO_LIBEXTA
 #ifdef _WIN32
-# define GDO_LIBEXTA    ".dll"
-# define GDO_LIBEXTW   L".dll"
+# define GDO_LIBEXTA  ".dll"
 #elif defined(__APPLE__)
-# define GDO_LIBEXTA    ".dylib"
-# define GDO_LIBEXTW   L".dylib"
+# define GDO_LIBEXTA  ".dylib"
 #elif defined(_AIX)
-# define GDO_LIBEXTA    ".a"
-# define GDO_LIBEXTW   L".a"
+# define GDO_LIBEXTA  ".a"
 #else /* ELF */
-# define GDO_LIBEXTA    ".so"
-# define GDO_LIBEXTW   L".so"
+# define GDO_LIBEXTA  ".so"
 #endif
 
 /**
@@ -53,46 +41,46 @@ GDO_LIBEXTW
  *
  * macOS: libfoo.1.2.dylib
  *
- * AIX: libfoo.a
+ * AIX: libfoo.a(shr.o) or libfoo.a(shr_64.o)
  * AIX uses archive files without API number.
+ * These archives typically contain a 32 bit shared object `shr.o'
+ * and a 64 bit shared object `shr_64.o'.
  *
  * Android: libfoo.so
  * ELF format but without API number.
  *
  * ELF: libfoo.so.1.2
  */
-#ifdef GDO_LIBNAME
-# undef GDO_LIBNAME
-#endif
-#ifdef GDO_LIBNAMEA
-# undef GDO_LIBNAMEA
-#endif
-#ifdef GDO_LIBNAMEW
-# undef GDO_LIBNAMEW
-#endif
+#undef GDO_LIBNAMEA
 #ifdef _WIN32
 # ifdef __MINGW32__
-#  define GDO_LIBNAMEA(NAME, API)   "lib" #NAME "-" #API ".dll"
-#  define GDO_LIBNAMEW(NAME, API)  L"lib" #NAME "-" #API ".dll"
+#  define GDO_LIBNAMEA(NAME, API)  "lib" #NAME "-" #API ".dll"
 # else
-#  define GDO_LIBNAMEA(NAME, API)         #NAME "-" #API ".dll"
-#  define GDO_LIBNAMEW(NAME, API)     L"" #NAME "-" #API ".dll"
+#  define GDO_LIBNAMEA(NAME, API)        #NAME "-" #API ".dll"
 # endif
 #elif defined(__APPLE__)
-# define GDO_LIBNAMEA(NAME, API)    "lib" #NAME "." #API ".dylib"
-# define GDO_LIBNAMEW(NAME, API)   L"lib" #NAME "." #API ".dylib"
+# define GDO_LIBNAMEA(NAME, API)   "lib" #NAME "." #API ".dylib"
 #elif defined(_AIX)
-# define GDO_LIBNAMEA(NAME, API)    "lib" #NAME ".a"
-# define GDO_LIBNAMEW(NAME, API)   L"lib" #NAME ".a"
+# if defined(__64BIT__) /* IBM XL C */ || defined(__LP64__) /* GCC */
+#  define GDO_LIBNAMEA(NAME, API)  "lib" #NAME ".a(shr_64.o)"
+# else
+#  define GDO_LIBNAMEA(NAME, API)  "lib" #NAME ".a(shr.o)"
+# endif
 #elif defined(__ANDROID__)
-# define GDO_LIBNAMEA(NAME, API)    "lib" #NAME ".so"
-# define GDO_LIBNAMEW(NAME, API)   L"lib" #NAME ".so"
-#else /* default ELF filename */
-# define GDO_LIBNAMEA(NAME, API)    "lib" #NAME ".so." #API
-# define GDO_LIBNAMEW(NAME, API)   L"lib" #NAME ".so." #API
+# define GDO_LIBNAMEA(NAME, API)   "lib" #NAME ".so"
+#else /* other ELF systems */
+# define GDO_LIBNAMEA(NAME, API)   "lib" #NAME ".so." #API
 #endif
 
-/* wide/narrow char default macros */
+/* wide character macros */
+#undef GDO_LIBEXTW
+#undef GDO_LIBNAMEW
+#define GDO_LIBEXTW              L"" GDO_LIBEXTA
+#define GDO_LIBNAMEW(NAME, API)  L"" GDO_LIBNAMEA(NAME,API)
+
+/* wide/narrow character default macros */
+#undef GDO_LIBEXT
+#undef GDO_LIBNAME
 #if defined(_WIN32) && defined(_UNICODE)
 # define GDO_LIBEXT              GDO_LIBEXTW
 # define GDO_LIBNAME(NAME, API)  GDO_LIBNAMEW(NAME, API)
