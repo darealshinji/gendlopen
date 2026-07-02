@@ -124,7 +124,7 @@ public:
     ~gendlopen();
 
     /* return program version string */
-    constexpr const char *version() { return "1.0"; }
+    constexpr const char *version() { return "1.1"; }
 
     /* get() / set() an option */
 
