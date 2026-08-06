@@ -88,7 +88,7 @@ On Windows you can use `dumpbin` from Visual Studio Developer Command Prompt:
 `dumpbin /imports myexecutable.exe | findstr gtk_`
 
 
-Copying these declarations verbatim from i.e. online documentation into a text file:
+Copy these declarations verbatim from i.e. online documentation into a text file:
 ``` C
 guint
 gtk_get_major_version (
@@ -303,8 +303,9 @@ This is ignored however for "minimal-C" and "minimal-C++".
 
 You can force to overwrite an existing output file with `-force`.
 
-To avoid conflicts all functions/macros/etc. are prefixed with `gdo_` or `GDO_`.
-If you want to use more than one generated header you can change the prefix
+To avoid conflicts all functions/macros/etc. provided by the generated headers
+are either prefixed with `gdo_`/`GDO_` or declared within a namespace `gdo::`.
+If you want to use more than one generated header you can change the prefix/namespace
 in the output with `-prefix=<string>`.
 
 
@@ -330,15 +331,16 @@ const gdo_char_t *gdo_last_error();
 
 ``` C++
 //-format=C++
+// class dl within namespace gdo
 gdo::dl(); // empty c'tor
-bool gdo::load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
-bool gdo::load_all_symbols();
-bool gdo::free(bool force=false); // called by d'tor
-std::string gdo::error();
+bool gdo::dl::load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
+bool gdo::dl::load_all_symbols();
+bool gdo::dl::free(bool force=false); // called by d'tor
+std::string gdo::dl::error();
 
 #ifdef GDO_WINAPI
-bool gdo::load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
-std::wstring gdo::error_w();
+bool gdo::dl::load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
+std::wstring gdo::dl::error_w();
 #endif
 ```
 
@@ -350,6 +352,7 @@ void gdo_free_library();
 
 ``` C++
 //-format=minimal-C++
+// namespace gdo
 void gdo::load_library_and_symbols(const char *filename); // throws exceptions
 void gdo::free_library();
 ```
