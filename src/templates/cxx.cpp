@@ -440,6 +440,20 @@ bool gdo::dl::get_library_path(void)
 }
 #endif //_AIX
 
+#if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
+bool gdo::dl::fullpath_procmap(__u64 addr, std::string &path)
+{
+    char buf[GDO_BUFLEN];
+
+    if (_gdo_fullpath_procmap(addr, buf, GDO_BUFLEN)) {
+        path = buf;
+        return true;
+    }
+
+    return false;
+}
+#endif
+
 #ifdef GDO_HAVE_DLINFO
 bool gdo::dl::get_library_path_dlinfo(void)
 {
@@ -457,11 +471,8 @@ bool gdo::dl::get_library_path_dlinfo(void)
     }
 
 # ifdef __linux__
-    char buf[GDO_BUFLEN];
-
-    /* if the path is relative try to get the full library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, buf, GDO_BUFLEN)) {
-        m_libpath = buf;
+    /* try to get the full library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && fullpath_procmap(lm->l_addr, m_libpath)) {
         return true;
     }
 # endif
@@ -476,6 +487,8 @@ bool gdo::dl::get_library_path_dlinfo(void)
 bool gdo::dl::get_library_path_dladdr(void)
 {
     /* use dladdr() to get the library path from a symbol pointer */
+
+    void *addr = nullptr;
     Dl_info info;
 
     if (no_symbols_loaded()) {
@@ -484,15 +497,24 @@ bool gdo::dl::get_library_path_dladdr(void)
     }
 
     if (false
-        || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
+        || _gdo_call_dladdr((addr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%)), &info)
     ) {
         m_libpath = info.dli_fname;
-        return true;
     }
 
-    m_errmsg = "dladdr() failed to get library path";
+# ifdef __linux__
+    /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
+    if (m_libpath.empty() || m_libpath.at(0) != '/') {
+        fullpath_procmap(reinterpret_cast<__u64>(addr), m_libpath);
+    }
+# endif
 
-    return false;
+    if (m_libpath.empty()) {
+        m_errmsg = "dladdr() failed to get library path";
+        return false;
+    }
+
+    return true;
 }
 #endif //GDO_HAVE_DLADDR
 

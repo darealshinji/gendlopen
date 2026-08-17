@@ -810,8 +810,8 @@ GDO_INLINE bool _gdo_libpath_dlinfo(void)
     }
 
 # ifdef __linux__
-    /* if the path is relative try to get the full library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm, gdo_hndl.libpath, GDO_BUFLEN)) {
+    /* try to get the full library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && _gdo_fullpath_procmap(lm->l_addr, gdo_hndl.libpath, GDO_BUFLEN)) {
         return true;
     }
 # endif
@@ -835,6 +835,7 @@ GDO_INLINE bool _gdo_libpath_dladdr(void)
     /* use dladdr() to get the library path from a symbol pointer */
 
     const char *path = NULL;
+    void *addr = NULL;
     Dl_info info;
 
     _gdo_clear_error();
@@ -845,10 +846,17 @@ GDO_INLINE bool _gdo_libpath_dladdr(void)
     }
 
     if (false
-        || _gdo_call_dladdr((void *)GDO_RAWPTR_%%symbol%%, &info)
+        || _gdo_call_dladdr((addr = (void *)GDO_RAWPTR_%%symbol%%), &info)
     ) {
         path = info.dli_fname;
     }
+
+# ifdef __linux__
+    /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
+    if ((!path || path[0] != '/') && _gdo_fullpath_procmap((__u64)addr, gdo_hndl.libpath, GDO_BUFLEN)) {
+        return true;
+    }
+# endif
 
     if (!path) {
         _gdo_save_to_errbuf("dladdr() failed to get library path");

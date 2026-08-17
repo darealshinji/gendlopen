@@ -192,6 +192,9 @@ private:
 #ifdef _AIX
     bool aix_libpath(struct ld_info *info, uint8_t *sym);
 #endif
+#if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
+    bool fullpath_procmap(__u64 addr, std::string &path);
+#endif
 #ifdef GDO_HAVE_DLINFO
     bool get_library_path_dlinfo(void);
 #endif

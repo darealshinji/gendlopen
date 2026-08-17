@@ -94,7 +94,7 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
 #endif //_AIX
 
 
-#if defined(GDO_HAVE_DLINFO) && defined(__linux__)
+#if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -110,7 +110,7 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
 
 
 /* try to get the full library path from process map */
-GDO_INLINE bool _gdo_fullpath_procmap(struct link_map *lm, char *buf, size_t bufsize)
+GDO_INLINE bool _gdo_fullpath_procmap(__u64 addr, char *buf, size_t bufsize)
 {
 #ifdef PROCMAP_QUERY
 
@@ -125,7 +125,7 @@ GDO_INLINE bool _gdo_fullpath_procmap(struct link_map *lm, char *buf, size_t buf
 
         q.size          = sizeof(struct procmap_query);
         q.query_flags   = PROCMAP_QUERY_FILE_BACKED_VMA;
-        q.query_addr    = (__u64)lm->l_addr;  /* find this address */
+        q.query_addr    = addr;        /* find this address */
         q.vma_name_size = bufsize;     /* in: buffer size; out: saved path length + NUL byte */
         q.vma_name_addr = (__u64)buf;  /* buffer to save pathname */
 
@@ -160,7 +160,7 @@ GDO_INLINE bool _gdo_fullpath_procmap(struct link_map *lm, char *buf, size_t buf
         int rv = sscanf(line, "%jx-%jx %4[rwxsp-] %*u %*u:%*u %*u %m[^\n]",
                         &start, &end, mode, &path);
 
-        if (rv == 4 && lm->l_addr >= start && lm->l_addr < end) {
+        if (rv == 4 && addr >= start && addr < end) {
             /* match */
             break;
         }
@@ -182,5 +182,5 @@ GDO_INLINE bool _gdo_fullpath_procmap(struct link_map *lm, char *buf, size_t buf
     return false;
 }
 
-#endif //GDO_HAVE_DLINFO && __linux__
+#endif // (GDO_HAVE_DLINFO || GDO_HAVE_DLADDR) && __linux__
 
