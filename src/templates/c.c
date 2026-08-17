@@ -853,7 +853,7 @@ GDO_INLINE bool _gdo_libpath_dladdr(void)
 
 # ifdef __linux__
     /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
-    if ((!path || path[0] != '/') && _gdo_fullpath_procmap((__u64)addr, gdo_hndl.libpath, GDO_BUFLEN)) {
+    if ((!path || path[0] != '/') && _gdo_fullpath_procmap((uint64_t)addr, gdo_hndl.libpath, GDO_BUFLEN)) {
         return true;
     }
 # endif

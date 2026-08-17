@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
+#include <inttypes.h>
 #ifdef _AIX
-# include <inttypes.h>
 # include <sys/ldr.h>
 #endif
 
@@ -193,7 +193,7 @@ private:
     bool aix_libpath(struct ld_info *info, uint8_t *sym);
 #endif
 #if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
-    bool fullpath_procmap(__u64 addr, std::string &path);
+    bool fullpath_procmap(uint64_t addr, std::string &path);
 #endif
 #ifdef GDO_HAVE_DLINFO
     bool get_library_path_dlinfo(void);

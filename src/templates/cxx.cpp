@@ -441,7 +441,7 @@ bool gdo::dl::get_library_path(void)
 #endif //_AIX
 
 #if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
-bool gdo::dl::fullpath_procmap(__u64 addr, std::string &path)
+bool gdo::dl::fullpath_procmap(uint64_t addr, std::string &path)
 {
     char buf[GDO_BUFLEN];
 
@@ -505,7 +505,7 @@ bool gdo::dl::get_library_path_dladdr(void)
 # ifdef __linux__
     /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
     if (m_libpath.empty() || m_libpath.at(0) != '/') {
-        fullpath_procmap(reinterpret_cast<__u64>(addr), m_libpath);
+        fullpath_procmap(reinterpret_cast<uint64_t>(addr), m_libpath);
     }
 # endif
 

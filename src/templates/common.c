@@ -110,7 +110,7 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
 
 
 /* try to get the full library path from process map */
-GDO_INLINE bool _gdo_fullpath_procmap(__u64 addr, char *buf, size_t bufsize)
+GDO_INLINE bool _gdo_fullpath_procmap(uint64_t addr, char *buf, size_t bufsize)
 {
 #ifdef PROCMAP_QUERY
 
