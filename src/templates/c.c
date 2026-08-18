@@ -767,55 +767,54 @@ GDO_INLINE bool _gdo_library_path(void)
 
 #else // dlinfo() + dladdr()
 
-GDO_INLINE bool _gdo_libpath_dlinfo(void)
+/* use dlinfo() to get a link map */
+GDO_INLINE char *_gdo_libpath_dlinfo(void)
 {
-#ifdef GDO_HAVE_DLINFO /* dlinfo() (Linux, FreeBSD, ...) */
+#ifdef GDO_HAVE_DLINFO
 
-    /* use dlinfo() to get a link map */
+# ifdef __linux__
+    char buf[GDO_BUFLEN];
+# endif
     struct link_map *lm = NULL;
 
     _gdo_clear_error();
 
     if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
         _gdo_save_error(NULL);
-        return false;
+        return NULL;
     }
 
     if (!lm->l_name || lm->l_name[0] == 0) {
         _gdo_save_to_errbuf("dlinfo() failed to get library path");
-        return false;
+        return NULL;
     }
 
 # ifdef __linux__
     /* try to get the absolute library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && _gdo_abspath_procmap(lm->l_addr, gdo_hndl.libpath, GDO_BUFLEN)) {
-        return true;
+    if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
+        _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
+    {
+        return strdup(buf);
     }
 # endif
 
-    size_t len = strlen(lm->l_name) + 1;
+    return strdup(lm->l_name);
 
-    if (len > GDO_BUFLEN) {
-        return false;
-    }
+#else
 
-    memcpy(gdo_hndl.libpath, lm->l_name, len);
-
-    return true;
-
-#else //!GDO_HAVE_DLINFO
-
-    return false;
+    return NULL;
 
 #endif //!GDO_HAVE_DLINFO
 }
 
-GDO_INLINE bool _gdo_libpath_dladdr(void)
+/* use dladdr() to get the library path from a symbol pointer */
+GDO_INLINE char *_gdo_libpath_dladdr(void)
 {
-#ifdef GDO_HAVE_DLADDR /* dladdr() (POSIX.1-2024) */
+#ifdef GDO_HAVE_DLADDR // dladdr() (POSIX.1-2024)
 
-    /* use dladdr() to get the library path from a symbol pointer */
-
+# ifdef __linux__
+    char buf[GDO_BUFLEN];
+# endif
     const char *path = NULL;
     void *addr = NULL;
     Dl_info info;
@@ -824,7 +823,7 @@ GDO_INLINE bool _gdo_libpath_dladdr(void)
 
     if (gdo_no_symbols_loaded()) {
         _gdo_save_to_errbuf("no symbols were loaded");
-        return false;
+        return NULL;
     }
 
     if (false
@@ -835,61 +834,56 @@ GDO_INLINE bool _gdo_libpath_dladdr(void)
 
 # ifdef __linux__
     /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
-    if ((!path || path[0] != '/') && _gdo_abspath_procmap((uint64_t)addr, gdo_hndl.libpath, GDO_BUFLEN)) {
-        return true;
+    if ((!path || path[0] != '/') && _gdo_abspath_procmap((uint64_t)addr, buf, GDO_BUFLEN)) {
+        return strdup(buf);
     }
 # endif
 
     if (!path) {
         _gdo_save_to_errbuf("dladdr() failed to get library path");
-        return false;
+        return NULL;
     }
 
-    size_t len = strlen(path) + 1;
+    return strdup(path);
 
-    if (len > GDO_BUFLEN) {
-        return false;
-    }
+#else
 
-    memcpy(gdo_hndl.libpath, path, len);
-
-    return true;
-
-#else //!GDO_HAVE_DLADDR
-
-    return false;
+    return NULL;
 
 #endif //!GDO_HAVE_DLADDR
 }
 
 GDO_INLINE bool _gdo_library_path(void)
 {
-    char *copy = NULL;
+    char *path = NULL;
+    char *dli = NULL;
+    char *dla = NULL;
 
-    /* prefer dlinfo() over dladdr() */
-    if (_gdo_libpath_dlinfo()) {
-        if (gdo_hndl.libpath[0] == '/') {
-            /* dlinfo() returned an absolute path */
-            return true;
+    /* try to get an absolute path (check with dlinfo() first) */
+    if ((dli = _gdo_libpath_dlinfo()) && dli[0] == '/') {
+        path = dli;
+    } else if ((dla = _gdo_libpath_dladdr()) && dla[0] == '/') {
+        path = dla;
+    }
+
+    /* maybe a relative path */
+    if (!path) {
+        path = dli ? dli : dla;
+    }
+
+    /* copy path to buffer */
+    if (path) {
+        size_t len = strlen(path);
+
+        if (len < GDO_BUFLEN) {
+            memcpy(gdo_hndl.libpath, path, len + 1);
         }
-
-        /* backup relative path */
-        copy = strdup(gdo_hndl.libpath);
     }
 
-    /* restore relative path if dladdr() failed */
-    if (!_gdo_libpath_dladdr() && copy) {
-        memcpy(gdo_hndl.libpath, copy, strlen(copy) + 1);
-    }
+    free(dli);
+    free(dla);
 
-    free(copy);
-
-    if (gdo_hndl.libpath[0] != 0) {
-        _gdo_clear_error();
-        return true;
-    }
-
-    return false;
+    return (gdo_hndl.libpath[0] != 0);
 }
 
 #endif // dlinfo() + dladdr()

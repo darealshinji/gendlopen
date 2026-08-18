@@ -388,7 +388,7 @@ bool gdo::dl::get_library_path(void)
 
 #elif defined(_AIX)
 
-bool gdo::dl::aix_libpath(struct ld_info *info, uint8_t *sym)
+bool gdo::dl::libpath_from_symptr(struct ld_info *info, uint8_t *sym)
 {
     const char *path, *member;
 
@@ -428,7 +428,7 @@ bool gdo::dl::get_library_path(void)
         auto info = reinterpret_cast<struct ld_info *>(buf);
 
         if (false
-            || aix_libpath(info, reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%))
+            || libpath_from_symptr(info, reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%))
         ) {
             return true;
         }
@@ -441,26 +441,14 @@ bool gdo::dl::get_library_path(void)
 
 #else // dlinfo() + dladdr()
 
-# ifdef __linux__
-bool gdo::dl::abspath_procmap(uint64_t addr, std::string &path)
+/* use dlinfo() to get a link map */
+bool gdo::dl::libpath_dlinfo(std::string &path)
 {
-    char buf[GDO_BUFLEN];
+#ifdef GDO_HAVE_DLINFO
 
-    if (_gdo_abspath_procmap(addr, buf, GDO_BUFLEN)) {
-        path = buf;
-        return true;
-    }
-
-    return false;
-}
-# endif //__linux__
-
-bool gdo::dl::get_library_path_dlinfo(void)
-{
-# ifdef GDO_HAVE_DLINFO
-
-    /* use dlinfo() to get a link map */
     struct link_map *lm = nullptr;
+
+    clear_error();
 
     if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == -1) {
         save_error();
@@ -472,31 +460,39 @@ bool gdo::dl::get_library_path_dlinfo(void)
         return false;
     }
 
-#  ifdef __linux__
+# ifdef __linux__
+    char buf[GDO_BUFLEN];
+
     /* try to get the absolute library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && abspath_procmap(lm->l_addr, m_libpath)) {
+    if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
+        _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
+    {
+        path = buf;
         return true;
     }
-#  endif
+# endif
 
-    m_libpath = lm->l_name;
+    path = lm->l_name;
 
     return true;
 
-# else
+#else
 
     return false;
 
-# endif //GDO_HAVE_DLINFO
+#endif //!GDO_HAVE_DLINFO
 }
 
-bool gdo::dl::get_library_path_dladdr(void)
+/* use dladdr() to get the library path from a symbol pointer */
+bool gdo::dl::libpath_dladdr(std::string &path)
 {
-# ifdef GDO_HAVE_DLADDR
-    /* use dladdr() to get the library path from a symbol pointer */
+#ifdef GDO_HAVE_DLADDR // dladdr() (POSIX.1-2024)
 
+    const char *ptr = nullptr;
     void *addr = nullptr;
     Dl_info info;
+
+    clear_error();
 
     if (no_symbols_loaded()) {
         m_errmsg = "no symbols were loaded";
@@ -506,56 +502,60 @@ bool gdo::dl::get_library_path_dladdr(void)
     if (false
         || _gdo_call_dladdr((addr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%)), &info)
     ) {
-        m_libpath = info.dli_fname;
+        ptr = info.dli_fname;
     }
 
-#  ifdef __linux__
+# ifdef __linux__
+    char buf[GDO_BUFLEN];
+
     /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
-    if (m_libpath.empty() || m_libpath.at(0) != '/') {
-        abspath_procmap(reinterpret_cast<uint64_t>(addr), m_libpath);
+    if ((!ptr || ptr[0] != '/') &&
+        _gdo_abspath_procmap(reinterpret_cast<uint64_t>(addr), buf, GDO_BUFLEN))
+    {
+        path = buf;
+        return true;
     }
-#  endif
+# endif
 
-    if (m_libpath.empty()) {
+    if (!ptr) {
         m_errmsg = "dladdr() failed to get library path";
         return false;
     }
 
+    path = ptr;
+
     return true;
 
-# else
+#else
 
     return false;
 
-# endif //GDO_HAVE_DLADDR
+#endif //GDO_HAVE_DLADDR
 }
 
 bool gdo::dl::get_library_path(void)
 {
-    std::string copy;
+    std::string dli, dla;
 
-    /* prefer dlinfo() over dladdr() */
-    if (get_library_path_dlinfo()) {
-        if (m_libpath.at(0) == '/') {
-            /* dlinfo() returned an absolute path */
-            return true;
-        }
-
-        /* backup relative path */
-        copy = m_libpath;
+    /* try to get an absolute path (check with dlinfo() first) */
+    if (libpath_dlinfo(dli) && dli.at(0) == '/') {
+        m_libpath = dli;
+    } else if (libpath_dladdr(dla) && dla.at(0) == '/') {
+        m_libpath = dla;
     }
 
-    /* restore relative path if dladdr() failed */
-    if (!get_library_path_dladdr() && !copy.empty()) {
-        m_libpath = copy;
+    /* maybe a relative path */
+    if (m_libpath.empty()) {
+        m_libpath = (dli.size() > 0) ? dli : dla;
     }
 
-    if (!m_libpath.empty()) {
-        clear_error();
-        return true;
+    if (m_libpath.empty()) {
+        return false;
     }
 
-    return false;
+    clear_error();
+
+    return true;
 }
 
 #endif // dlinfo() + dladdr()

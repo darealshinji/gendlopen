@@ -187,14 +187,13 @@ private:
     void load_lib(const std::string &filename);
 
     bool get_library_path(void);
+
 #ifdef _AIX
-    bool aix_libpath(struct ld_info *info, uint8_t *sym);
+    bool libpath_from_symptr(struct ld_info *info, uint8_t *sym);
+#elif !defined(GDO_DLFCN_WIN32)
+    bool libpath_dlinfo(std::string &path);
+    bool libpath_dladdr(std::string &path);
 #endif
-#ifdef __linux__
-    bool abspath_procmap(uint64_t addr, std::string &path);
-#endif
-    bool get_library_path_dlinfo(void);
-    bool get_library_path_dladdr(void);
 
 #endif // !GDO_WINAPI
 
