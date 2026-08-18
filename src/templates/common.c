@@ -109,8 +109,8 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
 #endif
 
 
-/* try to get the full library path from process map */
-GDO_INLINE bool _gdo_fullpath_procmap(uint64_t addr, char *buf, size_t bufsize)
+/* try to get the absolute library path from process map */
+GDO_INLINE bool _gdo_abspath_procmap(uint64_t addr, char *buf, size_t bufsize)
 {
 #ifdef PROCMAP_QUERY
 
@@ -129,7 +129,7 @@ GDO_INLINE bool _gdo_fullpath_procmap(uint64_t addr, char *buf, size_t bufsize)
         q.vma_name_size = bufsize;     /* in: buffer size; out: saved path length + NUL byte */
         q.vma_name_addr = (__u64)buf;  /* buffer to save pathname */
 
-        if (ioctl(fd, PROCMAP_QUERY, &q) == 0 && q.vma_name_size > 0) {
+        if (ioctl(fd, PROCMAP_QUERY, &q) == 0 && q.vma_name_size > 0 && buf[0] == '/') {
             close(fd);
             return true;
         }
@@ -160,7 +160,9 @@ GDO_INLINE bool _gdo_fullpath_procmap(uint64_t addr, char *buf, size_t bufsize)
         int rv = sscanf(line, "%jx-%jx %4[rwxsp-] %*u %*u:%*u %*u %m[^\n]",
                         &start, &end, mode, &path);
 
-        if (rv == 4 && addr >= start && addr < end) {
+        if (rv == 4 && addr >= start && addr < end &&
+            path && path[0] == '/')
+        {
             /* match */
             break;
         }

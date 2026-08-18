@@ -186,21 +186,15 @@ private:
 
     void load_lib(const std::string &filename);
 
-#if defined(GDO_DLFCN_WIN32) || defined(_AIX)
     bool get_library_path(void);
-#endif
 #ifdef _AIX
     bool aix_libpath(struct ld_info *info, uint8_t *sym);
 #endif
-#if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
-    bool fullpath_procmap(uint64_t addr, std::string &path);
+#ifdef __linux__
+    bool abspath_procmap(uint64_t addr, std::string &path);
 #endif
-#ifdef GDO_HAVE_DLINFO
     bool get_library_path_dlinfo(void);
-#endif
-#ifdef GDO_HAVE_DLADDR
     bool get_library_path_dladdr(void);
-#endif
 
 #endif // !GDO_WINAPI
 

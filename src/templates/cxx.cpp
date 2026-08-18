@@ -85,11 +85,11 @@ std::string gdo::make_libname(const std::string &name, const size_t api)
 #ifdef GDO_WINAPI
 std::wstring gdo::make_libname(const std::wstring &name, const size_t api)
 {
-#ifdef __MINGW32__
+# ifdef __MINGW32__
     return L"lib" + name + L'-' + std::to_wstring(api) + L".dll";
-#else
+# else
     return          name + L'-' + std::to_wstring(api) + L".dll";
-#endif
+# endif
 }
 #endif //GDO_WINAPI
 
@@ -362,6 +362,7 @@ void gdo::dl::load_lib(const std::string &filename)
 /* get library path */
 
 #ifdef GDO_DLFCN_WIN32
+
 bool gdo::dl::get_library_path(void)
 {
     /* dlfcn-win32:
@@ -384,10 +385,9 @@ bool gdo::dl::get_library_path(void)
 
     return true;
 }
-#endif //GDO_DLFCN_WIN32
 
+#elif defined(_AIX)
 
-#ifdef _AIX
 bool gdo::dl::aix_libpath(struct ld_info *info, uint8_t *sym)
 {
     const char *path, *member;
@@ -438,25 +438,27 @@ bool gdo::dl::get_library_path(void)
 
     return false;
 }
-#endif //_AIX
 
-#if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
-bool gdo::dl::fullpath_procmap(uint64_t addr, std::string &path)
+#else // dlinfo() + dladdr()
+
+# ifdef __linux__
+bool gdo::dl::abspath_procmap(uint64_t addr, std::string &path)
 {
     char buf[GDO_BUFLEN];
 
-    if (_gdo_fullpath_procmap(addr, buf, GDO_BUFLEN)) {
+    if (_gdo_abspath_procmap(addr, buf, GDO_BUFLEN)) {
         path = buf;
         return true;
     }
 
     return false;
 }
-#endif
+# endif //__linux__
 
-#ifdef GDO_HAVE_DLINFO
 bool gdo::dl::get_library_path_dlinfo(void)
 {
+# ifdef GDO_HAVE_DLINFO
+
     /* use dlinfo() to get a link map */
     struct link_map *lm = nullptr;
 
@@ -470,22 +472,27 @@ bool gdo::dl::get_library_path_dlinfo(void)
         return false;
     }
 
-# ifdef __linux__
-    /* try to get the full library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && fullpath_procmap(lm->l_addr, m_libpath)) {
+#  ifdef __linux__
+    /* try to get the absolute library path from /proc/self/maps */
+    if (lm->l_name[0] != '/' && abspath_procmap(lm->l_addr, m_libpath)) {
         return true;
     }
-# endif
+#  endif
 
     m_libpath = lm->l_name;
 
     return true;
-}
-#endif //GDO_HAVE_DLINFO
 
-#ifdef GDO_HAVE_DLADDR
+# else
+
+    return false;
+
+# endif //GDO_HAVE_DLINFO
+}
+
 bool gdo::dl::get_library_path_dladdr(void)
 {
+# ifdef GDO_HAVE_DLADDR
     /* use dladdr() to get the library path from a symbol pointer */
 
     void *addr = nullptr;
@@ -502,12 +509,12 @@ bool gdo::dl::get_library_path_dladdr(void)
         m_libpath = info.dli_fname;
     }
 
-# ifdef __linux__
+#  ifdef __linux__
     /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
     if (m_libpath.empty() || m_libpath.at(0) != '/') {
-        fullpath_procmap(reinterpret_cast<uint64_t>(addr), m_libpath);
+        abspath_procmap(reinterpret_cast<uint64_t>(addr), m_libpath);
     }
-# endif
+#  endif
 
     if (m_libpath.empty()) {
         m_errmsg = "dladdr() failed to get library path";
@@ -515,10 +522,45 @@ bool gdo::dl::get_library_path_dladdr(void)
     }
 
     return true;
-}
-#endif //GDO_HAVE_DLADDR
 
-#endif // !GDO_WINAPI
+# else
+
+    return false;
+
+# endif //GDO_HAVE_DLADDR
+}
+
+bool gdo::dl::get_library_path(void)
+{
+    std::string copy;
+
+    /* prefer dlinfo() over dladdr() */
+    if (get_library_path_dlinfo()) {
+        if (m_libpath.at(0) == '/') {
+            /* dlinfo() returned an absolute path */
+            return true;
+        }
+
+        /* backup relative path */
+        copy = m_libpath;
+    }
+
+    /* restore relative path if dladdr() failed */
+    if (!get_library_path_dladdr() && !copy.empty()) {
+        m_libpath = copy;
+    }
+
+    if (!m_libpath.empty()) {
+        clear_error();
+        return true;
+    }
+
+    return false;
+}
+
+#endif // dlinfo() + dladdr()
+
+#endif //!GDO_WINAPI
 
 
 /* load symbol address */
@@ -966,37 +1008,20 @@ std::string gdo::dl::library_path()
     !defined(GDO_DLFCN_WIN32) && \
     !defined(GDO_HAVE_DLINFO) && \
     !defined(GDO_HAVE_DLADDR)
+
     m_errmsg = "function not implemented";
-    return {};
-#endif
+
+#else
 
     if (!lib_loaded()) {
         set_error_invalid_handle();
         return {};
     }
 
-    /* was the library path already saved? */
-    if (!m_libpath.empty()) {
+    if (!m_libpath.empty() || get_library_path()) {
         return m_libpath;
     }
 
-#if defined(GDO_DLFCN_WIN32) || defined(_AIX)
-    if (get_library_path()) {
-        return m_libpath;
-    }
-#endif
-
-#ifdef GDO_HAVE_DLINFO
-    /* prefer dlinfo() over dladdr() */
-    if (get_library_path_dlinfo()) {
-        return m_libpath;
-    }
-#endif
-
-#ifdef GDO_HAVE_DLADDR
-    if (get_library_path_dladdr()) {
-        return m_libpath;
-    }
 #endif
 
     /* error */
