@@ -193,6 +193,7 @@ private:
 #elif !defined(GDO_DLFCN_WIN32)
     bool libpath_dlinfo(std::string &path);
     bool libpath_dladdr(std::string &path);
+    bool libpath_procmap(std::string &path);
 #endif
 
 #endif // !GDO_WINAPI

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 
 
 #ifdef GDO_WINAPI
@@ -434,8 +435,6 @@ bool gdo::dl::get_library_path(void)
         }
     }
 
-    m_errmsg = "failed to get the library path";
-
     return false;
 }
 
@@ -448,15 +447,12 @@ bool gdo::dl::libpath_dlinfo(std::string &path)
 
     struct link_map *lm = nullptr;
 
-    clear_error();
-
     if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        save_error();
+        //save_error();
         return false;
     }
 
     if (!lm->l_name || lm->l_name[0] == 0) {
-        m_errmsg = "dlinfo() failed to get library path";
         return false;
     }
 
@@ -473,7 +469,6 @@ bool gdo::dl::libpath_dlinfo(std::string &path)
 # endif
 
     path = lm->l_name;
-
     return true;
 
 #else
@@ -488,69 +483,71 @@ bool gdo::dl::libpath_dladdr(std::string &path)
 {
 #ifdef GDO_HAVE_DLADDR // dladdr() (POSIX.1-2024)
 
-    const char *ptr = nullptr;
-    void *addr = nullptr;
     Dl_info info;
 
-    clear_error();
-
     if (no_symbols_loaded()) {
-        m_errmsg = "no symbols were loaded";
         return false;
     }
 
     if (false
-        || _gdo_call_dladdr((addr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%)), &info)
+        || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
     ) {
-        ptr = info.dli_fname;
-    }
-
-# ifdef __linux__
-    char buf[GDO_BUFLEN];
-
-    /* parse /proc/self/maps if dladdr() failed or didn't return an absolute path */
-    if ((!ptr || ptr[0] != '/') &&
-        _gdo_abspath_procmap(reinterpret_cast<uint64_t>(addr), buf, GDO_BUFLEN))
-    {
-        path = buf;
+        path = info.dli_fname;
         return true;
     }
-# endif
 
-    if (!ptr) {
-        m_errmsg = "dladdr() failed to get library path";
+#endif //GDO_HAVE_DLADDR
+
+    return false;
+}
+
+/* parse /proc/self/maps for absolute path */
+bool gdo::dl::libpath_procmap(std::string &path)
+{
+#ifdef __linux__
+
+    char buf[GDO_BUFLEN];
+    void *addr = nullptr;
+
+    if (no_symbols_loaded()) {
         return false;
     }
 
-    path = ptr;
+    if (false
+        || (addr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%)) != nullptr
+    ) {
+        if (_gdo_abspath_procmap(reinterpret_cast<uint64_t>(addr), buf, GDO_BUFLEN)) {
+            path = buf;
+            return true;
+        }
+    }
 
-    return true;
-
-#else
+#endif //__linux__
 
     return false;
-
-#endif //GDO_HAVE_DLADDR
 }
 
 bool gdo::dl::get_library_path(void)
 {
-    std::string dli, dla;
+    std::string dli, dla, pm;
 
     /* try to get an absolute path (check with dlinfo() first) */
     if (libpath_dlinfo(dli) && dli.at(0) == '/') {
-        m_libpath = dli;
+        m_libpath = std::move(dli);
     } else if (libpath_dladdr(dla) && dla.at(0) == '/') {
-        m_libpath = dla;
+        m_libpath = std::move(dla);
+    } else if (libpath_procmap(pm)) {
+        m_libpath = std::move(pm); /* always absolute */
     }
 
     /* maybe a relative path */
     if (m_libpath.empty()) {
-        m_libpath = (dli.size() > 0) ? dli : dla;
-    }
+        m_libpath = std::move(dli.size() > 0 ? dli : dla);
 
-    if (m_libpath.empty()) {
-        return false;
+        if (m_libpath.empty()) {
+            m_errmsg = "failed to get library path";
+            return false;
+        }
     }
 
     clear_error();
@@ -1002,8 +999,6 @@ std::wstring gdo::dl::filename_w()
 /* get path of loaded library */
 std::string gdo::dl::library_path()
 {
-    clear_error();
-
 #if !defined(_AIX) && \
     !defined(GDO_DLFCN_WIN32) && \
     !defined(GDO_HAVE_DLINFO) && \
@@ -1012,6 +1007,8 @@ std::string gdo::dl::library_path()
     m_errmsg = "function not implemented";
 
 #else
+
+    clear_error();
 
     if (!lib_loaded()) {
         set_error_invalid_handle();
