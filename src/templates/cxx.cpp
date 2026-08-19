@@ -999,10 +999,14 @@ std::wstring gdo::dl::filename_w()
 /* get path of loaded library */
 std::string gdo::dl::library_path()
 {
-#if !defined(_AIX) && \
+#if !defined(GDO_HAVE_DLINFO) && \
+    !defined(GDO_HAVE_DLADDR) && \
     !defined(GDO_DLFCN_WIN32) && \
-    !defined(GDO_HAVE_DLINFO) && \
-    !defined(GDO_HAVE_DLADDR)
+    !defined(__linux__) && \
+    !defined(_AIX)
+
+    /* Windows and AIX have their own API; on Linux we can fall back to
+     * parse /proc/self/maps in case a C library is missing dlinfo() or dladdr() */
 
     m_errmsg = "function not implemented";
 

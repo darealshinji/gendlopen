@@ -633,10 +633,14 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 /*****************************************************************************/
 GDO_LINKAGE const gdo_char_t *gdo_library_path(void)
 {
-#if !defined(_AIX) && \
+#if !defined(GDO_HAVE_DLINFO) && \
+    !defined(GDO_HAVE_DLADDR) && \
+    !defined(__linux__) && \
     !defined(_WIN32) && \
-    !defined(GDO_HAVE_DLINFO) && \
-    !defined(GDO_HAVE_DLADDR)
+    !defined(_AIX)
+
+    /* Windows and AIX have their own API; on Linux we can fall back to
+     * parse /proc/self/maps in case a C library is missing dlinfo() or dladdr() */
 
     _gdo_save_to_errbuf("function not implemented");
 
