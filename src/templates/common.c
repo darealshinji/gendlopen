@@ -56,11 +56,11 @@ GDO_INLINE bool _gdo_call_dladdr(const void *addr, Dl_info *info)
 
 
 /* parse ld_info struct and search for library filename that provides the address of `sym' */
-GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym, const char **member)
+GDO_INLINE const char *_gdo_aix_parse_ldinfo(uint8_t *buf, size_t size, uint8_t *sym, const char **member)
 {
-    struct ld_info *cur = info;
+    struct ld_info *cur = (struct ld_info *)buf;
 
-    while (true) {
+    while (cur < (buf + size) && cur->ldinfo_next != 0) {
         uint8_t *text = (uint8_t *)cur->ldinfo_textorg;
         uint8_t *data = (uint8_t *)cur->ldinfo_dataorg;
         uint8_t *text_end = text + cur->ldinfo_textsize;
@@ -70,9 +70,6 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(struct ld_info *info, uint8_t *sym,
         if ((sym >= text && sym < text_end) || (sym >= data && sym < data_end)) {
             /* found */
             break;
-        } else if (cur->ldinfo_next == 0) {
-            /* end of linked list */
-            return NULL;
         } else {
             /* next entry in linked list */
             cur = (struct ld_info *)((uint8_t *)cur + cur->ldinfo_next);

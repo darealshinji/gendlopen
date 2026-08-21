@@ -389,7 +389,7 @@ bool gdo::dl::get_library_path(void)
 
 #elif defined(_AIX)
 
-bool gdo::dl::libpath_from_symptr(struct ld_info *info, uint8_t *sym)
+bool gdo::dl::libpath_from_symptr(uint8_t *buf, size_t size, uint8_t *sym)
 {
     const char *path, *member;
 
@@ -398,7 +398,7 @@ bool gdo::dl::libpath_from_symptr(struct ld_info *info, uint8_t *sym)
     }
 
     member = nullptr;
-    path = _gdo_aix_parse_ldinfo(info, sym, reinterpret_cast<const char **>(&member));
+    path = _gdo_aix_parse_ldinfo(buf, size, sym, reinterpret_cast<const char **>(&member));
 
     if (!path) {
         return false;
@@ -426,10 +426,8 @@ bool gdo::dl::get_library_path(void)
     }
 
     if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
-        auto info = reinterpret_cast<struct ld_info *>(buf);
-
         if (false
-            || libpath_from_symptr(info, reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%))
+            || libpath_from_symptr(buf, sizeof(buf), reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%))
         ) {
             return true;
         }
@@ -531,17 +529,19 @@ bool gdo::dl::get_library_path(void)
 {
     std::string dli, dla, pm;
 
-    /* try to get an absolute path (check with dlinfo() first) */
+    /* check with dlinfo() first because it doesn't require any symbols to be loaded;
+     * stop immediately when the path is absolute */
     if (libpath_dlinfo(dli) && dli.at(0) == '/') {
         m_libpath = std::move(dli);
     } else if (libpath_dladdr(dla) && dla.at(0) == '/') {
         m_libpath = std::move(dla);
     } else if (libpath_procmap(pm)) {
-        m_libpath = std::move(pm); /* always absolute */
+        /* paths from /proc/self/maps are always absolute */
+        m_libpath = std::move(pm);
     }
 
-    /* maybe a relative path */
     if (m_libpath.empty()) {
+        /* relative path or nothing at all */
         m_libpath = std::move(dli.size() > 0 ? dli : dla);
 
         if (m_libpath.empty()) {
@@ -999,18 +999,14 @@ std::wstring gdo::dl::filename_w()
 /* get path of loaded library */
 std::string gdo::dl::library_path()
 {
-#if !defined(GDO_HAVE_DLINFO) && \
-    !defined(GDO_HAVE_DLADDR) && \
-    !defined(GDO_DLFCN_WIN32) && \
-    !defined(__linux__) && \
-    !defined(_AIX)
+#if defined(GDO_HAVE_DLINFO) || \
+    defined(GDO_HAVE_DLADDR) || \
+    defined(GDO_DLFCN_WIN32) || \
+    defined(__linux__) || \
+    defined(_AIX)
 
     /* Windows and AIX have their own API; on Linux we can fall back to
      * parse /proc/self/maps in case a C library is missing dlinfo() or dladdr() */
-
-    m_errmsg = "function not implemented";
-
-#else
 
     clear_error();
 
@@ -1022,6 +1018,10 @@ std::string gdo::dl::library_path()
     if (!m_libpath.empty() || get_library_path()) {
         return m_libpath;
     }
+
+#else
+
+    m_errmsg = "function not implemented";
 
 #endif
 

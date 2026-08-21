@@ -633,18 +633,14 @@ GDO_LINKAGE const gdo_char_t *gdo_last_error(void)
 /*****************************************************************************/
 GDO_LINKAGE const gdo_char_t *gdo_library_path(void)
 {
-#if !defined(GDO_HAVE_DLINFO) && \
-    !defined(GDO_HAVE_DLADDR) && \
-    !defined(__linux__) && \
-    !defined(_WIN32) && \
-    !defined(_AIX)
+#if defined(GDO_HAVE_DLINFO) || \
+    defined(GDO_HAVE_DLADDR) || \
+    defined(__linux__) || \
+    defined(_WIN32) || \
+    defined(_AIX)
 
     /* Windows and AIX have their own API; on Linux we can fall back to
      * parse /proc/self/maps in case a C library is missing dlinfo() or dladdr() */
-
-    _gdo_save_to_errbuf("function not implemented");
-
-#else
 
     _gdo_clear_error();
 
@@ -656,6 +652,10 @@ GDO_LINKAGE const gdo_char_t *gdo_library_path(void)
     if (gdo_hndl.libpath[0] != 0 || _gdo_library_path()) {
         return gdo_hndl.libpath;
     }
+
+#else
+
+    _gdo_save_to_errbuf("function not implemented");
 
 #endif
 
@@ -706,7 +706,7 @@ GDO_INLINE bool _gdo_library_path(void)
 
 #elif defined(_AIX)
 
-GDO_INLINE bool _gdo_libpath_from_symptr(struct ld_info *info, uint8_t *sym)
+GDO_INLINE bool _gdo_libpath_from_symptr(uint8_t *buf, size_t size, uint8_t *sym)
 {
     const char *path, *member;
     size_t len;
@@ -716,7 +716,7 @@ GDO_INLINE bool _gdo_libpath_from_symptr(struct ld_info *info, uint8_t *sym)
     }
 
     member = NULL;
-    path = _gdo_aix_parse_ldinfo(info, sym, (const char **)&member);
+    path = _gdo_aix_parse_ldinfo(buf, size, sym, (const char **)&member);
 
     if (!path) {
         return false;
@@ -747,18 +747,16 @@ GDO_INLINE bool _gdo_libpath_from_symptr(struct ld_info *info, uint8_t *sym)
 
 GDO_INLINE bool _gdo_library_path(void)
 {
-    uint8_t q[GDO_AIX_LOADQUERY_BUFLEN];
+    uint8_t buf[GDO_AIX_LOADQUERY_BUFLEN];
 
     if (gdo_no_symbols_loaded()) {
         _gdo_save_to_errbuf("no symbols were loaded");
         return false;
     }
 
-    if (loadquery(L_GETINFO, q, sizeof(q)) != -1) {
-        struct ld_info *info = (struct ld_info *)q;
-
+    if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
         if (false
-            || _gdo_libpath_from_symptr(info, (uint8_t *)GDO_RAWPTR_%%symbol%%)
+            || _gdo_libpath_from_symptr(buf, sizeof(buf), (uint8_t *)GDO_RAWPTR_%%symbol%%)
         ) {
             return true;
         }
@@ -863,17 +861,18 @@ GDO_INLINE bool _gdo_library_path(void)
     char *pm = NULL;
     size_t len;
 
-    /* try to get an absolute path (check with dlinfo() first) */
+    /* check with dlinfo() first because it doesn't require any symbols to be loaded;
+     * stop immediately when the path is absolute */
     if ((dli = _gdo_libpath_dlinfo()) != NULL && dli[0] == '/') {
         path = dli;
     } else if ((dla = _gdo_libpath_dladdr()) != NULL && dla[0] == '/') {
         path = dla;
     } else if ((pm = _gdo_libpath_procmap()) != NULL) {
-        path = pm; /* always absolute */
+        path = pm; /* paths from /proc/self/maps are always absolute */
     }
 
-    /* maybe a relative path */
     if (!path) {
+        /* relative path or nothing at all */
         path = dli ? dli : dla;
     }
 
