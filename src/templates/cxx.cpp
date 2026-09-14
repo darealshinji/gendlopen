@@ -527,27 +527,24 @@ bool gdo::dl::libpath_procmap(std::string &path)
 
 bool gdo::dl::get_library_path(void)
 {
-    std::string dli, dla, pm;
+    std::string s1, s2, s3;
 
-    /* check with dlinfo() first because it doesn't require any symbols to be loaded;
-     * stop immediately when the path is absolute */
-    if (libpath_dlinfo(dli) && dli.at(0) == '/') {
-        m_libpath = std::move(dli);
-    } else if (libpath_dladdr(dla) && dla.at(0) == '/') {
-        m_libpath = std::move(dla);
-    } else if (libpath_procmap(pm)) {
+    /* check with dlinfo() first because it doesn't require any symbols to be loaded */
+    if (libpath_dlinfo(s1) && s1.at(0) == '/') {
+        m_libpath = std::move(s1);
+    } else if (libpath_dladdr(s2) && s2.at(0) == '/') {
+        m_libpath = std::move(s2);
+    } else if (libpath_procmap(s3)) {
         /* paths from /proc/self/maps are always absolute */
-        m_libpath = std::move(pm);
+        m_libpath = std::move(s3);
+    } else {
+        /* relative path or nothing at all */
+        m_libpath = std::move(!s1.empty() ? s1 : s2);
     }
 
     if (m_libpath.empty()) {
-        /* relative path or nothing at all */
-        m_libpath = std::move(dli.size() > 0 ? dli : dla);
-
-        if (m_libpath.empty()) {
-            m_errmsg = "failed to get library path";
-            return false;
-        }
+        m_errmsg = "failed to get library path";
+        return false;
     }
 
     clear_error();

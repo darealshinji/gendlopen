@@ -853,37 +853,54 @@ GDO_INLINE char *_gdo_libpath_procmap(void)
     return NULL;
 }
 
+GDO_INLINE const char *_gdo_library_path_3(char **ptr1, char **ptr2, char **ptr3)
+{
+    /* try dlinfo() first because it doesn't require any symbols to be loaded */
+    *ptr1 = _gdo_libpath_dlinfo();
+
+    if (*ptr1 && *ptr1[0] == '/') {
+        /* absolute path */
+        return *ptr1;
+    }
+
+    /* try dladdr() */
+    *ptr2 = _gdo_libpath_dladdr();
+
+    if (*ptr2 && *ptr2[0] == '/') {
+        /* absolute path */
+        return *ptr2;
+    }
+
+    /* search /proc/self/maps */
+    *ptr3 = _gdo_libpath_procmap();
+
+    if (*ptr3) {
+        /* should be an absolute path */
+        return *ptr3;
+    }
+
+    /* no absolute paths (or nothing at all) */
+    return *ptr1 ? *ptr1 : *ptr2;
+}
+
 GDO_INLINE bool _gdo_library_path(void)
 {
-    char *path = NULL;
-    char *dli = NULL;
-    char *dla = NULL;
-    char *pm = NULL;
+    char *ptr1 = NULL;
+    char *ptr2 = NULL;
+    char *ptr3 = NULL;
     size_t len;
 
-    /* check with dlinfo() first because it doesn't require any symbols to be loaded;
-     * stop immediately when the path is absolute */
-    if ((dli = _gdo_libpath_dlinfo()) != NULL && dli[0] == '/') {
-        path = dli;
-    } else if ((dla = _gdo_libpath_dladdr()) != NULL && dla[0] == '/') {
-        path = dla;
-    } else if ((pm = _gdo_libpath_procmap()) != NULL) {
-        path = pm; /* paths from /proc/self/maps are always absolute */
-    }
-
-    if (!path) {
-        /* relative path or nothing at all */
-        path = dli ? dli : dla;
-    }
+    /* get library path using 3 methods */
+    const char *path = _gdo_library_path_3(&ptr1, &ptr2, &ptr3);
 
     /* copy path to buffer */
     if (path && (len = strlen(path)) < GDO_BUFLEN) {
         memcpy(gdo_hndl.libpath, path, len + 1);
     }
 
-    free(dli);
-    free(dla);
-    free(pm);
+    free(ptr1);
+    free(ptr2);
+    free(ptr3);
 
     if (gdo_hndl.libpath[0] == 0) {
         _gdo_save_to_errbuf("failed to get library path");
