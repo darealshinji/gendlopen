@@ -93,6 +93,8 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(uint8_t *buf, size_t size, uint8_t 
 
 #if (defined(GDO_HAVE_DLINFO) || defined(GDO_HAVE_DLADDR)) && defined(__linux__)
 
+#include <ctype.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,6 +106,25 @@ GDO_INLINE const char *_gdo_aix_parse_ldinfo(uint8_t *buf, size_t size, uint8_t 
 # include <sys/ioctl.h>
 # include <unistd.h>
 #endif
+
+
+GDO_INLINE char *_gdo_read_hex(char *line, uint64_t *val, char ch_end)
+{
+    char *endptr = NULL;
+
+    if (!isxdigit(*line)) {
+        return NULL;
+    }
+
+    errno = 0;
+    *val = strtoul(line, &endptr, 16);
+
+    if (errno != 0 || !endptr || *endptr != ch_end) {
+        return NULL;
+    }
+
+    return endptr;
+}
 
 
 /* try to get the absolute library path from process map */
@@ -138,7 +159,7 @@ GDO_INLINE bool _gdo_abspath_procmap(uint64_t addr, char *buf, size_t bufsize)
 
 #endif //PROCMAP_QUERY
 
-    /* use getline() and sscanf() to parse /proc/self/maps */
+    /* parse /proc/self/maps line by line */
 
     FILE *fp = fopen("/proc/self/maps", "r");
 
@@ -146,26 +167,43 @@ GDO_INLINE bool _gdo_abspath_procmap(uint64_t addr, char *buf, size_t bufsize)
         return false;
     }
 
-    uintmax_t start, end;
-    char mode[5];
     char *line = NULL, *path = NULL;
     size_t n = 0;
+    ssize_t nread;
 
-    while (getline(&line, &n, fp) != -1) {
+    while ((nread = getline(&line, &n, fp)) != -1) {
         /* address start-end         mode offset   device inode      pathname */
         /* 7de29d200000-7de29d228000 r--p 00000000 103:01 2758110    /usr/lib/x86_64-linux-gnu/libc.so.6\n */
-        int rv = sscanf(line, "%jx-%jx %4[rwxsp-] %*u %*u:%*u %*u %m[^\n]",
-                        &start, &end, mode, &path);
 
-        if (rv == 4 && addr >= start && addr < end &&
-            path && path[0] == '/')
-        {
-            /* match */
-            break;
+        uint64_t start = 0, end = 0;
+        char *ptr, *ptr_path;
+
+        /* library path */
+        if (nread < 1 || (ptr_path = strstr(line, " /")) == NULL) {
+            continue;
         }
 
-        free(path);
-        path = NULL;
+        ptr_path++;
+
+        /* address start value */
+        if ((ptr = _gdo_read_hex(line, &start, '-')) == NULL || addr < start) {
+            continue;
+        }
+
+        ptr++;
+
+        /* address end value */
+        if ((ptr = _gdo_read_hex(ptr, &end, ' ')) == NULL || addr >= end) {
+            continue;
+        }
+
+        /* remove trailing newline */
+        if (line[nread - 1] == '\n') {
+            line[nread - 1] = 0;
+        }
+
+        path = strdup(ptr_path);
+        break;
     }
 
     free(line);
