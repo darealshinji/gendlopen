@@ -110,6 +110,13 @@ typedef void *gdo_hmod_t;
 #define GDO_INLINE  static inline
 
 
+#ifdef __cplusplus
+# define GDO_EXTERN extern "C"
+#else
+# define GDO_EXTERN extern
+#endif
+
+
 #ifdef _WIN32
 # define GDO_BUFLEN (32*1024) /* https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation */
 #else
@@ -157,7 +164,7 @@ typedef struct {
   const char *dli_sname;
   void       *dli_saddr;
 } Dl_info;
-extern int dladdr(const void *addr, Dl_info *info);
+GDO_EXTERN int dladdr(const void *addr, Dl_info *info);
 #endif
 
 
@@ -191,7 +198,7 @@ extern int dladdr(const void *addr, Dl_info *info);
 # else
 #  define RTLD_DI_LINKMAP 3  /* NetBSD libc */
 # endif
-extern int dlinfo(void *handle, int request, void *info);
+GDO_EXTERN int dlinfo(void *handle, int request, void *info);
 #endif
 
 
@@ -212,7 +219,7 @@ extern int dlinfo(void *handle, int request, void *info);
 # define DLMOPEN_PROTOTYPE
 # define LM_ID_NEWLM -1  /* new namespace */
 typedef long int Lmid_t;
-extern void *dlmopen(Lmid_t lmid, const char *path, int flags);
+GDO_EXTERN void *dlmopen(Lmid_t lmid, const char *path, int flags);
 #endif
 
 
