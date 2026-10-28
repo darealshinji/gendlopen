@@ -530,9 +530,9 @@ bool gdo::dl::get_library_path(void)
     std::string s1, s2, s3;
 
     /* check with dlinfo() first because it doesn't require any symbols to be loaded */
-    if (libpath_dlinfo(s1) && s1.at(0) == '/') {
+    if (libpath_dlinfo(s1) && !s1.empty() && s1.front() == '/') {
         m_libpath = std::move(s1);
-    } else if (libpath_dladdr(s2) && s2.at(0) == '/') {
+    } else if (libpath_dladdr(s2) && !s2.empty() && s2.front() == '/') {
         m_libpath = std::move(s2);
     } else if (libpath_procmap(s3)) {
         /* paths from /proc/self/maps are always absolute */
