@@ -774,36 +774,28 @@ GDO_INLINE char *_gdo_libpath_dlinfo(void)
 {
 #ifdef GDO_HAVE_DLINFO
 
-# ifdef __linux__
-    char buf[GDO_BUFLEN];
-# endif
     struct link_map *lm = NULL;
 
-    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        //_gdo_save_error(NULL);
-        return NULL;
-    }
-
-    if (!lm->l_name || lm->l_name[0] == 0) {
-        return NULL;
-    }
-
-# ifdef __linux__
-    /* try to get the absolute library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
-        _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
+    if (dlinfo(gdo_hndl.handle, RTLD_DI_LINKMAP, &lm) == 0 &&
+        lm->l_name && lm->l_name[0] != 0)
     {
-        return strdup(buf);
-    }
+# ifdef __linux__
+        char buf[GDO_BUFLEN];
+
+        /* try to get the absolute library path from /proc/self/maps */
+        if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
+            _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
+        {
+            return strdup(buf);
+        }
 # endif
 
-    return strdup(lm->l_name);
-
-#else
-
-    return NULL;
+        return strdup(lm->l_name);
+    }
 
 #endif //!GDO_HAVE_DLINFO
+
+    return NULL;
 }
 
 /* use dladdr() to get the library path from a symbol pointer */

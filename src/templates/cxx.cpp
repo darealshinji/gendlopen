@@ -425,7 +425,7 @@ bool gdo::dl::get_library_path(void)
         return false;
     }
 
-    if (loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
+    if (::loadquery(L_GETINFO, buf, sizeof(buf)) != -1) {
         if (false
             || libpath_from_symptr(buf, sizeof(buf), reinterpret_cast<uint8_t *>(GDO_RAWPTR_%%symbol%%))
         ) {
@@ -445,35 +445,28 @@ bool gdo::dl::libpath_dlinfo(std::string &path)
 
     struct link_map *lm = nullptr;
 
-    if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == -1) {
-        //save_error();
-        return false;
-    }
-
-    if (!lm->l_name || lm->l_name[0] == 0) {
-        return false;
-    }
-
-# ifdef __linux__
-    char buf[GDO_BUFLEN];
-
-    /* try to get the absolute library path from /proc/self/maps */
-    if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
-        _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
+    if (::dlinfo(m_handle, RTLD_DI_LINKMAP, &lm) == 0 &&
+        lm->l_name && lm->l_name[0] != 0)
     {
-        path = buf;
-        return true;
-    }
+# ifdef __linux__
+        char buf[GDO_BUFLEN];
+
+        /* try to get the absolute library path from /proc/self/maps */
+        if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
+            _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
+        {
+            path = buf;
+            return true;
+        }
 # endif
 
-    path = lm->l_name;
-    return true;
-
-#else
-
-    return false;
+        path = lm->l_name;
+        return true;
+    }
 
 #endif //!GDO_HAVE_DLINFO
+
+    return false;
 }
 
 /* use dladdr() to get the library path from a symbol pointer */

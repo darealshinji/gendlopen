@@ -193,7 +193,7 @@ GDO_INLINE bool _gdo_abspath_procmap(uint64_t addr, char *buf, size_t bufsize)
         ptr++;
 
         /* address end value */
-        if ((ptr = _gdo_read_hex(ptr, &end, ' ')) == NULL || addr >= end) {
+        if (_gdo_read_hex(ptr, &end, ' ') == NULL || addr >= end) {
             continue;
         }
 
