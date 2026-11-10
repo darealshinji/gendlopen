@@ -37,14 +37,48 @@
 # define OPT_SEPARATOR_EQUAL
 #endif
 //#define OPT_ENABLE_ASSERT
-#include "opt_parser++.hpp"
+#include "opt_parser.h"
 
 
-namespace help
+
+class opt
 {
-    extern void print(char *prog);
-    extern void print_full(char *prog);
-}
+private:
+
+    struct opt_args m_args;
+
+    bool get_arg(const char *&ptr, const char *opt, const size_t &optlen)
+    {
+        if (opt_get_arg(&m_args, opt, optlen)) {
+            ptr = m_args.value;
+            return true;
+        }
+
+        ptr = NULL;
+        return false;
+    }
+
+public:
+
+    opt(const int &argc, char ** const &argv)
+    {
+        auto callback = [] (const char *msg) {
+            throw gendlopen::error_cmd(msg);
+        };
+
+        opt_init(&m_args, argc, argv, 0, callback);
+    }
+
+    bool iterate()              { return opt_iterate(&m_args); }
+    const char *current() const { return m_args.current; }
+    uint8_t pfxlen() const      { return m_args.pfxlen; }
+    bool flag(const char *str)  { return opt_arg_eq(&m_args, str); }
+
+    template<size_t N>
+    bool arg(const char *&ptr, char const (&opt)[N]) {
+        return get_arg(ptr, opt, N-1);
+    }
+};
 
 
 namespace /* anonymous */
@@ -70,18 +104,13 @@ namespace /* anonymous */
 }
 
 
-
-/* parse command line arguments */
+/* parse command line arguments; reminder: empty arguments always throw an exception */
 void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
 {
-    auto callback = [] (const char *msg) {
-        throw gendlopen::error_cmd(msg);
-    };
-
     const char *input_file = NULL;
     const char *p = NULL;
 
-    opt o(argc, argv, callback);
+    opt o(argc, argv);
 
     while (o.iterate()) {
         if (o.pfxlen() == 0) {
@@ -92,18 +121,16 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
                 std::cerr << "warning: non-option argument ignored: " << o.current() << std::endl;
             }
         } else if (o.flag("?") || o.flag("help")) {
-            help::print(argv[0]);
-            std::exit(0);
+            throw E_HELP;
         } else if (o.flag("full-help")) {
-            help::print_full(argv[0]);
-            std::exit(0);
+            throw E_FULLHELP;
         } else if (o.flag("ast-all-symbols")) {
             ast_all_symbols(true);
         } else if (o.arg(p, "D")) {
             add_def(p);
         } else if (o.arg(p, "dump-templates")) {
-            dump_templates(p);
-            std::exit(0);
+            dump_path(p);
+            return;
         } else if (o.arg(p, "format")) {
             format(p);
         } else if (o.flag("force")) {
@@ -139,15 +166,14 @@ void gendlopen::parse_cmdline(const int &argc, char ** const &argv)
         } else if (o.arg(p, "templates-path")) {
             templates_path(p);
         } else if (o.flag("version")) {
-            std::cout << "gendlopen " << gendlopen::version() << std::endl;
-            std::exit(0);
+            throw E_VERSION;
         } else {
-            throw gendlopen::error_cmd(std::string("unknown option: ") + o.current());
+            throw error_cmd(std::string("unknown option: ") + o.current());
         }
     }
 
     if (!input_file || *input_file == 0) {
-        throw gendlopen::error_cmd("input file is required");
+        throw error_cmd("input file is required");
     }
 
     input(input_file);
@@ -179,7 +205,7 @@ void gendlopen::parse_options(const vstring_t &options)
         } else if (get_option(token, p, "prefix=")) {
             prefix(p);
         } else {
-            throw gendlopen::error("unknown %option string: " + token);
+            throw error("unknown %option string: " + token);
         }
     }
 }

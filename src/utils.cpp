@@ -141,17 +141,6 @@ void utils::strip_spaces(std::string &s)
     }
 }
 
-/* replace string "from" with string "to" in string "str" */
-void utils::replace(const std::string &from, const std::string &to, std::string &str)
-{
-    size_t pos = 0;
-
-    while (utils::find(str, from, pos)) {
-        str.replace(pos, from.size(), to);
-        pos += to.size();
-    }
-}
-
 /* count '\n' characters */
 size_t utils::count_linefeed(const std::string &str)
 {
@@ -186,52 +175,4 @@ bool utils::get_lines(FILE *fp, template_t &entry)
 
     return (c != EOF);
 }
-
-
-/* append missing path separator */
-void utils::append_missing_separator(std::string &path)
-{
-#ifdef _WIN32
-    if (!(path.empty() || path.ends_with('\\') || path.ends_with('/'))) {
-        path.push_back('\\');
-    }
-#else
-    if (!(path.empty() || path.ends_with('/'))) {
-        path.push_back('/');
-    }
-#endif
-}
-
-
-#ifdef UTILS_PROGNAME_FALLBACK
-
-/* get program name without full path */
-const char *utils::progname(char *argv0)
-{
-    const char *p = NULL;
-    char *path = argv0;
-
-#ifdef _WIN32
-    /* prefer _pgmptr over argv[0] */
-    if (_get_pgmptr(&path) != 0) {
-        path = argv0;
-    }
-
-    for (auto cur = path; *cur != 0; cur++) {
-        if (*cur == '\\' || *cur == '/') {
-            p = cur;
-        }
-    }
-#else
-    p = ::strrchr(path, '/');
-#endif
-
-    if (p && *(p+1) != 0) {
-        return p + 1;
-    }
-
-    return path;
-}
-
-#endif /* UTILS_PROGNAME_FALLBACK */
 

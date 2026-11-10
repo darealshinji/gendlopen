@@ -29,8 +29,10 @@
 #endif
 #include <errno.h>  /* program_invocation_short_name */
 #include <stdio.h>
+#include <stdlib.h>  /* _get_pgmptr */
 #include <string.h>
 #include <algorithm>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include "types.hpp"
@@ -101,7 +103,12 @@ void strip_spaces(std::string &s);
 
 
 /* replace string "from" with string "to" in string "s" */
-void replace(const std::string &from, const std::string &to, std::string &s);
+inline void replace(const std::string &from, const std::string &to, std::string &s)
+{
+    for (size_t pos = 0; utils::find(s, from, pos); pos += to.size()) {
+        s.replace(pos, from.size(), to);
+    }
+}
 
 
 /* count '\n' characters */
@@ -113,7 +120,18 @@ bool get_lines(FILE *fp, template_t &entry);
 
 
 /* append missing path separator */
-void append_missing_separator(std::string &path);
+inline void append_missing_separator(std::string &path)
+{
+#ifdef _WIN32
+    if (!(path.empty() || path.ends_with('\\') || path.ends_with('/'))) {
+        path.push_back('\\');
+    }
+#else
+    if (!(path.empty() || path.ends_with('/'))) {
+        path.push_back('/');
+    }
+#endif
+}
 
 
 /* get program name without full path */
@@ -131,11 +149,26 @@ inline const char *progname(char *) {
     return getprogname();
 }
 
+#elif defined(_WIN32)
+
+inline std::string progname(char *argv0)
+{
+    char *ptr;
+
+    /* prefer _pgmptr over argv[0] */
+    if (::_get_pgmptr(&ptr) == 0) {
+        return std::filesystem::path(ptr).stem().string();
+    }
+
+    return std::filesystem::path(argv0).stem().string();
+}
+
 #else
 
 /* other */
-#define UTILS_PROGNAME_FALLBACK 1
-const char *progname(char *argv0);
+inline std::string progname(char *argv0) {
+    return std::filesystem::path(argv0).filename().string();
+}
 
 #endif
 

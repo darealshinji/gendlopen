@@ -31,6 +31,19 @@
 #include "utils.hpp"
 
 
+namespace help
+{
+    extern void print(char *prog);
+    extern void print_full(char *prog);
+}
+
+
+template<class T>
+void print_errmsg(char * const argv0, T const &e) {
+    std::cerr << utils::progname(argv0) << ": error: " << e.what() << std::endl;
+}
+
+
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
@@ -46,6 +59,12 @@ int main(int argc, char **argv)
 
         /* parse command line and tokenize input file */
         gdo.parse_cmdline(argc, argv);
+
+        if (!gdo.dump_path().empty()) { /* -dump-templates=.. */
+            gdo.dump_templates();
+            return 0;
+        }
+
         gdo.tokenize();
 
         if (gdo.print_symbols()) { /* -print-symbols */
@@ -57,14 +76,33 @@ int main(int argc, char **argv)
             gdo.generate();
         }
     }
-    catch (const gendlopen::error_cmd &e) {
-        std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
+    catch (gendlopen::error_cmd const &e) {
+        print_errmsg(argv[0], e);
         std::cerr << "Try `" << argv[0] << " -help' for more information." << std::endl;
         return 1;
     }
-    catch (const gendlopen::error &e) {
-        std::cerr << utils::progname(argv[0]) << ": error: " << e.what() << std::endl;
+    catch (gendlopen::error const &e) {
+        print_errmsg(argv[0], e);
         return 1;
+    }
+    catch (std::filesystem::filesystem_error const &e) {
+        print_errmsg(argv[0], e);
+        return 1;
+    }
+    catch (gendlopen::help num)
+    {
+        switch (num)
+        {
+        case gendlopen::E_HELP:
+            help::print(argv[0]);
+            break;
+        case gendlopen::E_FULLHELP:
+            help::print_full(argv[0]);
+            break;
+        case gendlopen::E_VERSION:
+            std::cout << "gendlopen " << gendlopen::version() << std::endl;
+            break;
+        }
     }
 
     return 0;

@@ -100,15 +100,14 @@ namespace /* anonymous */
     }
 
     /* save template data to file */
-    void save_to_file(std::string path, const char *filename, const template_t *list)
+    void save_to_file(const std::string &dir, const char *filename, const template_t *list)
     {
         cio::ofstream ofs;
 
-        utils::append_missing_separator(path);
-        path += filename;
+        auto path = fs::path{dir} / filename;
 
         if (!ofs.open(path)) {
-            throw gendlopen::error(std::string("failed to open file for writing: ") + path);
+            throw gendlopen::error("failed to open file for writing: " + path.string());
         }
 
         std::cout << "saving " << path << std::endl;
@@ -215,15 +214,13 @@ void gendlopen::load_template(templates::name file)
 
 
 /* dump templates */
-void gendlopen::dump_templates(const char *dir)
+void gendlopen::dump_templates()
 {
-    auto st = fs::symlink_status(dir);
-
-    if (!fs::exists(st) && !fs::create_directories(dir)) {
-        throw error(std::string("failed to create directory: ") + dir);
+    if (!fs::exists(fs::status(m_dump_path)) && !fs::create_directories(m_dump_path)) {
+        throw error("failed to create directory: " + m_dump_path);
     }
 
-#define TEMPLATE(FILE, VAR) save_to_file(dir, #FILE, templates::ptr_##VAR);
+#define TEMPLATE(FILE, VAR) save_to_file(m_dump_path, #FILE, templates::ptr_##VAR);
 #include "list.h"
 #undef TEMPLATE
 }

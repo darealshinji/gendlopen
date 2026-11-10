@@ -56,17 +56,27 @@ class gendlopen
 {
 public:
 
-    class error : public std::runtime_error {
-        public:
-            error(const std::string &message) : std::runtime_error(message) {}
-            virtual ~error() {}
+    typedef enum {
+        E_HELP,
+        E_FULLHELP,
+        E_VERSION
+    } help;
+
+    class error : public std::exception
+    {
+    private:
+        std::string m_message;
+    public:
+        error(const std::string &msg) : m_message(msg) {}
+        const char *what() const noexcept { return m_message.c_str(); }
     };
 
-    class error_cmd : public std::runtime_error {
-        public:
-            error_cmd(const std::string &message) : std::runtime_error(message) {}
-            virtual ~error_cmd() {}
+    class error_cmd : public error
+    {
+    public:
+        error_cmd(const std::string &msg) : error(msg) {}
     };
+
 
 private:
 
@@ -100,10 +110,9 @@ private:
     /* options.cpp */
     void parse_options(const vstring_t &options);
 
-    /* data*.cpp */
+    /* data.cpp */
     void load_template(templates::name file);
     void create_template_lists(vtemplate_t &header, vtemplate_t &body);
-    void dump_templates(const char *dir);
 
     /* generate.cpp */
     size_t save_data(templates::name file, const template_t *list);
@@ -124,7 +133,7 @@ public:
     ~gendlopen();
 
     /* return program version string */
-    constexpr const char *version() { return "1.1"; }
+    static constexpr const char *version() { return "1.1"; }
 
     /* get() / set() an option */
 
@@ -135,6 +144,7 @@ public:
     OPT( param::names,   parameter_names, param::read )
     OPT( std::string,    custom_template, {}          )
     OPT( std::string,    default_lib,     {}          )
+    OPT( std::string,    dump_path,       {}          )
     OPT( bool,           force,           false       )
     OPT( bool,           separate,        false       )
     OPT( bool,           ast_all_symbols, false       )
@@ -156,6 +166,9 @@ public:
     void process_custom_template();
     void parameter_names(const char *str);
     void templates_path(const char *str);
+
+    /* data.cpp */
+    void dump_templates();
 
     /* generate.cpp */
     void generate();
