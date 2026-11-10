@@ -164,16 +164,6 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 }
 
 
-/* set templates path */
-void gendlopen::templates_path(const char *str)
-{
-    m_templates_path = str;
-
-    /* does nothing on an empty string */
-    utils::append_missing_separator(m_templates_path);
-}
-
-
 /* read and process custom template */
 void gendlopen::process_custom_template()
 {

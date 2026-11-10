@@ -119,20 +119,6 @@ size_t count_linefeed(const std::string &str);
 bool get_lines(FILE *fp, template_t &entry);
 
 
-/* append missing path separator */
-inline void append_missing_separator(std::string &path)
-{
-#ifdef _WIN32
-    if (!(path.empty() || path.ends_with('\\') || path.ends_with('/'))) {
-        path.push_back('\\');
-    }
-#else
-    if (!(path.empty() || path.ends_with('/'))) {
-        path.push_back('/');
-    }
-#endif
-}
-
 
 /* get program name without full path */
 #ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
@@ -156,7 +142,7 @@ inline std::string progname(char *argv0)
     char *ptr;
 
     /* prefer _pgmptr over argv[0] */
-    if (::_get_pgmptr(&ptr) == 0) {
+    if (_get_pgmptr(&ptr) == 0) {
         return std::filesystem::path(ptr).stem().string();
     }
 

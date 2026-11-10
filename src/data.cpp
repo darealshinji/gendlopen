@@ -52,24 +52,23 @@ namespace t = templates;
 namespace /* anonymous */
 {
     /* find template and load it into memory */
-    void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *file, bool line_directive)
+    void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *filename, bool line_directive)
     {
-        std::string path;
         bool rv = true;
 
         /* don't add line directive to license part */
-        if (strcmp(file, "license.h") == 0) {
+        if (strcmp(filename, "license.h") == 0) {
             line_directive = false;
         }
 
         /* lookup path */
-        path = dir + file;
+        auto path = fs::path{dir} / filename;
 
         /* open file for reading */
         open_file ofs(path);
 
         if (!ofs.is_open()) {
-            throw gendlopen::error("failed to open file for reading: " + path);
+            throw gendlopen::error("failed to open file for reading: " + path.string());
         }
 
         FILE *fp = ofs.file_pointer();
@@ -83,7 +82,7 @@ namespace /* anonymous */
             if (fp == stdin) {
                 entry.data = "#line 1 \"<STDIN>\"";
             } else {
-                entry.data = "#line 1 \"" + std::string(file) + "\"\n";
+                entry.data = "#line 1 \"" + std::string(filename) + "\"\n";
             }
 
             data.push_back(entry);

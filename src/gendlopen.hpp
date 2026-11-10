@@ -82,7 +82,7 @@ private:
 
     vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;
     vproto_t m_prototypes, m_objects;
-    std::string m_defines, m_templates_path;
+    std::string m_defines;
 
     std::string m_pfx = "gdo"; /* can be mixed case, used to create header name on STDOUT */
     std::string m_pfx_upper = "GDO";
@@ -144,6 +144,7 @@ public:
     OPT( param::names,   parameter_names, param::read )
     OPT( std::string,    custom_template, {}          )
     OPT( std::string,    default_lib,     {}          )
+    OPT( std::string,    templates_path,  {}          )
     OPT( std::string,    dump_path,       {}          )
     OPT( bool,           force,           false       )
     OPT( bool,           separate,        false       )
@@ -165,7 +166,6 @@ public:
     void print_symbols_to_stdout();
     void process_custom_template();
     void parameter_names(const char *str);
-    void templates_path(const char *str);
 
     /* data.cpp */
     void dump_templates();
