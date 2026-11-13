@@ -188,13 +188,7 @@ GDO_DECL const gdo_char_t *gdo_library_path(void);
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 /* we need an actual function for the VA_ARGS macro */
-#ifdef __GNUC__
-inline __attribute__ ((always_inline)) void _gdo_noop(void) {}
-#elif defined(_MSC_VER)
-__forceinline void _gdo_noop(void) {}
-#else
-extern void _gdo_noop(void);
-#endif
+GDO_INLINE void _gdo_noop(void) {}
 
 
 /* by default #define hooks that do nothing */

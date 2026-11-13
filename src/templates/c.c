@@ -950,10 +950,6 @@ GDO_INLINE bool _gdo_library_path(void)
 /*****************************************************************************/
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
-#if !defined(__GNUC__) && !defined(_MSC_VER)
-void _gdo_noop(void) {}
-#endif
-
 GDO_INLINE void _gdo_print_error(const gdo_char_t *fmt, const gdo_char_t *sym, const gdo_char_t *msg)
 {
 #ifdef _WIN32
