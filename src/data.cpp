@@ -62,7 +62,7 @@ namespace /* anonymous */
         }
 
         /* lookup path */
-        auto path = fs::path{dir} / filename;
+        auto path = utils::make_fs_path(dir, filename);
 
         /* open file for reading */
         open_file ofs(path);
@@ -103,7 +103,7 @@ namespace /* anonymous */
     {
         cio::ofstream ofs;
 
-        auto path = fs::path{dir} / filename;
+        auto path = utils::make_fs_path(dir, filename);
 
         if (!ofs.open(path)) {
             throw gendlopen::error("failed to open file for writing: " + path.string());

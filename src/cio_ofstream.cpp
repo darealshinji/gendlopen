@@ -22,6 +22,9 @@
  SOFTWARE.
 **/
 
+#include <filesystem>
+#include <string>
+
 #include "cio_ofstream.hpp"
 
 

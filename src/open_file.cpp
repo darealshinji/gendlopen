@@ -28,6 +28,8 @@
 # define _CRT_SECURE_NO_WARNINGS
 # endif
 #endif
+#include <filesystem>
+#include <string>
 
 #include "open_file.hpp"
 

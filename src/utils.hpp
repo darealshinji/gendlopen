@@ -33,6 +33,7 @@
 #include <string.h>
 #include <algorithm>
 #include <filesystem>
+#include <locale>
 #include <string>
 #include <vector>
 #include "types.hpp"
@@ -42,6 +43,31 @@
 
 namespace utils
 {
+
+template<typename T>
+std::filesystem::path make_fs_path(T name)
+{
+#ifdef __MINGW32__
+    /* bug: need to explicitly set locale, otherwise the program
+     * may crash if the name contains non-ANSI characters */
+    return std::filesystem::path(name, std::locale());
+#else
+    return std::filesystem::path{name};
+#endif
+}
+
+template<typename T1, typename T2>
+std::filesystem::path make_fs_path(T1 name1, T2 name2)
+{
+#ifdef __MINGW32__
+    auto path = make_fs_path(name1);
+    path /= make_fs_path(name2);
+    return path;
+#else
+    return std::filesystem::path{name1} / name2;
+#endif
+}
+
 
 /* MSVC compat */
 
@@ -139,21 +165,25 @@ inline const char *progname(char *) {
 
 inline std::string progname(char *argv0)
 {
+    std::filesystem::path path;
     char *ptr;
 
     /* prefer _pgmptr over argv[0] */
     if (_get_pgmptr(&ptr) == 0) {
-        return std::filesystem::path(ptr).stem().string();
+        path = make_fs_path(ptr);
+    } else {
+        path = make_fs_path(argv0);
     }
 
-    return std::filesystem::path(argv0).stem().string();
+    return path.stem().string();
 }
 
 #else
 
 /* other */
 inline std::string progname(char *argv0) {
-    return std::filesystem::path(argv0).filename().string();
+    auto path = make_fs_path(argv0);
+    return path.filename().string();
 }
 
 #endif

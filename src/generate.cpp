@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <ctime>
 #include <filesystem>
-#include <locale>
 #include <iomanip>
 #include <iostream>
 #include <regex>
@@ -437,11 +436,7 @@ void gendlopen::generate()
         m_separate = false;
     } else {
         /* save output filename */
-#ifdef __MINGW32__
-        ofbody = ofhdr = fs::path(m_output, std::locale());
-#else
-        ofbody = ofhdr = m_output;
-#endif
+        ofbody = ofhdr = utils::make_fs_path(m_output);
     }
 
     /* change settings based on output format */
