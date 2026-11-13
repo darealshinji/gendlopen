@@ -362,32 +362,7 @@ void gdo::dl::load_lib(const std::string &filename)
 
 /* get library path */
 
-#ifdef GDO_DLFCN_WIN32
-
-bool gdo::dl::get_library_path(void)
-{
-    /* dlfcn-win32:
-     * The handle returned by dlopen() is a `HMODULE' casted to `void *',
-     * so we can directly use GetModuleFileNameA() to receive the DLL path. */
-
-    char buf[GDO_BUFLEN];
-    auto hmod = reinterpret_cast<HMODULE>(m_handle);
-    DWORD nSize = ::GetModuleFileNameA(hmod, buf, sizeof(buf));
-
-    if (nSize == 0) {
-        m_errmsg = "failed to get the library path";
-        return false;
-    } else if (nSize == sizeof(buf)) {
-        m_errmsg = "buffer is too small to hold the library path";
-        return false;
-    }
-
-    m_libpath = buf;
-
-    return true;
-}
-
-#elif defined(_AIX)
+#ifdef _AIX
 
 bool gdo::dl::libpath_from_symptr(uint8_t *buf, size_t size, uint8_t *sym)
 {
@@ -438,8 +413,41 @@ bool gdo::dl::get_library_path(void)
 
 #else // dlinfo() + dladdr()
 
+/* receive libary path directly from the handle */
+std::string gdo::dl::libpath_from_handle(void)
+{
+#ifdef GDO_DLFCN_WIN32
+
+    /* dlfcn-win32:
+     * The handle returned by dlopen() is a `HMODULE' casted to `void *',
+     * so we can directly use GetModuleFileNameA() to receive the DLL path. */
+
+    char buf[GDO_BUFLEN];
+    DWORD nSize = ::GetModuleFileNameA(reinterpret_cast<HMODULE>(m_handle), buf, GDO_BUFLEN);
+
+    if (nSize > 0 && nSize < GDO_BUFLEN) {
+        return buf;
+    }
+
+#elif defined(__HAIKU__)
+
+    size_t len;
+    auto p = reinterpret_cast<const char *>(m_handle);
+
+    /* Haiku:
+     * The handle is a pointer to a struct similar to `struct link_map' whose
+     * first entry is a char array holding the full library path (1024 chars max) */
+    if (p && *p == '/' && (len = ::strnlen(p, 1024)) < 1024) {
+        return p;
+    }
+
+#endif //!GDO_DLFCN_WIN32
+
+    return {};
+}
+
 /* use dlinfo() to get a link map */
-bool gdo::dl::libpath_dlinfo(std::string &path)
+std::string gdo::dl::libpath_dlinfo(bool force_abspath)
 {
 #ifdef GDO_HAVE_DLINFO
 
@@ -452,88 +460,119 @@ bool gdo::dl::libpath_dlinfo(std::string &path)
         char buf[GDO_BUFLEN];
 
         /* try to get the absolute library path from /proc/self/maps */
-        if (lm->l_name[0] != '/' && lm->l_addr != 0 &&
+        if (force_abspath &&
+            lm->l_name[0] != '/' &&
+            lm->l_addr != 0 &&
             _gdo_abspath_procmap(lm->l_addr, buf, GDO_BUFLEN))
         {
-            path = buf;
-            return true;
+            return buf;
         }
 # endif
 
-        path = lm->l_name;
-        return true;
+        return lm->l_name;
     }
 
 #endif //!GDO_HAVE_DLINFO
 
-    return false;
+#if !defined(GDO_HAVE_DLINFO) || !defined(__linux__)
+    UNUSED_REF(force_abspath);
+#endif
+
+    return {};
 }
 
 /* use dladdr() to get the library path from a symbol pointer */
-bool gdo::dl::libpath_dladdr(std::string &path)
+std::string gdo::dl::libpath_dladdr(void)
 {
 #ifdef GDO_HAVE_DLADDR // dladdr() (POSIX.1-2024)
 
     Dl_info info;
 
-    if (no_symbols_loaded()) {
-        return false;
-    }
-
-    if (false
-        || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
-    ) {
-        path = info.dli_fname;
-        return true;
+    if (any_symbol_loaded()) {
+        if (false
+            || _gdo_call_dladdr(reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%), &info)
+        ) {
+            return info.dli_fname;
+        }
     }
 
 #endif //GDO_HAVE_DLADDR
 
-    return false;
+    return {};
 }
 
 /* parse /proc/self/maps for absolute path */
-bool gdo::dl::libpath_procmap(std::string &path)
+std::string gdo::dl::libpath_procmap(void)
 {
 #ifdef __linux__
 
     char buf[GDO_BUFLEN];
     void *addr = nullptr;
 
-    if (no_symbols_loaded()) {
-        return false;
-    }
-
     if (false
         || (addr = reinterpret_cast<void *>(GDO_RAWPTR_%%symbol%%)) != nullptr
     ) {
         if (_gdo_abspath_procmap(reinterpret_cast<uint64_t>(addr), buf, GDO_BUFLEN)) {
-            path = buf;
-            return true;
+            return buf;
         }
     }
 
 #endif //__linux__
 
-    return false;
+    return {};
+}
+
+void gdo::dl::libpath_any_method(bool force_abspath)
+{
+    auto libpath_found = [&, this] ()
+    {
+#ifdef _WIN32
+        return !m_libpath.empty();
+#else
+        return ((force_abspath && !m_libpath.empty() && m_libpath.front() == '/')
+                || (!force_abspath && !m_libpath.empty()));
+#endif
+    };
+
+    /* void *handle */
+    m_libpath = libpath_from_handle();
+
+    if (libpath_found()) {
+        return;
+    }
+
+    /* dlinfo() */
+    m_libpath = libpath_dlinfo(force_abspath);
+
+    if (libpath_found()) {
+        return;
+    }
+
+    /* dladdr() */
+    m_libpath = libpath_dladdr();
+
+    if (libpath_found()) {
+        return;
+    }
+
+    /* /proc/self/maps */
+    if (force_abspath) {
+        m_libpath = libpath_procmap();
+    }
 }
 
 bool gdo::dl::get_library_path(void)
 {
-    std::string s1, s2, s3;
+    /* try to get absolute library path,
+     * ignoring relative path results */
+    libpath_any_method(true);
 
-    /* check with dlinfo() first because it doesn't require any symbols to be loaded */
-    if (libpath_dlinfo(s1) && !s1.empty() && s1.front() == '/') {
-        m_libpath = std::move(s1);
-    } else if (libpath_dladdr(s2) && !s2.empty() && s2.front() == '/') {
-        m_libpath = std::move(s2);
-    } else if (libpath_procmap(s3)) {
-        /* paths from /proc/self/maps are always absolute */
-        m_libpath = std::move(s3);
-    } else {
-        /* relative path or nothing at all */
-        m_libpath = std::move(!s1.empty() ? s1 : s2);
+#if !defined(_WIN32)
+    /* try to get relative library path */
+    if (m_libpath.empty()) {
+        libpath_any_method(false);
     }
+#endif
 
     if (m_libpath.empty()) {
         m_errmsg = "failed to get library path";
@@ -993,10 +1032,8 @@ std::string gdo::dl::library_path()
     defined(GDO_HAVE_DLADDR) || \
     defined(GDO_DLFCN_WIN32) || \
     defined(__linux__) || \
+    defined(__HAIKU__) || \
     defined(_AIX)
-
-    /* Windows and AIX have their own API; on Linux we can fall back to
-     * parse /proc/self/maps in case a C library is missing dlinfo() or dladdr() */
 
     clear_error();
 

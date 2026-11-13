@@ -190,10 +190,12 @@ private:
 
 #ifdef _AIX
     bool libpath_from_symptr(struct ld_info *info, uint8_t *sym);
-#elif !defined(GDO_DLFCN_WIN32)
-    bool libpath_dlinfo(std::string &path);
-    bool libpath_dladdr(std::string &path);
-    bool libpath_procmap(std::string &path);
+#else
+    std::string libpath_from_handle(void);
+    std::string libpath_dlinfo(bool force_abspath);
+    std::string libpath_dladdr(void);
+    std::string libpath_procmap(void);
+    void libpath_any_method(bool force_abspath);
 #endif
 
 #endif // !GDO_WINAPI
