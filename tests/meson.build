@@ -43,41 +43,36 @@ symbol_list = [
 ]
 
 components = [
-    ['',    'c_test',                 'C',                                    hw,                             []],
-    ['',    'c_autoload',             'C automatic loading',                  hw,                             []],
-    ['',    'c_auto_release',         'C automatic release',                  hw,                             []],
-    ['',    'c_clang_ast',            'C generated from clang AST',           'ast.txt',                      symbol_list],
-    ['',    'c_load_symbol',          'C load individual symbols',            hw,                             []],
-    ['',    'c_minimal',              'C minimal header',                     hw,                             ['-format', 'minimal']],
-    ['',    'c_line',                 'C with #line directives',              hw,                             ['-line']],
-    ['',    'c_no_date',              'C generated without date in header',   hw,                             ['-no-date']],
-    ['',    'c_option',               'C generated with %option lines',       'helloworld_option.txt',        []],
-    ['',    'c_param_create',         'C parameter names created',            'helloworld_param_create.txt',  ['-param=create']],
-    ['',    'c_param_skip',           'C parameter names skipped',            hw,                             ['-param=skip']],
-    ['',    'c_prefix',               'C custom symbol prefix',               hw,                             ['-prefix', 'MyPrefix']],
-    ['',    'c_static_linkage',       'C static inline linkage',              hw,                             []],
-    ['',    'c_wrapped_functions',    'C wrapped functions',                  hw,                             []],
-    ['pp',  'cxx_test',               'C++',                                  hw,                             ['-format=c++']],
-    ['pp',  'cxx_autoload',           'C++ automatic loading',                hw,                             ['-format=c++']],
-    ['pp',  'cxx_minimal',            'C++ minimal header',                   hw,                             ['-format', 'minimal-c++']],
-    ['pp',  'cxx_prefix',             'C++ custom symbol prefix',             hw,                             ['-format=C++', '-prefix=MyPrefix']],
-    ['pp',  'cxx_wrapped_functions',  'C++ wrapped functions',                hw,                             ['-format=c++']]
+    ['c_test',                 'C',                                    hw,                             []],
+    ['c_autoload',             'C automatic loading',                  hw,                             []],
+    ['c_auto_release',         'C automatic release',                  hw,                             []],
+    ['c_clang_ast',            'C generated from clang AST',           'ast.txt',                      symbol_list],
+    ['c_load_symbol',          'C load individual symbols',            hw,                             []],
+    ['c_minimal',              'C minimal header',                     hw,                             ['-format', 'minimal']],
+    ['c_line',                 'C with #line directives',              hw,                             ['-line']],
+    ['c_no_date',              'C generated without date in header',   hw,                             ['-no-date']],
+    ['c_option',               'C generated with %option lines',       'helloworld_option.txt',        []],
+    ['c_param_create',         'C parameter names created',            'helloworld_param_create.txt',  ['-param=create']],
+    ['c_param_skip',           'C parameter names skipped',            hw,                             ['-param=skip']],
+    ['c_prefix',               'C custom symbol prefix',               hw,                             ['-prefix', 'MyPrefix']],
+    ['c_static_linkage',       'C static inline linkage',              hw,                             []],
+    ['c_wrapped_functions',    'C wrapped functions',                  hw,                             []],
 ]
 
 foreach p : components
     command = [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@']
 
-    foreach arg : p[4]
+    foreach arg : p[3]
         command += arg
     endforeach
 
-    gen_hdr = custom_target(p[1]+'.h'+p[0],
+    gen_hdr = custom_target(p[0]+'.h',
         depends : helloworld_lib,
-        output : p[1]+'.h'+p[0],
-        input : p[3],
+        output : p[0]+'.h',
+        input : p[2],
         command : command)
 
-    e = executable(p[1], [p[1]+'.c'+p[0], gen_hdr],
+    e = executable(p[0], [p[0]+'.c', gen_hdr],
         dependencies : dl_dep,
         override_options : test_overrides,
         c_args : test_flags,
@@ -85,7 +80,7 @@ foreach p : components
         build_rpath : test_rpath,
         install : false)
 
-    test(p[2], e, env : ld_library_path)
+    test(p[1], e, env : ld_library_path)
 endforeach
 
 
@@ -118,58 +113,50 @@ endforeach
 
 ### multiple source files tests ###
 
-components = [
-    ['c_',   '',   'C'],
-    ['cxx_', 'pp', 'C++']
-]
+gen_srcs = custom_target('c_multi_generated.c',
+    depends : helloworld_lib,
+    output : ['c_multi_generated.c', 'c_multi_generated.h'],
+    input : hw,
+    command : [
+        gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT1@',
+        '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
+        '-DGDO_ENABLE_AUTOLOAD'
+    ]
+)
 
-foreach p : components
-    gen_srcs = custom_target(p[0]+'multi_generated.c'+p[1],
-        depends : helloworld_lib,
-        output : [p[0]+'multi_generated.c'+p[1], p[0]+'multi_generated.h'+p[1]],
-        input : hw,
-        command : [
-            gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT1@', '-format', p[2],
-            '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
-            '-DGDO_ENABLE_AUTOLOAD'
-        ]
-    )
+e = executable('c_multi', ['c_multi.c', 'c_multi_cb.c', 'c_multi_call2.c', gen_srcs],
+    dependencies : dl_dep,
+    override_options : test_overrides,
+    c_args : test_flags,
+    cpp_args : test_flags,
+    build_rpath : test_rpath,
+    install : false
+)
 
-    e = executable(p[0]+'multi', [p[0]+'multi.c'+p[1], p[0]+'multi_cb.c'+p[1], p[0]+'multi_call2.c'+p[1], gen_srcs],
-        dependencies : dl_dep,
-        override_options : test_overrides,
-        c_args : test_flags,
-        cpp_args : test_flags,
-        build_rpath : test_rpath,
-        install : false
-    )
+test('C multiple source files', e, env : ld_library_path)
 
-    test(p[2]+' multiple source files', e, env : ld_library_path)
-endforeach
 
-foreach p : components
-    gen_srcs = custom_target(p[0]+'va_args_inline_generated.c'+p[1],
-        depends : helloworld_lib,
-        output : [p[0]+'va_args_inline_generated.c'+p[1], p[0]+'va_args_inline_generated.h'+p[1]],
-        input : hw,
-        command : [
-            gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT1@', '-format', p[2],
-            '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
-            '-DGDO_ENABLE_AUTOLOAD'
-        ]
-    )
+gen_srcs = custom_target('c_va_args_inline_generated.c',
+    depends : helloworld_lib,
+    output : ['c_va_args_inline_generated.c', 'c_va_args_inline_generated.h'],
+    input : hw,
+    command : [
+        gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT1@',
+        '-separate', '-library=API:0:helloworld', '-include=helloworld.h',
+        '-DGDO_ENABLE_AUTOLOAD'
+    ]
+)
 
-    e = executable(p[0]+'va_args_inline', [p[0]+'va_args_inline.c'+p[1], gen_srcs],
-        dependencies : dl_dep,
-        override_options : test_overrides,
-        c_args : test_flags,
-        cpp_args : test_flags,
-        build_rpath : test_rpath,
-        install : false
-    )
+e = executable('c_va_args_inline', ['c_va_args_inline.c', gen_srcs],
+    dependencies : dl_dep,
+    override_options : test_overrides,
+    c_args : test_flags,
+    cpp_args : test_flags,
+    build_rpath : test_rpath,
+    install : false
+)
 
-    test(p[2]+' VA_ARGS inline, multiple source files', e, env : ld_library_path)
-endforeach
+test('C VA_ARGS inline, multiple source files', e, env : ld_library_path)
 
 
 
@@ -234,38 +221,27 @@ test('C generated from STDIN', e, env : ld_library_path)
 
 if host_is_win32
     c_args = ['-DUNICODE', '-D_UNICODE']
-    cpp_args = ['-DUNICODE', '-D_UNICODE']
     link_args = []
 
     if arg_syntax != 'msvc'
         c_args += '-municode'
-        cpp_args += '-municode'
         link_args += '-municode'
     endif
 
+    gen_hdr = custom_target('c_win32_wide.h',
+        output : 'c_win32_wide.h',
+        input : hw,
+        command : [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@']
+    )
 
-    components = [
-        ['c_',   '',   'C'],
-        ['cxx_', 'pp', 'C++']
-    ]
+    e = executable('c_win32_wide', ['c_win32_wide.c', gen_hdr],
+        override_options : test_overrides,
+        c_args : [c_args, test_flags],
+        link_args : link_args,
+        install : false
+    )
 
-    foreach p : components
-        gen_hdr = custom_target(p[0]+'win32_wide.h'+p[1],
-            output : p[0]+'win32_wide.h'+p[1],
-            input : hw,
-            command : [gendlopen_bin, '@INPUT@', '-format', p[2], '-force', '-out', '@OUTPUT@']
-        )
-
-        e = executable(p[0]+'win32_wide', [p[0]+'win32_wide.c'+p[1], gen_hdr],
-            override_options : test_overrides,
-            c_args : [c_args, test_flags],
-            cpp_args : [cpp_args, test_flags],
-            link_args : link_args,
-            install : false
-        )
-
-        test(p[2]+' win32 wide characters API', e, env : ld_library_path)
-    endforeach
+    test('C win32 wide characters API', e, env : ld_library_path)
 endif
 
 
@@ -280,34 +256,23 @@ if host_is_win32
 
     incdir = include_directories('dlfcn-win32')
 
-    components = [
-        ['',    'c_win32_dlopen',    'C using dlopen() on win32',    hw,  ['-DGDO_USE_DLOPEN']],
-        ['pp',  'cxx_win32_dlopen',  'C++ using dlopen() on win32',  hw,  ['-format=C++', '-DGDO_USE_DLOPEN']]
-    ]
+    gen_hdr = custom_target('c_win32_dlopen.h',
+        depends : helloworld_lib,
+        output : 'c_win32_dlopen.h',
+        input : hw,
+        command : [gendlopen_bin, '@INPUT@', '-DGDO_USE_DLOPEN', '-force', '-out', '@OUTPUT@']
+    )
 
-    foreach p : components
-        command = [gendlopen_bin, '@INPUT@', '-force', '-out', '@OUTPUT@']
+    e = executable('c_win32_dlopen', ['c_win32_dlopen.c', gen_hdr],
+        override_options : test_overrides,
+        include_directories : incdir,
+        c_args : test_flags,
+        cpp_args : test_flags,
+        link_with : libdl,
+        build_rpath : test_rpath,
+        install : false
+    )
 
-        foreach arg : p[4]
-            command += arg
-        endforeach
-
-        gen_hdr = custom_target(p[1]+'.h'+p[0],
-            depends : helloworld_lib,
-            output : p[1]+'.h'+p[0],
-            input : p[3],
-            command : command)
-
-        e = executable(p[1], [p[1]+'.c'+p[0], gen_hdr],
-            override_options : test_overrides,
-            include_directories : incdir,
-            c_args : test_flags,
-            cpp_args : test_flags,
-            link_with : libdl,
-            build_rpath : test_rpath,
-            install : false)
-
-        test(p[2], e, env : ld_library_path)
-    endforeach
+    test('C using dlopen() on win32', e, env : ld_library_path)
 endif
 

@@ -5,6 +5,27 @@ if not has_builtin_va_arg_pack
     example_flags += '-DGDO_DISABLE_WARNINGS'
 endif
 
+if arg_syntax == 'msvc'
+    example_overrides = {'cpp_std' : 'c++14'}
+else
+    example_overrides = {'cpp_std' : 'c++11'}
+endif
+
+
+example_cxx_sdl_h = custom_target('example_cxx_sdl.h',
+    output : 'example_cxx_sdl.h',
+    input : 'msgbox_sdl.txt',
+    command : [gendlopen_bin, '@INPUT@', '-force', '-ignore-options', '-out', '@OUTPUT@']
+)
+
+executable('cxx_raii', ['cxx_raii.cpp', example_cxx_sdl_h],
+    dependencies : dl_dep,
+    override_options : example_overrides,
+    cpp_args : example_flags,
+    include_directories : include_directories('thirdparty/sdl'),
+    install : false
+)
+
 
 if host_is_win32
     # UUID
@@ -60,9 +81,9 @@ else
 
         executable('msgbox', ['msgbox.c', gen_hdrs],
             dependencies : [dl_dep, gtk_dep, x11_dep],
-            install : false,
             c_args : [example_flags, wno_deprecated_declarations],
-            include_directories : include_directories('thirdparty/sdl')
+            include_directories : include_directories('thirdparty/sdl'),
+            install : false
         )
     endif
 

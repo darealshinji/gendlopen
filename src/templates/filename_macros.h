@@ -76,7 +76,7 @@ GDO_LIBEXTW
 #undef GDO_LIBEXTW
 #undef GDO_LIBNAMEW
 #define GDO_LIBEXTW              L"" GDO_LIBEXTA
-#define GDO_LIBNAMEW(NAME, API)  L"" GDO_LIBNAMEA(NAME,API)
+#define GDO_LIBNAMEW(NAME, API)  L"" GDO_LIBNAMEA(NAME, API)
 
 /* wide/narrow character default macros */
 #undef GDO_LIBEXT
@@ -88,4 +88,3 @@ GDO_LIBEXTW
 # define GDO_LIBEXT              GDO_LIBEXTA
 # define GDO_LIBNAME(NAME, API)  GDO_LIBNAMEA(NAME, API)
 #endif
-

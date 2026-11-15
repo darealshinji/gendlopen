@@ -66,11 +66,7 @@ static void dump(FILE *fpOut, const char *in_dir, const char *in_file, const cha
     /* write output */
     fprintf(fpOut, "/* %s */\n", in_file);
     fprintf(fpOut, "static const template_t %s[] = {\n", varName);
-
-    /* don't add line directive to license part */
-    if (strcmp("license.h", in_file) != 0) {
-        fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", false, 1 },\n", in_file);
-    }
+    fprintf(fpOut, "  { \"#line 1 \\\"<built-in>/%s\\\"\", false, 1 },\n", in_file);
 
 #define READ_NEXT() (c = fgetc(fp))
 

@@ -131,62 +131,6 @@ namespace /* anonymous */
 }
 
 
-/* create template data */
-void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
-{
-    auto concat_sources = [&] (const template_t *t_header, const template_t *t_body)
-    {
-        load_template(t::file_common_header);
-        load_template(t::file_common_body);
-
-        if (m_separate) {
-            /* common header + header, common body + body */
-            header.push_back(t::ptr_common_header);
-            header.push_back(t_header);
-            body.push_back(t::ptr_common_body);
-            body.push_back(t_body);
-        } else {
-            /* common data + header + body */
-            header.push_back(t::ptr_common_header);
-            header.push_back(t::ptr_common_body);
-            header.push_back(t_header);
-            header.push_back(t_body);
-        }
-    };
-
-    switch (m_format)
-    {
-    case output::c:
-        load_template(t::file_c_header);
-        load_template(t::file_c_body);
-        concat_sources(t::ptr_c_header, t::ptr_c_body);
-        break;
-
-    case output::cxx:
-        load_template(t::file_cxx_header);
-        load_template(t::file_cxx_body);
-        concat_sources(t::ptr_cxx_header, t::ptr_cxx_body);
-        break;
-
-    case output::plugin:
-        load_template(t::file_plugin_header);
-        load_template(t::file_plugin_body);
-        concat_sources(t::ptr_plugin_header, t::ptr_plugin_body);
-        break;
-
-    case output::minimal:
-        load_template(t::file_min_c_header);
-        header.push_back(t::ptr_min_c_header);
-        break;
-
-    case output::minimal_cxx:
-        load_template(t::file_min_cxx_header);
-        header.push_back(t::ptr_min_cxx_header);
-        break;
-    }
-}
-
-
 /* load template into memory */
 void gendlopen::load_template(templates::name file)
 {
@@ -208,6 +152,72 @@ void gendlopen::load_template(templates::name file)
 
     default:
         break;
+    }
+}
+
+
+/* create template data */
+void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
+{
+    if (m_format == output::c)
+    {
+        load_template(t::file_common_header);
+        load_template(t::file_c_header_1);
+        load_template(t::file_c_header_wrap);
+        load_template(t::file_c_header_end);
+        load_template(t::file_c_body_1);
+        load_template(t::file_c_body_2);
+        load_template(t::file_c_body_3);
+        load_template(t::file_c_body_4);
+        load_template(t::file_c_body_5);
+        load_template(t::file_c_body_6);
+        load_template(t::file_c_body_7);
+        load_template(t::file_c_body_8);
+        load_template(t::file_c_body_9);
+        load_template(t::file_c_body_wrap);
+        load_template(t::file_c_body_end);
+
+        /* header */
+        header.push_back(t::ptr_common_header);
+        header.push_back(t::ptr_c_header_1);
+        header.push_back(t::ptr_c_header_wrap);
+        header.push_back(t::ptr_c_header_end);
+
+        /* body */
+        vtemplate_t *vec = m_separate ? &body : &header;
+        vec->push_back(t::ptr_c_body_1);
+        vec->push_back(t::ptr_c_body_2);
+        vec->push_back(t::ptr_c_body_3);
+        vec->push_back(t::ptr_c_body_4);
+        vec->push_back(t::ptr_c_body_5);
+        vec->push_back(t::ptr_c_body_6);
+        vec->push_back(t::ptr_c_body_7);
+        vec->push_back(t::ptr_c_body_8);
+        vec->push_back(t::ptr_c_body_9);
+        vec->push_back(t::ptr_c_body_wrap);
+        vec->push_back(t::ptr_c_body_end);
+    }
+    else if (m_format == output::plugin) {
+        load_template(t::file_plugin_header);
+        load_template(t::file_plugin_body);
+        load_template(t::file_common_header);
+
+        header.push_back(t::ptr_common_header);
+        header.push_back(t::ptr_plugin_header);
+
+        if (m_separate) {
+            body.push_back(t::ptr_plugin_body);
+        } else {
+            header.push_back(t::ptr_plugin_body);
+        }
+    }
+    else if (m_format == output::minimal) {
+        load_template(t::file_min_c_header);
+        header.push_back(t::ptr_min_c_header);
+    }
+    else if (m_format == output::minimal_cxx) {
+        load_template(t::file_min_cxx_header);
+        header.push_back(t::ptr_min_cxx_header);
     }
 }
 

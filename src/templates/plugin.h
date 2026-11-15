@@ -73,3 +73,4 @@ GDO_DECL gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
  */
 GDO_DECL void gdo_release_plugins(gdo_plugin_t *plug);
 
+

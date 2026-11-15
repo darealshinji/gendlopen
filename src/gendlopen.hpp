@@ -82,7 +82,7 @@ private:
 
     vstring_t m_includes, m_symbol_list, m_prefix_list, m_typedefs;
     vproto_t m_prototypes, m_objects;
-    std::string m_defines;
+    std::string m_defines, m_common_prefix;
 
     std::string m_pfx = "gdo"; /* can be mixed case, used to create header name on STDOUT */
     std::string m_pfx_upper = "GDO";

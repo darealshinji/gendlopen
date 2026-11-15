@@ -16,11 +16,15 @@
 #endif
 
 #ifdef GDO_WINAPI
-# define GDO_LOAD_LIB(x)  LoadLibraryEx(x, NULL, GDO_DEFAULT_FLAGS)
-# define GDO_STRDUP       _tcsdup
+# define GDO_LOAD_LIB(HANDLE, FLAGS)   LoadLibraryEx(HANDLE, NULL, FLAGS)
+# define GDO_FREE_LIB(HANDLE)          FreeLibrary(HANDLE)
+# define GDO_LOAD_SYM(HANDLE, SYMBOL)  (void *)GetProcAddress(HANDLE, SYMBOL)
+# define GDO_STRDUP                    _tcsdup
 #else
-# define GDO_LOAD_LIB(x)  dlopen(x, GDO_DEFAULT_FLAGS)
-# define GDO_STRDUP       strdup
+# define GDO_LOAD_LIB(HANDLE, FLAGS)   dlopen(HANDLE, FLAGS)
+# define GDO_FREE_LIB(HANDLE)          dlclose(HANDLE)
+# define GDO_LOAD_SYM(HANDLE, SYMBOL)  dlsym(HANDLE, SYMBOL)
+# define GDO_STRDUP                    strdup
 #endif
 
 
@@ -46,14 +50,16 @@ GDO_LINKAGE gdo_plugin_t *gdo_load_plugins(const gdo_char_t **files, size_t num)
         plug->list[i].filename = GDO_STRDUP(files[i]);
 
         /* load plugin */
-        if ((plug->list[i].handle = GDO_LOAD_LIB(files[i])) == NULL) {
+        plug->list[i].handle = GDO_LOAD_LIB(files[i], GDO_DEFAULT_FLAGS);
+
+        if (!plug->list[i].handle) {
             continue;
         }
 @
         /* load %%symbol%% */@
         plug->list[i].ptr.%%symbol%% =@
             (%%sym_type%%)@
-                _gdo_call_dlsym(plug->list[i].handle, "%%symbol%%");
+                GDO_LOAD_SYM(plug->list[i].handle, "%%symbol%%");
     }
 
     return plug;
@@ -71,7 +77,7 @@ GDO_LINKAGE void gdo_release_plugins(gdo_plugin_t *plug)
         free(plug->list[i].filename);
 
         if (plug->list[i].handle) {
-            _gdo_call_dlclose(plug->list[i].handle);
+            GDO_FREE_LIB(plug->list[i].handle);
         }
     }
 

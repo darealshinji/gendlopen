@@ -48,32 +48,19 @@ namespace /* anonymous */
     }
 
     /* check for a "%PARAM_SKIP_*%" line */
-    bool check_skip_keyword(const char *ptr, bool &param_skip_code, param::names parameter_names)
+    bool check_skip_keyword(const std::string &line, bool &param_skip_code, param::names parameter_names)
     {
-        const char str[] = "%PARAM_SKIP_";
-        const size_t len = sizeof(str) - 1;
-
-        if (strncmp(ptr, str, len) != 0) {
+        if (line == "%PARAM_SKIP_REMOVE_BEGIN%") {
+            param_skip_code = (parameter_names == param::skip);
+        } else if (line == "%PARAM_SKIP_USE_BEGIN%") {
+            param_skip_code = (parameter_names != param::skip);
+        } else if (line == "%PARAM_SKIP_END%") {
+            param_skip_code = false;
+        } else {
             return false;
         }
 
-        ptr += len;
-
-        if (strcmp(ptr, "REMOVE_BEGIN%") == 0) {
-            /* PARAM_SKIP_REMOVE_BEGIN */
-            param_skip_code = (parameter_names == param::skip);
-            return true;
-        } else if (strcmp(ptr, "USE_BEGIN%") == 0) {
-            /* PARAM_SKIP_USE_BEGIN */
-            param_skip_code = (parameter_names != param::skip);
-            return true;
-        } else if (strcmp(ptr, "END%") == 0) {
-            /* PARAM_SKIP_END */
-            param_skip_code = false;
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /* get the length of the longest symbol */
@@ -202,8 +189,11 @@ size_t gendlopen::replace_symbol_names(const std::string &entry)
     auto replace_and_print = [&, this] (const std::string &symbol)
     {
         std::string copy = entry;
+        std::string symbol_nopfx = symbol.substr(m_common_prefix.length());
+
         utils::replace("%%sym_type%%", type, copy);
         utils::replace("%%symbol%%", symbol, copy);
+        utils::replace("%%symbol_nopfx%%", symbol_nopfx, copy);
 
         if (m_line_directive) {
             save::ofs << "#line " << m_substitute_lineno << '\n';
@@ -298,7 +288,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
 
     /* check if we have to comment out lines between
      * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-    if (line.maybe_keyword && check_skip_keyword(line.data.c_str(), param_skip_code, m_parameter_names)) {
+    if (line.maybe_keyword && check_skip_keyword(line.data, param_skip_code, m_parameter_names)) {
         if (!param_skip_code && m_line_directive) {
             /* +1 to compensate for the removed %PARAM_SKIP_* line */
             save::ofs << "#line " << (m_substitute_lineno + 1) << '\n';
@@ -382,7 +372,7 @@ size_t gendlopen::substitute(const vtemplate_t &vec)
         m_substitute_lineno = 0;
 
         /* skip initial line directive */
-        if (!m_line_directive && strncmp(list->data.c_str(), "#line", 5) == 0) {
+        if (!m_line_directive && list->data.starts_with("#line")) {
             list++;
         }
 

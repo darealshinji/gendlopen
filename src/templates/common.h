@@ -2,7 +2,6 @@
 /*                        common macros and headers                          */
 /*****************************************************************************/
 
-
 /***
 
 *** flags ***
@@ -73,7 +72,6 @@ GDO_HOOK_<function>(...)
     On other compilers these functions are implemented using preprocessor macros
     which means there will be some limitations when using hook macros.
 ***/
-
 
 #ifndef __cplusplus
 # include <stdbool.h>
@@ -220,6 +218,15 @@ GDO_EXTERN int dlinfo(void *handle, int request, void *info);
 # define LM_ID_NEWLM -1  /* new namespace */
 typedef long int Lmid_t;
 GDO_EXTERN void *dlmopen(Lmid_t lmid, const char *path, int flags);
+#endif
+
+
+/* enable parsing of /proc/self/maps */
+#if !defined(GDO_HAVE_PROC_SELF_MAPS) && \
+    (defined(GDO_HAVE_DLINFO) || \
+     defined(GDO_HAVE_DLADDR)) && \
+     defined(__linux__)
+# define GDO_HAVE_PROC_SELF_MAPS
 #endif
 
 
@@ -409,14 +416,23 @@ GDO_EXTERN void *dlmopen(Lmid_t lmid, const char *path, int flags);
 #endif
 
 
+/* set GDO_WRAP_FUNCTIONS too if GDO_ENABLE_AUTOLOAD was set */
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_WRAP_FUNCTIONS)
+# define GDO_WRAP_FUNCTIONS
+#endif
+
+
 /* whether wrapped functions can be used */
 %PARAM_SKIP_REMOVE_BEGIN%
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
 # error Auto-loading functions require "GDO_DEFAULT_LIB" to be set
 #endif
 %PARAM_SKIP_USE_BEGIN%
-#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
+#ifdef GDO_WRAP_FUNCTIONS
 # error Auto-loading and wrapped functions cannot be used because "-param=skip" was set
 #endif
 %PARAM_SKIP_END%
+
+
+
 

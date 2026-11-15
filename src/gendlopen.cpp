@@ -68,7 +68,7 @@ void gendlopen::add_def(const std::string &def)
 
     if (utils::find(def, '=', pos)) {
         name = def.substr(0, pos);
-        value = ' ' + def.substr(pos + 1);
+        value = def.substr(pos + 1);
     } else {
         name = def;
     }
@@ -77,7 +77,7 @@ void gendlopen::add_def(const std::string &def)
 
     if (!name.empty()) {
         m_defines += "#ifndef "  + name + '\n';
-        m_defines += "# define " + name + value + '\n';
+        m_defines += "# define " + name + "  " + value + '\n';
         m_defines += "#endif\n";
     }
 }
@@ -90,8 +90,6 @@ void gendlopen::format(const char *str)
 
     if (s == "c") {
         format(output::c);
-    } else if (s == "cxx" || s == "c++" || s == "cpp") {
-        format(output::cxx);
     } else if (s == "minimal" || s == "minimal-c") {
         format(output::minimal);
     } else if (s == "minimal-cxx" || s == "minimal-c++" || s == "minimal-cpp") {

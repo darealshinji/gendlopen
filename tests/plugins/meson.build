@@ -18,5 +18,5 @@ e = executable('load_plugins', 'load_plugins.cpp', gen_hdr,
     build_rpath : test_rpath,
     install : false)
 
-test('C load plugins (C++ source file)', e)
+test('C++ source file with C plugin header', e)
 

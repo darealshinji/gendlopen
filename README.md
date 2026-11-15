@@ -2,11 +2,11 @@
 
 Gendlopen is a small tool intended to help with the creation of code that
 dynamically loads shared libraries. It takes text files with C prototype
-declarations as input and creates C or C++ header files as output.
+declarations as input and creates C header files as output.
 It's designed to add dynamic loading support to existing code with minimal effort.
 
 Features:
- * can generate code for C and C++
+ * can generate different types of output
  * win32 API `LoadLibraryEx()` and POSIX `dlopen()`
  * wide and narrow characters on win32 API
  * option to automatically load library and symbols
@@ -290,15 +290,14 @@ it to STDOUT: `gendlopen input.txt`
 To save it into a file use `-out`: `gendlopen input.txt -out=output.h`
 
 A couple of different output "formats" are supported right now:
-* `-format=C`: C header file with many features (this is the default)
-* `-format=C++`: C++ header file with many features (no exception handling)
+* `-format=C`: C header file with many features (default)
 * `-format=plugin`: C header intended to help writing a plugin loader
 * `-format=minimal`: small C header
 * `-format=minimal-C++`: small C++ header with exception handling
 
 Furthermore you can save the output into separate body and header files
 using the option `-separate`.
-The filename extensions will be set to .c/.h or .cpp/.hpp accordingly.
+The filename extensions will be set to .c/.h accordingly.
 This is ignored however for "minimal-C" and "minimal-C++".
 
 You can force to overwrite an existing output file with `-force`.
@@ -327,21 +326,6 @@ bool gdo_load_lib_name(const gdo_char_t *filename);
 bool gdo_load_all_symbols();
 bool gdo_free_lib();
 const gdo_char_t *gdo_last_error();
-```
-
-``` C++
-//-format=C++
-// class dl within namespace gdo
-gdo::dl(); // empty c'tor
-bool gdo::dl::load(const std::string &filename, int flags=default_flags, bool new_namespace=false);
-bool gdo::dl::load_all_symbols();
-bool gdo::dl::free(bool force=false); // called by d'tor
-std::string gdo::dl::error();
-
-#ifdef GDO_WINAPI
-bool gdo::dl::load(const std::wstring &filename, int flags=default_flags, bool new_namespace=false);
-std::wstring gdo::dl::error_w();
-#endif
 ```
 
 ``` C
@@ -379,17 +363,6 @@ if (gdo_load_lib_name("mylib.so") && gdo_load_all_symbols()) {
 }
 
 gdo_free_lib(); // always safe to call
-```
-
-``` C++
-//-format=C++
-gdo::dl mydl();
-
-if (mydl.load("mylib.so") && mydl.load_all_symbols()) {
-    // run optional code
-} else {
-    std::cerr << mydl.error() << std::endl;
-}
 ```
 
 ``` C
