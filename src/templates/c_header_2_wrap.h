@@ -4,7 +4,8 @@
 %PARAM_SKIP_REMOVE_BEGIN%
 #ifdef GDO_WRAP_FUNCTIONS
 
-/* we need an actual function for the VA_ARGS macro */
+/* we need an actual function for the VA_ARGS macro
+ * and declare it "extern" to prevent linking issues */
 GDO_EXTERN void _gdo_noop(void);
 
 

@@ -54,115 +54,80 @@ namespace /* anonymous */
     /* tokenize stream into prototype tokens and options */
     int tokenize_stream(std::vector<vstring_t> &vec, vstring_t *options)
     {
-        int rv = LEX_ERROR;
         vstring_t tokens;
-        bool loop = true;
         bool block = false;
         int curly_count = 0;
+        int rv;
 
-        while (loop)
-        {
-            rv = lex::lex();
-
-            if (block)
+        while ((rv = lex::lex()) > 0) {
+            switch (rv)
             {
-                /* struct, union, enum or typedef block */
-                switch (rv)
-                {
-                case LEX_STRUCT:
-                case LEX_UNION:
-                case LEX_ENUM:
-                case LEX_TYPEDEF:
-                case LEX_ID:
-                case LEX_OTHER:
-                case LEX_EQUAL:
-                    /* ignore */
-                    break;
-
-                case LEX_CURLY_OPEN:
-                    ++curly_count;
-                    break;
-
-                case LEX_CURLY_CLOSE:
-                    --curly_count;
-                    break;
-
-                /* end of block? */
-                case LEX_SEMICOLON:
-                    if (curly_count < 1) {
-                        block = false;
-                        tokens.clear();
-                    }
-                    break;
-
-                /* "%option" line */
-                case LEX_OPTION:
-                    if (options) {
-                        options->push_back(lex::text());
-                    }
-                    break;
-
-                default:
-                    /* EOF, error, etc. */
-                    loop = false;
-                    break;
-                }
-            }
-            else
-            {
-                switch (rv)
-                {
-                /* identifier, other tokens */
-                case LEX_ID:
-                case LEX_OTHER:
+            case LEX_ID:
+            case LEX_OTHER:
+                if (!block) {
                     tokens.push_back(lex::text());
-                    break;
+                }
+                break;
 
-                /* struct, union, enum or typedef */
-                case LEX_STRUCT:
-                case LEX_UNION:
-                case LEX_ENUM:
-                case LEX_TYPEDEF:
+            case LEX_STRUCT:
+            case LEX_UNION:
+            case LEX_ENUM:
+            case LEX_TYPEDEF:
+                if (!block) {
                     if (tokens.empty()) {
                         block = true;
                         curly_count = 0;
                     } else {
-                        /* part of function parameter, etc. */
+                        /* i.e. part of function parameter */
                         tokens.push_back(lex::text());
                     }
-                    break;
+                }
+                break;
 
-                /* {}= */
-                case LEX_CURLY_OPEN:
-                case LEX_CURLY_CLOSE:
-                case LEX_EQUAL:
-                    lex::set_illegal_char();
-                    rv = LEX_ERROR;
-                    loop = false;
-                    break;
-
-                /* end of prototype declaration */
-                case LEX_SEMICOLON:
-                    if (!tokens.empty()) {
-                        vec.push_back(tokens);
-                        tokens.clear();
-                    }
-                    break;
-
-                /* "%option" line */
-                case LEX_OPTION:
-                    if (options) {
-                        options->push_back(lex::text());
-                    }
-                    break;
-
-                default:
-                    /* EOF, error, etc. */
-                    loop = false;
+            case '{':
+                if (block) {
+                    curly_count++;
                     break;
                 }
+                [[fallthrough]];
+
+            case '}':
+                if (block) {
+                    curly_count--;
+                    break;
+                }
+                [[fallthrough]];
+
+            case '=':
+                if (!block) {
+                    lex::set_illegal_char();
+                    return LEX_ERROR;
+                }
+                break;
+
+            /* end of block or prototype? */
+            case ';':
+                if (block && curly_count < 1) {
+                    block = false;
+                    tokens.clear();
+                } else if (!block && !tokens.empty()) {
+                    vec.push_back(tokens);
+                    tokens.clear();
+                }
+                break;
+
+            /* "%option" line */
+            case LEX_OPTION:
+                if (options) {
+                    options->push_back(lex::text());
+                }
+                break;
+
+            /* Clang AST */
+            default:
+                return rv;
             }
-        } /* end of loop body */
+        }
 
         /* push back if last prototype didn't end on semicolon */
         if (!tokens.empty()) {
@@ -238,9 +203,9 @@ namespace /* anonymous */
 
 
     /* inner loop */
-    bool erase_Rparen(ventry_t &v,
-                      ventry_t::iterator &inner_Lparen,
-                      ventry_t::iterator &outer_Lparen)
+    bool erase_double_paren(ventry_t &v,
+                            ventry_t::iterator &inner_Lparen,
+                            ventry_t::iterator &outer_Lparen)
     {
         for (auto it = inner_Lparen + 1; it != v.end(); it++) {
             /* check for two consecutive closing parentheses */
@@ -276,7 +241,7 @@ namespace /* anonymous */
                 auto outer_Lparen = it;     /* -->(( */
                 auto inner_Lparen = it + 1; /*    ((<-- */
 
-                if (erase_Rparen(v, inner_Lparen, outer_Lparen)) {
+                if (erase_double_paren(v, inner_Lparen, outer_Lparen)) {
                     /* don't increment iterator */
                     continue;
                 }

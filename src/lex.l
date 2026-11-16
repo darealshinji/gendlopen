@@ -1,45 +1,15 @@
-%{
-
-/**
- Licensed under the MIT License <http://opensource.org/licenses/MIT>.
- SPDX-License-Identifier: MIT
- Copyright (c) 2024-2026 Carsten Janssen
-
- Permission is hereby  granted, free of charge, to any  person obtaining a copy
- of this software and associated  documentation files (the "Software"), to deal
- in the Software  without restriction, including without  limitation the rights
- to  use, copy,  modify, merge,  publish, distribute,  sublicense, and/or  sell
- copies  of  the Software,  and  to  permit persons  to  whom  the Software  is
- furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
-
- THE SOFTWARE  IS PROVIDED "AS  IS", WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
- IMPLIED,  INCLUDING BUT  NOT  LIMITED TO  THE  WARRANTIES OF  MERCHANTABILITY,
- FITNESS FOR  A PARTICULAR PURPOSE AND  NONINFRINGEMENT. IN NO EVENT  SHALL THE
- AUTHORS  OR COPYRIGHT  HOLDERS  BE  LIABLE FOR  ANY  CLAIM,  DAMAGES OR  OTHER
- LIABILITY, WHETHER IN AN ACTION OF  CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
-**/
-
+%top{
 #include <ctype.h>
 #include "lex.h"
+}
 
-#ifdef _MSC_VER
-# define SNPRINTF(STR, LEN, FMT, ...)  _snprintf_s(STR, LEN, _TRUNCATE, FMT, __VA_ARGS__)
-#else
-# define SNPRINTF(STR, LEN, FMT, ...)  snprintf(STR, LEN, FMT, __VA_ARGS__)
-#endif
-
-static char errbuf[128] = {0};
-const char *lex_errmsg = errbuf;
-
+%{
+/* forward declarations */
 static int handle_ast_begin();
 void set_illegal_char();
-
 %}
+
+/* definitions */
 
 bom                 "\xEF\xBB\xBF"
 col                 [\x1B][\[][0-9;]*[m]
@@ -47,14 +17,10 @@ split               "\\"[[:space:]]*?"\n"
 ast_begin           ^({bom})?({col})?"TranslationUnitDecl"({col})?({col})?" 0x".*
 funcvar             ^({col})?[|`]"-"({col})?({col})?("Function"|"Var")"Decl"({col})?({col})?" 0x".*
 parmvar             ^({col})?[| ]" "[|`]"-"({col})?({col})?"ParmVarDecl"({col})?({col})?" 0x".*
-
 option              ^({bom})?"%option"[[:space:]]
 optstr              [^[:space:]]+
-
 preproc             ^({bom})?[[:space:]]*?"#"
-
 identifier          [a-zA-Z0-9_]+
-other               [*,()\[\]]
 
 %option noinput nounput noyywrap yylineno nounistd never-interactive
 
@@ -65,6 +31,7 @@ other               [*,()\[\]]
 %x PRE
 %x PRE_COMMENT
 
+/* rules */
 %%
 
 {ast_begin}                 { return handle_ast_begin(); }
@@ -116,17 +83,27 @@ other               [*,()\[\]]
 "typedef"                   { return LEX_TYPEDEF; }
 
 {identifier}                { return LEX_ID; }
-{other}                     { return LEX_OTHER; }
+[*,()\[\]]                  { return LEX_OTHER; }
 "..."                       { return LEX_OTHER; }
 
-"{"                         { return LEX_CURLY_OPEN; }
-"}"                         { return LEX_CURLY_CLOSE; }
-"="                         { return LEX_EQUAL; }
-";"                         { return LEX_SEMICOLON; }
+"{"                         { return '{'; }
+"}"                         { return '}'; }
+"="                         { return '='; }
+";"                         { return ';'; }
 
 .                           { set_illegal_char(); return LEX_ERROR; }
 
 %%
+
+/* user code */
+
+#ifdef _MSC_VER
+# define SNPRINTF(STR, LEN, FMT, ...)  _snprintf_s(STR, LEN, _TRUNCATE, FMT, __VA_ARGS__)
+#else
+# define SNPRINTF(STR, LEN, FMT, ...)  snprintf(STR, LEN, FMT, __VA_ARGS__)
+#endif
+
+static char errbuf[128] = {0};
 
 /* handle begin of Clang AST */
 static int handle_ast_begin()
@@ -142,13 +119,18 @@ static int handle_ast_begin()
     return LEX_ERROR;
 }
 
+/* return error message */
+const char *lex_errmsg() {
+    return *errbuf ? errbuf : NULL;
+}
+
 /* save error message */
 void set_illegal_char()
 {
-    const char *fmt = "illegal character [%c] at line %d";
     unsigned char c = (unsigned char)*yytext;
+    const char *fmt = "illegal character [%c] at line %d";
 
-    if (!isgraph((int)*yytext)) {
+    if (!isgraph((int)c)) {
         fmt = "illegal character [0x%02X] at line %d";
     }
 
