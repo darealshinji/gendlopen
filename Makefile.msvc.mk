@@ -44,5 +44,5 @@ $(OUT)\templates_data.cpp: $(OUT)\gen_templates_data.exe
 	$(OUT)\gen_templates_data.exe $(SRC)\templates $@
 
 $(OUT)\gen_templates_data.exe: $(OUT)\.gitignore
-	cd $(OUT)\ && $(CC) /nologo /Fe:gen_templates_data.exe ..\$(SRC)\gen_templates_data.c
+	cd $(OUT)\ && $(CC) /nologo /Fe:gen_templates_data.exe ..\$(SRC)\gen_templates_data.cpp
 

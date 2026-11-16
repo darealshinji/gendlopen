@@ -85,6 +85,19 @@ void open_file::close()
     m_fp = stdin;
 }
 
+bool open_file::getc(char &c)
+{
+    int val;
+
+    if (!m_fp || (val = ::fgetc(m_fp)) == EOF) {
+        return false;
+    }
+
+    c = static_cast<char>(val);
+
+    return true;
+}
+
 FILE *open_file::file_pointer() const
 {
     return m_fp;

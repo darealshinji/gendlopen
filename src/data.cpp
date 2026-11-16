@@ -38,8 +38,8 @@
 namespace templates
 {
 #define TEMPLATE(FILE, VAR) \
-    std::vector<template_t> data_##VAR; \
-    extern const template_t *ptr_##VAR;
+    extern const char *VAR; \
+    [[maybe_unused]] const char *filename_##VAR = #FILE;
 
 #include "list.h"
 #undef TEMPLATE
@@ -52,15 +52,8 @@ namespace t = templates;
 namespace /* anonymous */
 {
     /* find template and load it into memory */
-    void load_from_file(std::vector<template_t> &data, const std::string &dir, const char *filename, bool line_directive)
+    void load_from_file(std::string &data, const std::string &dir, const char *filename, bool line_directive)
     {
-        bool rv = true;
-
-        /* don't add line directive to license part */
-        if (strcmp(filename, "license.h") == 0) {
-            line_directive = false;
-        }
-
         /* lookup path */
         auto path = utils::make_fs_path(dir, filename);
 
@@ -71,35 +64,25 @@ namespace /* anonymous */
             throw gendlopen::error("failed to open file for reading: " + path.string());
         }
 
-        FILE *fp = ofs.file_pointer();
-
-        template_t entry;
-        entry.maybe_keyword = false;
-        entry.line_count = 1;
-
         /* add initial #line directive */
         if (line_directive) {
-            if (fp == stdin) {
-                entry.data = "#line 1 \"<STDIN>\"";
+            if (ofs.file_pointer() == stdin) {
+                data += "#line 1 \"<STDIN>\"";
             } else {
-                entry.data = "#line 1 \"" + std::string(filename) + "\"\n";
+                data += "#line 1 \"" + std::string(filename) + "\"\n";
             }
-
-            data.push_back(entry);
         }
 
         /* read lines */
-        while (rv) {
-            rv = utils::get_lines(fp, entry);
-            data.push_back(entry);
-        }
+        char c;
 
-        entry = { {}, 0, 0 };
-        data.push_back(entry);
+        while (ofs.getc(c)) {
+            data += c;
+        }
     }
 
     /* save template data to file */
-    void save_to_file(const std::string &dir, const char *filename, const template_t *list)
+    void save_to_file(const std::string &dir, const char *filename, const char *data)
     {
         cio::ofstream ofs;
 
@@ -109,115 +92,83 @@ namespace /* anonymous */
             throw gendlopen::error("failed to open file for writing: " + path.string());
         }
 
-        std::cout << "saving " << path << std::endl;
+        ofs << data;
 
-        for ( ; list->line_count != 0; list++) {
-            if (list->line_count == 1) {
-                ofs << list->data << '\n';
-            } else {
-                /* we need to append `@' symbols to multiline data */
-                for (const char &c : list->data) {
-                    if (c == '\n') {
-                        ofs << "@\n";
-                    } else {
-                        ofs << c;
-                    }
-                }
-
-                ofs << '\n';
-            }
-        }
+        std::cout << "file saved: " << path << std::endl;
     }
 }
 
 
-/* load template into memory */
-void gendlopen::load_template(templates::name file)
+/* load template data into memory */
+void gendlopen::load_template(const char *ptr, std::string &buffer)
 {
     if (m_templates_path.empty()) {
-        /* nothing to load */
+        buffer += ptr;
         return;
     }
 
-    switch (file)
-    {
 #define TEMPLATE(FILE, VAR) \
-    case templates::file_##VAR: \
-        load_from_file(templates::data_##VAR, m_templates_path, #FILE, m_line_directive); \
-        templates::ptr_##VAR = templates::data_##VAR.data(); \
-        break;
-
+    if (ptr == t::VAR) {\
+        load_from_file(buffer, m_templates_path, #FILE, m_line_directive); \
+        return; \
+    }
 #include "list.h"
 #undef TEMPLATE
 
-    default:
-        break;
-    }
+    throw error("gendlopen::load_template() failed to load data");
 }
 
 
 /* create template data */
-void gendlopen::create_template_lists(vtemplate_t &header, vtemplate_t &body)
+void gendlopen::create_template_lists(std::string &header, std::string &body)
 {
-    if (m_format == output::c)
+    auto add_msg = [] (std::string &buf, const char *filename) {
+        buf += "/* template file \"<built-in>/";
+        buf += filename;
+        buf += "\" was skipped */\n\n";
+    };
+
+    switch (m_format)
     {
-        load_template(t::file_common_header);
-        load_template(t::file_c_header_1);
-        load_template(t::file_c_header_wrap);
-        load_template(t::file_c_header_end);
-        load_template(t::file_c_body_1);
-        load_template(t::file_c_body_2);
-        load_template(t::file_c_body_3);
-        load_template(t::file_c_body_4);
-        load_template(t::file_c_body_5);
-        load_template(t::file_c_body_6);
-        load_template(t::file_c_body_7);
-        load_template(t::file_c_body_8);
-        load_template(t::file_c_body_9);
-        load_template(t::file_c_body_wrap);
-        load_template(t::file_c_body_end);
+    case output::c:
+        load_template(t::common_header, header);
+        load_template(t::c_header_1, header);
 
-        /* header */
-        header.push_back(t::ptr_common_header);
-        header.push_back(t::ptr_c_header_1);
-        header.push_back(t::ptr_c_header_wrap);
-        header.push_back(t::ptr_c_header_end);
+        load_template(t::c_body_1, body);
+        load_template(t::c_body_2, body);
+        load_template(t::c_body_3, body);
+        load_template(t::c_body_4, body);
+        load_template(t::c_body_5, body);
+        load_template(t::c_body_6, body);
+        load_template(t::c_body_7, body);
+        load_template(t::c_body_8, body);
+        load_template(t::c_body_9, body);
 
-        /* body */
-        vtemplate_t *vec = m_separate ? &body : &header;
-        vec->push_back(t::ptr_c_body_1);
-        vec->push_back(t::ptr_c_body_2);
-        vec->push_back(t::ptr_c_body_3);
-        vec->push_back(t::ptr_c_body_4);
-        vec->push_back(t::ptr_c_body_5);
-        vec->push_back(t::ptr_c_body_6);
-        vec->push_back(t::ptr_c_body_7);
-        vec->push_back(t::ptr_c_body_8);
-        vec->push_back(t::ptr_c_body_9);
-        vec->push_back(t::ptr_c_body_wrap);
-        vec->push_back(t::ptr_c_body_end);
-    }
-    else if (m_format == output::plugin) {
-        load_template(t::file_plugin_header);
-        load_template(t::file_plugin_body);
-        load_template(t::file_common_header);
-
-        header.push_back(t::ptr_common_header);
-        header.push_back(t::ptr_plugin_header);
-
-        if (m_separate) {
-            body.push_back(t::ptr_plugin_body);
+        if (m_parameter_names == param::skip) {
+            add_msg(header, t::filename_c_header_wrap);
+            add_msg(body, t::filename_c_body_wrap);
         } else {
-            header.push_back(t::ptr_plugin_body);
+            load_template(t::c_header_wrap, header);
+            load_template(t::c_body_wrap, body);
         }
-    }
-    else if (m_format == output::minimal) {
-        load_template(t::file_min_c_header);
-        header.push_back(t::ptr_min_c_header);
-    }
-    else if (m_format == output::minimal_cxx) {
-        load_template(t::file_min_cxx_header);
-        header.push_back(t::ptr_min_cxx_header);
+
+        load_template(t::c_header_end, header);
+        load_template(t::c_body_end, body);
+        break;
+
+    case output::plugin:
+        load_template(t::common_header, header);
+        load_template(t::plugin_header, header);
+        load_template(t::plugin_body, body);
+        break;
+
+    case output::minimal:
+        load_template(t::min_c_header, header);
+        break;
+
+    case output::minimal_cxx:
+        load_template(t::min_cxx_header, header);
+        break;
     }
 }
 
@@ -229,7 +180,7 @@ void gendlopen::dump_templates()
         throw error("failed to create directory: " + m_dump_path);
     }
 
-#define TEMPLATE(FILE, VAR) save_to_file(m_dump_path, #FILE, templates::ptr_##VAR);
+#define TEMPLATE(FILE, VAR) save_to_file(m_dump_path, #FILE, templates::VAR);
 #include "list.h"
 #undef TEMPLATE
 }

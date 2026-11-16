@@ -111,18 +111,18 @@ private:
     void parse_options(const vstring_t &options);
 
     /* data.cpp */
-    void load_template(templates::name file);
-    void create_template_lists(vtemplate_t &header, vtemplate_t &body);
+    void load_template(const char *ptr, std::string &buffer);
+    void create_template_lists(std::string &header, std::string &body);
 
     /* generate.cpp */
-    size_t save_data(templates::name file, const template_t *list);
+    size_t save_data(const char *ptr);
 
     /* substitute.cpp */
     size_t replace_function_prototypes(const std::string &entry);
     size_t replace_object_prototypes(const std::string &entry);
     size_t replace_symbol_names(const std::string &entry);
-    size_t substitute_line(const template_t &line, bool &skip_code);
-    size_t substitute(const vtemplate_t &data);
+    size_t substitute_line(const std::string &line, bool &skip_code);
+    size_t substitute(std::string &data);
 
 public:
 

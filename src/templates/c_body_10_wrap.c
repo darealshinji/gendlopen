@@ -1,9 +1,7 @@
 /*****************************************************************************/
 /*                     helper used by wrapper functions                      */
 /*****************************************************************************/
-%PARAM_SKIP_REMOVE_BEGIN%
-#if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
-
+#ifdef GDO_WRAP_FUNCTIONS
 
 void _gdo_noop(void)
 {}
@@ -119,8 +117,7 @@ GDO_LINKAGE void _gdo_wrap_check_loaded(void *symptr, int load, const gdo_char_t
 #endif //!GDO_ENABLE_AUTOLOAD
 }
 
-#endif // GDO_WRAP_FUNCTIONS || GDO_ENABLE_AUTOLOAD
-%PARAM_SKIP_END%
+#endif // GDO_WRAP_FUNCTIONS
 /*****************************************************************************/
 
 

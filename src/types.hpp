@@ -59,15 +59,8 @@ typedef struct _proto {
 } proto_t;
 
 
-typedef struct _template {
-    std::string data;
-    bool maybe_keyword;
-    size_t line_count;
-} template_t;
-
 
 using vproto_t = std::vector<proto_t>;
-using vtemplate_t = std::vector<const template_t *>;
 
 
 /* enum for outout format */
@@ -75,7 +68,6 @@ namespace output
 {
     typedef enum {
         c,
-        cxx,
         plugin,
         minimal,
         minimal_cxx
@@ -104,18 +96,4 @@ namespace filter
         pfx_list = prefix | list, /* look for prefixed and/or whitelisted symbols */
     } mode;
 };
-
-
-/* enum for template files */
-namespace templates
-{
-#define TEMPLATE(FILE, VAR) \
-    file_##VAR,
-
-    typedef enum {
-#include "list.h"
-    } name;
-
-#undef TEMPLATE
-}
 

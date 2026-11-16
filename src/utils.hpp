@@ -94,7 +94,7 @@ inline int strncasecmp(const char *a, const char *b, size_t n)
 template<typename T>
 bool find(const std::string &haystack, const T &needle, size_t &pos)
 {
-    return ((pos = haystack.find(needle)) != std::string::npos);
+    return ((pos = haystack.find(needle /*, pos*/)) != std::string::npos);
 }
 
 template<typename T>
@@ -139,11 +139,6 @@ inline void replace(const std::string &from, const std::string &to, std::string 
 
 /* count '\n' characters */
 size_t count_linefeed(const std::string &str);
-
-
-/* read input lines */
-bool get_lines(FILE *fp, template_t &entry);
-
 
 
 /* get program name without full path */

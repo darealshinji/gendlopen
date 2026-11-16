@@ -90,7 +90,7 @@ std::string strip_line(const char *line)
 bool get_parameters(std::string &args, std::string &param_names, int &param_count)
 {
     std::smatch m;
-    size_t pos;
+    size_t pos = 0;
 
     const std::regex reg(
         "^[| ] [|`]-ParmVarDecl 0x.*?"
@@ -197,7 +197,7 @@ int gendlopen::get_declarations(filter::mode mode)
 
     if (is_function) {
         /* function declaration */
-        size_t pos;
+        size_t pos = 0;
         int rv, param_count = 1;
 
         if (!utils::find(m.str(2), '(', pos)) {

@@ -26,48 +26,6 @@
 #include "utils.hpp"
 
 
-namespace /* anonymous */
-{
-
-/* returns false on \n or EOF */
-bool save_to_line(int c, template_t &entry)
-{
-    switch (c)
-    {
-    case '\n':
-        /* concatenate lines ending on '@' */
-        if (entry.data.ends_with('@')) {
-            entry.data.back() = '\n';
-            entry.line_count++;
-            break;
-        } else if (entry.data.ends_with("@\r")) {
-            /* Windows line ending */
-            entry.data.replace(entry.data.size() - 2, 2, "\r\n");
-            entry.line_count++;
-            break;
-        }
-        return false;
-
-    case EOF:
-        /* remove trailing '@' */
-        utils::delete_suffix(entry.data, '@');
-        return false;
-
-    case '%':
-        entry.maybe_keyword = true;
-        [[fallthrough]];
-
-    default:
-        entry.data.push_back(static_cast<char>(c));
-        break;
-    }
-
-    return true;
-}
-
-}
-
-
 /* convert string to uppercase */
 std::string utils::to_upper(const std::string &str, bool underscores)
 {
@@ -153,26 +111,5 @@ size_t utils::count_linefeed(const std::string &str)
     }
 
     return n;
-}
-
-/* read input lines */
-bool utils::get_lines(FILE *fp, template_t &entry)
-{
-    int c = EOF;
-
-    /* initialize data */
-    entry.data.clear();
-    entry.maybe_keyword = false;
-    entry.line_count = 1;
-
-    while (true) {
-        c = ::fgetc(fp);
-
-        if (!save_to_line(c, entry)) {
-            break;
-        }
-    }
-
-    return (c != EOF);
 }
 

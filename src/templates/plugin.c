@@ -18,7 +18,7 @@
 #ifdef GDO_WINAPI
 # define GDO_LOAD_LIB(HANDLE, FLAGS)   LoadLibraryEx(HANDLE, NULL, FLAGS)
 # define GDO_FREE_LIB(HANDLE)          FreeLibrary(HANDLE)
-# define GDO_LOAD_SYM(HANDLE, SYMBOL)  (void *)GetProcAddress(HANDLE, SYMBOL)
+# define GDO_LOAD_SYM(HANDLE, SYMBOL)  ((void *)GetProcAddress(HANDLE, SYMBOL))
 # define GDO_STRDUP                    _tcsdup
 #else
 # define GDO_LOAD_LIB(HANDLE, FLAGS)   dlopen(HANDLE, FLAGS)

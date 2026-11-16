@@ -45,8 +45,8 @@ $(OBJS): $(OUT)/.gitignore
 $(OUT)/templates_data.cpp: $(OUT)/gen_templates_data
 	$(OUT)/gen_templates_data $(SRC)/templates $@
 
-$(OUT)/gen_templates_data: $(OUT)/.gitignore $(SRC)/gen_templates_data.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $(SRC)/gen_templates_data.c $(LDFLAGS)
+$(OUT)/gen_templates_data: $(OUT)/.gitignore $(SRC)/gen_templates_data.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $(SRC)/gen_templates_data.cpp $(LDFLAGS)
 
 $(OUT)/cio_ofstream.o: $(SRC)/cio_ofstream.cpp
 	$(COMPILE_CXX) $@ $(SRC)/cio_ofstream.cpp

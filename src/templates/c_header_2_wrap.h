@@ -1,8 +1,11 @@
 /*****************************************************************************/
 /*                                wrap code                                  */
 /*****************************************************************************/
-%PARAM_SKIP_REMOVE_BEGIN%
 #ifdef GDO_WRAP_FUNCTIONS
+
+#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
+# error Auto-loading functions require "GDO_DEFAULT_LIB" to be set
+#endif
 
 /* we need an actual function for the VA_ARGS macro
  * and declare it "extern" to prevent linking issues */
@@ -88,7 +91,6 @@ GDO_DECL void _gdo_wrap_check_loaded(void *symptr, int load, const gdo_char_t *s
 #undef GDO_XPARAM
 
 #endif //GDO_WRAP_FUNCTIONS
-%PARAM_SKIP_END%
 /***************************** end of wrap code ******************************/
 
 

@@ -54,6 +54,8 @@ public:
     bool is_open() const;
     void close();
 
+    bool getc(char &c);
+
     /* return raw FILE pointer */
     FILE *file_pointer() const;
 };

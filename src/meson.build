@@ -22,7 +22,7 @@ gendlopen_deps = gendlopen_src
 # templates_data.cpp
 gen_templates_data = executable(
     'gen_templates_data',
-    'gen_templates_data.c',
+    'gen_templates_data.cpp',
     win_subsystem : 'console',
     install : false,
     native : true

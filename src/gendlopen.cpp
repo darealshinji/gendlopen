@@ -64,7 +64,7 @@ void gendlopen::add_inc(const std::string &inc)
 void gendlopen::add_def(const std::string &def)
 {
     std::string name, value, out;
-    size_t pos;
+    size_t pos = 0;
 
     if (utils::find(def, '=', pos)) {
         name = def.substr(0, pos);
@@ -165,10 +165,6 @@ std::string gendlopen::replace_prefixes(const std::string &input)
 /* read and process custom template */
 void gendlopen::process_custom_template()
 {
-    template_t entry;
-    bool param_skip_code = false;
-    bool rv = true;
-
     /* open file for reading */
     open_file file(m_custom_template);
 
@@ -178,11 +174,10 @@ void gendlopen::process_custom_template()
 
     /* create output file */
     save::open_ofstream(m_output, m_force);
-    FILE *fp = file.file_pointer();
 
     /* write initial #line directive */
     if (m_line_directive) {
-        if (fp == stdin) {
+        if (file.file_pointer() == stdin) {
             save::ofs << "#line 1 \"<STDIN>\"\n";
         } else {
             save::ofs << "#line 1 \"" << m_custom_template << "\"\n";
@@ -192,12 +187,15 @@ void gendlopen::process_custom_template()
         m_substitute_lineno = 1;
     }
 
-    /* parse lines */
-    while (rv) {
-        rv = utils::get_lines(fp, entry);
-        substitute_line(entry, param_skip_code);
-        m_substitute_lineno += entry.line_count;
+    /* parse data */
+    char c;
+    std::string data;
+
+    while (file.getc(c)) {
+        data += c;
     }
+
+    substitute(data);
 }
 
 

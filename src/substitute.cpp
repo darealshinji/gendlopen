@@ -47,22 +47,6 @@ namespace /* anonymous */
         std::string cxx_namespace;
     }
 
-    /* check for a "%PARAM_SKIP_*%" line */
-    bool check_skip_keyword(const std::string &line, bool &param_skip_code, param::names parameter_names)
-    {
-        if (line == "%PARAM_SKIP_REMOVE_BEGIN%") {
-            param_skip_code = (parameter_names == param::skip);
-        } else if (line == "%PARAM_SKIP_USE_BEGIN%") {
-            param_skip_code = (parameter_names != param::skip);
-        } else if (line == "%PARAM_SKIP_END%") {
-            param_skip_code = false;
-        } else {
-            return false;
-        }
-
-        return true;
-    }
-
     /* get the length of the longest symbol */
     size_t get_longest_symbol_size(const vproto_t &v)
     {
@@ -132,8 +116,8 @@ size_t gendlopen::replace_function_prototypes(const std::string &entry)
             line_count++;
         }
 
-        save::ofs << copy << '\n';
-        line_count += entry_lines + 1;
+        save::ofs << copy;
+        line_count += entry_lines;
     }
 
     return line_count;
@@ -172,8 +156,8 @@ size_t gendlopen::replace_object_prototypes(const std::string &entry)
             line_count++;
         }
 
-        save::ofs << copy << '\n';
-        line_count += entry_lines + 1;
+        save::ofs << copy;
+        line_count += entry_lines;
     }
 
     return line_count;
@@ -200,8 +184,8 @@ size_t gendlopen::replace_symbol_names(const std::string &entry)
             line_count++;
         }
 
-        save::ofs << copy << '\n';
-        line_count += entry_lines + 1;
+        save::ofs << copy;
+        line_count += entry_lines;
     };
 
     /* function pointer */
@@ -232,7 +216,7 @@ size_t gendlopen::replace_symbol_names(const std::string &entry)
 }
 
 /* substitute placeholders in a single line/entry */
-size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
+size_t gendlopen::substitute_line(const std::string &line, bool &param_skip_code)
 {
     const list_t function_keywords = {
         "%%return%%",
@@ -268,7 +252,7 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return entry_lines;
     };
 
-    auto find_keyword = [&buf] (const list_t &list) -> char {
+    auto find_keyword = [] (std::string &buf, const list_t &list) -> uint8_t {
         for (const auto &e : list) {
             if (utils::find(buf, e)) {
                 return 1;
@@ -277,45 +261,20 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
         return 0;
     };
 
-    /* empty line */
-    if (line.data.empty()) {
-        if (!param_skip_code) {
-            save::ofs << '\n';
-            return 1; /* 1 line */
-        }
-        return 0; /* no line */
-    }
-
-    /* check if we have to comment out lines between
-     * "%PARAM_SKIP_*_BEGIN%" and "%PARAM_SKIP_END%" */
-    if (line.maybe_keyword && check_skip_keyword(line.data, param_skip_code, m_parameter_names)) {
-        if (!param_skip_code && m_line_directive) {
-            /* +1 to compensate for the removed %PARAM_SKIP_* line */
-            save::ofs << "#line " << (m_substitute_lineno + 1) << '\n';
-            return 1; /* 1 line */
-        }
-        return 0; /* no line */
-    }
-
-    /* skip line */
-    if (param_skip_code) {
-        return 0;
-    }
-
     /* replace prefixes */
     if (m_pfx_upper == "GDO") {
-        buf = line.data;
+        buf = line;
     } else {
-        buf = replace_prefixes(line.data);
+        buf = replace_prefixes(line);
     }
 
     /* check if the line needs to be processed in a loop */
-    if (line.maybe_keyword && utils::find(buf, "%%")) {
+    if (utils::find(buf, "%%")) {
         char kw = 0;
 
-        kw |= find_keyword(function_keywords) << 1;
-        kw |= find_keyword(object_keywords)   << 2;
-        kw |= find_keyword(symbol_keywords)   << 3;
+        kw |= find_keyword(buf, function_keywords) << 1;
+        kw |= find_keyword(buf, object_keywords)   << 2;
+        kw |= find_keyword(buf, symbol_keywords)   << 3;
 
         switch (kw)
         {
@@ -342,24 +301,29 @@ size_t gendlopen::substitute_line(const template_t &line, bool &param_skip_code)
             return replace_symbol_names(buf);
 
         default:
-            throw error("cannot mix function, object and regular symbol"
-                        " placeholders:\n" + line.data);
+            std::string msg = "cannot mix function, object and regular symbol placeholders:\n";
+            msg += ">>>>>>>>\n";
+            msg += line;
+            msg += "<<<<<<<<<\n";
+
+            throw error(msg);
         }
     }
 
     /* nothing to loop, just append and return */
-    save::ofs << buf << '\n';
+    save::ofs << buf;
 
-    return utils::count_linefeed(buf) + 1;
+    return utils::count_linefeed(buf);
 }
 
 /* substitute placeholders */
-size_t gendlopen::substitute(const vtemplate_t &vec)
+size_t gendlopen::substitute(std::string &data)
 {
+    std::string line;
     size_t lines_written = 0;
     bool param_skip_code = false;
 
-    if (vec.empty()) {
+    if (data.empty()) {
         return 0;
     }
 
@@ -367,19 +331,48 @@ size_t gendlopen::substitute(const vtemplate_t &vec)
         throw error("no function or object prototypes");
     }
 
-    for (const template_t *list : vec) {
-        /* init input template line count */
-        m_substitute_lineno = 0;
+    if (!data.ends_with('\n')) {
+        data += '\n';
+    }
 
-        /* skip initial line directive */
-        if (!m_line_directive && list->data.starts_with("#line")) {
-            list++;
+    /* reset input template line count */
+    m_substitute_lineno = 0;
+
+    for (auto &c : data) {
+        if (c != '\n') {
+            line += c;
+            continue;
         }
 
-        for ( ; list->line_count != 0; list++) {
-            lines_written += substitute_line(*list, param_skip_code);
-            m_substitute_lineno += list->line_count;
+        /* line feed character found */
+
+        if (line.ends_with('\r')) {
+            /* remove CRLF line endings */
+            line.pop_back();
         }
+
+        if (line.ends_with('@')) {
+            /* multiline entry */
+            line.pop_back();
+            line += '\n';
+            continue;
+        }
+
+        if (line.starts_with("#line")) {
+            m_substitute_lineno = 0;
+
+            if (!m_line_directive) {
+                /* skip #line directive */
+                line.clear();
+                continue;
+            }
+        }
+
+        line += '\n';
+        lines_written += substitute_line(line, param_skip_code);
+        m_substitute_lineno += utils::count_linefeed(line);
+
+        line.clear();
     }
 
     return lines_written;

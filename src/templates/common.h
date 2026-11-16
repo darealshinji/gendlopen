@@ -415,23 +415,10 @@ GDO_EXTERN void *dlmopen(Lmid_t lmid, const char *path, int flags);
 # define GDO_ENABLE_AUTOLOAD
 #endif
 
-
 /* set GDO_WRAP_FUNCTIONS too if GDO_ENABLE_AUTOLOAD was set */
 #if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_WRAP_FUNCTIONS)
 # define GDO_WRAP_FUNCTIONS
 #endif
-
-
-/* whether wrapped functions can be used */
-%PARAM_SKIP_REMOVE_BEGIN%
-#if defined(GDO_ENABLE_AUTOLOAD) && !defined(GDO_DEFAULT_LIB)
-# error Auto-loading functions require "GDO_DEFAULT_LIB" to be set
-#endif
-%PARAM_SKIP_USE_BEGIN%
-#ifdef GDO_WRAP_FUNCTIONS
-# error Auto-loading and wrapped functions cannot be used because "-param=skip" was set
-#endif
-%PARAM_SKIP_END%
 
 
 

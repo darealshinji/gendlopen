@@ -51,8 +51,8 @@ namespace fs = std::filesystem;
 /* template.h */
 namespace templates
 {
-    extern const template_t *ptr_license;
-    extern const template_t *ptr_filename_macros;
+    extern const char *license;
+    extern const char *filename_macros;
 }
 
 
@@ -290,12 +290,9 @@ size_t header_guard_begin(const std::string &header_name, const std::string &pfx
 }
 
 /* don't need to count lines anymore */
-void header_guard_end(const std::string &header_name, const std::string &pfx_upper, bool pragma_once)
+void header_guard_end(const std::string &header_name, const std::string &pfx_upper)
 {
-    if (!pragma_once) {
-        ofs << "\n"
-            "#endif //_" << pfx_upper << '_' << utils::to_upper(header_name) << "_\n";
-    }
+    ofs << "#endif //_" << pfx_upper << '_' << utils::to_upper(header_name) << "_\n";
 }
 
 void include_header(const std::string &header_name, const std::string &pfx_upper)
@@ -349,37 +346,28 @@ size_t line_directive(const size_t lines, bool line_directive, const std::string
 
 
 /* save data, replace prefixes, return line count */
-size_t gendlopen::save_data(templates::name file, const template_t *list)
+size_t gendlopen::save_data(const char *ptr)
 {
-    size_t total_lines = 0;
+    std::string data;
+    size_t pos = 0;
 
-    load_template(file);
+    load_template(ptr, data);
 
     /* skip initial line directive */
-    if (!m_line_directive && strncmp(list->data.c_str(), "#line", 5) == 0) {
-        list++;
+    if (!m_line_directive && data.starts_with("#line") &&
+        utils::find(data, '\n', pos))
+    {
+        data.erase(0, pos);
     }
 
-    for ( ; list->line_count != 0; list++) {
-        std::string buf;
-
-        if (m_pfx_upper == "GDO") {
-            /* nothing to replace */
-            buf = list->data;
-        } else {
-            buf = replace_prefixes(list->data);
-        }
-
-        /* save data, count newlines */
-        save::ofs << buf;
-        total_lines += utils::count_linefeed(buf);
-
-        /* save and count extra newline */
-        save::ofs << '\n';
-        total_lines++;
+    if (m_pfx_upper != "GDO") {
+        data = replace_prefixes(data);
     }
 
-    return total_lines;
+    /* save data, count newlines */
+    save::ofs << data;
+
+    return utils::count_linefeed(data);
 }
 
 
@@ -388,7 +376,7 @@ void gendlopen::generate()
 {
     fs::path ofhdr, ofbody;
     std::string header_name, header_guard;
-    vtemplate_t header_data, body_data;
+    std::string header_data, body_data;
     bool is_cxx = false;
     size_t lines = 0;
 
@@ -427,6 +415,8 @@ void gendlopen::generate()
     /* define GDO_SEPARATE if saving into separate files */
     if (m_separate) {
         m_defines += "#define " + m_pfx_upper + "_SEPARATE\n";
+    } else {
+        m_defines += "#undef " + m_pfx_upper + "_SEPARATE\n";
     }
 
     /* default library name */
@@ -449,33 +439,41 @@ void gendlopen::generate()
     create_template_lists(header_data, body_data);
 
 
-    /*************** header data ***************/
+    /* save header data */
     save::open_ofstream(ofhdr, m_force);
 
     lines += save::note(m_print_date);
-    lines += save_data(templates::file_license, templates::ptr_license);
+    lines += save_data(templates::license);
 
     lines += save::line_directive(lines, m_line_directive, header_name);
     lines += save::header_guard_begin(header_name, m_pfx_upper, m_pragma_once);
 
-    lines += save_data(templates::file_filename_macros, templates::ptr_filename_macros);
+    lines += save_data(templates::filename_macros);
     lines += save::line_directive(lines, m_line_directive, header_name);
     lines += save::extra_data(m_defines, m_includes, m_typedefs);
 
     lines += substitute(header_data);
 
-    lines += save::line_directive(lines, m_line_directive, header_name);
-    save::header_guard_end(header_name, m_pfx_upper, m_pragma_once);
+    if (!m_separate && !body_data.empty()) {
+        /* C body data as part of header */
+        save::ofs << "\n\n\n";
+        lines += 3;
+        lines += substitute(body_data);
+    }
 
-    save::ofs.close();
+    if (!m_pragma_once) {
+        save::line_directive(lines, m_line_directive, header_name);
+        save::header_guard_end(header_name, m_pfx_upper);
+    }
 
 
-    /**************** body data ****************/
-    if (!body_data.empty()) {
+    /* save body data in separate file */
+    if (m_separate && !body_data.empty()) {
+        save::ofs.close();
         save::open_ofstream(ofbody, m_force);
 
         save::note(m_print_date);
-        save_data(templates::file_license, templates::ptr_license);
+        save_data(templates::license);
         save::include_header(header_name, m_pfx_upper);
 
         substitute(body_data);

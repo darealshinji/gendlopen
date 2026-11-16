@@ -151,9 +151,9 @@ GDO_LINKAGE bool gdo_load_symbol_name(const char *symbol)
     const size_t pfxlen = sizeof(pfx) - 1;
 
     if (pfxlen == 0 || strncmp(symbol, pfx, pfxlen) == 0) {
-        /* check symbol names (skips common prefix if present) */
+        const char *ptr = symbol + pfxlen;
 @
-        if (strcmp(symbol + pfxlen, "%%symbol_nopfx%%") == 0) {@
+        if (strcmp(ptr, "%%symbol_nopfx%%") == 0) {@
             return gdo_load_symbol(GDO_LOAD_%%symbol%%);@
         }
     }
