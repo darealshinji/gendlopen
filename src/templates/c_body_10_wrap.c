@@ -5,6 +5,10 @@
 #if defined(GDO_WRAP_FUNCTIONS) || defined(GDO_ENABLE_AUTOLOAD)
 
 
+void _gdo_noop(void)
+{}
+
+
 /* strstr() / wcsstr() */
 GDO_INLINE const gdo_char_t *_gdo_tcsstr(const gdo_char_t *haystack, const gdo_char_t *needle)
 {

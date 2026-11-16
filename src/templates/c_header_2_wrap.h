@@ -5,7 +5,7 @@
 #ifdef GDO_WRAP_FUNCTIONS
 
 /* we need an actual function for the VA_ARGS macro */
-GDO_INLINE void _gdo_noop(void) {}
+GDO_EXTERN void _gdo_noop(void);
 
 
 /* by default #define hooks that do nothing */
@@ -71,7 +71,7 @@ GDO_DECL void _gdo_wrap_check_loaded(void *symptr, int load, const gdo_char_t *s
 # define GDO_XPARAM   %%param_names%%@
 #endif //!GDO_HAS_VA_ARGS_%%func_symbol%%@
 #ifdef GDO_XDECL@
-    GDO_WRAP_DECL %%type%% GDO_WRAP(%%func_symbol%%) (GDO_XARGS) {@
+    GDO_XDECL %%type%% GDO_WRAP(%%func_symbol%%) (GDO_XARGS) {@
         _GDO_WRAP_CHECK_LOADED( %%func_symbol%% );@
         GDO_HOOK_%%func_symbol%%( GDO_XPARAM );@
         %%return%% GDO_RAWPTR_%%func_symbol%%( GDO_XPARAM );@
