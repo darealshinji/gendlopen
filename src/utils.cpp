@@ -23,6 +23,7 @@
 **/
 
 #include <cctype>
+#include <string>
 #include "utils.hpp"
 
 
@@ -68,48 +69,5 @@ std::string utils::to_lower(const std::string &str, bool underscores)
     }
 
     return out;
-}
-
-/* returns true if s begins with a prefix found in list */
-bool utils::is_prefixed(const std::string &s, const vstring_t &list)
-{
-    if (s.empty() || list.empty()) {
-        return false;
-    }
-
-    for (const auto &e : list) {
-        if (s.starts_with(e)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/* strip ANSI white-space characters from front and back */
-void utils::strip_spaces(std::string &s)
-{
-    /* remove from back */
-    while (!s.empty() && ::isspace(s.back())) {
-        s.pop_back();
-    }
-
-    /* remove from front */
-    while (!s.empty() && ::isspace(s.front())) {
-        s.erase(0, 1);
-    }
-}
-
-/* count '\n' characters */
-size_t utils::count_linefeed(const std::string &str)
-{
-    size_t n = 0;
-
-    for (auto &c : str) {
-        if (c == '\n') {
-            n++;
-        }
-    }
-
-    return n;
 }
 

@@ -59,21 +59,12 @@ public:
 
     ~opt() {}
 
-    bool iterate() {
-        return opt_iterate(&m_args);
-    }
+    bool iterate() { return opt_iterate(&m_args); }
 
-    const char *current() const {
-        return m_args.current;
-    }
+    const char *current() const { return m_args.current; }
+    uint8_t pfxlen() const { return m_args.pfxlen; }
 
-    uint8_t pfxlen() const {
-        return m_args.pfxlen;
-    }
-
-    bool flag(const char *str) {
-        return opt_arg_eq(&m_args, str);
-    }
+    bool flag(const char *str) { return opt_arg_eq(&m_args, str); }
 
     template<size_t N>
     bool arg(const char *&ptr, char const (&opt)[N]) {

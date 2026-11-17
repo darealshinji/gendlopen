@@ -37,6 +37,9 @@ using iter_t = vstring_t::iterator;
 using list_t = std::list<const char *>;
 
 
+namespace fs = std::filesystem;
+
+
 namespace proto
 {
     typedef enum {

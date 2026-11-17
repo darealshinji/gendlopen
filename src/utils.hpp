@@ -44,74 +44,6 @@
 namespace utils
 {
 
-template<typename T>
-std::filesystem::path make_fs_path(T name)
-{
-#ifdef __MINGW32__
-    /* bug: need to explicitly set locale, otherwise the program
-     * may crash if the name contains non-ANSI characters */
-    return std::filesystem::path(name, std::locale());
-#else
-    return std::filesystem::path{name};
-#endif
-}
-
-template<typename T1, typename T2>
-std::filesystem::path make_fs_path(T1 name1, T2 name2)
-{
-#ifdef __MINGW32__
-    auto path = make_fs_path(name1);
-    path /= make_fs_path(name2);
-    return path;
-#else
-    return std::filesystem::path{name1} / name2;
-#endif
-}
-
-
-/* MSVC compat */
-
-inline int strcasecmp(const char *a, const char *b)
-{
-#ifdef _MSC_VER
-    return ::_stricmp(a, b);
-#else
-    return ::strcasecmp(a, b);
-#endif
-}
-
-inline int strncasecmp(const char *a, const char *b, size_t n)
-{
-#ifdef _MSC_VER
-    return ::_strnicmp(a, b, n);
-#else
-    return ::strncasecmp(a, b, n);
-#endif
-}
-
-
-/* syntactic sugar */
-template<typename T>
-bool find(const std::string &haystack, const T &needle, size_t &pos)
-{
-    return ((pos = haystack.find(needle /*, pos*/)) != std::string::npos);
-}
-
-template<typename T>
-bool find(const std::string &haystack, const T &needle)
-{
-    return (haystack.find(needle) != std::string::npos);
-}
-
-
-/* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
-template<size_t N>
-bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N])
-{
-    return (str.size() > N-1 && utils::strncasecmp(str.c_str(), pfx, N-1) == 0);
-}
-
-
 /* convert a string to uppercase or lowercase
  *
  * underscores=true will convert any character not matching [A-Za-z0-9] to underscore `_'
@@ -120,17 +52,81 @@ std::string to_upper(const std::string &s, bool underscores=true);
 std::string to_lower(const std::string &s, bool underscores=true);
 
 
+#ifdef __MINGW32__
+/* bug: need to explicitly set locale, otherwise the program
+ * may crash if the name contains non-ANSI characters */
+template<typename T> fs::path mkpath(T name) {
+    return fs::path(name, std::locale());
+}
+
+template<typename T1, typename T2>
+fs::path mkpath(T1 name1, T2 name2) {
+    return mkpath(name1) / mkpath(name2);
+}
+#else //!__MINGW32__
+template<typename T> fs::path mkpath(T name) {
+    return fs::path{name};
+}
+
+template<typename T1, typename T2>
+fs::path mkpath(T1 name1, T2 name2) {
+    return fs::path{name1} / name2;
+}
+#endif //!__MINGW32__
+
+
+#ifdef _MSC_VER
+inline int strcasecmp(const char *a, const char *b)            { return ::_stricmp(a, b); }
+inline int strncasecmp(const char *a, const char *b, size_t n) { return ::_strnicmp(a, b, n); }
+#else
+inline int strcasecmp(const char *a, const char *b)            { return ::strcasecmp(a, b); }
+inline int strncasecmp(const char *a, const char *b, size_t n) { return ::strncasecmp(a, b, n); }
+#endif
+
+
+/* syntactic sugar */
+template<typename T>
+bool find(const std::string &haystack, const T &needle, size_t &pos) {
+    return ((pos = haystack.find(needle)) != std::string::npos);
+}
+
+template<typename T>
+bool find(const std::string &haystack, const T &needle) {
+    return (haystack.find(needle) != std::string::npos);
+}
+
+
+/* case-insensitive comparison if string begins with prefix (and is longer than prefix) */
+template<size_t N>
+bool prefixed_and_longer_case(const std::string &str, char const (&pfx)[N]) {
+    return (str.size() > N-1 && strncasecmp(str.c_str(), pfx, N-1) == 0);
+}
+
+
 /* returns true if s begins with a prefix found in list */
-bool is_prefixed(const std::string &s, const vstring_t &list);
+inline bool is_prefixed(const std::string &s, const vstring_t &list)
+{
+    if (!s.empty() && !list.empty()) {
+        for (const auto &e : list) {
+            if (s.starts_with(e)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 
 /* strip ANSI white-space characters from front and back */
-void strip_spaces(std::string &s);
+inline void strip_spaces(std::string &s) {
+    while (!s.empty() && ::isspace(s.back()))  { s.pop_back(); }
+    while (!s.empty() && ::isspace(s.front())) { s.erase(0, 1); }
+}
 
 
 /* replace string "from" with string "to" in string "s" */
-inline void replace(const std::string &from, const std::string &to, std::string &s)
-{
+inline void replace(const std::string &from, const std::string &to, std::string &s) {
     for (size_t pos = 0; utils::find(s, from, pos); pos += to.size()) {
         s.replace(pos, from.size(), to);
     }
@@ -138,49 +134,34 @@ inline void replace(const std::string &from, const std::string &to, std::string 
 
 
 /* count '\n' characters */
-size_t count_linefeed(const std::string &str);
-
-
-/* get program name without full path */
-#ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
-
-/* GNU */
-inline const char *progname(char *) {
-    return program_invocation_short_name;
-}
-
-#elif defined(HAVE_GETPROGNAME)
-
-/* BSD */
-inline const char *progname(char *) {
-    return getprogname();
-}
-
-#elif defined(_WIN32)
-
-inline std::string progname(char *argv0)
+inline size_t count_linefeed(const std::string &str)
 {
-    std::filesystem::path path;
-    char *ptr;
+    size_t n = 0;
 
-    /* prefer _pgmptr over argv[0] */
-    if (_get_pgmptr(&ptr) == 0) {
-        path = make_fs_path(ptr);
-    } else {
-        path = make_fs_path(argv0);
+    for (auto &c : str) {
+        if (c == '\n') {
+            n++;
+        }
     }
 
-    return path.stem().string();
+    return n;
 }
 
-#else
 
-/* other */
+/* get program name without full path (used in messages) */
+#ifdef HAVE_PROGRAM_INVOCATION_SHORT_NAME
+inline const char *progname(char *) { return program_invocation_short_name; }
+#elif defined(HAVE_GETPROGNAME)
+inline const char *progname(char *) { return getprogname(); }
+#elif defined(_WIN32)
 inline std::string progname(char *argv0) {
-    auto path = make_fs_path(argv0);
-    return path.filename().string();
+    char *ptr = (_get_pgmptr(&ptr) == 0) ? ptr : argv0;
+    return mkpath(ptr).stem().string();
 }
-
+#else
+inline std::string progname(char *argv0) {
+    return mkpath(argv0).filename().string();
+}
 #endif
 
 

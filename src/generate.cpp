@@ -44,11 +44,7 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-namespace fs = std::filesystem;
 
-
-
-/* template.h */
 namespace templates
 {
     extern const char *license;
@@ -56,17 +52,18 @@ namespace templates
 }
 
 
+
 namespace /* anonymous */
 {
     bool compare_chars_at(vproto_t &vec, vproto_t::iterator &it0, size_t pos)
     {
-        const char *front = (*it0).symbol.c_str();
+        const char *first_entry = (*it0).symbol.c_str();
 
         for (auto it = vec.begin(); it != vec.end(); it++) {
             if (it != it0) {
-                char c = (*it).symbol.c_str()[pos];
+                char c = (*it).symbol[pos];
 
-                if (c == 0 || c != front[pos]) {
+                if (c == 0 || c != first_entry[pos]) {
                     return true;
                 }
             }
@@ -114,7 +111,7 @@ cio::ofstream ofs;
 
 
 /* quote library name */
-std::string quote_lib(const std::string &lib, bool wide)
+static std::string quote_lib(const std::string &lib, bool wide)
 {
     if (wide) {
         if (lib.size() >= 3 && utils::front_and_back(lib, "L\"", '"')) {
@@ -146,7 +143,7 @@ std::string quote_lib(const std::string &lib, bool wide)
  *
  * return macros
  */
-std::string format_libname(const std::string &str, const std::string &pfx)
+static std::string format_libname(const std::string &str, const std::string &pfx)
 {
     std::string lib_a, lib_w, out;
 
@@ -204,7 +201,7 @@ std::string format_libname(const std::string &str, const std::string &pfx)
 
 
 /* print note */
-size_t note(bool print_date)
+static size_t note(bool print_date)
 {
     std::stringstream strm;
 
@@ -238,7 +235,7 @@ size_t note(bool print_date)
 
 
 /* extra defines, headers and typedefs */
-size_t extra_data(const std::string &defs, const vstring_t &incs, const vstring_t &tdefs)
+static size_t extra_data(const std::string &defs, const vstring_t &incs, const vstring_t &tdefs)
 {
     std::string str;
 
@@ -270,7 +267,7 @@ size_t extra_data(const std::string &defs, const vstring_t &incs, const vstring_
     return utils::count_linefeed(str);
 }
 
-size_t header_guard_begin(const std::string &header_name, const std::string &pfx_upper, bool pragma_once)
+static size_t header_guard_begin(const std::string &header_name, const std::string &pfx_upper, bool pragma_once)
 {
     std::string str;
 
@@ -290,18 +287,30 @@ size_t header_guard_begin(const std::string &header_name, const std::string &pfx
 }
 
 /* don't need to count lines anymore */
-void header_guard_end(const std::string &header_name, const std::string &pfx_upper)
+static void header_guard_end(const std::string &header_name, const std::string &pfx_upper)
 {
     ofs << "#endif //_" << pfx_upper << '_' << utils::to_upper(header_name) << "_\n";
 }
 
-void include_header(const std::string &header_name, const std::string &pfx_upper)
+static void include_header(const std::string &header_name, const std::string &pfx_upper)
 {
     /* define "GDO_INCLUDED_IN_BODY" before including the header */
     ofs << "\n"
         "#define " << pfx_upper << "_INCLUDED_IN_BODY\n"
         "#include \"" << header_name << "\"\n"
         "\n";
+}
+
+static size_t line_directive(const size_t lines, bool line_directive, const std::string &header_name)
+{
+    if (line_directive) {
+        /* +1 to count the "#line" directive itself and
+         * +1 to print the number of the next line */
+        save::ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
+        return 1;
+    }
+
+    return 0;
 }
 
 /* open output file stream for writing */
@@ -327,19 +336,6 @@ void open_ofstream(const fs::path &opath, bool force)
     if (!ofs.open(opath)) {
         throw gendlopen::error("failed to open file for writing: " + opath.string());
     }
-}
-
-size_t line_directive(const size_t lines, bool line_directive, const std::string &header_name)
-{
-    if (!line_directive) {
-        return 0;
-    }
-
-    /* +1 to count the "#line" directive itself and
-     * +1 to print the number of the next line */
-    save::ofs << "#line " << (lines + 2) << " \"" << header_name << "\"\n";
-
-    return 1;
 }
 
 } /* end namespace save */
@@ -387,7 +383,7 @@ void gendlopen::generate()
         m_separate = false;
     } else {
         /* save output filename */
-        ofbody = ofhdr = utils::make_fs_path(m_output);
+        ofbody = ofhdr = utils::mkpath(m_output);
     }
 
     /* change settings based on output format */
@@ -438,7 +434,6 @@ void gendlopen::generate()
     /* create template data */
     create_template_lists(header_data, body_data);
 
-
     /* save header data */
     save::open_ofstream(ofhdr, m_force);
 
@@ -465,7 +460,6 @@ void gendlopen::generate()
         save::line_directive(lines, m_line_directive, header_name);
         save::header_guard_end(header_name, m_pfx_upper);
     }
-
 
     /* save body data in separate file */
     if (m_separate && !body_data.empty()) {

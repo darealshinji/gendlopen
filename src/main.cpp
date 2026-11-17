@@ -85,7 +85,7 @@ int main(int argc, char **argv)
         print_errmsg(argv[0], e);
         return 1;
     }
-    catch (std::filesystem::filesystem_error const &e) {
+    catch (fs::filesystem_error const &e) {
         print_errmsg(argv[0], e);
         return 1;
     }

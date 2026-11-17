@@ -2,7 +2,6 @@ OUT = out
 SRC = src
 
 CXX_SRCS = \
-	..\$(SRC)\cio_ofstream.cpp \
 	..\$(SRC)\check_pattern.cpp \
 	..\$(SRC)\clang_ast.cpp \
 	..\$(SRC)\data.cpp \
@@ -10,7 +9,6 @@ CXX_SRCS = \
 	..\$(SRC)\generate.cpp \
 	..\$(SRC)\help.cpp \
 	..\$(SRC)\main.cpp \
-	..\$(SRC)\open_file.cpp \
 	..\$(SRC)\options.cpp \
 	..\$(SRC)\parameter_names.cpp \
 	..\$(SRC)\parse.cpp \

@@ -45,7 +45,6 @@ namespace templates
 #undef TEMPLATE
 }
 
-namespace fs = std::filesystem;
 namespace t = templates;
 
 
@@ -55,7 +54,7 @@ namespace /* anonymous */
     void load_from_file(std::string &data, const std::string &dir, const char *filename, bool line_directive)
     {
         /* lookup path */
-        auto path = utils::make_fs_path(dir, filename);
+        auto path = utils::mkpath(dir, filename);
 
         /* open file for reading */
         open_file ofs(path);
@@ -66,7 +65,7 @@ namespace /* anonymous */
 
         /* add initial #line directive */
         if (line_directive) {
-            if (ofs.file_pointer() == stdin) {
+            if (ofs.is_stdin()) {
                 data += "#line 1 \"<STDIN>\"";
             } else {
                 data += "#line 1 \"" + std::string(filename) + "\"\n";
@@ -86,7 +85,7 @@ namespace /* anonymous */
     {
         cio::ofstream ofs;
 
-        auto path = utils::make_fs_path(dir, filename);
+        auto path = utils::mkpath(dir, filename);
 
         if (!ofs.open(path)) {
             throw gendlopen::error("failed to open file for writing: " + path.string());
@@ -108,7 +107,7 @@ void gendlopen::load_template(const char *ptr, std::string &buffer)
     }
 
 #define TEMPLATE(FILE, VAR) \
-    if (ptr == t::VAR) {\
+    if (ptr == templates::VAR) {\
         load_from_file(buffer, m_templates_path, #FILE, m_line_directive); \
         return; \
     }
@@ -180,7 +179,8 @@ void gendlopen::dump_templates()
         throw error("failed to create directory: " + m_dump_path);
     }
 
-#define TEMPLATE(FILE, VAR) save_to_file(m_dump_path, #FILE, templates::VAR);
+#define TEMPLATE(FILE, VAR) \
+    save_to_file(m_dump_path, #FILE, templates::VAR);
 #include "list.h"
 #undef TEMPLATE
 }

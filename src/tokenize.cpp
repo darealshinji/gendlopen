@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <string>
 #include <algorithm>
+#include <filesystem>
 #include <utility>
 #include <vector>
 #include "gendlopen.hpp"
@@ -194,7 +195,7 @@ namespace /* anonymous */
     }
 
 
-    inline bool consec_match(const ventry_t &v, const ventry_t::iterator &it, const char &ch)
+    bool consec_match(const ventry_t &v, const ventry_t::iterator &it, const char &ch)
     {
         auto next = it + 1;
 
@@ -302,6 +303,34 @@ namespace /* anonymous */
             v_in.push_back(std::move(e.str));
         }
     }
+
+
+    bool is_stdin(const std::string &path)
+    {
+#ifdef _WIN32
+        return (path == "-");
+#else
+        return (path == "-" || fs::equivalent(path, "/dev/stdin"));
+#endif
+    }
+
+
+    /* check if input and custom template refer to the same file */
+    bool same_files(const std::string &input, const std::string &custom_template)
+    {
+        try {
+            if (input == custom_template ||
+                (is_stdin(input) && is_stdin(custom_template)) ||
+                fs::equivalent(utils::mkpath(input), utils::mkpath(custom_template)))
+            {
+                return true;
+            }
+        } catch (fs::filesystem_error const&) {
+            return false;
+        }
+
+        return false;
+    }
 } /* end anonymous namespace */
 
 
@@ -346,13 +375,11 @@ void gendlopen::tokenize()
         throw error("input file required");
     }
 
-    if (m_input == "-" && m_custom_template == "-") {
-        throw error("cannot read input file and custom template both from STDIN");
+    if (!m_custom_template.empty() && same_files(m_input, m_custom_template)) {
+        throw error("cannot read input and custom template from the same file");
     }
 
-    std::string input_name = (m_input == "-")
-        ? "<STDIN>"
-        : "file: " + m_input;
+    std::string input_name = (m_input == "-") ? "<STDIN>" : "file: " + m_input;
 
     open_file file(m_input);
 
@@ -361,7 +388,7 @@ void gendlopen::tokenize()
     }
 
     /* set input file pointer */
-    lex::set_fpin(file.file_pointer());
+    lex::set_fpin(file.fp());
 
     /* read and tokenize input */
     int ret = tokenize_stream(vec_tokens, poptions);

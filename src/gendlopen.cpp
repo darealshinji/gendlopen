@@ -177,7 +177,7 @@ void gendlopen::process_custom_template()
 
     /* write initial #line directive */
     if (m_line_directive) {
-        if (file.file_pointer() == stdin) {
+        if (file.is_stdin()) {
             save::ofs << "#line 1 \"<STDIN>\"\n";
         } else {
             save::ofs << "#line 1 \"" << m_custom_template << "\"\n";

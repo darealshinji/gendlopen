@@ -43,28 +43,42 @@ private:
     std::ostream *m_optr = &std::cout;
 
     template<class T>
-    bool open_path(const T &path)
+    bool do_open(const T &path)
     {
         close();
-        m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
 
-        if (m_ofs.is_open()) {
-            m_optr = dynamic_cast<std::ostream *>(&m_ofs);
+        /* stdout */
+        if (path == "-") {
             return true;
+        } else {
+            m_ofs.open(path, std::ios_base::out | std::ios_base::binary);
+
+            if (m_ofs.is_open()) {
+                m_optr = dynamic_cast<std::ostream *>(&m_ofs);
+                return true;
+            }
         }
 
         return false;
     }
 
+
 public:
 
-    ofstream();
-    ~ofstream();
+    ofstream()  {}
+    ~ofstream() { close(); }
 
-    bool open(const std::filesystem::path &path);
-    bool open(const std::string &file);
+    bool open(const std::filesystem::path &path) { return do_open(path); }
+    bool open(const std::string &path)           { return do_open(path); }
 
-    void close();
+    void close() {
+        if (m_ofs.is_open()) {
+            m_ofs.close();
+        }
+
+        /* set to stdout */
+        m_optr = &std::cout;
+    }
 
     /* overloading "<<" operator */
     template<class T>

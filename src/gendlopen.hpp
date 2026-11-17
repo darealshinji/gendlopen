@@ -39,7 +39,7 @@ namespace save
     extern cio::ofstream ofs;
 
     /* open output file stream for writing */
-    void open_ofstream(const std::filesystem::path &opath, bool force);
+    void open_ofstream(const fs::path &opath, bool force);
 }
 
 

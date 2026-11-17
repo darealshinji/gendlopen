@@ -2,7 +2,6 @@ OUT = out
 SRC = src
 
 OBJS = \
-	$(OUT)/cio_ofstream.o \
 	$(OUT)/check_pattern.o \
 	$(OUT)/clang_ast.o \
 	$(OUT)/data.o \
@@ -11,7 +10,6 @@ OBJS = \
 	$(OUT)/help.o \
 	$(OUT)/lex.yy.o \
 	$(OUT)/main.o \
-	$(OUT)/open_file.o \
 	$(OUT)/options.o \
 	$(OUT)/parameter_names.o \
 	$(OUT)/parse.o \

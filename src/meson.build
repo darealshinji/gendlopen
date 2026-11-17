@@ -1,5 +1,4 @@
 gendlopen_src = files(
-    'cio_ofstream.cpp',
     'check_pattern.cpp',
     'clang_ast.cpp',
     'data.cpp',
@@ -8,7 +7,6 @@ gendlopen_src = files(
     'help.cpp',
     'lex.yy.c',
     'main.cpp',
-    'open_file.cpp',
     'options.cpp',
     'parameter_names.cpp',
     'parse.cpp',
